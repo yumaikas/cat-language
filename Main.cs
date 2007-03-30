@@ -9,13 +9,14 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Cat
 {
     public class MainClass
     {
-        public static List<string> gsInputFiles = new List<string>();
-        public static StreamWriter gpLogFile = null;
+        static List<string> gsInputFiles = new List<string>();
+        static StringWriter gpTranscript = new StringWriter();
 
         static void Main(string[] a)
         {
@@ -24,44 +25,34 @@ namespace Cat
                 foreach (string s in a)
                     gsInputFiles.Add(s);
 
-                try
-                {
-                    if (Config.gbLogSession)
-                        gpLogFile = new StreamWriter("log.txt");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Failed to open log file {0}", e);
-                    Config.gbLogSession = false;
-                }
-
                 // Splash screen 
                 if (Config.gbShowLogo)
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.10.0 March 28, 2006");
+                    WriteLine("version 0.10.0 March 29, 2006");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is public domain");
                     WriteLine("http://www.cat-language.com");
+                    WriteLine("");
+                    WriteLine("Type in #help for help, and #exit to exit.");
                     WriteLine("");
                 }
 
                 // Load primitive operations 
                 RegisterPrimitives(Scope.Global());
-
-                // Quietly load the standard library 
-                bool bTmp = Config.gbQuietImport;
-                Config.gbQuietImport = true;
-                string sLibrary = "lib\\standard.cat";
-                if (!File.Exists(sLibrary))
-                    Console.WriteLine("Could not find the standard library: " + sLibrary);
-                Executor.Main.LoadModule(sLibrary);
-                Config.gbQuietImport = bTmp;
                 
                 // Load all files on the command line                
                 foreach (string sFile in MainClass.gsInputFiles)
                     Executor.Main.LoadModule(sFile);
+
+
+                if (gsInputFiles.Count == 0)
+                {
+                    Console.WriteLine("warning: no files were passed as command line arguments, therefore the standard library hasn't been loaded.");
+                    Console.WriteLine("you can load the standard library by writing: \"lib\\standard.cat\" load");
+                }
+
 
                 // main execution loop
                 while (true)
@@ -70,15 +61,27 @@ namespace Cat
                     try
                     {
                         string s = Console.ReadLine();
-                        if (Config.gbLogSession)
-                            gpLogFile.WriteLine(s);
-                        DateTime begin = DateTime.Now;
-                        Executor.Main.Execute(s + '\n');
-                        TimeSpan elapsed = DateTime.Now - begin;
-                        if (Config.gbOutputTimeElapsed)
-                            WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
-                        if (Config.gbOutputStack)
-                            Executor.Main.OutputStack();
+                        gpTranscript.WriteLine(s);
+                        if (s.Length > 0)
+                        {
+                            // Is this a meta-command?
+                            if (s[0] == '#')
+                            {
+                                if (s == "#exit")
+                                    break;
+                                ParseMetaCommand(s);
+                            }
+                            else
+                            {
+                                DateTime begin = DateTime.Now;
+                                Executor.Main.Execute(s + '\n');
+                                TimeSpan elapsed = DateTime.Now - begin;
+                                if (Config.gbOutputTimeElapsed)
+                                    WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
+                                if (Config.gbOutputStack)
+                                    Executor.Main.OutputStack();
+                            }
+                        }
                     }
                     catch (Exception e)
                     {
@@ -91,14 +94,71 @@ namespace Cat
                 WriteLine("Untrapped exception occurred: {0}", e.Message);
             }
 
-            if (Config.gbLogSession)
+            string sTranscript = "transcript.txt";
+            try
             {
-                gpLogFile.Flush();
-                gpLogFile.Close();
+                StreamWriter sw = new StreamWriter("transcript.txt");
+                gpTranscript.Flush();
+                sw.Write(gpTranscript.ToString());
+                sw.Close();
+                WriteLine("A transcript of your session has been saved in the file " + sTranscript.ToString());
+            }
+            catch(Exception e)
+            {
+                WriteLine("Error occured while writing transcript: " + e.Message);
+            }
+
+            WriteLine("goodbye!");
+
+        }
+
+        #region meta-commands (commands intended for the interpreter)
+        public static void ParseMetaCommand(string s)
+        {
+            Trace.Assert(s.Length > 0);
+            Trace.Assert(s[0] == '#');
+
+            string[] tokens = s.Split(new char[] { ' ' });
+
+            Trace.Assert(tokens.Length > 0);
+
+            switch (tokens[0])
+            {
+                case "#help":
+                    WriteLine("#defs will provide a list of available functions.");
+                    WriteLine("#exit will allow you to exit the program.");
+                    WriteLine("More help will be available in later versions.");
+                    break;
+                case "#defs":
+                    OutputDefs();
+                    break;
+                default:
+                    WriteLine("unrecognized meta-command " + tokens[0]);
+                    break;
             }
         }
 
-        #region console/loggging output function 
+        public static void OutputDefs()
+        {
+            foreach (Function f in Scope.Global().GetAllFunctions())
+            {
+                if (f is DefinedFunction)
+                {
+                    DefinedFunction d = f as DefinedFunction;
+                    WriteLine(f.GetName() + "\t== " + d.GetTermsAsString());
+                }
+                else
+                {
+                    WriteLine(f.GetName() + "\t" + f.GetTypeString());
+                }
+            }
+            foreach (List<Method> list in Scope.Global().GetAllMethods())
+                foreach (Method m in list)
+                    WriteLine(m.GetName() + "\t" + m.GetTypeString());
+        }
+        #endregion
+
+        #region console/loggging output function
         public static void WriteArrayList(ArrayList a)
         {
             Write("(");
@@ -131,32 +191,30 @@ namespace Cat
         public static void Write(string s, object o)
         {
             Console.Write(s, o);
-            if (Config.gbLogSession) gpLogFile.Write(s, o);
+            gpTranscript.Write(s, o);
         }
 
         public static void WriteLine(string s, object o)
         {
             Console.WriteLine(s, o);
-            if (Config.gbLogSession) gpLogFile.WriteLine(s, o);
+            gpTranscript.WriteLine(s, o);
         }
 
         public static void Write(string s)
         {
             Console.Write(s);
-            if (Config.gbLogSession) gpLogFile.Write(s);
+            gpTranscript.Write(s);
         }
 
         public static void WriteLine(string s)
         {
             Console.WriteLine(s);
-            if (Config.gbLogSession) gpLogFile.WriteLine(s);
+            gpTranscript.WriteLine(s);
         }
 
         public static void Prompt()
         {
             Write(">> ");
-            if (Config.gbLogSession)
-                gpLogFile.Flush();
         }
         #endregion
 

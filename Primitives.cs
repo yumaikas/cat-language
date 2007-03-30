@@ -101,23 +101,6 @@ namespace Cat
             }
         }
 
-        public class Defs : Function
-        {
-            public Defs()
-                : base("defs", "() ~> ()", "lists all available functions")
-            { }
-
-            public override void Eval(CatStack stk)
-            {
-                // This makes me think that Eval should receive Executor types as arguments instead of CatStack           
-                foreach (Function f in Scope.Global().GetAllFunctions())
-                    Console.WriteLine(f.GetName() + "\t" + f.GetTypeString());
-                foreach (List<Method> list in Scope.Global().GetAllMethods())
-                    foreach (Method m in list)
-                        Console.WriteLine(m.GetName() + "\t" + m.GetTypeString());
-            }
-        }
-
         public class List : Function
         {
             public List()
@@ -161,21 +144,6 @@ namespace Cat
                 stk.Push(q);
             }
         }
-
-        /*  
-        public class Help : Function
-        {
-            public Help()
-                : base("help", "() ~> ()", "outputs some helpful advice")
-            { }
-
-            public override void Eval(CatStack stk)
-            {
-                Console.WriteLine("Use the 'defs' command to see a list of available functions.");
-                Console.WriteLine("Visit http://www.cat-language.com for more help.");
-                Console.WriteLine("More help will be available in later versions.");
-            }
-        }*/
 
         public class Clr : Function
         {
@@ -311,8 +279,8 @@ namespace Cat
         #endregion
 
         #region console functions
-        public static void write(Object o) { Console.Write(o.ToString()); }
-        public static void writeln(Object o) { Console.WriteLine(o.ToString()); }
+        public static void write(Object o) { MainClass.Write(o.ToString()); }
+        public static void writeln(Object o) { MainClass.WriteLine(o.ToString()); }
         public static string readln() { return Console.ReadLine(); }
         public static char readkey() { return Console.ReadKey().KeyChar; }
         #endregion

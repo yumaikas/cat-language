@@ -328,5 +328,13 @@ namespace Cat
             foreach (Function f in mTerms)
                 f.Eval(stk);
         }
+
+        public string GetTermsAsString()
+        {
+            string s = "";
+            foreach (Function f in mTerms)
+                s += f.GetName() + " ";
+            return s;
+        }
     }
 }
