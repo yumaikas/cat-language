@@ -68,11 +68,6 @@ namespace Cat
         public static bool gbOutputTimeElapsed = false;
 
         /// <summary>
-        /// Determines whether all of the output should saved to a log file.
-        /// </summary>
-        public static bool gbLogSession = false;
-
-        /// <summary>
         /// The number of worker threads that the interpreter can spawn at one time. 
         /// </summary>
         public static int gnMaxWorkerThreads = 1;
@@ -96,6 +91,6 @@ namespace Cat
         /// Outputs the result of performing a conversion from a function
         /// with named arguments to a point-free form.
         /// </summary>
-        public static bool gbShowPointFreeConversion = true;
+        public static bool gbShowPointFreeConversion = false;
     }
 }
