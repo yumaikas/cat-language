@@ -1,0 +1,5 @@
+define quadratic_eqn(x a b c)
+{
+  x sqr a * x b * + c +
+}
+
