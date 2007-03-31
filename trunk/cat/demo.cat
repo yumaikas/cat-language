@@ -1,5 +1,10 @@
 define quadratic_eqn(x a b c)
-{
-  x sqr a * x b * + c +
-}
+{ x sqr a * x b * + c + }
+
+define gt1 : ('a -> 'a bool)
+{ dup 1 > }
+
+define while_fac
+{ 1 swap [[*] keep dec] [dup 1 >] while pop }
+
 
