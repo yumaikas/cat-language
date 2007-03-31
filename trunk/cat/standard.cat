@@ -131,13 +131,31 @@ define != { neq }
 //=============================================================================
 // Additional combinators
 
-define dipd : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
-{ swap [dip] dip }
+// Sometime called "slip"
+define swip : ('A ('A -> 'B) 'c -> 'B 'c)
+{ swap dip }
+
+// Sometimes called "sip"
+define keep : ('A 'b ('A 'b -> 'C) -> 'C 'b)
+{ dupd dip }
+
+define sweep : ('A ('A 'b -> 'C) 'b -> 'C 'b)
+{ swap keep }
+
+define dip2 : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
+{ swap [dip] swip }
+
+define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
+{ swap [dip2] swip }
+
+define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
+{ swap [dip3] swip }
 
 //=============================================================================
 // List operators
 
-define swons : (var list -> list) { swap cons }
+define swons : (var list -> list)
+{ swap cons }
 
 //=============================================================================
 // Function manipulation operators
@@ -159,4 +177,14 @@ define curry5 : ('a 'b 'c 'd 'e ('F 'a 'b 'c 'd 'e -> 'G) -> ('F -> 'G))
 
 define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
 { quote swap compose }
+
+//==============================================================================
+// Looping constructions
+
+define repeat : ('A ('A -> 'A) int -> 'A)
+{ swap [swip dec] curry [neqz] while pop }
+
+// reverse for loop
+define rfor : ('A ('A int -> 'A) int -> 'A)
+{ swap [sweep dec] curry [neqz] while pop }
 
