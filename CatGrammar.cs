@@ -122,7 +122,7 @@ namespace Cat
         }
         public static Rule TypeAlias()
         {
-            return Token(Seq(Ident(), Token("="), NoFail(Choice(Delay(FxnType), TypeName), "only function types can be labelled")));
+            return Token(Seq(Ident(), Token("="), NoFail(Choice(Delay(FxnType), TypeName()), "only function types can be labelled")));
         }
         public static Rule TypeComponent()
         {
