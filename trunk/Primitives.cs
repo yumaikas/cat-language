@@ -10,6 +10,18 @@ namespace Cat
 {
     public class Primitives
     {
+        public class Id : Function
+        {
+            public Id()
+                : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.")
+            { }
+
+            public override void Eval(CatStack stk)
+            {                
+            }
+        }
+
+
         public class True : Function
         {
             public True()
