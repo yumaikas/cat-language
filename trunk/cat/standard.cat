@@ -108,6 +108,27 @@ define eqz : (int -> int bool)  { dup 0 eq }
 define neqz : (int -> int bool) { eqz not }
 
 //=============================================================================
+// predicate generation functions
+
+define ltf : ('a -> ('a -> 'a bool))
+{ [dupd lt] curry }
+
+define lteqf : ('a -> ('a -> 'a bool))
+{ [dupd lteq] curry }
+
+define gtf : ('a -> ('a -> 'a bool))
+{ [dupd gt] curry }
+
+define gteqf : ('a -> ('a -> 'a bool))
+{ [dupd gteq] curry }
+
+define eqf : ('a -> ('a -> 'a bool))
+{ [dupd eq] curry }
+
+define neqf : ('a -> ('a -> 'a bool))
+{ [dupd neq] curry }
+
+//=============================================================================
 // Additional mathematical definitions
 
 define inc : (int -> int) { 1 add }
@@ -157,6 +178,9 @@ define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 define swons : (var list -> list)
 { swap cons }
 
+define n : (int -> list)
+{ ltf 0 swap [inc] gen }
+
 //=============================================================================
 // Function manipulation operators
 
@@ -187,4 +211,3 @@ define repeat : ('A ('A -> 'A) int -> 'A)
 // reverse for loop
 define rfor : ('A ('A int -> 'A) int -> 'A)
 { swap [sweep dec] curry [neqz] while pop }
-

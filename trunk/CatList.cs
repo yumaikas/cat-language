@@ -27,12 +27,42 @@ namespace Cat
         public abstract CatList dup();
         public abstract int count();
         public abstract Object nth(int n);
-        public abstract CatList drop(int n);        
+        public abstract CatList drop(int n);
         #endregion
 
+        public virtual CatList map(Function f)
+        {
+            CatStack stk = new CatStack();
+            for (int i = count(); i > 0; --i)
+            {
+                Object tmp = nth(i - 1);
+                stk.Push(f.Invoke(tmp));
+            }
+            return new ListFromStack(stk);
+        }
+        public virtual Object foldl(Object x, Function f)
+        {
+            for (int i = 0; i < count(); ++i)
+            {
+                Object tmp = nth(i);
+                x = f.Invoke(x, tmp);
+            }
+            return x;
+        }
+        public virtual CatList filter(Function f)
+        {
+            CatStack stk = new CatStack();
+            for (int i = count(); i > 0; --i)
+            {
+                Object tmp = nth(i - 1);
+                if ((bool)f.Invoke(tmp))
+                    stk.Push(tmp);
+            }
+            return new ListFromStack(stk);
+        }
         public virtual CatList append(Object o) 
         { 
-            return new ConsCell(o, this); 
+            return new ConsCell(this, o); 
         }
         public virtual Object head()
         {
@@ -45,6 +75,11 @@ namespace Cat
         }
 
         public string str()
+        {
+            return ToString();
+        }
+
+        public override string ToString()
         {
             string result = "( ";
             int nMax = count();
@@ -66,11 +101,6 @@ namespace Cat
             result += ")";
             return result;
         }
-
-        public override string ToString()
-        {
-            return str();
-        }
     }
 
     /// <summary>
@@ -79,11 +109,40 @@ namespace Cat
     public class EmptyList : CatList
     {
         #region public functions
-        public override CatList append(Object o) { return new UnitList(o); }
-        public override CatList dup() { return this; }
-        public override int count() { return 0; }
-        public override Object nth(int n) { throw new Exception("no items"); }
-        public override CatList drop(int n) { if (n != 0) throw new Exception("no items"); return this; }
+        public override CatList append(Object o) 
+        { 
+            return unit(o); 
+        }
+        public override CatList dup() 
+        { 
+            return this; 
+        }
+        public override int count() 
+        { 
+            return 0; 
+        }
+        public override CatList map(Function f) 
+        { 
+            return this; 
+        }
+        public override Object foldl(Object o, Function f) 
+        { 
+            return o; 
+        }
+        public override CatList filter(Function f)
+        {
+            return this;
+        }
+        public override Object nth(int n) 
+        { 
+            throw new Exception("no items"); 
+        }
+        public override CatList drop(int n) 
+        { 
+            if (n != 0) 
+                throw new Exception("no items"); 
+            return this; 
+        }
         public override object head()
         {
             throw new Exception("empty list, no head");
@@ -104,9 +163,35 @@ namespace Cat
         public UnitList(Object o) { m = o; } 
 
         #region public functions
-        public override CatList dup() { return new UnitList(m); }
-        public override int count() { return 1; }
-        public override Object nth(int n) { if (n != 0) throw new Exception("only one item in list"); return m; }
+        public override CatList dup() 
+        { 
+            return unit(m); 
+        }
+        public override int count() 
+        { 
+            return 1; 
+        }
+        public override CatList map(Function f) 
+        { 
+            return unit(f.Invoke(m)); 
+        }
+        public override Object foldl(Object o, Function f) 
+        { 
+            return f.Invoke(o, m); 
+        }
+        public override CatList filter(Function f)
+        {
+            if ((bool)f.Invoke(m))
+                return unit(m);
+            else
+                return nil();
+        }
+        public override Object nth(int n) 
+        { 
+            if (n != 0) 
+                throw new Exception("only one item in list"); 
+            return m; 
+        }
         public override CatList drop(int n) 
         {
             switch (n)
@@ -134,15 +219,48 @@ namespace Cat
     {
         Object mHead;
         CatList mTail;
-        public ConsCell(Object o, CatList list)
+        public ConsCell(CatList list, Object o)
         {
             mHead = o;
             mTail = list;
         }
-        public override CatList dup() { return this; }
-        public override int count() { return 1 + mTail.count(); }
-        public override Object nth(int n) { if (n == 0) return mHead; else return mTail.nth(n - 1); }
-        public override CatList drop(int n) { if (n == 0) return this; else return mTail.drop(n - 1); }
+        public override CatList dup() 
+        { 
+            return this; 
+        }
+        public override int count() 
+        { 
+            return 1 + mTail.count(); 
+        }
+        public override CatList map(Function f)
+        {
+            return cons(mTail.map(f), f.Invoke(mHead));
+        }
+        public override Object foldl(Object o, Function f)
+        {
+            return f.Invoke(o, mTail.foldl(mHead, f));
+        }
+        public override CatList filter(Function f)
+        {
+            if ((bool)f.Invoke(mHead))
+                return cons(mTail.filter(f), mHead);
+            else
+                return mTail.filter(f);
+        }
+        public override Object nth(int n) 
+        { 
+            if (n == 0) 
+                return mHead; 
+            else 
+                return mTail.nth(n - 1); 
+        }
+        public override CatList drop(int n) 
+        { 
+            if (n == 0) 
+                return this; 
+            else 
+                return mTail.drop(n - 1); 
+        }
         public override object head()
         {
             return mHead;
@@ -163,9 +281,18 @@ namespace Cat
         {
             mStk = stk;
         }
-        public override CatList dup() { return this; }
-        public override int count() { return mStk.Count; }
-        public override Object nth(int n) { return mStk[n]; }
+        public override CatList dup() 
+        { 
+            return this; 
+        }
+        public override int count() 
+        { 
+            return mStk.Count; 
+        }
+        public override Object nth(int n) 
+        { 
+            return mStk[n]; 
+        }
         public override CatList drop(int n) 
         {
             if (n == 0) 
@@ -176,7 +303,7 @@ namespace Cat
                 case 0:
                     return nil();
                 case 1:
-                    return new UnitList(mStk[count() - 1]);
+                    return unit(mStk[count() - 1]);
                 default:
                     return new SubList(this, count() - n);
             }
@@ -225,11 +352,67 @@ namespace Cat
                 case 0:
                     return nil();
                 case 1:
-                    return new UnitList(nth(mCount - 1));
+                    return unit(nth(mCount - 1));
                 default:
                     return new SubList(mList, mCount - n);
             }
         }
     }
     
+    public class LazyList : CatList 
+    {
+        Object mInit;
+        Function mNext;
+        Function mCond;
+
+        public LazyList(Object init, Function cond, Function next)
+        {
+            mInit = init;
+            mNext = next;
+            mCond = cond;
+        }
+
+        public override CatList dup()
+        {
+            return new LazyList(mInit, mCond, mNext);
+        }
+
+        public override int count()
+        {
+            int n = 0;
+            Object o = mInit;
+            while ((bool)mCond.Invoke(o))
+            {
+                ++n;
+                o = mNext.Invoke(o);
+            }
+            return n;           
+        }
+
+        public override Object nth(int n)
+        {
+            Object o = mInit;
+            while ((bool)mCond.Invoke(o))
+            {
+                if (n-- == 0)
+                    return o;
+                o = mNext.Invoke(o);
+            }
+            throw new Exception("out of bounds");        
+        }
+
+        public override CatList drop(int n)
+        {
+            return new LazyList(nth(n), mNext, mCond);
+        }
+        public override Object head()
+        {
+            return mInit;
+        }
+        public override string ToString()
+        {
+            // TODO: something more descriptive
+            return "(" + mInit.ToString() + "..)";
+        }       
+    }
 }

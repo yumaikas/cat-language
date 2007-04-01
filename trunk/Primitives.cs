@@ -116,6 +116,22 @@ namespace Cat
             }
         }
 
+        public class Gen : Function
+        {
+            public Gen()
+                : base("gen", "(init='a next=('a -> 'a) cond=('a -> 'a bool) -> list)", 
+                    "creates a lazily evaluated list from an initial value, applying a successor function until the predicate is satisfied")
+            { }
+
+            public override void Eval(CatStack stk)
+            {
+                Function term = stk.Pop() as Function;
+                Function next = stk.Pop() as Function;
+                Object init = stk.Pop();
+                stk.Push(new LazyList(init, next, term));
+            }
+        }
+
         public class Compose : Function
         {
             public Compose()
@@ -283,6 +299,10 @@ namespace Cat
         public static void writeln(Object o) { MainClass.WriteLine(o.ToString()); }
         public static string readln() { return Console.ReadLine(); }
         public static char readkey() { return Console.ReadKey().KeyChar; }
+        #endregion
+
+        #region list functions
+
         #endregion
     }
 }

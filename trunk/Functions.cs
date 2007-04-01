@@ -59,6 +59,39 @@ namespace Cat
         }
 
         public abstract void Eval(CatStack stk);
+
+        public Object Invoke()
+        {
+            CatStack stk = new CatStack();
+            Eval(stk);
+            return stk[0];
+        }
+
+        public Object Invoke(Object o)
+        {
+            CatStack stk = new CatStack();
+            stk.Push(o);
+            Eval(stk);
+            return stk[0];
+        }
+
+        public Object Invoke(Object o1, Object o2)
+        {
+            CatStack stk = new CatStack();
+            stk.Push(o1);
+            stk.Push(o2);
+            Eval(stk);
+            return stk[0];
+        }
+
+        public Object Invoke(Object[] args)
+        {
+            CatStack stk = new CatStack();
+            foreach (Object arg in args)
+                stk.Push(arg);
+            Eval(stk);
+            return stk[0];
+        }
     }
   
     /// <summary>

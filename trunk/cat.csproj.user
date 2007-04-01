@@ -1,11 +1,11 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartWorkingDirectory>c:\dev\cat\output</StartWorkingDirectory>
-    <StartArguments>lib\standard.cat lib\demo.cat</StartArguments>
+    <StartWorkingDirectory>C:\dev\cat\src\cat\</StartWorkingDirectory>
+    <StartArguments>standard.cat demo.cat</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <StartWorkingDirectory>c:\dev\cat\output</StartWorkingDirectory>
-    <StartArguments>lib\standard.cat lib\demo.cat</StartArguments>
+    <StartWorkingDirectory>C:\dev\cat\src\cat\</StartWorkingDirectory>
+    <StartArguments>standard.cat demo.cat</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <PublishUrlHistory>ftp://www.cat-language.com/|c:\dev\cat\publish\</PublishUrlHistory>
