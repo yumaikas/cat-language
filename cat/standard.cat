@@ -5,15 +5,6 @@
 // this file is public domain
 
 //=============================================================================
-// Basic identity functions
-
-define noop : ( -> )
-{ }
-
-define id : ('a -> 'a)
-{ }
-
-//=============================================================================
 // Basic shuffling operators
 
 define swapd : ('a 'b 'c -> 'b 'a 'c)
@@ -102,10 +93,20 @@ define embed_args
 
 //=============================================================================
 // Common predicates.
-// Predicate have the form: 'A -> 'A bool
+// Predicate usually have the form: 'A -> 'A bool
 
 define eqz : (int -> int bool)  { dup 0 eq }
 define neqz : (int -> int bool) { eqz not }
+define gtz : (int -> int bool) { dup 0 gt }
+define gteqz : (int -> int bool) { dup 0 gteq }
+define ltz : (int -> int bool) { dup 0 lt }
+define lteqz : (int -> int bool) { dup 0 lteq }
+
+// Not really a predicate, but used to generate predicate
+define modn : (int int -> int bool) { dupd mod 0 eq }
+
+define even : (int -> int bool) { 2 modn }
+define odd : (int -> int bool) { dup inc mod 0 eq }
 
 //=============================================================================
 // predicate generation functions
@@ -127,6 +128,9 @@ define eqf : ('a -> ('a -> 'a bool))
 
 define neqf : ('a -> ('a -> 'a bool))
 { [dupd neq] curry }
+
+define modnf : (int int -> (int -> int bool))
+{ [dupd modn] curry }
 
 //=============================================================================
 // Additional mathematical definitions
@@ -175,11 +179,62 @@ define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 //=============================================================================
 // List operators
 
+define (
+{ nil }
+
+define ,
+{ cons }
+
+define )
+{ cons }
+
 define swons : (var list -> list)
 { swap cons }
 
+define uncons : (list -> list var)
+{ head [tail nip] dip }
+
+define uncons2 : (list -> list var var)
+{ uncons [uncons] dip }
+
+define uncons3 : (list -> list var var var)
+{ uncons [uncons2] dip }
+
+define uncons4 : (list -> list var var var var)
+{ uncons [uncons3] dip }
+
+define first : (list -> var var)
+{ car }
+
+define first2 : (list -> var var)
+{ uncons [first] dip }
+
+define first3  : (list -> var var var)
+{ uncons [first2] dip }
+
+define first4 : (list -> var var var var)
+{ uncons [first3] dip }
+
+define range : (int int -> list)
+{ ltf [inc] gen }
+
 define n : (int -> list)
-{ ltf 0 swap [inc] gen }
+{ 0 swap range }
+
+//=============================================================================
+// Infinite list generators
+
+define naturals : ( -> list)
+{ 0 [true] [inc] gen }
+
+define odds : ( -> list)
+{ 1 [true] [inc] gen  }
+
+define evens : ( -> list)
+{ 0 [true] [inc] gen  }
+
+define negatives : ( -> list)
+{ 1 neg [true] [dec] gen }
 
 //=============================================================================
 // Function manipulation operators
@@ -211,3 +266,45 @@ define repeat : ('A ('A -> 'A) int -> 'A)
 // reverse for loop
 define rfor : ('A ('A int -> 'A) int -> 'A)
 { swap [sweep dec] curry [neqz] while pop }
+
+//==============================================================================
+// Vector functions
+
+define sum : (list -> var)
+{ 0 [+] foldl }
+
+//==============================================================================
+// Hash helper functions
+
+// Gets a value from a hash_list. If it doesn't exist then uses the default
+define hash_safe_get : (hash_list key=var default=var -> hash_list var)
+{
+  [[hash_contains] keep] dip // => hash_list bool key default
+  quote                      // => hash_list bool key [default]
+  [[hash_get] curry] dip     // => hash_list bool [key hash_get] [default]
+  if                         // => hash_list result
+}
+
+// Adds an element as unit list to a hash_list if it doesn't exist,
+// otherwise chain it to the current list item.
+define hash_add_chain : (hash_list key=var value=var -> hash_list)
+{
+  [[nil hash_safe_get] keep] dip // => hash_list curr key value
+  swapd cons                     // => hash_list key list(curr, value)
+  hash_set                       // => hash_list
+}
+
+define list_to_hash : (list -> hash_list)
+{
+  hash_list [uncons swap hash_add_chain] foldl
+}
+
+define test_list : ( -> list)
+{
+  ((1, "a"),(2, "b"),(3, "a"),(4, "c"),(5, "b"),(6, "a"))
+}
+
+define list_to_hash_test
+{
+  test_list list_to_hash hash_to_list
+}
