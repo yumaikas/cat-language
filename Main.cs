@@ -53,7 +53,6 @@ namespace Cat
                     Console.WriteLine("you can load the standard library by writing: \"lib\\standard.cat\" load");
                 }
 
-
                 // main execution loop
                 while (true)
                 {
@@ -223,6 +222,7 @@ namespace Cat
         {
             scope.Register(typeof(Primitives));
             scope.Register(typeof(CatList));
+            scope.Register(typeof(HashList));
             scope.Register(typeof(Window));
         }
 

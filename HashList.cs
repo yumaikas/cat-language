@@ -7,7 +7,6 @@ namespace Cat
 {
     class HashList
     {
-        int mnRefCount = 0;
         HashList mNext;
         Dictionary<Object, Object> mDict = new Dictionary<object,object>();
 
@@ -16,18 +15,21 @@ namespace Cat
             mNext = this;
         }
 
-        public HashList(HashList list)
+        public static HashList hash_list()
         {
-            mnRefCount = 1;
-            list.mnRefCount += 1;
-            mDict = list.Dict();
+            return new HashList();
+        }
+
+        private HashList(HashList list)
+        {
+            mDict = list.mDict;
             mNext = list.mNext;
             list.mNext = this;
         }
 
         public HashList dup()
         {
-            HashList result = new HashList(this);
+            return new HashList(this);
         }
 
         private HashList MakeCopy()
@@ -38,11 +40,9 @@ namespace Cat
             HashList next = mNext;
             while (next != this)
             {
-                next.mnRefCount--;
-                Trace.Assert(next.mnRefCount >= 0);
                 // Remove "this" from the reference chain
                 if (next.mNext == this)
-                    next.mNext == this.mNext;
+                    next.mNext = this.mNext;
             }
 
             return result;
@@ -51,17 +51,42 @@ namespace Cat
         public static HashList hash_add(HashList h, Object key, Object value)
         {
             HashList result = h;
-            if (mnRefCount > 0)
+            if (result.mNext != result)
                 result = h.MakeCopy();
             result.mDict.Add(key, value);
             return result;
         }
 
-        public Object hash_get(Object key)
+        public static HashList hash_set(HashList h, Object key, Object value)
         {
-            result.mDict[key];
+            HashList result = h;
+            if (result.mNext != result)
+                result = h.MakeCopy();
+            result.mDict[key] = value;
             return result;
         }
 
+        public Object hash_get(Object key)
+        {
+            Object result = mDict[key];
+            return result;
+        }
+
+        public bool hash_contains(Object key)
+        {
+            return mDict.ContainsKey(key);
+        }
+
+        public static CatList hash_to_list(HashList h)
+        {
+            CatStack stk = new CatStack();
+            foreach (KeyValuePair<Object, Object> pair in h.mDict)
+            {
+                CatList tmp = CatList.pair(pair.Value, pair.Key);
+                stk.Push(tmp);
+            }
+            CatList result = new ListFromStack(stk);
+            return result;
+        }
     }
 }

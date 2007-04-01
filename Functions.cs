@@ -292,7 +292,6 @@ namespace Cat
         }
     }
 
-
     /// <summary>
     /// This represents a function call. 
     /// 
