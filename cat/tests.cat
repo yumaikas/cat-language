@@ -1,3 +1,10 @@
+define test : (('a -> 'b) list -> bool)
+{
+  [list] dip
+  compare_lists
+}
+
+
 define test_list : ( -> list)
 {
   ((1, "a"),(2, "b"),(3, "a"),(4, "c"),(5, "b"),(6, "a"))
@@ -26,5 +33,4 @@ define test_m
 
 define test_r
 { self_join }
-
 

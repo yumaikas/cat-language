@@ -218,6 +218,19 @@ define range : (int int -> list)
 define n : (int -> list)
 { 0 swap range }
 
+define flatten : (list -> list)
+{ nil [cat] foldl }
+
+// Returns true iff any value satisfies the condition
+// Could be optimized
+define any : (list ('a -> bool) -> bool)
+{ dupd [or] compose false swap foldl }
+
+// Returns true iff all values satisfy the condition
+// Could be optimized
+define all : (list ('a -> bool) -> bool)
+{ dupd [and] compose true swap foldl }
+
 //=============================================================================
 // Infinite list generators
 
@@ -299,4 +312,3 @@ define self_join : (list -> list)
 { list_to_hash hash_to_list }
 
 //============================================================================
-
