@@ -306,32 +306,3 @@ define self_join : (list -> list)
 
 //============================================================================
 
-define test_list : ( -> list)
-{
-  ((1, "a"),(2, "b"),(3, "a"),(4, "c"),(5, "b"),(6, "a"))
-}
-
-define list_to_hash_test
-{ test_list self_join }
-
-// This is essentially a single computer version of the google MapReduce algorithm
-// Using names this could be defined as:
-// define map_reduce(x f g) { x f map self_join [g reduce] map }
-define map_reduce(x f g)
-{  }
-
-define test_strings
-{
-  (
-    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1)
-    , (("I", "am", "very", "lazy"), 2)
-    , (("I", "hope", "this", "is", "over", "quick"), 3)
-  )
-}
-
-define test_m
-{ rest first [1 cons] map }
-
-define test_r
-{ self_join }
-
