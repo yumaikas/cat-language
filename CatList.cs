@@ -33,7 +33,22 @@ namespace Cat
         public abstract CatList drop(int n);
         #endregion
 
-        public virtual CatList map(Function f)
+        public static CatList map(CatList x, Function f)
+        {
+            return x.vmap(f);
+        }
+
+        public static Object foldl(CatList x, Object o, Function f)
+        {
+            return x.vfoldl(o, f);
+        }
+
+        public static CatList filter(CatList x, Function f)
+        {
+            return x.vfilter(f);
+        }
+
+        public virtual CatList vmap(Function f)
         {
             CatStack stk = new CatStack();
             for (int i = count(); i > 0; --i)
@@ -43,7 +58,7 @@ namespace Cat
             }
             return new ListFromStack(stk);
         }
-        public virtual Object foldl(Object x, Function f)
+        public virtual Object vfoldl(Object x, Function f)
         {
             for (int i = 0; i < count(); ++i)
             {
@@ -52,7 +67,10 @@ namespace Cat
             }
             return x;
         }
-        public virtual CatList filter(Function f)
+        /// <summary>
+        /// TODO: This is a pretty awful implementation. In some cases O(n^2)
+        /// </summary>
+        public virtual CatList vfilter(Function f)
         {
             CatStack stk = new CatStack();
             for (int i = count(); i > 0; --i)
@@ -124,15 +142,15 @@ namespace Cat
         { 
             return 0; 
         }
-        public override CatList map(Function f) 
+        public override CatList vmap(Function f) 
         { 
             return this; 
         }
-        public override Object foldl(Object o, Function f) 
+        public override Object vfoldl(Object o, Function f) 
         { 
             return o; 
         }
-        public override CatList filter(Function f)
+        public override CatList vfilter(Function f)
         {
             return this;
         }
@@ -161,7 +179,7 @@ namespace Cat
     /// A UnitList is a special case of a CatList with one item
     /// </summary>
     public class UnitList : CatList
-    {
+    {       
         private Object m;
         public UnitList(Object o) { m = o; } 
 
@@ -174,15 +192,15 @@ namespace Cat
         { 
             return 1; 
         }
-        public override CatList map(Function f) 
+        public override CatList vmap(Function f) 
         { 
             return unit(f.Invoke(m)); 
         }
-        public override Object foldl(Object o, Function f) 
+        public override Object vfoldl(Object o, Function f) 
         { 
             return f.Invoke(o, m); 
         }
-        public override CatList filter(Function f)
+        public override CatList vfilter(Function f)
         {
             if ((bool)f.Invoke(m))
                 return unit(m);
@@ -235,20 +253,21 @@ namespace Cat
         { 
             return 1 + mTail.count(); 
         }
-        public override CatList map(Function f)
+        public override CatList vmap(Function f)
         {
-            return cons(mTail.map(f), f.Invoke(mHead));
+            return cons(mTail.vmap(f), f.Invoke(mHead));
         }
-        public override Object foldl(Object o, Function f)
+        public override Object vfoldl(Object o, Function f)
         {
-            return f.Invoke(o, mTail.foldl(mHead, f));
+            o = f.Invoke(o, mHead);
+            return mTail.vfoldl(o, f);
         }
-        public override CatList filter(Function f)
+        public override CatList vfilter(Function f)
         {
             if ((bool)f.Invoke(mHead))
-                return cons(mTail.filter(f), mHead);
+                return cons(mTail.vfilter(f), mHead);
             else
-                return mTail.filter(f);
+                return mTail.vfilter(f);
         }
         public override Object nth(int n) 
         { 
@@ -440,12 +459,26 @@ namespace Cat
             else
                 return mInit;
         }
-        public override CatList map(Function f)
+        public override CatList vmap(Function f)
         {
             if (mMapF == null)
                 return new LazyList(mInit, mCond, mNext, f);
             else
                 return new LazyList(mInit, mCond, mNext, new ComposedFunction(mMapF, f));
+        }
+        public override Object vfoldl(Object x, Function f)
+        {
+            Object cur = mInit;
+            Object result = x;
+            while ((bool)mCond.Invoke(cur))
+            {
+                if (mMapF != null)
+                    result = f.Invoke(result, mMapF.Invoke(cur));
+                else
+                    result = f.Invoke(result, cur);
+                cur = mNext.Invoke(cur);
+            }
+            return result ;
         }
         public override string ToString()
         {
