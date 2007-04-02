@@ -295,9 +295,13 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 }
 
 define list_to_hash : (list -> hash_list)
-{
-  hash_list [uncons swap hash_add_chain] foldl
-}
+{  hash_list [uncons swap hash_add_chain] foldl }
+
+// performs an inner join on a list of lists on the first item.
+define self_join : (list -> list)
+{ list_to_hash hash_to_list }
+
+//============================================================================
 
 define test_list : ( -> list)
 {
@@ -305,6 +309,8 @@ define test_list : ( -> list)
 }
 
 define list_to_hash_test
-{
-  test_list list_to_hash hash_to_list
-}
+{ test_list self_join
+
+define map_reduce
+{ }
+
