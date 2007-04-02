@@ -203,6 +203,9 @@ define uncons3 : (list -> list var var var)
 define uncons4 : (list -> list var var var var)
 { uncons [uncons3] dip }
 
+define rest : (list -> list)
+{ uncons pop }
+
 define first : (list -> var var)
 { uncons nip }
 
@@ -297,7 +300,7 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 define list_to_hash : (list -> hash_list)
 {  hash_list [uncons swap hash_add_chain] foldl }
 
-// performs an inner join on a list of lists on the first item.
+// performs an inner self-join on a list of lists based the first item.
 define self_join : (list -> list)
 { list_to_hash hash_to_list }
 
@@ -309,8 +312,26 @@ define test_list : ( -> list)
 }
 
 define list_to_hash_test
-{ test_list self_join
+{ test_list self_join }
 
-define map_reduce
-{ }
+// This is essentially a single computer version of the google MapReduce algorithm
+// Using names this could be defined as:
+// define map_reduce(x f g) { x f map self_join [g reduce] map }
+define map_reduce(x f g)
+{  }
+
+define test_strings
+{
+  (
+    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1)
+    , (("I", "am", "very", "lazy"), 2)
+    , (("I", "hope", "this", "is", "over", "quick"), 3)
+  )
+}
+
+define test_m
+{ rest first [1 cons] map }
+
+define test_r
+{ self_join }
 
