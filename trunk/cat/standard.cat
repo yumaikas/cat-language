@@ -203,12 +203,6 @@ define uncons3 : (list -> list var var var)
 define uncons4 : (list -> list var var var var)
 { uncons [uncons3] dip }
 
-define rest : (list -> list)
-{ uncons pop }
-
-define first : (list -> var var)
-{ uncons nip }
-
 define first2 : (list -> var var)
 { uncons [first] dip }
 

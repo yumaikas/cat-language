@@ -30,7 +30,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.10.0 March 29, 2006");
+                    WriteLine("version 0.10.2 April 2nd, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is public domain");
                     WriteLine("http://www.cat-language.com");
