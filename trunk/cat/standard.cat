@@ -231,6 +231,10 @@ define any : (list ('a -> bool) -> bool)
 define all : (list ('a -> bool) -> bool)
 { dupd [and] compose true swap foldl }
 
+// Reverse a list
+define rev : (list -> list)
+{ nil [cons] foldl }
+
 //=============================================================================
 // Infinite list generators
 

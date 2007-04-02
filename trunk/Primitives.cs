@@ -10,6 +10,7 @@ namespace Cat
 {
     public class Primitives
     {
+        #region primitive function classes
         public class Id : Function
         {
             public Id()
@@ -147,7 +148,8 @@ namespace Cat
         public class Compose : Function
         {
             public Compose()
-                : base("compose", "(('A -> 'B) ('B -> 'C) -> ('A -> 'C))", "creates a function by composing (concatenating) two existing functions")
+                : base("compose", "(('A -> 'B) ('B -> 'C) -> ('A -> 'C))", 
+                    "creates a function by composing (concatenating) two existing functions")
             { }
 
             public override void Eval(CatStack stk)
@@ -162,7 +164,8 @@ namespace Cat
         public class Quote : Function
         {
             public Quote()
-                : base("quote", "('a -> ( -> 'a))", "creates a constant generating function from the top value on the stack")
+                : base("quote", "('a -> ( -> 'a))", 
+                    "creates a constant generating function from the top value on the stack")
             { }
 
             public override void Eval(CatStack stk)
@@ -228,6 +231,7 @@ namespace Cat
                 }
             }
         }
+        #endregion 
 
         #region boolean functions
         public static bool and(bool x, bool y) { return x && y; }
@@ -235,7 +239,7 @@ namespace Cat
         public static bool not(bool x) { return !x; }
         #endregion
 
-        #region int functions       
+        #region int functions
         public static bool xor(bool x, bool y) { return x ^ y; }
         public static int add(int x, int y) { return x + y; }
         public static int sub(int x, int y) { return x - y; }
