@@ -30,7 +30,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.10.2 April 2nd, 2007");
+                    WriteLine("version 0.10.3 April 2nd, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is public domain");
                     WriteLine("http://www.cat-language.com");
@@ -135,7 +135,13 @@ namespace Cat
                     Executor.Main.LoadModule(tokens[1]);
                     break;
                 case "#defs":
-                    OutputDefs();
+                    OutputTextDefs();
+                    break;
+                case "#wikidefs":
+                    OutputWikiDefs();
+                    break;
+                case "#htmldefs":
+                    OutputHtmlDefs();
                     break;
                 default:
                     WriteLine("unrecognized meta-command " + tokens[0]);
@@ -143,23 +149,38 @@ namespace Cat
             }
         }
 
-        public static void OutputDefs()
+        public static void OutputWikiDefs()
+        {
+            OutputDefs("|| ", " || ", " ||");
+        }
+
+        public static void OutputHtmlDefs()
+        {
+            WriteLine("<table>");
+            OutputDefs("<tr><td>", "</td><td>", "</td></tr>");
+            WriteLine("</table>");
+        }
+
+        public static void OutputTextDefs()
+        {
+            OutputDefs("", "\t", "");
+        }
+
+        public static void OutputDefs(string sLineBegin, string sDiv, string sLineEnd)
         {
             foreach (Function f in Scope.Global().GetAllFunctions())
             {
-                if (f is DefinedFunction)
-                {
-                    DefinedFunction d = f as DefinedFunction;
-                    WriteLine(f.GetName() + "\t== " + d.GetTermsAsString());
-                }
-                else
-                {
-                    WriteLine(f.GetName() + "\t" + f.GetTypeString());
-                }
+                //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
+                WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
             }
             foreach (List<Method> list in Scope.Global().GetAllMethods())
-                foreach (Method m in list)
-                    WriteLine(m.GetName() + "\t" + m.GetTypeString());
+            {
+                foreach (Method f in list)
+                {
+                    //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
+                    WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
+                }
+            }
         }
         #endregion
 
@@ -229,7 +250,7 @@ namespace Cat
             scope.Register(typeof(Primitives));
             scope.Register(typeof(CatList));
             scope.Register(typeof(HashList));
-            scope.Register(typeof(Window));
+            //scope.Register(typeof(Window));
         }
 
         #endregion

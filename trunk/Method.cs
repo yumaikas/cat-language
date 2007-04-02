@@ -88,20 +88,40 @@ namespace Cat
         MethodBase mMethod;
         MethodSignature mSig;
 
+        public static string TypeToString(Type t)
+        {
+            switch (t.Name)
+            {
+                case ("HashList"): return "hash_list";
+                case ("Int32"): return "int";
+                case ("Double"): return "float";
+                case ("CatList"): return "list";
+                case ("Object"): return "var";
+                case ("Function"): return "function";
+                case ("Boolean"): return "bool";
+                case ("String"): return "string";
+                case ("Char"): return "char";
+                default: return t.Name;
+            }
+        }
+
         public static string MethodToTypeString(MethodBase m)
         {
             string s = "(";
             
             if (HasThisType(m))
-                s += m.DeclaringType.Name + " ";
+                s += "this=" + TypeToString(m.DeclaringType) + " ";
             
             foreach (ParameterInfo pi in m.GetParameters())
-                s += pi.ParameterType.Name + " ";
+                s += TypeToString(pi.ParameterType) + " ";
             
             s += ") -> (";
 
+            if (HasThisType(m))
+                s += "this ";
+
             if (HasReturnType(m))
-                s += GetReturnType(m).Name;
+                s += TypeToString(GetReturnType(m));
             
             s += ")";
             
@@ -143,6 +163,8 @@ namespace Cat
 
         public static string MethodToDesc(MethodBase mi)
         {
+            return "";
+            /*
             if (mi.IsConstructor)
                 return "constructor for " + mi.DeclaringType.ToString();
             else
@@ -150,6 +172,7 @@ namespace Cat
                     return "method for " + mi.DeclaringType.ToString();
                 else
                     return "static method for " + mi.DeclaringType.ToString();
+             */
         }
 
         public static string MethodToName(MethodBase mi)

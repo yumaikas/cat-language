@@ -124,7 +124,7 @@ namespace Cat
                 CatStack tmp = new CatStack();
                 Function f = stk.Pop() as Function;
                 f.Eval(tmp);
-                stk.Push(new ListFromStack(tmp));
+                stk.Push(new StackToList(tmp));
             }
         }
 
