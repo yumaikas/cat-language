@@ -86,9 +86,10 @@ namespace Cat
         #region virtual functions
         public virtual CatList vcat(CatList x)
         {
-            CatStack stk = ToCatStack();
+            CatStack stk = new CatStack();
             Accessor acc = delegate(Object a)
             { stk.PushFront(a); };
+            WithEach(acc);
             x.WithEach(acc);
             return new StackToList(stk);
         }
@@ -229,7 +230,7 @@ namespace Cat
         }
         public override CatList vcat(CatList x)
         {
-            return cons(this, x);
+            return cons(x, m);
         }
         public override CatList vmap(Function f) 
         { 
@@ -295,22 +296,6 @@ namespace Cat
         public override int count() 
         { 
             return 1 + mTail.count(); 
-        }
-        public override CatList vmap(Function f)
-        {
-            return cons(mTail.vmap(f), f.Invoke(mHead));
-        }
-        public override Object vfoldl(Object o, Function f)
-        {
-            o = f.Invoke(o, mHead);
-            return mTail.vfoldl(o, f);
-        }
-        public override CatList vfilter(Function f)
-        {
-            if ((bool)f.Invoke(mHead))
-                return cons(mTail.vfilter(f), mHead);
-            else
-                return mTail.vfilter(f);
         }
         public override Object nth(int n) 
         { 
@@ -388,8 +373,8 @@ namespace Cat
         }
         public override void WithEach(Accessor acc)
         {
-            foreach (Object o in mStk)
-                acc(o);
+            for (int i = 0; i < count(); ++i)
+                acc(nth(i));
         }
     }
 
@@ -535,17 +520,17 @@ namespace Cat
         }
         public override string ToString()
         {
-            string result = "(";
+            string result = ")";
             if ((bool)mCond.Invoke(mInit))
             {
-                result += nth(0).ToString();
+                result = nth(0).ToString() + result;
                 Object next = mNext.Invoke(mInit);
                 if ((bool)mCond.Invoke(next))
                 {
-                    result += ", " + nth(1).ToString() + " ..";
+                    result = ".. " + nth(1).ToString() + ", " + result;
                 }
             }
-            result += ")";
+            result = "(" + result ;
             return result;
         }
         public override void WithEach(Accessor acc)
