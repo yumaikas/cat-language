@@ -22,8 +22,9 @@ define test_strings
 }
 
 define test_m
-{ rest first [1 cons] map }
+{ flatten [1 cons] map }
 
 define test_r
 { self_join }
+
 

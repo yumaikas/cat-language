@@ -6,79 +6,113 @@ using System.Diagnostics;
 
 namespace Cat
 {    
+    public delegate void Accessor(Object a);
+
     /// <summary>
     /// This is the base class for the primary Cat collection. There are 
-    /// several different types of CatLists. The different kinds of lists, 
-    /// improve performance.
+    /// several different types of CatLists. This helps reduce copying 
+    /// and reduce space requirements for certain kinds of lists.
     /// </summary>
     public abstract class CatList 
     {       
         private static EmptyList gNil = new EmptyList();
 
-        // common constructors
-        public static EmptyList nil() { return gNil; }
-        public static UnitList unit(Object o) { return new UnitList(o); }
-        public static ConsCell pair(Object second, Object first) { return new ConsCell(unit(second), first); }
-        
-        // These are static functions which remove the original argument, 
-        // Notice that if I want to eventually use reference counting, I will 
-        // have to modify these functions
-        public static CatList cons(CatList x, Object o) { return x.append(o); }
-        public static CatList cdr(CatList x) { return x.tail(); }        
-
-        #region abstract functions        
-        public abstract CatList dup();
-        public abstract int count();
-        public abstract Object nth(int n);
-        public abstract CatList drop(int n);
-        #endregion
-
+        #region static functions
+        public static EmptyList nil() 
+        { 
+            return gNil; 
+        }
+        public static UnitList unit(Object o) 
+        { 
+            return new UnitList(o); 
+        }
+        public static ConsCell pair(Object second, Object first) 
+        { 
+            return new ConsCell(unit(second), first); 
+        }        
+        public static CatList cons(CatList x, Object o) 
+        { 
+            return x.append(o); 
+        }
+        public static Object first(CatList x) 
+        { 
+            return x.head(); 
+        }
+        public static CatList rest(CatList x) 
+        { 
+            return x.tail(); 
+        }        
         public static CatList map(CatList x, Function f)
         {
             return x.vmap(f);
         }
-
         public static Object foldl(CatList x, Object o, Function f)
         {
             return x.vfoldl(o, f);
         }
-
         public static CatList filter(CatList x, Function f)
         {
             return x.vfilter(f);
         }
+        public static CatList cat(CatList x, CatList y)
+        {
+            return x.vcat(y);
+        }
+        #endregion
 
+        #region member functions
+        public string str()
+        {
+            return ToString();
+        }
+        public CatStack ToCatStack()
+        {
+            CatStack stk = new CatStack();
+            Accessor acc = delegate(Object a)
+            { stk.PushFront(a); };
+            WithEach(acc);
+            return stk;
+        }
+        #endregion 
+
+        #region abstract functions
+        public abstract CatList dup();
+        public abstract int count();
+        public abstract Object nth(int n);
+        public abstract CatList drop(int n);
+        public abstract void WithEach(Accessor acc);
+        #endregion
+
+        #region virtual functions
+        public virtual CatList vcat(CatList x)
+        {
+            CatStack stk = ToCatStack();
+            Accessor acc = delegate(Object a)
+            { stk.PushFront(a); };
+            x.WithEach(acc);
+            return new ListFromStack(stk);
+        }
         public virtual CatList vmap(Function f)
         {
             CatStack stk = new CatStack();
-            for (int i = count(); i > 0; --i)
-            {
-                Object tmp = nth(i - 1);
-                stk.Push(f.Invoke(tmp));
-            }
+            Accessor acc = delegate(Object a)
+            { stk.PushFront(f.Invoke(a)); };
+            WithEach(acc);
             return new ListFromStack(stk);
         }
         public virtual Object vfoldl(Object x, Function f)
         {
-            for (int i = 0; i < count(); ++i)
-            {
-                Object tmp = nth(i);
-                x = f.Invoke(x, tmp);
-            }
+            Accessor acc = delegate(Object a)
+            { x = f.Invoke(x, a); };
+            WithEach(acc);
             return x;
         }
-        /// <summary>
-        /// TODO: This is a pretty awful implementation. In some cases O(n^2)
-        /// </summary>
         public virtual CatList vfilter(Function f)
         {
             CatStack stk = new CatStack();
-            for (int i = count(); i > 0; --i)
-            {
-                Object tmp = nth(i - 1);
-                if ((bool)f.Invoke(tmp))
-                    stk.Push(tmp);
-            }
+            Accessor acc = delegate(Object a)
+            { if ((bool)f.Invoke(a)) stk.PushFront(a); };
+            WithEach(acc);
             return new ListFromStack(stk);
         }
         public virtual CatList append(Object o) 
@@ -89,17 +123,10 @@ namespace Cat
         {
             return nth(count() - 1);
         }
-
         public virtual CatList tail()
         {
             return drop(1);
         }
-
-        public string str()
-        {
-            return ToString();
-        }
-
         public override string ToString()
         {
             string result = "( ";
@@ -122,6 +149,7 @@ namespace Cat
             result += ")";
             return result;
         }
+        #endregion
     }
 
     /// <summary>
@@ -141,6 +169,10 @@ namespace Cat
         public override int count() 
         { 
             return 0; 
+        }
+        public override CatList vcat(CatList x)
+        {
+            return x;
         }
         public override CatList vmap(Function f) 
         { 
@@ -172,6 +204,9 @@ namespace Cat
         {
             throw new Exception("empty list, no tail");
         }
+        public override void WithEach(Accessor acc)
+        {
+        }
         #endregion
     }
 
@@ -191,6 +226,10 @@ namespace Cat
         public override int count() 
         { 
             return 1; 
+        }
+        public override CatList vcat(CatList x)
+        {
+            return cons(this, x);
         }
         public override CatList vmap(Function f) 
         { 
@@ -230,11 +269,15 @@ namespace Cat
         {
             return nil();
         }
+        public override void WithEach(Accessor acc)
+        {
+            acc(m);
+        }
         #endregion
     }
 
     /// <summary>
-    /// A ConsCell is a very naive implementation of a functional list
+    /// A ConsCell is a relatively naive implementation of a functional list
     /// </summary>
     public class ConsCell : CatList
     {
@@ -291,12 +334,25 @@ namespace Cat
         {
             return mTail;
         }
+        public override void WithEach(Accessor acc)
+        {
+            acc(mHead);
+            mTail.WithEach(acc);
+        }
+    }
+
+    /// <summary>
+    /// This simply is used to indicate that a list implementation
+    /// has constant time complexity for count() and nth() methods
+    /// </summary>
+    public abstract class IndexableCatList : CatList
+    {
     }
 
     /// <summary>
     /// Wraps a CatStack in a CatList
     /// </summary>
-    public class ListFromStack : CatList
+    public class ListFromStack : IndexableCatList
     {
         CatStack mStk;
         public ListFromStack(CatStack stk)
@@ -330,18 +386,24 @@ namespace Cat
                     return new SubList(this, count() - n);
             }
         }
+        public override void WithEach(Accessor acc)
+        {
+            foreach (Object o in mStk)
+                acc(o);
+        }
     }
 
     /// <summary>
     /// A SubList is a view into a ListFromStack. It is like a generalization
     /// of a ConsCell
     /// </summary>
-    public class SubList : CatList
+    public class SubList : IndexableCatList
     {
-        CatList mList;
+        IndexableCatList mList;
         int mCount;
         int mOffset;
-        public SubList(CatList list, int cnt)
+        
+        public SubList(IndexableCatList list, int cnt)
         {
             Trace.Assert(cnt >= 2);
             Trace.Assert(cnt < list.count());
@@ -379,8 +441,13 @@ namespace Cat
                     return new SubList(mList, mCount - n);
             }
         }
+        public override void WithEach(Accessor acc)
+        {
+            for (int i = 0; i < count(); ++i)
+                acc(nth(i));
+        }
     }
-    
+
     /// <summary>
     /// Also known as a generator, a lazy list generates values as they are requested
     /// Some operations (such as "drop" and "dup" and "map) are always very fast, whereas count
@@ -466,20 +533,6 @@ namespace Cat
             else
                 return new LazyList(mInit, mCond, mNext, new ComposedFunction(mMapF, f));
         }
-        public override Object vfoldl(Object x, Function f)
-        {
-            Object cur = mInit;
-            Object result = x;
-            while ((bool)mCond.Invoke(cur))
-            {
-                if (mMapF != null)
-                    result = f.Invoke(result, mMapF.Invoke(cur));
-                else
-                    result = f.Invoke(result, cur);
-                cur = mNext.Invoke(cur);
-            }
-            return result ;
-        }
         public override string ToString()
         {
             string result = "(";
@@ -494,6 +547,20 @@ namespace Cat
             }
             result += ")";
             return result;
-        }       
+        }
+        public override void WithEach(Accessor acc)
+        {
+            Object cur = mInit;
+            if (mMapF != null)
+            {
+                while ((bool)mCond.Invoke(cur))
+                    acc(mMapF.Invoke(cur));
+            }
+            else
+            {
+                while ((bool)mCond.Invoke(cur))
+                    acc(cur);
+            }
+        }
     }    
 }
