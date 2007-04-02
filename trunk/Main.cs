@@ -50,7 +50,7 @@ namespace Cat
                 if (gsInputFiles.Count == 0)
                 {
                     Console.WriteLine("warning: no files were passed as command line arguments, therefore the standard library hasn't been loaded.");
-                    Console.WriteLine("you can load the standard library by writing: \"lib\\standard.cat\" load");
+                    Console.WriteLine("you can load the standard library by writing: #load path\\standard.cat");
                 }
 
                 // main execution loop
@@ -126,7 +126,13 @@ namespace Cat
                 case "#help":
                     WriteLine("#defs will provide a list of available functions.");
                     WriteLine("#exit will allow you to exit the program.");
+                    WriteLine("#load filename loads a file during execution.");
                     WriteLine("More help will be available in later versions.");
+                    break;
+                case "#load":
+                    if (tokens.Length != 2)
+                        throw new Exception("The #load meta-command requires an additional argument");
+                    Executor.Main.LoadModule(tokens[1]);
                     break;
                 case "#defs":
                     OutputDefs();
