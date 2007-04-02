@@ -350,23 +350,17 @@ namespace Cat
         public DefinedFunction(string s, List<Function> terms)
         {
             msName = s;
-            msType = "???";
-            msDesc = "";
+            msType = "untyped";
             mTerms = terms;
+            msDesc = "";
+            foreach (Function f in mTerms)
+                msDesc += f.GetName() + " ";
         }
 
         public override void Eval(CatStack stk)
         {
             foreach (Function f in mTerms)
                 f.Eval(stk);
-        }
-
-        public string GetTermsAsString()
-        {
-            string s = "";
-            foreach (Function f in mTerms)
-                s += f.GetName() + " ";
-            return s;
         }
     }
 }

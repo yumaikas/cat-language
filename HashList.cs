@@ -85,7 +85,7 @@ namespace Cat
                 CatList tmp = CatList.pair(pair.Value, pair.Key);
                 stk.Push(tmp);
             }
-            CatList result = new ListFromStack(stk);
+            CatList result = new StackToList(stk);
             return result;
         }
     }

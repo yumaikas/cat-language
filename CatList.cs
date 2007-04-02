@@ -18,15 +18,15 @@ namespace Cat
         private static EmptyList gNil = new EmptyList();
 
         #region static functions
-        public static EmptyList nil() 
+        public static CatList nil() 
         { 
             return gNil; 
         }
-        public static UnitList unit(Object o) 
+        public static CatList unit(Object o) 
         { 
             return new UnitList(o); 
         }
-        public static ConsCell pair(Object second, Object first) 
+        public static CatList pair(Object second, Object first) 
         { 
             return new ConsCell(unit(second), first); 
         }        
@@ -90,7 +90,7 @@ namespace Cat
             Accessor acc = delegate(Object a)
             { stk.PushFront(a); };
             x.WithEach(acc);
-            return new ListFromStack(stk);
+            return new StackToList(stk);
         }
         public virtual CatList vmap(Function f)
         {
@@ -98,7 +98,7 @@ namespace Cat
             Accessor acc = delegate(Object a)
             { stk.PushFront(f.Invoke(a)); };
             WithEach(acc);
-            return new ListFromStack(stk);
+            return new StackToList(stk);
         }
         public virtual Object vfoldl(Object x, Function f)
         {
@@ -113,7 +113,7 @@ namespace Cat
             Accessor acc = delegate(Object a)
             { if ((bool)f.Invoke(a)) stk.PushFront(a); };
             WithEach(acc);
-            return new ListFromStack(stk);
+            return new StackToList(stk);
         }
         public virtual CatList append(Object o) 
         { 
@@ -352,10 +352,10 @@ namespace Cat
     /// <summary>
     /// Wraps a CatStack in a CatList
     /// </summary>
-    public class ListFromStack : IndexableCatList
+    public class StackToList : IndexableCatList
     {
         CatStack mStk;
-        public ListFromStack(CatStack stk)
+        public StackToList(CatStack stk)
         {
             mStk = stk;
         }
@@ -554,12 +554,18 @@ namespace Cat
             if (mMapF != null)
             {
                 while ((bool)mCond.Invoke(cur))
+                {
                     acc(mMapF.Invoke(cur));
+                    cur = mNext.Invoke(cur);
+                }
             }
             else
             {
                 while ((bool)mCond.Invoke(cur))
+                {
                     acc(cur);
+                    cur = mNext.Invoke(cur);
+                }
             }
         }
     }    
