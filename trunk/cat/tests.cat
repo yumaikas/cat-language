@@ -13,24 +13,35 @@ define test_list : ( -> list)
 define list_to_hash_test
 { test_list self_join }
 
-// This is essentially a single computer version of the google MapReduce algorithm
-// Using names this could be defined as:
-// define map_reduce(x f g) { x f map self_join [g reduce] map }
-define map_reduce(x f g)
-{  }
-
 define test_strings
 {
   (
-    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1)
-    , (("I", "am", "very", "lazy"), 2)
-    , (("I", "hope", "this", "is", "over", "quick"), 3)
+    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1),
+    (("I", "am", "very", "lazy"), 2),
+    (("I", "hope", "this", "is", "over", "quick"), 3),
+    (("I", "have", "high", "hopes", "for", "the", "lazy", "dog"), 4)
   )
 }
 
+// This is essentially a non-distributed naive implementation of the google MapReduce algorithm
+//
+// In pseduo-code:
+//
+//   map_reduce(input fmap freduce) == input fmap flatten self_join freduce map
+//
+// where:
+//
+//     input = list(pair('input_value, 'input_key))
+//     fmap = pair('input_value, 'input_key)) -> list(pair('output_value, 'output_key))
+//     freduce = pair(list('output_value), 'output_key) -> pair('output_value, 'output_key)
+//
+define map_reduce { [map flatten self_join] dip map }
+
 define test_m
-{ flatten [1 cons] map }
+{ unpair pop [1 swap pair] map }
 
 define test_r
-{ self_join }
+{ unpair [sum] dip pair }
 
+define test_map_reduce
+{ test_strings [test_m] [test_r] map_reduce print_list }
