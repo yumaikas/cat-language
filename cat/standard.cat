@@ -156,6 +156,10 @@ define != { neq }
 //=============================================================================
 // Additional combinators
 
+// swap then compose (or reverse compose)
+define rcompose : (('B -> 'C) ('A -> 'B) -> ('A -> 'C))
+{ swap compose }
+
 // Sometime called "slip"
 define swip : ('A ('A -> 'B) 'c -> 'B 'c)
 { swap dip }
@@ -203,14 +207,8 @@ define uncons3 : (list -> list var var var)
 define uncons4 : (list -> list var var var var)
 { uncons [uncons3] dip }
 
-define first2 : (list -> var var)
+define unpair : (list -> var var)
 { uncons [first] dip }
-
-define first3  : (list -> var var var)
-{ uncons [first2] dip }
-
-define first4 : (list -> var var var var)
-{ uncons [first3] dip }
 
 define range : (int int -> list)
 { ltf [inc] gen }
@@ -281,6 +279,14 @@ define repeat : ('A ('A -> 'A) int -> 'A)
 define rfor : ('A ('A int -> 'A) int -> 'A)
 { swap [sweep dec] curry [neqz] while pop }
 
+// For operating over a list, but not modifying it
+define for_each : (list (var ~> ) ~> list)
+{ [dup] rcompose map }
+
+// Output
+define print_list : (list ~> list)
+{ [writeln] for_each }
+
 //==============================================================================
 // Vector functions
 
@@ -309,7 +315,7 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 }
 
 define list_to_hash : (list -> hash_list)
-{  hash_list [uncons swap hash_add_chain] foldl }
+{  hash_list [unpair swap hash_add_chain] foldl }
 
 // performs an inner self-join on a list of lists based the first item.
 define self_join : (list -> list)
