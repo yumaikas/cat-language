@@ -46,9 +46,9 @@ namespace Cat
         {
             return x.vmap(f);
         }
-        public static Object foldl(CatList x, Object o, Function f)
+        public static Object fold(CatList x, Object o, Function f)
         {
-            return x.vfoldl(o, f);
+            return x.vfold(o, f);
         }
         public static CatList filter(CatList x, Function f)
         {
@@ -101,7 +101,7 @@ namespace Cat
             WithEach(acc);
             return new StackToList(stk);
         }
-        public virtual Object vfoldl(Object x, Function f)
+        public virtual Object vfold(Object x, Function f)
         {
             Accessor acc = delegate(Object a)
             { x = f.Invoke(x, a); };
@@ -179,7 +179,7 @@ namespace Cat
         { 
             return this; 
         }
-        public override Object vfoldl(Object o, Function f) 
+        public override Object vfold(Object o, Function f) 
         { 
             return o; 
         }
@@ -236,7 +236,7 @@ namespace Cat
         { 
             return unit(f.Invoke(m)); 
         }
-        public override Object vfoldl(Object o, Function f) 
+        public override Object vfold(Object o, Function f) 
         { 
             return f.Invoke(o, m); 
         }
