@@ -271,8 +271,8 @@ namespace Cat
     }
 
     /// <summary>
-    /// This class represents a dynamically created function, 
-    /// e.g. the result of calling the quote function.
+    /// This class represents a function, created by calling
+    /// compose.
     /// </summary>
     public class ComposedFunction : Function
     {

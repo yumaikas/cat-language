@@ -250,7 +250,7 @@ namespace Cat
             scope.Register(typeof(Primitives));
             scope.Register(typeof(CatList));
             scope.Register(typeof(HashList));
-            //scope.Register(typeof(Window));
+            scope.Register(typeof(wnd));
         }
 
         #endregion

@@ -11,7 +11,9 @@ namespace Cat
 {
     public partial class GraphWindow : Form
     {
-        Dictionary<string, Object> mProps = new Dictionary<string,object>();
+        List<Object> mValues = new List<Object>();
+        List<String> mNames = new List<String>();
+
         Mutex mMutex = new Mutex();
 
         public GraphWindow()
@@ -23,28 +25,66 @@ namespace Cat
         {
             mMutex.WaitOne();
 
-            mProps[s] = o;
+            mValues.Add(o);
+            mNames.Add(s);
 
             mMutex.ReleaseMutex();
 
             // Tell the parent thread to invalidate
-            MethodInvoker p = Refresh;
+            MethodInvoker p = Refresh;  
             Invoke(p);
+        }
+
+        private Point CatListToPoint(CatList l)
+        {
+            return new Point((int)l.nth(1), (int)l.nth(0));
         }
 
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
         {
             mMutex.WaitOne();
+            Pen pen = new System.Drawing.Pen(System.Drawing.Color.Black);
+            Point origin = new Point(0, 0);
+            Point cur;
+            bool bPenUp = false;
 
-            foreach (string s in mProps.Keys)
+            for (int i = 0; i < mNames.Count; ++i )
             {
+                string s = mNames[i];
+                Object val = mValues[i];
+
                 switch (s)
                 {
-                    case "text":
-                        Text = mProps[s] as String;
+                    case "set_text":
+                        Text = val as String;
+                        break;
+                    case "rotate":
+                        p.Graphics.RotateTransform((float)val);
+                        break;
+                    case "pen_color":
+                        pen.Color = (Color)val;
+                        break;
+                    case "pen_width":
+                        pen.Width = (int)val;
+                        break;
+                    case "line_to":
+                        cur = CatListToPoint(val as CatList);
+                        if (!bPenUp)
+                            e.Graphics.DrawLine(pen, origin, cur);
+                        break;
+                    case "line_rel":
+                        prev = cur;
+                        cur = CatListToPoint(val as CatList);
+                        cur.X = prev.X + cur.X;
+                        cur.Y = prev.Y + cur.Y;
+                        if (!bPenUp)
+                            e.Graphics.DrawLine(pen, prev, cur);
+                        break;
+                    case "pen_up":
+                        bPenUp = (bool)val;
                         break;
                     case "bg":
-                        BackColor = (Color)mProps[s];
+                        BackColor = (Color)val;
                         break;
                 }
             }
@@ -53,12 +93,12 @@ namespace Cat
         }
     }
 
-    public class Window 
+    public class wnd 
     {
         GraphWindow mWindow;
         EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-        public Window()
+        public wnd()
         {            
             Thread t = new Thread(new ThreadStart(LaunchWindow));
             t.Start();
@@ -77,35 +117,59 @@ namespace Cat
             Application.Run(mWindow);
         }
 
-        public void set_text(string s)
+        public void set(Object o, String s)
         {
-            mWindow.SetProp("text", s);
+            mWindow.SetProp(s, o);
         }
 
-        public void set_bg_color(Color c)
+        public void move_to(CatList x)
         {
-            mWindow.SetProp("bg", c);
+            set(x, "move_to");
         }
-        
+
+        public void line_to(CatList x)
+        {
+            set(x, "line_to");
+        }
+
+        public void move_rel(CatList x)
+        {
+            set(x, "move_rel");
+        }
+
+        public void line_rel(CatList x)
+        {
+            set(x, "line_rel");
+        }
+
+        public void pen_color(Color x)
+        {
+            set(x, "pen_color");
+        }
+
+        public void pen_color(int x)
+        {
+            set(x, "pen_width");
+        }
+
+        public void rotate(double x)
+        {
+            set((float)x, "rotate");
+        }
+
+        public void rotate(int x)
+        {
+            set((float)x, "rotate");
+        }
+
+        public void pen_up(bool x)
+        {
+            set(x, "pen_up");
+        }
+
         static public Color blue() { return Color.Blue; }
         static public Color red() { return Color.Red; }
         static public Color green() { return Color.Green; }
         static public Color rgb(int r, int g, int b) { return Color.FromArgb(r, g, b); }
-    }
-
-    public class Vector2D
-    {
-        // [1 2] draw_to
-        // Can I say lists and functions are the same? 
-        // I could say that whereever a list is hoped for, but a function is given ... then 
-        // that function is executed and the result is passed. 
-        // { 1 2 } function
-        // [1 2] list: 1 -> 1 [dup] 
-        // [1 2 3] == list of numbers 
-        // [1 2 pop] == list of functions
-        // (1 2 3) == list of values 
-        //public Vector2D(
-        //
-        // TODO: finish.
     }
 }
