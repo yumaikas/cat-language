@@ -36,7 +36,6 @@ namespace Cat
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(382, 357);
             this.Name = "GraphWindow";
-            this.TopMost = true;
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.GraphWindow_Paint);
             this.ResumeLayout(false);
 
