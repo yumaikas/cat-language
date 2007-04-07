@@ -1,0 +1,48 @@
+define fd
+{ [0 line_to] curry render }
+
+define bk
+{ neg fd }
+
+define rt
+{ [rotate] curry render }
+
+define pu
+{ [true set_pen_up] render }
+
+define pd
+{ [false set_pen_up] render }
+
+define pc
+{ [pen_color] curry render }
+
+define pw
+{ [pen_width] curry render }
+
+define fc
+{ [set_solid_fill] curry render }
+
+define nf
+{ [no_fill] render }
+
+define el
+{ [ellipse] curry4 render }
+
+define rect
+{ [rectangle] curry4 remder }
+
+define poly
+{ [poly] curry render }
+
+define fill
+{ [set_solid_fill] curry render }
+
+define lt
+{ neg rt }
+
+define square
+{ [fd 90 rt] curry 4 repeat }
+
+define pattern
+{ blue pc 5 pw [100 square 15 rt] 24 repeat }
+
