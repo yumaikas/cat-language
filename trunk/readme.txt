@@ -1,6 +1,6 @@
 Cat Interpreter 
-public domain 
-by Christopher Diggins
+Copyright 2007, by Christopher Diggins
+Licensed under the MIT License (see license.txt)
 
 NOTE: 
 Don't forget to load the standard library by passing it as a command-line argument.
@@ -8,28 +8,33 @@ Don't forget to load the standard library by passing it as a command-line argume
 To compile the source code you can use the Microsoft Visual C# Express edition.
 You can download it for free at: 
 
-   http://msdn.microsoft.com/vstudio/express/visualcsharp/
+	http://msdn.microsoft.com/vstudio/express/visualcsharp/
+
+The open-source Mono compiler is not supported, but may work:
+
+	http://www.mono-project.com/Downloads
 
 To report bugs go to:
 
-  http://code.google.com/p/cat-language/issues/list
+	http://code.google.com/p/cat-language/issues/list
 
 To get the latest download go to:
 
-  http://code.google.com/p/cat-language/downloads/list
+	http://code.google.com/p/cat-language/downloads/list
 
 To join the Cat discussion group and mailing list go to:
 
-  http://groups.google.com/group/catlanguage
+	http://groups.google.com/group/catlanguage
 
 For a Cat tutorial go to:
 
-  http://code.google.com/p/cat-language/wiki/Tutorial
+	http://code.google.com/p/cat-language/wiki/Tutorial
 
 The Cat manual/specification is at:
+		
+	http://www.cat-language.com/manual.html
 
-  http://www.cat-language.com/manual.html
+Most importantly, have fun! 
 
-Have fun! 
 Christopher Diggins
 http://www.cdiggins.com

@@ -44,5 +44,5 @@ define square
 { [fd 90 rt] curry 4 repeat }
 
 define pattern
-{ blue pc 5 pw [100 square 15 rt] 24 repeat }
+{ [blue pc 5 pw [100 square 15 rt] 24 repeat] render }
 
