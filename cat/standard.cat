@@ -404,7 +404,10 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 define list_to_hash : (list -> hash_list)
 {  hash_list [unpair swap hash_add_chain] fold }
 
-// performs an inner self-join on a list of lists based the first item.
+// performs an inner self-join on a list of pairs based the first item.
 define self_join : (list -> list)
 { list_to_hash hash_to_list }
 
+// performs an inner join on two lists of pairs
+define join : (list list -> list)
+{ cat self_join }

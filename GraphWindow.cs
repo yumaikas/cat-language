@@ -30,6 +30,10 @@ namespace Cat
             mMutex.WaitOne();
             mFxns.Clear();
             mMutex.ReleaseMutex();
+
+            // Tell the parent thread to invalidate
+            MethodInvoker p = Invalidate;
+            Invoke(p);
         }
 
         public void AddFxn(Function f)
@@ -46,6 +50,20 @@ namespace Cat
         private Point CatListToPoint(CatList l)
         {
             return new Point((int)l.nth(1), (int)l.nth(0));
+        }
+
+        public void SaveToFile(string s)
+        {
+            mMutex.WaitOne();
+
+            Bitmap b = new Bitmap(Width, Height, CreateGraphics());
+            gdi g = new gdi(this, Graphics.FromImage(b));
+            foreach (Function f in mFxns) 
+                g.render(f);
+
+            b.Save(s);
+
+            mMutex.ReleaseMutex();
         }
 
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
@@ -219,6 +237,11 @@ namespace Cat
         public void clear_screen()
         {
             mWindow.ClearFxns();
+        }
+
+        public void save(string s)
+        {
+            mWindow.SaveToFile(s);
         }
 
         static public Color blue() { return Color.Blue; }
