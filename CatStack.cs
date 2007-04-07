@@ -1,7 +1,5 @@
 /// Public domain code by Christopher Diggins
 /// http://www.cat-language.com
-/// 
-/// TEMP: SVN Test.
 
 using System;
 using System.Collections;

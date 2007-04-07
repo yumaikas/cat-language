@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace Cat
 {
@@ -30,9 +31,10 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.10.3 April 2nd, 2007");
+                    WriteLine("version 0.10.4 April 6th, 2007");
                     WriteLine("by Christopher Diggins");
-                    WriteLine("this software is public domain");
+                    WriteLine("this software is released under the MIT license");
+                    WriteLine("the source code is public domain and available at");
                     WriteLine("http://www.cat-language.com");
                     WriteLine("");
                     WriteLine("Type in #help for help, and #exit to exit.");
@@ -250,7 +252,8 @@ namespace Cat
             scope.Register(typeof(Primitives));
             scope.Register(typeof(CatList));
             scope.Register(typeof(HashList));
-            scope.Register(typeof(wnd));
+            scope.Register(typeof(window));
+            scope.Register(typeof(gdi));
         }
 
         #endregion

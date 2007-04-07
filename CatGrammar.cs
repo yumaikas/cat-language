@@ -1,3 +1,6 @@
+/// Public domain code by Christopher Diggins
+/// http://www.cat-language.com
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -122,7 +125,7 @@ namespace Cat
         }
         public static Rule TypeAlias()
         {
-            return Token(Seq(Ident(), Token("="), NoFail(Choice(Delay(FxnType), TypeName()), "only function types can be labelled")));
+            return Token(Seq(Ident(), Token("="), Delay(TypeComponent)));
         }
         public static Rule TypeComponent()
         {

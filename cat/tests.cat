@@ -45,3 +45,21 @@ define test_r
 
 define test_map_reduce
 { test_strings [test_m] [test_r] map_reduce print_list }
+
+define if_swap : ('a 'a  ('a 'a -> 'a 'a bool) -> 'a 'a)
+{ eval [] [swap] if }
+
+//============================================================================
+// Sorting functions
+
+define ordered_swap : ('a 'a -> 'a 'a)
+{ compare [] [swap] if }
+
+define sorted_insert : (list 'a -> list)
+{ nil [uncons] dip [swapd swap cons] [[empty not] dip] while cat }
+
+define insert_sort
+{ }
+
+
+
