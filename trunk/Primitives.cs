@@ -201,7 +201,7 @@ namespace Cat
                 Function body = stk.Pop() as Function;
 
                 cond.Eval(stk);
-                while (!(bool)stk.Pop())
+                while ((bool)stk.Pop())
                 {
                     body.Eval(stk);
                     cond.Eval(stk);

@@ -1,8 +1,12 @@
+/// Public domain code by Christopher Diggins
+/// http://www.cat-language.com
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
@@ -13,25 +17,29 @@ namespace Cat
     {
         List<Object> mValues = new List<Object>();
         List<String> mNames = new List<String>();
-
+        List<Function> mFxns = new List<Function>();
         Mutex mMutex = new Mutex();
 
         public GraphWindow()
         {
             InitializeComponent();
         }
-        
-        public void SetProp(string s, Object o)
+
+        public void ClearFxns()
         {
             mMutex.WaitOne();
+            mFxns.Clear();
+            mMutex.ReleaseMutex();
+        }
 
-            mValues.Add(o);
-            mNames.Add(s);
-
+        public void AddFxn(Function f)
+        {
+            mMutex.WaitOne();
+            mFxns.Add(f);
             mMutex.ReleaseMutex();
 
             // Tell the parent thread to invalidate
-            MethodInvoker p = Refresh;  
+            MethodInvoker p = Invalidate;  
             Invoke(p);
         }
 
@@ -43,62 +51,148 @@ namespace Cat
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
         {
             mMutex.WaitOne();
-            Pen pen = new System.Drawing.Pen(System.Drawing.Color.Black);
-            Point origin = new Point(0, 0);
-            Point cur;
-            bool bPenUp = false;
 
-            for (int i = 0; i < mNames.Count; ++i )
-            {
-                string s = mNames[i];
-                Object val = mValues[i];
-
-                switch (s)
-                {
-                    case "set_text":
-                        Text = val as String;
-                        break;
-                    case "rotate":
-                        p.Graphics.RotateTransform((float)val);
-                        break;
-                    case "pen_color":
-                        pen.Color = (Color)val;
-                        break;
-                    case "pen_width":
-                        pen.Width = (int)val;
-                        break;
-                    case "line_to":
-                        cur = CatListToPoint(val as CatList);
-                        if (!bPenUp)
-                            e.Graphics.DrawLine(pen, origin, cur);
-                        break;
-                    case "line_rel":
-                        prev = cur;
-                        cur = CatListToPoint(val as CatList);
-                        cur.X = prev.X + cur.X;
-                        cur.Y = prev.Y + cur.Y;
-                        if (!bPenUp)
-                            e.Graphics.DrawLine(pen, prev, cur);
-                        break;
-                    case "pen_up":
-                        bPenUp = (bool)val;
-                        break;
-                    case "bg":
-                        BackColor = (Color)val;
-                        break;
-                }
-            }
+            gdi g = new gdi(this, e.Graphics);
+            foreach (Function f in mFxns)
+                g.render(f);            
 
             mMutex.ReleaseMutex();
         }
+
+        private void GraphWindow_Resize(object sender, EventArgs e)
+        {
+            Invalidate();
+        }
     }
 
-    public class wnd 
+    public class gdi
+    {
+        public Executor mExec = new Executor();
+
+        Pen mPen = new Pen(Color.Black);
+        bool mbPenUp = false;
+
+        GraphWindow mw;
+        Graphics mg;
+        
+        public gdi(GraphWindow w, Graphics g)
+        {
+            Point mOrigin = new Point(0, 0);
+            mPen.LineJoin = LineJoin.Bevel;
+            mw = w;
+            mg = g;
+            mg.TranslateTransform(mw.Width / 2, mw.Height / 2);
+        }
+
+        public void render(Function f)
+        {
+            mExec.Push(this);
+            f.Eval(mExec.GetStack());
+            mExec.Pop();
+        }
+
+        public void rotate(int x)
+        {
+            mg.RotateTransform(x);
+        }
+
+        public void line_to(int x, int y)
+        {
+            if (!mbPenUp)
+                mg.DrawLine(mPen, 0, 0, x, y);
+            mg.TranslateTransform(x, y);
+        }
+
+        public void scale(double x)
+        {
+            mg.ScaleTransform((float)x, (float)x);
+        }
+
+        public void set_pen_up(bool b)
+        {
+            mbPenUp = b;
+        }
+
+        public bool get_pen_up()
+        {
+            return mbPenUp;
+        }
+
+        public void line(int x0, int y0, int x1, int y1)
+        {
+            if (!mbPenUp)
+                mg.DrawLine(mPen, x0, y0, x1, y1);
+        }
+
+        public void rectangle(int x, int y, int w, int h)
+        {
+            if (!mbPenUp)
+                mg.DrawRectangle(mPen, x, y, w, h);
+        }
+
+        public void ellipse(int x, int y, int w, int h)
+        {
+            if (!mbPenUp)
+                mg.DrawEllipse(mPen, x, y, w, h);
+        }
+
+        public void pen_color(Color x)
+        {
+            mPen.Color = x;
+        }
+
+        public void pen_width(int x)
+        {
+            mPen.Width = x;
+        }
+
+        public void set_solid_fill(Color x)
+        {
+            mPen.Brush = new SolidBrush(x);
+        }
+
+        public void no_fill()
+        {
+            mPen.Brush = null;
+        }
+
+        public void poly(CatList x)
+        {
+            mg.DrawPolygon(mPen, ListToPointArray(x));
+        }
+        
+        public void lines(CatList x)
+        {
+            mg.DrawLines(mPen, ListToPointArray(x));
+        }
+
+        #region helper functions
+        private Point ListToPoint(CatList x)
+        {
+            return new Point((int)x.nth(1), (int)x.nth(0));
+        }
+
+        private Point[] ListToPointArray(CatList x)
+        {
+            Point[] result = new Point[x.count()];
+            int i = 0;
+            Accessor acc = delegate(Object o)
+            {
+                CatList tmp = o as CatList;
+                result[i++] = ListToPoint(tmp);
+            };
+            x.WithEach(acc);
+            return result;
+        }
+        #endregion
+    }
+
+    public class window 
     {
         GraphWindow mWindow;
         EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-        public wnd()
+        public window()
         {            
             Thread t = new Thread(new ThreadStart(LaunchWindow));
             t.Start();
@@ -117,54 +211,14 @@ namespace Cat
             Application.Run(mWindow);
         }
 
-        public void set(Object o, String s)
+        public void render(Function f)
         {
-            mWindow.SetProp(s, o);
+            mWindow.AddFxn(f);
         }
 
-        public void move_to(CatList x)
+        public void clear_screen()
         {
-            set(x, "move_to");
-        }
-
-        public void line_to(CatList x)
-        {
-            set(x, "line_to");
-        }
-
-        public void move_rel(CatList x)
-        {
-            set(x, "move_rel");
-        }
-
-        public void line_rel(CatList x)
-        {
-            set(x, "line_rel");
-        }
-
-        public void pen_color(Color x)
-        {
-            set(x, "pen_color");
-        }
-
-        public void pen_color(int x)
-        {
-            set(x, "pen_width");
-        }
-
-        public void rotate(double x)
-        {
-            set((float)x, "rotate");
-        }
-
-        public void rotate(int x)
-        {
-            set((float)x, "rotate");
-        }
-
-        public void pen_up(bool x)
-        {
-            set(x, "pen_up");
+            mWindow.ClearFxns();
         }
 
         static public Color blue() { return Color.Blue; }

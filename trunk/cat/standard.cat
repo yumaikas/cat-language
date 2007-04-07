@@ -25,25 +25,16 @@ define popd : ('a 'b -> 'b)
 define popdd : ('a 'b 'c -> 'b 'c)
 { [popd] dip }
 
-define dup2 : ('a -> 'a 'a 'a )
-{ dup dup }
-
 define pop2 : ('a 'b -> )
 { pop pop }
-
-define dup3 : ('a -> 'a 'a 'a 'a )
-{ dup dup dup dup }
 
 define pop3 : ('a 'b 'c -> )
 { pop pop pop pop }
 
-define dup4 : ('a -> 'a 'a 'a 'a 'a )
-{ dup dup dup dup }
-
 define pop4 : ('a 'b 'c 'd -> )
 { pop pop pop pop }
 
- define nip : ('a 'b -> 'b)
+define nip : ('a 'b -> 'b)
 { popd }
 
 define over : ('a 'b -> 'a 'b 'a)
@@ -66,6 +57,72 @@ define peek : ('a 'b 'c -> 'a 'b 'c 'a)
 
 define poke : ('a 'b 'c -> 'c 'b)
 { popdd swap }
+
+//==============================================================================
+// PeekN, DigN and BuryN functions
+
+define peek1 : ('a 'b -> 'a 'b 'a)
+{ dupd swap }
+
+// The same as ordinary "peek"
+define peek2 : ('a 'b 'c -> 'a 'b 'c 'a)
+{ [peek1] dip swap }
+
+define peek3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
+{ [peek2] dip swap }
+
+define peek4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
+{ [peek3] dip swap }
+
+define peek5 : ('a 'b 'c 'd 'e 'f -> 'a 'b 'c 'd 'e 'f 'a)
+{ [peek4] dip swap }
+
+define dig1 : ('a 'b -> 'b 'a)
+{ swap }
+
+// The same as ordinary "dig"
+define dig2 : ('a 'b 'c -> 'b 'c 'a)
+{ [dig1] dip swap }
+
+define dig3 : ('a 'b 'c 'd -> 'b 'c 'd 'a)
+{ [dig2] dip swap }
+
+define dig4 : ('a 'b 'c 'd 'e -> 'b 'c 'd 'e 'a)
+{ [dig3] dip swap }
+
+define dig5 : ('a 'b 'c 'd 'e 'f -> 'b 'c 'd 'e 'f 'a)
+{ [dig4] dip swap }
+
+define bury1 : ('a 'b -> 'b 'a)
+{ swap }
+
+// The same as ordinary "bury"
+define bury2 : ('a 'b 'c -> 'c 'a 'b)
+{ swap [bury1] dip }
+
+define bury3 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
+{ swap [bury2] dip }
+
+define bury4 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd)
+{ swap [bury3] dip }
+
+define bury5 : ('a 'b 'c 'd 'e 'f -> 'f 'a 'b 'c 'd 'e)
+{ swap [bury4] dip }
+
+//==============================================================================
+// DupN
+
+define dup2 : ('a 'b -> 'a 'b 'a 'b)
+{ peek1 peek1 }
+
+define dup3 : ('a 'b 'c -> 'a 'b 'c 'a 'b 'c)
+{ peek2 peek2 peek2 }
+
+define dup4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a 'b 'c 'd)
+{ peek3 peek3 peek3 peek3 }
+
+define dup5 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a 'b 'c 'd 'e)
+{ peek4 peek4 peek4 peek4 peek4 }
 
 //==============================================================================
 // Argument list manipulation
@@ -109,28 +166,47 @@ define even : (int -> int bool) { 2 modn }
 define odd : (int -> int bool) { dup inc mod 0 eq }
 
 //=============================================================================
-// predicate generation functions
+// Predicate generation functions
 
-define ltf : ('a -> ('a -> 'a bool))
+define ltf : (x='a -> (y='a -> y bool))
 { [dupd lt] curry }
 
-define lteqf : ('a -> ('a -> 'a bool))
+define lteqf : (x='a -> (y='a -> y bool))
 { [dupd lteq] curry }
 
-define gtf : ('a -> ('a -> 'a bool))
+define gtf : (x='a -> (y='a -> y bool))
 { [dupd gt] curry }
 
-define gteqf : ('a -> ('a -> 'a bool))
+define gteqf : (x='a -> (y='a -> y bool))
 { [dupd gteq] curry }
 
-define eqf : ('a -> ('a -> 'a bool))
+define eqf : (x='a -> (y='a -> y bool))
 { [dupd eq] curry }
 
-define neqf : ('a -> ('a -> 'a bool))
+define neqf : (x='a -> (y='a -> y bool))
 { [dupd neq] curry }
 
 define modnf : (int int -> (int -> int bool))
 { [dupd modn] curry }
+
+//=============================================================================
+// Comparison predicates
+
+define compare_lt : ('a 'a -> 'a 'a bool)
+{ dup2 lt }
+
+define compare_lteq : ('a 'a -> 'a 'a bool)
+{ dup2 lteq  }
+
+define compare_gt : ('a 'a -> 'a 'a bool)
+{ dup2 gt }
+
+define compare_gteq : ('a 'a -> 'a 'a bool)
+{ dup2 lt }
+
+// The default comparison predicate uses lteq ( <= )
+define compare : ('a 'a -> 'a 'a bool)
+{ compare_lteq }
 
 //=============================================================================
 // Additional mathematical definitions
@@ -172,13 +248,13 @@ define sweep : ('A ('A 'b -> 'C) 'b -> 'C 'b)
 { swap keep }
 
 define dip2 : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
-{ swap [dip] swip }
+{ swap [dip] dip }
 
 define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
-{ swap [dip2] swip }
+{ swap [dip2] dip }
 
 define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
-{ swap [dip3] swip }
+{ swap [dip3] dip }
 
 //=============================================================================
 // List operators
@@ -216,22 +292,25 @@ define range : (int int -> list)
 define n : (int -> list)
 { 0 swap range }
 
+define foldl
+{ "foldl has been renamed to fold" fail }
+
 define flatten : (list -> list)
-{ nil [cat] foldl }
+{ nil [cat] fold }
 
 // Returns true iff any value satisfies the condition
 // Could be optimized
 define any : (list ('a -> bool) -> bool)
-{ dupd [or] compose false swap foldl }
+{ dupd [or] compose false swap fold }
 
 // Returns true iff all values satisfy the condition
 // Could be optimized
 define all : (list ('a -> bool) -> bool)
-{ dupd [and] compose true swap foldl }
+{ dupd [and] compose true swap fold }
 
 // Reverse a list
 define rev : (list -> list)
-{ nil [cons] foldl }
+{ nil [cons] fold }
 
 //=============================================================================
 // Infinite list generators
@@ -250,6 +329,10 @@ define negatives : ( -> list)
 
 //=============================================================================
 // Function manipulation operators
+
+// Quote operation aliases
+define constantly : ('a -> ( -> 'a))
+{ quote }
 
 define curry : ('a ('B 'a -> 'C) -> ('B -> 'C))
 { [quote] dip compose }
@@ -272,8 +355,12 @@ define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
 //==============================================================================
 // Looping constructions
 
-define repeat : ('A ('A -> 'A) int -> 'A)
-{ swap [swip dec] curry [neqz] while pop }
+define repeat : ('A body=('A -> 'A) int -> 'A)
+{
+  swap            // 'A int [body]
+  [dip dec] curry // 'A int [[body] dip dec]
+  [neqz] while pop
+}
 
 // reverse for loop
 define rfor : ('A ('A int -> 'A) int -> 'A)
@@ -291,7 +378,7 @@ define print_list : (list ~> list)
 // Vector functions
 
 define sum : (list -> var)
-{ 0 [+] foldl }
+{ 0 [+] fold }
 
 //==============================================================================
 // Hash helper functions
@@ -315,10 +402,9 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 }
 
 define list_to_hash : (list -> hash_list)
-{  hash_list [unpair swap hash_add_chain] foldl }
+{  hash_list [unpair swap hash_add_chain] fold }
 
 // performs an inner self-join on a list of lists based the first item.
 define self_join : (list -> list)
 { list_to_hash hash_to_list }
 
-//============================================================================
