@@ -62,4 +62,42 @@ define insert_sort
 { }
 
 
+//===========================================================================
 
+Given:
+
+    sum = 0;
+    for (int i = 0; i < array.length; i++)
+        for (int j = i; j < array.length; j++)
+            eval(closure{sum += array[i] * array[j]});
+    return sum;
+
+Step 1:
+
+    sum = 0;
+    subarray = array;
+    foreach (x in array)
+        foreach (y in subarray)
+            eval(closure{sum += x * y});
+            subarray = subarray.tail();
+    return sum;
+
+Step 2:
+
+  define outer : (array -> num)
+  {
+    dup 0 pair
+    [inner] fold
+  }
+
+  define inner : (pair(array, num), num -> pair(array, num))
+  {
+    [unpair] dip // stack=subarray, acc, x
+    [* +] curry fold // stack=subbarray, acc
+    [tail] dip // remove first item from sub array: stack=subarray, acc
+    pair // stack=pair(subarray, acc)
+  }
+
+Notice:
+
+  This is an inner diagonal
