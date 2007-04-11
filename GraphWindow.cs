@@ -69,10 +69,12 @@ namespace Cat
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
         {
             mMutex.WaitOne();
-
+            
             gdi g = new gdi(this, e.Graphics);
             foreach (Function f in mFxns)
-                g.render(f);            
+                g.render(f);
+
+            g.draw_turtle();
 
             mMutex.ReleaseMutex();
         }
@@ -148,10 +150,42 @@ namespace Cat
                 mg.DrawRectangle(mPen, x, y, w, h);
         }
 
-        public void ellipse(int x, int y, int w, int h)
+        public void ellipse(int w, int h)
         {
             if (!mbPenUp)
-                mg.DrawEllipse(mPen, x, y, w, h);
+                mg.DrawEllipse(mPen, w/2, h/2, w, h);
+        }
+
+        public void draw_turtle()
+        {
+            Pen turtlePen = new Pen(Color.Goldenrod);
+            Brush turtleBrush = new SolidBrush(Color.Green);
+            rotate(-45);
+            Rectangle rect;
+            for (int i = 0; i < 4; ++i)
+            {
+                rect = new Rectangle(-5, 12, 10, 10);
+                mg.DrawEllipse(turtlePen, rect);
+                mg.FillEllipse(turtleBrush, rect);
+                rotate(90);
+            }
+            rotate(-45);
+            rect = new Rectangle(-5, 15, 10, 10);
+            mg.FillEllipse(turtleBrush, rect);
+            mg.DrawEllipse(turtlePen, rect);
+            rect = new Rectangle(-15, -15, 30, 30);
+            mg.DrawEllipse(turtlePen, rect);
+            mg.FillEllipse(turtleBrush, rect);
+            
+            // stripe the body
+            GraphicsPath clipPath = new GraphicsPath();
+            clipPath.AddEllipse(rect);
+            turtlePen.Width = 2;
+            mg.SetClip(clipPath);
+            mg.DrawLine(turtlePen, -15, 0, 15, 0);
+            mg.DrawLine(turtlePen, -15, 8, 15, 8);
+            mg.DrawLine(turtlePen, -15, -8, 15, -8);
+            mg.ResetClip();
         }
 
         public void pen_color(Color x)

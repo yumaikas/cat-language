@@ -28,6 +28,9 @@ define nf
 define el
 { [ellipse] curry4 render }
 
+define circle
+{ 0 0 dig dup el }
+
 define rect
 { [rectangle] curry4 remder }
 
@@ -46,3 +49,5 @@ define square
 define pattern
 { [blue pc 5 pw [100 square 15 rt] 24 repeat] render }
 
+define chord
+{ }
