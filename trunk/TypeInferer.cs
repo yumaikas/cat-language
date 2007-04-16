@@ -4,48 +4,12 @@ using System.Text;
 using System.Diagnostics;
 
 /*
- * The big challenge is going to be: 
- * eval eval 
- * where eval : (R A (S A -> S B) -> R B)
- * so eval eval : 
- * (R A (S A -> S B) -> R B) (R0 A0 (S0 A0 -> S0 B0) -> R0 B0)
- * => R B  R0 A0 (S0 A0 -> S0 B0) 
- * => B = (S0 A0 -> S0 B0) || R = (S0 A0 -> S0 B0) && B = empty
- *
- * Alternatively: 
- * (A (A -> B) -> B) (A0 (A0 -> B0) -> B0)
- * B = A0 (A0 -> B0)
- * if (B = empty) A = (A0 -> B0) C 
+ * Some challenges 
+ * - coming up with good names for things. 
+ * - figuring out if two things have the same name
+ * - dealing with stack pairs. 
+ * - dealing with recursive functions (e.g. fib or fact)
  * 
- * Consider: 
- * [] [] (eval eval)
- * Should work shouldn't it?
- * 
- * The only requirement is that (r B) = (s (A0 -> B0))
- * 
- * The type is: 
- * ee : (A (A -> C (B -> D)) -> D)
- * 
- * What happens when I write: 
- * [] ee ? 
- * 
- * (r -> r (s -> s)) (A (A -> C (B -> D)) -> D)
- * result = (r -> D)
- * axiom s -> s = (A -> C (B -> D)) 
- * axiom s = A 
- * axiom s = C (B -> D)
- * axiom r = A 
- * s = r because s = A and r = A
- * r = C (B -> D)
- * unified result = (C (B -> D) -> D)
- * 
- * forall qualifiers are magical. 
- * perhaps they can be merged.
- * (r 'A (s 'A -> s 'B) -> r 'B)
- * is the same as: 
- * (r 'A (r 'A -> r 'B) -> r 'B)
- * Well it means that forall 
- 
 */
 
 namespace Cat
@@ -56,11 +20,15 @@ namespace Cat
 
     class Constraints
     {
+        Dictionary<string, List<CatKind>> mConstraints
+            = new Dictionary<string, List<CatKind>>();
+        /*
         Dictionary<string, List<CatTypeKind>> typeConstraints 
             = new Dictionary<string, List<CatTypeKind>>();
 
         Dictionary<string, List<CatStackKind>> stkConstraints
             = new Dictionary<string, List<CatStackKind>>();
+         */
 
         // Is this going to work? 
         // We have issues of StackKinds containing StackKinds. 
@@ -92,26 +60,96 @@ namespace Cat
         // The concern becomes how do I equate constraints. I can say things about the top 
         // but not the botoom. 
 
-        public void AddConstraint(CatTypeKind x, CatTypeKind y)
+        // naming is going to be a problem. 
+        // 
+
+        public void AddStackConstraint(CatStackKind x, CatStackKind y)
         {
-            typeConstraints.Add(x.GetName(), y);
-            typeConstraints.Add(y.GetName(), x);
+            AddNameConstraint(x.GetName(), y);
+            AddNameConstraint(y.GetName(), x);
+
+            if (x is CatSimpleStackKind && y is CatSimpleStackKind)
+            {
+                CatSimpleStackKind a = x as CatSimpleStackKind;
+                CatSimpleStackKind b = y as CatSimpleStackKind;
+                AddConstraint(a.GetTop(), b.GetTop());
+                AddConstraint(a.GetRest(), b.GetRest());
+            }
+        }
+
+        /*
+        private void AddStackPairConstraints(CatStackPairKind x, CatStackKind y)
+        {
+            else
+            {
+                // We may have a stack on stack condition, 
+                if (x is CatStackPairKind)
+                {
+                    AddStackPairConstraints(x as CatStackPairKind, y);                    
+                }
+                else if (y is CatStackPairKind)
+                {
+                    AddStackPairConstraints(y as CatStackPairKind, x);
+                }
+            }
+            if (y is CatStackPairKind)
+            {
+                // Look at the tops of both 
+                // if the same, 
+                CatStackPairKind tmp = y as CatStackPairKind;
+                /*
+                 * This should be a job for the resolution engine I think.
+                 * 
+                if (x.GetTop().Equals(tmp.GetTop()))
+                {
+                    return AddStackConstraint(x.GetRest(), tmp.GetRest());
+                }
+                else
+                {
+                    // possiblye look for something equal deeper down (A,B,C) = (D,B,E) well 
+                    // does that say anything? 
+                }
+            }
+            else if (y is CatSimpleStackKind)
+            {
+                CatSimpleStackKind tmp = y as CatSimpleStackKind;
+                // if tmp.Rest() == x.Rest()
+            }
+            else
+            {
+                throw new Exception("unrecognized stack kind " + y.ToString());
+            }
+        }
+        */
+
+        private void AddNameConstraint(string s, CatKind k)
+        {
+            if (!mConstraints.ContainsKey(s))
+                mConstraints.Add(s, new List<CatKind>());
+            List<CatKind> list = mConstraints[s];
+            if (!list.Contains(k))
+                list.Add(k);
+        }
+
+        private void AddTypeConstraint(CatTypeKind x, CatTypeKind y)
+        {
+            AddNameConstraint(x.GetName(), y);
+            AddNameConstraint(y.GetName(), x);
+
+            if (x is CatFxnType && y is CatFxnType)
+            {
+                AddFxnConstraint(x as CatFxnType, y as CatFxnType);
+            }
 
             // Don't forget, constraints are commutative:
             // x = y, y = z => x = z;
-            // Deal with that!
+            // Deal with that as well. This can lead to constraint explosion, possibly. 
         }
 
-        public void AddConstraint(CatStackKind x, CatStackKind y)
+        private void AddFxnConstraint(CatFxnType x, CatFxnType y)
         {
-            stkConstraints.Add(x.GetName(), y);
-            stkConstraints.Add(y.GetName(), x);
-        }
-
-        public void AddConstraint(CatFxnType x, CatFxnType y)
-        {
-            stkConstraints.Add(x.GetName(), y);
-            stkConstraints.Add(y.GetName(), x);
+            AddConstraint(x.GetProd(), y.GetProd());
+            AddConstraint(x.GetCons(), y.GetCons());
         }
 
         // I know that type kinds and stack kinds are created in response 
@@ -165,11 +203,15 @@ namespace Cat
         }        
     }
 
-    class CatKind
+    /// <summary>
+    /// All CatKinds should be immutable. This avoids a lot of problems and confusion.
+    /// </summary>
+    class CatKind : IEqualityComparer<CatKind>
     {
-        static int id = 0;
+        // This is used for different function types.
+        public static int id = 0;
+        
         string msName;
-        int mnId = id++;
 
         public CatKind(string s)
         {
@@ -180,14 +222,51 @@ namespace Cat
         {
             return msName;
         }
+
+        #region IEqualityComparer<CatKind> Members
+
+        public bool Equals(CatKind x, CatKind y)
+        {
+            return x.GetName().Equals(y.GetName());
+        }
+
+        public int GetHashCode(CatKind obj)
+        {
+            return obj.GetName().GetHashCode();
+        }
+
+        #endregion
     }
 
+    /// <summary>
+    /// Base class for the different Cat types
+    /// </summary>
     class CatTypeKind : CatKind
     {
     }
 
     class CatStackKind : CatKind
     {
+        public CatStackKind Push(CatKind x)
+        {
+            if (x is CatStackKind)
+                return new CatStackPairKind(this, x as CatStackKind);
+            else if (x is CatTypeKind)
+                return new CatStackKind(this, x as CatTypeKind);
+            else
+                throw new Exception("unhandled kind " + x.ToString());
+        }
+    }
+
+    class CatSimpleStackKind : CatStackKind
+    {
+        public CatSimpleStackKind(CatStackKind r, CatTypeKind t)
+            : base(t.GetName() + "." + r.GetName())
+        {
+            top = t;
+            rest = r;
+        }
+
         CatTypeKind top;
         CatStackKind rest;
 
@@ -210,26 +289,21 @@ namespace Cat
         {
             return GetTop() != null;
         }
-
-        public CatStackKind(CatTypeKind t, CatStackKind r)
-            : base(t.GetName() + "." + r.GetName())
-        {
-            top = t;
-            rest = r;
-        }
     }
 
+    /// <summary>
+    /// Represents a stack with a stack on top.
+    /// </summary>
     class CatStackPairKind : CatKind
     {
         CatStackKind top;
         CatStackKind rest;
 
-        // TODO: finish.
-        public CatStackPairKind(CatStackKind x, CatStackKind y)
-            : base(x.GetName() + ":" + y.GetName())
+        public CatStackPairKind(string sName, CatStackKind pRest, CatStackKind pTop)
+            : base(sName)
         {
-            top = x;
-            rest = y;
+            top = pTop;
+            rest = pRest;
         }
 
         public CatStackKind GetTop()
@@ -274,33 +348,32 @@ namespace Cat
     {
         CatStackKind prod;
         CatStackKind cons;
+        CatStackKind rho;
         
         Dictionary<string, CatKind> names = new List<CatKind>();
 
-        public CatFxnType(string sType) 
-            : base("not named yet")
+        public CatFxnType(string sName, string sType) 
+            : base("unnamed")
         {
-            CatStackKind cons = new CatStackVar(sName + "$rho");
-            CatStackKind prod = cons;
-
-            // Now add 
-            cons = cons.Push("a");
-            prod = prod.Push("b");
+            // TODO: create a function type 
         }
 
-        public CatFxnType(CatFxnType t)
+        public CatFxnType()
+            : base("unnamed")
         {
+            rho = new CatStackVar("$rho" + (id++).ToString());
+            prod = rho;
+            cons = rho;
         }
 
-        public void ComposeWith(CatFxnType x)
+        public void AddToProduction(CatKind x)
         {
-            // Set consumption to the consumption of x
-            // Add constraints to the type variables
-            // Add constraints to the stack variables 
-            // Update the internal name list 
-            // Remove no longer needed names 
-            // Expand stack variables where neccessary.
-            // Look for constraint cycles
+            prod = prod.Push(x);
+        }
+
+        public void AddToConsumption(CatKind x)
+        {
+            cons = cons.Push(x);
         }
 
         public CatStackKind GetProd()
@@ -313,37 +386,82 @@ namespace Cat
             return cons;
         }
 
-        public bool IsValid()
+        public void ResolveConstraints(Constraints c)
         {
-            // Make sure that there is always the same kind for both 
+            // TODO: print out constraints for now.
         }
-    }    
+    }
+
+    class CatComposedFxn : CatFxnType
+    {
+        public CatComposedFxn(CatFxnType x, CatFxnType y, Constraints c)
+        {
+            AddToConsumption(x.GetCons());
+            AddToProduction(y.GetProd());
+            c.AddConstraint(x.GetProd(), y.GetCons());
+            ResolveConstraints(c);
+        }
+    }
+
+    class CatQuotedFxn : CatFxnType
+    {
+        public CatQuotedFxn(CatFxnType f)
+        {
+            AddToProduction(y.GetProd());
+        }
+    }
   
     class CatTypeVar : CatTypeKind
     {
+        public CatTypeVar(string s)
+            : base(s)
+        { }
     }
 
     class CatPrimitiveType : CatTypeKind
     {
+        public CatPrimitiveType(string s)
+            : base(s)
+        { }
     }
 
     class CatParameterizedType : CatTypeKind
     {
     }
 
-    class CatUnionType : CatTypeKind
+    class CatAlgebraicType : CatTypeKind
     {
+        public CatTypeKind first;
+        public CatTypeKind second;
     }
 
-    class CatSumType : CatTypeKind
+    class CatUnionType : CatAlgebraicType 
     {
+        public CatUnionType(CatTypeKind x, CatTypeKind y)
+            : base("union(" + x.GetName() + "," + y.GetName() + ")")
+        {
+            first = x;
+            second = y;
+        }
     }
 
-    class CatRecordType : CatTypeKind
+    class CatSumType : CatAlgebraicType 
     {
+        public CatSumType(CatTypeKind x, CatTypeKind y)
+            : base("sum(" + x.GetName() + "," + y.GetName() + ")")
+        {
+            first = x;
+            second = y;
+        }
     }
 
-    class CatProductType : CatTypeKind
+    class CatProductType : CatAlgebraicType 
     {
+        public CatProductType(CatTypeKind x, CatTypeKind y)
+            : base("product(" + x.GetName() + "," + y.GetName() + ")")
+        {
+            first = x;
+            second = y;
+        }
     }
 }
