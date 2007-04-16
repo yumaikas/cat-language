@@ -3,65 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 
-/*
- * Some challenges 
- * - coming up with good names for things. 
- * - figuring out if two things have the same name
- * - dealing with stack pairs. 
- * - dealing with recursive functions (e.g. fib or fact)
- * 
-*/
-
 namespace Cat
 {
-    class TypeInferer
-    {
-    }
-
     class Constraints
     {
         Dictionary<string, List<CatKind>> mConstraints
             = new Dictionary<string, List<CatKind>>();
-        /*
-        Dictionary<string, List<CatTypeKind>> typeConstraints 
-            = new Dictionary<string, List<CatTypeKind>>();
-
-        Dictionary<string, List<CatStackKind>> stkConstraints
-            = new Dictionary<string, List<CatStackKind>>();
-         */
-
-        // Is this going to work? 
-        // We have issues of StackKinds containing StackKinds. 
-        // That is a bit confusing to be honest. I am not sure it is a good idea.
-
-        // There is going to be a problem because functions can refer to 
-        // type variables that exist in the top-level. 
-
-        // the resolution process involves creating new types that resolve the 
-        // constraints
-        // we are done when no constraints exist. 
-
-        // I believe stack constraints are one-way? Or are they. 
-        // Probably not. How do I choose? 
-        // Are bigger stacks always correct?
-
-        // One thing to note: 
-
-        // Will everything just work, if I assure that all constraints are two directional.
-
-        // What about type ('A ('A -> 'B) -> 'B) is there an implicit rho in these variables? 
-        // This reveals something interesting, stacks can have stacks on top.
-        // I have t o make sure I handle this case.
-
-        // Perhaps nested functions don't have implicit "rho" variables? Well they do. 
-        // Consider: (('A -> 'B) ('C -> 'D) -> ('A 'C -> 'B 'D))
-        // Now I can create a new kind of stack kind, a stack with a stack on top.
-        // I am not very happy about that. 
-        // The concern becomes how do I equate constraints. I can say things about the top 
-        // but not the botoom. 
-
-        // naming is going to be a problem. 
-        // 
 
         public void AddStackConstraint(CatStackKind x, CatStackKind y)
         {
@@ -76,51 +23,6 @@ namespace Cat
                 AddConstraint(a.GetRest(), b.GetRest());
             }
         }
-
-        /*
-        private void AddStackPairConstraints(CatStackPairKind x, CatStackKind y)
-        {
-            else
-            {
-                // We may have a stack on stack condition, 
-                if (x is CatStackPairKind)
-                {
-                    AddStackPairConstraints(x as CatStackPairKind, y);                    
-                }
-                else if (y is CatStackPairKind)
-                {
-                    AddStackPairConstraints(y as CatStackPairKind, x);
-                }
-            }
-            if (y is CatStackPairKind)
-            {
-                // Look at the tops of both 
-                // if the same, 
-                CatStackPairKind tmp = y as CatStackPairKind;
-                /*
-                 * This should be a job for the resolution engine I think.
-                 * 
-                if (x.GetTop().Equals(tmp.GetTop()))
-                {
-                    return AddStackConstraint(x.GetRest(), tmp.GetRest());
-                }
-                else
-                {
-                    // possiblye look for something equal deeper down (A,B,C) = (D,B,E) well 
-                    // does that say anything? 
-                }
-            }
-            else if (y is CatSimpleStackKind)
-            {
-                CatSimpleStackKind tmp = y as CatSimpleStackKind;
-                // if tmp.Rest() == x.Rest()
-            }
-            else
-            {
-                throw new Exception("unrecognized stack kind " + y.ToString());
-            }
-        }
-        */
 
         private void AddNameConstraint(string s, CatKind k)
         {
@@ -137,13 +39,7 @@ namespace Cat
             AddNameConstraint(y.GetName(), x);
 
             if (x is CatFxnType && y is CatFxnType)
-            {
                 AddFxnConstraint(x as CatFxnType, y as CatFxnType);
-            }
-
-            // Don't forget, constraints are commutative:
-            // x = y, y = z => x = z;
-            // Deal with that as well. This can lead to constraint explosion, possibly. 
         }
 
         private void AddFxnConstraint(CatFxnType x, CatFxnType y)
@@ -200,7 +96,85 @@ namespace Cat
                 CatStackKind r = GetNewStack(r.GetRest());
             }
             return ret;
-        }        
+        }
+
+        public void MergeConstraints(string sKey, List<CatKind> list)
+        {
+            List<CatKind> tmp;
+            if (mConstraints.TryGetValue(sKey, tmp))
+            {
+                mConstraints.Remove(sKey);
+                foreach (CatKind k in tmp)
+                {
+                    list.Add(k);
+                    MergeConstraints(k.GetName(), list);
+                }
+            }
+        }
+
+        public FxnType ResolveConstraints(FxnType t)
+        {
+            int n = 0;
+            List<List<CatKind>> pNewTypes = new List<List<CatKind>>();
+            
+            while (mConstraints.Count > 0)
+            {
+                string sKey = mConstraints.Keys[0];
+                List<CatKind> list = new List<CatKind>();
+                MergeConstraints(sKey, list);
+                pNewTypes.Add(list);
+            }
+
+            // TODO: create a reverse name lookup.
+            // Dictionary<string, int> pNewTypeLookup = new Dictionary<string, List<CatKind>>();
+
+            // There is also another interesting case. A B = C B then A = C  
+            // This is an important extra reduction step.
+
+
+            /*
+            CatStackPairKind x;
+            CatStackKind y;
+
+            {
+                // We may have a stack on stack condition, 
+                if (x is CatStackPairKind)
+                {
+                    AddStackPairConstraints(x as CatStackPairKind, y);                    
+                }
+                else if (y is CatStackPairKind)
+                {
+                    AddStackPairConstraints(y as CatStackPairKind, x);
+                }
+            }
+            if (y is CatStackPairKind)
+            {
+                // Look at the tops of both 
+                // if the same, 
+                CatStackPairKind tmp = y as CatStackPairKind;
+                 * This should be a job for the resolution engine I think.
+                 * 
+                if (x.GetTop().Equals(tmp.GetTop()))
+                {
+                    return AddStackConstraint(x.GetRest(), tmp.GetRest());
+                }
+                else
+                {
+                    // possiblye look for something equal deeper down (A,B,C) = (D,B,E) well 
+                    // does that say anything? 
+                }
+            }
+            else if (y is CatSimpleStackKind)
+            {
+                CatSimpleStackKind tmp = y as CatSimpleStackKind;
+                // if tmp.Rest() == x.Rest()
+            }
+            else
+            {
+                throw new Exception("unrecognized stack kind " + y.ToString());
+            }
+                 */
+        }
     }
 
     /// <summary>
@@ -384,12 +358,7 @@ namespace Cat
         public CatStackKind GetCons()
         {
             return cons;
-        }
-
-        public void ResolveConstraints(Constraints c)
-        {
-            // TODO: print out constraints for now.
-        }
+        }                 
     }
 
     class CatComposedFxn : CatFxnType
