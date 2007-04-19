@@ -83,6 +83,16 @@ namespace Cat
         {
             Invalidate();
         }
+
+        private void GraphWindow_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // Note: this doesn't like it can ever be called.
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                MessageBox.Show("Pop the window from the stack to close it");
+            }
+        }
     }
 
     public class gdi
@@ -91,6 +101,8 @@ namespace Cat
 
         Pen mPen = new Pen(Color.Black);
         bool mbPenUp = false;
+        Pen turtlePen = new Pen(Color.Blue);
+        Brush turtleBrush = new SolidBrush(Color.DarkSeaGreen);
 
         GraphWindow mw;
         Graphics mg;
@@ -106,9 +118,9 @@ namespace Cat
 
         public void render(Function f)
         {
-            mExec.Push(this);
-            f.Eval(mExec.GetStack());
-            mExec.Pop();
+            // Routes all graphics calls to this object.
+            mExec.GetGlobalScope().RegisterObject(this);
+            f.Eval(mExec);
         }
 
         public void rotate(int x)
@@ -156,35 +168,58 @@ namespace Cat
                 mg.DrawEllipse(mPen, w/2, h/2, w, h);
         }
 
+        public void draw_turtle_foot(int x, int y)
+        {
+            int footSize = 10;
+            Rectangle rect = new Rectangle(x - (footSize / 2), y - (footSize / 2), footSize, footSize);            
+            mg.FillEllipse(turtleBrush, rect);
+            mg.DrawEllipse(turtlePen, rect);
+        }
+
         public void draw_turtle()
         {
-            Pen turtlePen = new Pen(Color.Goldenrod);
-            Brush turtleBrush = new SolidBrush(Color.Green);
-            rotate(-45);
-            Rectangle rect;
-            for (int i = 0; i < 4; ++i)
-            {
-                rect = new Rectangle(-5, 12, 10, 10);
-                mg.DrawEllipse(turtlePen, rect);
-                mg.FillEllipse(turtleBrush, rect);
-                rotate(90);
-            }
-            rotate(-45);
-            rect = new Rectangle(-5, 15, 10, 10);
+            int w = 32; 
+            int h = 26;
+
+            // draw feet
+            int x = (h / 2) - 3;
+            int y = (w / 2) - 3;
+            draw_turtle_foot(-x, y);
+            draw_turtle_foot(-x, -y);
+            draw_turtle_foot(x, y);
+            draw_turtle_foot(x, -y);
+
+            // draw head 
+            draw_turtle_foot(w / 2 + 3, 0);
+
+            // draw eyes
+            Rectangle eye1 = new Rectangle(w / 2 + 4, 2, 1, 1);
+            Rectangle eye2 = new Rectangle(w / 2 + 4, -3, 1, 1);
+            mg.DrawRectangle(turtlePen, eye1);
+            mg.DrawRectangle(turtlePen, eye2);
+
+            // draw tail
+            Rectangle rect = new Rectangle(-(w/2) - 6, -2, 12, 4);
             mg.FillEllipse(turtleBrush, rect);
             mg.DrawEllipse(turtlePen, rect);
-            rect = new Rectangle(-15, -15, 30, 30);
-            mg.DrawEllipse(turtlePen, rect);
+           
+            // draw body
+            rect = new Rectangle(-w / 2, -h / 2, w, h);
             mg.FillEllipse(turtleBrush, rect);
+            mg.DrawEllipse(turtlePen, rect);
             
-            // stripe the body
+            // clip everything else to the body
             GraphicsPath clipPath = new GraphicsPath();
             clipPath.AddEllipse(rect);
-            turtlePen.Width = 2;
             mg.SetClip(clipPath);
-            mg.DrawLine(turtlePen, -15, 0, 15, 0);
-            mg.DrawLine(turtlePen, -15, 8, 15, 8);
-            mg.DrawLine(turtlePen, -15, -8, 15, -8);
+
+            // stripe the body
+            turtlePen.Width = 2;
+            mg.DrawLine(turtlePen, 0, -h/2, 0, h/2);
+
+            int curvature = w / 2;
+            mg.DrawEllipse(turtlePen, 7, -h/2, curvature, h);
+            mg.DrawEllipse(turtlePen, -(curvature + 7), -h / 2, curvature, h);
             mg.ResetClip();
         }
 
@@ -239,48 +274,59 @@ namespace Cat
         #endregion
     }
 
-    public class window 
+    static public class WindowManager
     {
-        GraphWindow mWindow;
-        EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
+        static GraphWindow mWindow;
+        static EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-        public window()
+        #region public functions
+        static public open_window()
         {            
+            if (mWindow != null)
+                throw new Exception("window is already open");
             Thread t = new Thread(new ThreadStart(LaunchWindow));
             t.Start();
             mWait.WaitOne();   
         }
 
-        private Form GetForm()
+        static public void close_window()
+        {
+            mWindow.SafeClose();
+        }
+
+        static public void clear_window()
+        {
+            mWindow.ClearFxns();
+        }
+
+        static public void save_window(string s)
+        {
+            mWindow.SaveToFile(s);
+        }
+
+        static public void render(Function f)
+        {
+            mWindow.AddFxn(f);
+        }
+        #endregion 
+
+        #region color functions
+        static public Color blue() { return Color.Blue; }
+        static public Color red() { return Color.Red; }
+        static public Color green() { return Color.Green; }
+        static public Color rgb(int r, int g, int b) { return Color.FromArgb(r, g, b); }
+        #endregion 
+
+        static private Form GetForm()
         {
             return mWindow;
         }
 
-        private void LaunchWindow()
+        static private void LaunchWindow()
         {
             mWindow = new GraphWindow();
             mWait.Set();
             Application.Run(mWindow);
         }
-
-        public void render(Function f)
-        {
-            mWindow.AddFxn(f);
-        }
-
-        public void clear_screen()
-        {
-            mWindow.ClearFxns();
-        }
-
-        public void save(string s)
-        {
-            mWindow.SaveToFile(s);
-        }
-
-        static public Color blue() { return Color.Blue; }
-        static public Color red() { return Color.Red; }
-        static public Color green() { return Color.Green; }
-        static public Color rgb(int r, int g, int b) { return Color.FromArgb(r, g, b); }
     }
 }

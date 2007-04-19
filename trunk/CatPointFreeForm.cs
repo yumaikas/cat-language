@@ -80,26 +80,26 @@ namespace Cat
                 return;
 
             List<string> args = new List<string>();
-            foreach (AstParam p in d.Params)
+            foreach (AstParam p in d.mParams)
                 args.Add(p.ToString());
 
             // Recursively convert the terms in the function, and in all anonymous 
             // functions.
-            ConvertTerms(args, d.Terms);
+            ConvertTerms(args, d.mTerms);
 
             // Add instructions to create a list from the arguments
             // Must be done after the conversion of other terms
-            for (int i = 0; i < d.Params.Count; ++i)
+            for (int i = 0; i < d.mParams.Count; ++i)
             {
-                d.Terms.Insert(0, new AstName("swons", "append argument '" + d.Params[i].ToString() + "' to argument list"));
+                d.mTerms.Insert(0, new AstName("swons", "append argument '" + d.mParams[i].ToString() + "' to argument list"));
             }
 
-            d.Terms.Insert(0, new AstName("arg_list", "create an argument list"));
+            d.mTerms.Insert(0, new AstName("arg_list", "create an argument list"));
 
             if (Config.gbShowPointFreeConversion)
             {
-                Console.Write(d.Name + " == ");
-                foreach (AstExpr expr in d.Terms)
+                Console.Write(d.mName + " == ");
+                foreach (AstExpr expr in d.mTerms)
                     Console.Write(expr.ToString() + " ");
                 Console.WriteLine();
             }
@@ -116,7 +116,7 @@ namespace Cat
 
         public static bool IsPointFree(AstDef d)
         {
-            return d.Params.Count == 0;
+            return d.mParams.Count == 0;
         }
     }
 }

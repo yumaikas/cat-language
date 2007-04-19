@@ -20,41 +20,43 @@ namespace Cat
     {
         #region fields
         static public Executor Main = new Executor();
-        private CatStack main_stack = new CatStack();
+        static public Executor Aux = new Executor();
+        private CatStack stack = new CatStack();
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
+        Scope scope = new Scope();
         #endregion
 
         #region public functions
         public CatStack GetStack()
         {
-            return main_stack;
+            return stack;
         }
         public void Push(Object o)
         {
-            main_stack.Push(o);
+            stack.Push(o);
         }
         public void PushInt(int n)
         {
-            main_stack.Push(n);
+            stack.Push(n);
         }
         public void PushString(string s)
         {
-            main_stack.Push(s);
+            stack.Push(s);
         }
         public void PushRef(Function p)
         {
-            main_stack.Push(p);
+            stack.Push(p);
         }
         public Object Pop()
         {
-            return main_stack.Pop();
+            return stack.Pop();
         }
         public T TypedPop<T>()
         {
-            if (main_stack.Count == 0)
+            if (stack.Count == 0)
                 throw new Exception("Trying to pop an empty stack");
-            Object o = main_stack.Pop();
+            Object o = stack.Pop();
             if (!(o is T))
                 throw new Exception("Expected type " + typeof(T).Name + " but instead found " + o.GetType().Name);
             return (T)o;
@@ -77,13 +79,13 @@ namespace Cat
         }
         public Object Peek()
         {
-            return main_stack.Peek();
+            return stack.Peek();
         }
         public T TypedPeek<T>()
         {
-            if (main_stack.Count == 0)
+            if (stack.Count == 0)
                 throw new Exception("Trying to peek into an empty stack ");
-            Object o = main_stack.Peek();
+            Object o = stack.Peek();
             if (!(o is T))
                 throw new Exception("Expected type " + typeof(T).Name + " but instead found " + o.GetType().Name);
             return (T)o;
@@ -98,11 +100,15 @@ namespace Cat
         }
         public bool IsEmpty()
         {
-            return (main_stack.Count == 0);
+            return (stack.Count == 0);
         }
         #endregion
 
         #region environment serialization
+        public Scope GetGlobalScope()
+        {
+            return scope;
+        }
         public void Import()
         {
             LoadModule(PopString());
@@ -158,21 +164,13 @@ namespace Cat
             for (int i = nMax - 1; i >= 0; --i)
             {
                 Object o = stk[i];
-                if (o is String)
-                {
-                    s += "\"" + (o as String) + "\"";
-                }
-                else
-                {
-                    s += o.ToString();
-                }
-                s += " ";
+                s += MainClass.ObjectToString(o) + " ";
             }
             return s;
         }
         public void OutputStack()
         {
-            MainClass.WriteLine("stack: " + StackToString(main_stack));
+            MainClass.WriteLine("stack: " + StackToString(stack));
         }
         #endregion
 
@@ -196,7 +194,7 @@ namespace Cat
             if (node is AstChar)
                 return new CharFunction((node as AstChar).GetValue());
             if (node is AstName)
-                return new FunctionName(node.ToString(), Scope.Global());
+                return new FunctionName(node.ToString());
             if (node is AstQuote)
                 return MakeQuoteFunction(node as AstQuote);
             throw new Exception("node " + node.ToString() + " does not have associated function");
@@ -206,13 +204,13 @@ namespace Cat
         {
             if (Config.gbAllowNamedParams)
                 CatPointFreeForm.Convert(node);
-            else if (node.Params.Count > 0)
+            else if (node.mParams.Count > 0)
                 throw new Exception("named parameters are not enabled");
             List<Function> fxns = new List<Function>();
-            foreach (AstExpr term in node.Terms)
+            foreach (AstExpr term in node.mTerms)
                 fxns.Add(ExprToFunction(term));
-            DefinedFunction def = new DefinedFunction(node.Name, fxns);
-            Scope.Global().AddFunction(def);
+            DefinedFunction def = new DefinedFunction(node.mName, fxns);
+            Executor.Main.GetGlobalScope().AddFunction(def);
         }
 
         private void ProcessNode(CatAstNode node)
@@ -220,7 +218,7 @@ namespace Cat
             if (node is AstExpr)
             {
                 Function f = ExprToFunction(node as AstExpr);
-                f.Eval(main_stack);
+                f.Eval(this);
             }
             else if (node is AstDef)
             {

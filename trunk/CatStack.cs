@@ -78,6 +78,23 @@ namespace Cat
             return Count == 0;
         }
 
+        /// <summary>
+        /// Used for debugging and error reporting. 
+        /// </summary>
+        /// <returns></returns>
+        public string GetTopTypesAsString()
+        {
+            string ret = "";
+            int n = Math.Min(3, Count);
+            for (int i = 0; i < n; ++i)
+            {
+                ret = GetType(i).ToString() + " " + ret;
+            }
+            if (n < Count)
+                ret = "... " + ret;
+            return ret;
+        }
+
         #region ITypeArray Members
 
         public Type GetType(int n)

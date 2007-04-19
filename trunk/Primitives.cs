@@ -17,11 +17,10 @@ namespace Cat
                 : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {                
             }
         }
-
 
         public class True : Function
         {
@@ -29,9 +28,9 @@ namespace Cat
                 : base("true", "( -> bool)")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                stk.Push(true);
+                exec.Push(true);
             }
         }
 
@@ -41,9 +40,9 @@ namespace Cat
                 : base("false", "( -> bool)")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                stk.Push(false);
+                exec.Push(false);
             }
         }
 
@@ -53,9 +52,9 @@ namespace Cat
                 : base("dup", "('a -> 'a 'a)", "duplicate the top item on the stack")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                stk.Push(stk.Peek());
+                exec.Push(exec.Peek());
             }
         }
 
@@ -65,9 +64,9 @@ namespace Cat
                 : base("pop", "('a -> )", "removes the top item from the stack")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                stk.Pop();
+                exec.Pop();
             }
         }
 
@@ -77,12 +76,12 @@ namespace Cat
                 : base("swap", "('a 'b -> 'b 'a)", "swap the top two items on the stack")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Object o1 = stk.Pop();
-                Object o2 = stk.Pop();
-                stk.Push(o1);
-                stk.Push(o2);
+                Object o1 = exec.Pop();
+                Object o2 = exec.Pop();
+                exec.Push(o1);
+                exec.Push(o2);
             }
         }
 
@@ -92,10 +91,10 @@ namespace Cat
                 : base("eval", "('A ('A -> 'B) -> 'B)", "evaluates a function")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Function f = stk.Pop() as Function;
-                f.Eval(stk);
+                Function f = exec.Pop() as Function;
+                f.Eval(exec);
             }
         }
 
@@ -105,43 +104,12 @@ namespace Cat
                 : base("dip", "('A 'b ('A -> 'C) -> 'C 'b)", "evaluates function, temporarily removing second item")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Function f = stk.Pop() as Function;
-                Object o = stk.Pop();
-                f.Eval(stk);
-                stk.Push(o);
-            }
-        }
-
-        public class List : Function
-        {
-            public List()
-                : base("list", "(( -> 'A) -> list)", "creates a list from a function")
-            { }
-
-            public override void Eval(CatStack stk)
-            {
-                CatStack tmp = new CatStack();
-                Function f = stk.Pop() as Function;
-                f.Eval(tmp);
-                stk.Push(new StackToList(tmp));
-            }
-        }
-
-        public class Gen : Function
-        {
-            public Gen()
-                : base("gen", "(init='a next=('a -> 'a) cond=('a -> 'a bool) -> list)", 
-                    "creates a lazily evaluated list from an initial value, applying a successor function until the predicate is satisfied")
-            { }
-
-            public override void Eval(CatStack stk)
-            {
-                Function term = stk.Pop() as Function;
-                Function next = stk.Pop() as Function;
-                Object init = stk.Pop();
-                stk.Push(new LazyList(init, next, term));
+                Function f = exec.Pop() as Function;
+                Object o = exec.Pop();
+                f.Eval(exec);
+                exec.Push(o);
             }
         }
 
@@ -152,59 +120,59 @@ namespace Cat
                     "creates a function by composing (concatenating) two existing functions")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Function right = stk.Pop() as Function;
-                Function left = stk.Pop() as Function;
+                Function right = exec.Pop() as Function;
+                Function left = exec.Pop() as Function;
                 ComposedFunction f = new ComposedFunction(left, right);
-                stk.Push(f);
+                exec.Push(f);
             }
         }
 
         public class Quote : Function
         {
             public Quote()
-                : base("quote", "('a -> ( -> 'a))", 
-                    "creates a constant generating function from the top value on the stack")
+                : base("qv", "('a -> ( -> 'a))", 
+                    "short for 'quote value', creates a constant generating function from the top value on the stack")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Object o = stk.Pop();
+                Object o = exec.Pop();
                 QuoteValue q = new QuoteValue(o);
-                stk.Push(q);
+                exec.Push(q);
             }
         }
 
         public class Clr : Function
         {
             public Clr()
-                : base("clr", "('A) -> ()", "removes all items from the stack")
+                : base("clear", "('A) -> ()", "removes all items from the stack")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                stk.Clear();
+                exec.GetStack().Clear();
             }
         }
 
         public class While : Function
         {
             public While()
-                : base("while", "('A body=('A -> 'A) condition=('A -> 'A bool) -> 'A)",
-                    "executes a block of code repeatedly until the condition is true")
+                : base("while", "(input='A body=('A -> 'A) condition=('A -> 'A bool) -> 'A)",
+                    "executes a block of code repeatedly until the condition returns true")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Function cond = stk.Pop() as Function;
-                Function body = stk.Pop() as Function;
+                Function cond = exec.Pop() as Function;
+                Function body = exec.Pop() as Function;
 
-                cond.Eval(stk);
-                while ((bool)stk.Pop())
+                cond.Eval(exec);
+                while ((bool)exec.Pop())
                 {
-                    body.Eval(stk);
-                    cond.Eval(stk);
+                    body.Eval(exec);
+                    cond.Eval(exec);
                 }
             }
         }
@@ -216,27 +184,63 @@ namespace Cat
                     "executes one predicate or another whether the condition is true")
             { }
 
-            public override void Eval(CatStack stk)
+            public override void Eval(Executor exec)
             {
-                Function onfalse = stk.Pop() as Function;
-                Function ontrue = stk.Pop() as Function;
+                Function onfalse = exec.Pop() as Function;
+                Function ontrue = exec.Pop() as Function;
 
-                if ((bool)stk.Pop())
+                if ((bool)exec.Pop())
                 {
-                    ontrue.Eval(stk);
+                    ontrue.Eval(exec);
                 }
                 else
                 {
-                    onfalse.Eval(stk);
+                    onfalse.Eval(exec);
                 }
             }
         }
         #endregion 
 
         #region boolean functions
-        public static bool and(bool x, bool y) { return x && y; }
-        public static bool or(bool x, bool y) { return x || y; }
-        public static bool not(bool x) { return !x; }
+        public class And : Function
+        {
+            public And()
+                : base("and", "(bool bool -> bool)", "returns true if both of the top two values on the stack are true")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                bool x = (bool)exec.Pop();
+                bool y = (bool)exec.Pop();
+                exec.Push(x && y);
+            }
+        }
+
+        public class Or : Function
+        {
+            public Or()
+                : base("or", "(bool bool -> bool)", "returns true if either of the top two values on the stack are true")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                bool x = (bool)exec.Pop();
+                bool y = (bool)exec.Pop();
+                exec.Push(x || y);
+            }
+        }
+
+        public class Not : Function
+        {
+            public Not()
+                : base("not", "(bool -> bool)", "returns true if the top value on the stack is false")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(!(bool)exec.Pop());
+            }
+        }
         #endregion
 
         #region int functions
@@ -318,7 +322,44 @@ namespace Cat
         #endregion
 
         #region list functions
+        public class List : Function
+        {
+            public List()
+                : base("list", "(( -> 'A) -> list)", "creates a list from a function")
+            { }
 
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                f.Eval(Executor.Aux);
+                exec.Push(new StackToList(Executor.Aux.GetStack()));
+            }
+        }
+
+        public class GenFilterMap : Function
+        {
+            public GenFilterMap()
+                : base("gen_filter_map", "(init='a next=('a -> 'a) cond=('a -> bool) filterf=('a -> bool) mapf=('a -> 'b) -> list)",
+                    "creates a lazily evaluated list comprehension")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function mapf = exec.Pop() as Function;
+                Function filterf = exec.Pop() as Function;
+                Function term = exec.Pop() as Function;
+                Function next = exec.Pop() as Function;
+                Object init = exec.Pop();
+                exec.Push(new LazyList(init, next, term, filterf, mapf));
+            }
+        }
+        #endregion
+
+        #region other function
+        public static void error(string s)
+        {
+            throw new Exception("s");
+        }
         #endregion
     }
 }

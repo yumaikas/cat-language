@@ -58,40 +58,112 @@ namespace Cat
             return msType;
         }
 
-        public abstract void Eval(CatStack stk);
+        public abstract void Eval(Executor exec);
 
-        public Object Invoke()
-        {
-            CatStack stk = new CatStack();
-            Eval(stk);
-            return stk[0];
+        public virtual Object Invoke()
+        {            
+            Eval(Executor.Aux);
+            return Executor.Aux.GetStack()[0];
         }
 
-        public Object Invoke(Object o)
+        public virtual Object Invoke(Object o)
         {
-            CatStack stk = new CatStack();
-            stk.Push(o);
-            Eval(stk);
-            return stk[0];
+            Executor.Aux.Push(o);
+            Eval(Executor.Aux);
+            return Executor.Aux.GetStack()[0];
         }
 
-        public Object Invoke(Object o1, Object o2)
+        public virtual Object Invoke(Object o1, Object o2)
         {
-            CatStack stk = new CatStack();
-            stk.Push(o1);
-            stk.Push(o2);
-            Eval(stk);
-            return stk[0];
+            Executor.Aux.Push(o1);
+            Executor.Aux.Push(o2);
+            Eval(Executor.Aux);
+            return Executor.Aux.GetStack()[0];
         }
 
-        public Object Invoke(Object[] args)
+        public virtual Object Invoke(Object[] args)
         {
-            CatStack stk = new CatStack();
             foreach (Object arg in args)
-                stk.Push(arg);
-            Eval(stk);
-            return stk[0];
+                Executor.Aux.Push(arg);
+            Eval(Executor.Aux);
+            return Executor.Aux.GetStack()[0];
         }
+
+        #region static functions
+        public static string TypeToString(Type t)
+        {
+            switch (t.Name)
+            {
+                case ("HashList"): return "hash_list";
+                case ("Int32"): return "int";
+                case ("Double"): return "float";
+                case ("CatList"): return "list";
+                case ("Object"): return "var";
+                case ("Function"): return "function";
+                case ("Boolean"): return "bool";
+                case ("String"): return "string";
+                case ("Char"): return "char";
+                default: return t.Name;
+            }
+        }
+
+        public static Type GetReturnType(MethodBase m)
+        {
+            if (m is ConstructorInfo)
+                return (m as ConstructorInfo).DeclaringType;
+            if (!(m is MethodInfo))
+                throw new Exception("Expected ConstructorInfo or MethodInfo");
+            return (m as MethodInfo).ReturnType;
+        }
+
+        public static bool HasReturnType(MethodBase m)
+        {
+            Type t = GetReturnType(m);
+            return (t != null) && (!t.Equals(typeof(void)));
+        }
+
+        public static bool HasThisType(MethodBase m)
+        {
+            if (m is ConstructorInfo)
+                return false;
+            return !m.IsStatic;
+        }
+
+        public static Type GetThisType(MethodBase m)
+        {
+            if (m is ConstructorInfo)
+                return null;
+            if (!(m is MethodInfo))
+                throw new Exception("Expected ConstructorInfo or MethodInfo");
+            if (m.IsStatic)
+                return null;
+            return (m as MethodInfo).DeclaringType;
+        }
+
+        public static string MethodToTypeString(MethodBase m)
+        {
+            string s = "(";
+
+            if (HasThisType(m))
+                s += "this=" + TypeToString(m.DeclaringType) + " ";
+
+            foreach (ParameterInfo pi in m.GetParameters())
+                s += TypeToString(pi.ParameterType) + " ";
+
+            s += ") -> (";
+
+            if (HasThisType(m))
+                s += "this ";
+
+            if (HasReturnType(m))
+                s += TypeToString(GetReturnType(m));
+
+            s += ")";
+
+            return s;
+        }
+
+        #endregion
     }
   
     /// <summary>
@@ -106,9 +178,9 @@ namespace Cat
             SetType("( -> int)");
             mnValue = x;
         }
-        public override void Eval(CatStack stk) 
+        public override void Eval(Executor exec) 
         { 
-            stk.Push(GetValue());
+            exec.Push(GetValue());
         }
         public override string ToString()
         {
@@ -132,9 +204,9 @@ namespace Cat
             SetType("( -> int)");
             mdValue = x;
         }
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            stk.Push(GetValue());
+            exec.Push(GetValue());
         }
         public double GetValue()
         {
@@ -154,9 +226,9 @@ namespace Cat
             msValue = x;
             SetType("( -> string)");
         }
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            stk.Push(GetValue());
+            exec.Push(GetValue());
         }
         public string GetValue()
         {
@@ -176,9 +248,9 @@ namespace Cat
             mcValue = x;
             SetType("( -> char)");
         }
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            stk.Push(GetValue());
+            exec.Push(GetValue());
         }
         public char GetValue()
         {
@@ -199,9 +271,9 @@ namespace Cat
             mpValue = x;
             msName = mpValue.ToString();
         }
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            stk.Push(mpValue);
+            exec.Push(mpValue);
         }
         public Object GetValue()
         {
@@ -230,9 +302,9 @@ namespace Cat
             msName += "]";
         }
 
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            stk.Push(new QuotedFunction(mChildren));
+            exec.Push(new QuotedFunction(mChildren));
         }
 
         public List<Function> GetChildren()
@@ -258,10 +330,10 @@ namespace Cat
             }
         }
 
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
             foreach (Function f in mChildren)
-                f.Eval(stk);
+                f.Eval(exec);
         }
 
         public List<Function> GetChildren()
@@ -285,10 +357,10 @@ namespace Cat
             msName = mFirst.GetName() + " " + mSecond.GetName();
             msDesc = "composed function";
         }
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            mFirst.Eval(stk);
-            mSecond.Eval(stk);
+            mFirst.Eval(exec);
+            mSecond.Eval(exec);
         }
     }
 
@@ -301,13 +373,10 @@ namespace Cat
     /// </summary>
     public class FunctionName : Function
     {
-        Scope mpScope;
-        
-        public FunctionName(string s, Scope scope)
+        public FunctionName(string s)
             : base(s, "???", "")
         {
             msName = s;
-            mpScope = scope;
         }
 
         private bool IsBetterMatchThan(Function f, Function g)
@@ -323,20 +392,22 @@ namespace Cat
             return fm.GetSignature().IsBetterMatchThan(gm.GetSignature());
         }
 
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
-            if (!mpScope.FunctionExists(msName))
+            Scope scope = exec.GetGlobalScope();
+            if (!scope.FunctionExists(msName))
                 throw new Exception(msName + " is not defined");
-            List<Function> fs = mpScope.Lookup(stk, msName);
+            List<Function> fs = scope.Lookup(exec.GetStack(), msName);
             if (fs.Count == 0)
-                throw new Exception("unable to find " + msName + " with matching types");
+                throw new Exception("unable to find " + msName + " with matching types. Types on stack are " 
+                    + exec.GetStack().GetTopTypesAsString());
             Function f = fs[0];
             for (int i=1; i < fs.Count; ++i)
             {
                 if (IsBetterMatchThan(fs[i], f))
                     f = fs[i];
             }
-            f.Eval(stk);
+            f.Eval(exec);
         }
     }
 
@@ -357,10 +428,45 @@ namespace Cat
                 msDesc += f.GetName() + " ";
         }
 
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
             foreach (Function f in mTerms)
-                f.Eval(stk);
+                f.Eval(exec);
+        }
+    }
+
+    /// <summary>
+    /// An ObjectBoundMethod is like a delegate, it a method pointer combined with an object pointer
+    /// </summary>
+    public class ObjectBoundMethod : Function
+    {
+        MethodInfo mMethod;
+        Object mObject;
+
+        public ObjectBoundMethod(Object o, MethodInfo mi)
+            : base(mi.Name, MethodToTypeString(mi))
+        {
+            mMethod = mi;
+            mObject = o;
+        }
+
+        public override void Eval(Executor exec)
+        {
+            int n = mMethod.GetParameters().Length;
+            Object[] a = new Object[n];
+            for (int i = 0; i < n; ++i)
+            {
+                Object o = exec.Pop();
+                a[n - i - 1] = o;
+            }
+            Object ret = mMethod.Invoke(mObject, a);
+            if (!mMethod.ReturnType.Equals(typeof(void)))
+                exec.Push(ret);
+        }
+
+        public Object GetObject()
+        {
+            return mObject;
         }
     }
 }

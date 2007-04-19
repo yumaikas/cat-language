@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 using System.IO;
+using System.Globalization;
 using Peg;
 
 namespace Cat
@@ -20,21 +21,18 @@ namespace Cat
         string msText;
         string msLabel;
         string msComment;
-        bool mbLeaf;
 
         public CatAstNode(AstNode node)
         {
-            mbLeaf = node.IsLeaf();
-            if (mbLeaf)
+            if (node.GetNumChildren() == 0)
                 msText = node.ToString();
             else
                 msText = "";
             msLabel = node.GetLabel();
         }
 
-        public CatAstNode(string sLabel, string sText, bool bLeaf)
+        public CatAstNode(string sLabel, string sText)
         {
-            mbLeaf = bLeaf;
             msLabel = sLabel;
             msText = sText;
         }
@@ -68,6 +66,16 @@ namespace Cat
                     return new AstInt(node);
                 case "hex":
                     return new AstHex(node);
+                case "stack":
+                    return new AstStack(node);
+                case "type_fxn":
+                    return new AstFxnType(node);
+                case "type_var":
+                    return new AstType(node);
+                case "type_name":
+                    return new AstSimpleType(node);
+                case "stack_var":
+                    return new AstStackVar(node);
                 default:
                     throw new Exception("unrecognized node type in AST tree: " + node.GetLabel());
             }
@@ -81,11 +89,16 @@ namespace Cat
             }
         }
 
-        public void CheckIsLeaf()
+        public void CheckIsLeaf(AstNode node)
         {
-            if (!mbLeaf)
+            CheckChildCount(node, 0);
+        }
+
+        public void CheckChildCount(AstNode node, int n)
+        {
+            if (node.GetNumChildren() != n)
             {
-                throw new Exception("Expected leaf node");
+                throw new Exception("expected " + n.ToString() + " children, instead found " + node.GetNumChildren().ToString());
             }
         }
 
@@ -97,11 +110,6 @@ namespace Cat
         public override string ToString()
         {
             return msText;
-        }
-
-        public bool IsLeaf()
-        {
-            return mbLeaf;
         }
 
         public void SetText(string sText)
@@ -127,7 +135,10 @@ namespace Cat
                 return s;
         }
 
-        public abstract void Output(TextWriter writer, int nIndent);
+        public virtual void Output(TextWriter writer, int nIndent)
+        {
+            writer.Write(ToString());
+        }
     }
 
     public class AstProgram : CatAstNode
@@ -151,7 +162,7 @@ namespace Cat
     public class AstExpr : CatAstNode
     {
         public AstExpr(AstNode node) : base(node) { }
-        public AstExpr(string sLabel, string sText, bool bLeaf) : base(sLabel, sText, bLeaf) { }
+        public AstExpr(string sLabel, string sText) : base(sLabel, sText) { }
 
         public override void Output(TextWriter writer, int nIndent)
         {
@@ -164,9 +175,10 @@ namespace Cat
 
     public class AstDef : CatAstNode
     {
-        public string Name;
-        public List<AstParam> Params = new List<AstParam>();
-        public List<AstExpr> Terms = new List<AstExpr>();
+        public string mName;
+        public AstFxnType mType;
+        public List<AstParam> mParams = new List<AstParam>();
+        public List<AstExpr> mTerms = new List<AstExpr>();
 
         public AstDef(AstNode node) : base(node)
         {
@@ -176,9 +188,17 @@ namespace Cat
                 throw new Exception("invalid function definition node");
 
             AstName name = new AstName(node.GetChild(0));
-            Name = name.ToString();
+            mName = name.ToString();
 
             int n = 1;
+
+            // Look to see if a type is defined
+            if ((node.GetNumChildren() >= 2) && (node.GetChild(1).GetLabel() == "type_fxn"))
+            {
+                mType = new AstFxnType(node.GetChild(1));
+                ++n;
+            }
+
             while (n < node.GetNumChildren())
             {
                 AstNode child = node.GetChild(n);
@@ -186,7 +206,7 @@ namespace Cat
                 if (child.GetLabel() != "param")
                     break;
 
-                Params.Add(new AstParam(child));
+                mParams.Add(new AstParam(child));
                 n++;
             }
 
@@ -198,7 +218,7 @@ namespace Cat
                 if (!(expr is AstExpr))
                     throw new Exception("expected expression node");
                 
-                Terms.Add(expr as AstExpr);
+                mTerms.Add(expr as AstExpr);
                 n++;
             }
         }
@@ -207,34 +227,36 @@ namespace Cat
         {
             if (HasComment())
                 writer.WriteLine(IndentedString(nIndent, " // " + GetComment()));
-
-
-            string s = "define " + Name + " // ( ";
-            foreach (AstParam p in Params)
-                s += p.ToString() + " ";
-            s += ")";            
-            writer.WriteLine(IndentedString(nIndent, s));
-            
-            writer.WriteLine(IndentedString(nIndent, "{"));
-            foreach (AstExpr x in Terms)
+            string s = "define " + mName;
+            if (mType != null)
             {
-                x.Output(writer, nIndent + 1);
+                s += " : " + mType.ToString();
             }
+            if (mParams.Count > 0)
+            {
+                s += " // ( ";
+                foreach (AstParam p in mParams)
+                    s += p.ToString() + " ";
+                s += ")";
+            }
+            writer.WriteLine(IndentedString(nIndent, s));            
+            writer.WriteLine(IndentedString(nIndent, "{"));
+            foreach (AstExpr x in mTerms)
+                x.Output(writer, nIndent + 1);
             writer.WriteLine(IndentedString(nIndent, "}"));
         }
     }
-
 
     public class AstName : AstExpr
     {
         public AstName(AstNode node) : base(node)
         {
             CheckLabel("name");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }        
         
         public AstName(string sOp, string sComment)
-            : base("name", sOp, true)
+            : base("name", sOp)
         {
             SetComment(sComment);
         }
@@ -245,7 +267,7 @@ namespace Cat
         public AstParam(AstNode node) : base(node)
         {
             CheckLabel("param");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }
 
         public override void Output(TextWriter writer, int nIndent)
@@ -271,7 +293,7 @@ namespace Cat
         }
 
         public AstQuote(AstExpr expr)
-            : base("quote", "", false)
+            : base("quote", "")
         {
             Terms.Add(expr);
         }
@@ -301,13 +323,12 @@ namespace Cat
         public AstInt(AstNode node) : base(node)
         {
             CheckLabel("int");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }
 
         public AstInt(int n)
-            : base("int", n.ToString(), true)
-        {
-        }
+            : base("int", n.ToString())
+        { }
 
         public int GetValue()
         {
@@ -320,7 +341,7 @@ namespace Cat
         public AstChar(AstNode node) : base(node)
         {
             CheckLabel("char");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }
 
         public char GetValue()
@@ -334,7 +355,7 @@ namespace Cat
         public AstString(AstNode node) : base(node)
         {
             CheckLabel("string");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }
 
         public string GetValue()
@@ -350,7 +371,7 @@ namespace Cat
         public AstFloat(AstNode node) : base(node)
         {
             CheckLabel("float");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }
 
         public double GetValue()
@@ -364,12 +385,98 @@ namespace Cat
         public AstHex(AstNode node) : base(node)
         {
             CheckLabel("hex");
-            CheckIsLeaf();
+            CheckIsLeaf(node);
         }
 
-        public string Getvalue()
+        public int GetValue()
         {
-            return ToString();
+            return int.Parse(ToString(), NumberStyles.HexNumber);
         }
     }
+
+    public class AstType : CatAstNode
+    {
+        public AstType(AstNode node)
+            : base(node)
+        {
+        }
+    }
+
+    public class AstStack : CatAstNode
+    {
+        public List<AstType> mTypes = new List<AstType>();
+
+        public AstStack(AstNode node)
+            : base(node)
+        {
+            CheckLabel("stack");
+            foreach (AstNode child in node.GetChildren())
+            {
+                CatAstNode tmp = Create(child);
+                if (!(tmp is AstType))
+                    throw new Exception("stack AST node should only have type AST nodes as children");
+                mTypes.Add(tmp as AstType);
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "";
+            foreach (AstType x in mTypes)
+                result += x.ToString() + " ";
+            return result;
+        }
+    }
+
+    public class AstTypeVar : AstType
+    {
+        public AstTypeVar(AstNode node)
+            : base(node)
+        {
+            CheckLabel("type_var");
+            CheckIsLeaf(node);
+        }
+    }
+
+    public class AstSimpleType : AstType
+    {
+        public AstSimpleType(AstNode node)
+            : base(node)
+        {
+            CheckLabel("type_name");
+            CheckIsLeaf(node);
+        }
+    }
+
+    public class AstStackVar : AstType
+    {
+        public AstStackVar(AstNode node)
+            : base(node)
+        {
+            CheckLabel("stack_var");
+            CheckIsLeaf(node);
+        }
+    }
+
+    public class AstFxnType : AstType
+    {
+        public AstStack mProd;
+        public AstStack mCons;
+
+        public AstFxnType(AstNode node)
+            : base(node)
+        {
+            CheckChildCount(node, 2);
+            mCons = new AstStack(node.GetChild(0));
+            mProd = new AstStack(node.GetChild(1));
+        }
+
+        public override string ToString()
+        {
+            return "( " + mCons.ToString() + "-> " + mProd.ToString() + ")";
+        }
+
+    }
+
+
 }

@@ -139,7 +139,7 @@ namespace Cat
 
             for (int i = 0; i < nMax - 1; ++i)
             {
-                result += nth(count() - (i + 1)).ToString();
+                result += MainClass.ObjectToString(nth(count() - (i + 1)));
                 result += ", ";
             }
 
@@ -149,7 +149,7 @@ namespace Cat
             }
 
             if (count() > 0)
-                result += nth(0).ToString();
+                result += MainClass.ObjectToString(nth(0));
             result += ")";
             return result;
         }
@@ -444,53 +444,50 @@ namespace Cat
     /// </summary>
     public class LazyList : CatList 
     {
-        Object mInit;
-        Function mNext;
-        Function mCond;
-        Function mMapF;
+        Object moInit;
+        Function mfNext;
+        Function mfCond;
+        Function mfMap;
+        Function mfFilter;
 
-        private LazyList(Object init, Function cond, Function next, Function mapf)
+        public LazyList(Object init, Function cond, Function next, Function filterf, Function mapf)
         {
-            mInit = init;
-            mNext = next;
-            mCond = cond;
-            mMapF = mapf;
-        }
-
-        public LazyList(Object init, Function cond, Function next)
-        {
-            mInit = init;
-            mNext = next;
-            mCond = cond;
-            mMapF = null;
+            moInit = init;
+            mfNext = next;
+            mfCond = cond;
+            mfMap = mapf;
+            mfFilter = filterf;
         }
 
         public override CatList dup()
         {
-            return new LazyList(mInit, mCond, mNext, mMapF);
+            return new LazyList(moInit, mfCond, mfNext, mfFilter, mfMap);
         }
 
         public override int count()
         {
             int n = 0;
-            Object o = mInit;
-            while ((bool)mCond.Invoke(o))
+            Object o = moInit;
+            while ((bool)mfCond.Invoke(o))
             {
                 ++n;
-                o = mNext.Invoke(o);
+                o = mfNext.Invoke(o);
             }
             return n;           
         }
 
         private Object nomap_nth(int n)
         {
-            Object o = mInit;
-            while ((bool)mCond.Invoke(o))
+            Object o = moInit;
+            while ((bool)mfCond.Invoke(o))
             {
-                if (n-- == 0)
-                    return o;
+                if ((bool)mfFilter.Invoke(o))
+                {
+                    if (n-- == 0)
+                        return o;
+                }
 
-                o = mNext.Invoke(o);
+                o = mfNext.Invoke(o);
             }
             throw new Exception("out of bounds");
         }
@@ -498,39 +495,35 @@ namespace Cat
         public override Object nth(int n)
         {
             Object o = nomap_nth(n);
-            if (mMapF != null)
-                return mMapF.Invoke(o);
-            else
-                return o;
+            return mfMap.Invoke(o);
         }
         public override CatList drop(int n)
         {
-            return new LazyList(nomap_nth(n), mNext, mCond, mMapF);
+            return new LazyList(nomap_nth(n), mfCond, mfNext, mfFilter, mfMap);
         }
         public override Object head()
         {
-            if (mMapF != null)
-                return mMapF.Invoke(mInit);
-            else
-                return mInit;
+            return nth(0);
         }
         public override CatList vmap(Function f)
         {
-            if (mMapF == null)
-                return new LazyList(mInit, mCond, mNext, f);
-            else
-                return new LazyList(mInit, mCond, mNext, new ComposedFunction(mMapF, f));
+            return new LazyList(moInit, mfCond, mfNext, mfFilter, new ComposedFunction(mfMap, f));
+        }
+        public override CatList vfilter(Function f)
+        {
+            ComposedFunction mfNewFilter = new ComposedFunction(new ComposedFunction(mfFilter, f), new Primitives.And());
+            return new LazyList(moInit, mfCond, mfNext, mfNewFilter, mfMap);
         }
         public override string ToString()
         {
             string result = ")";
-            if ((bool)mCond.Invoke(mInit))
+            if ((bool)mfCond.Invoke(moInit))
             {
                 result = nth(0).ToString() + result;
-                Object next = mNext.Invoke(mInit);
-                if ((bool)mCond.Invoke(next))
+                Object next = mfNext.Invoke(moInit);
+                if ((bool)mfCond.Invoke(next))
                 {
-                    result = ".. " + nth(1).ToString() + ", " + result;
+                    result = ".. " + MainClass.ObjectToString(nth(1)) + ", " + result;
                 }
             }
             result = "(" + result ;
@@ -538,22 +531,12 @@ namespace Cat
         }
         public override void WithEach(Accessor acc)
         {
-            Object cur = mInit;
-            if (mMapF != null)
+            Object cur = moInit;
+            while ((bool)mfCond.Invoke(cur))
             {
-                while ((bool)mCond.Invoke(cur))
-                {
-                    acc(mMapF.Invoke(cur));
-                    cur = mNext.Invoke(cur);
-                }
-            }
-            else
-            {
-                while ((bool)mCond.Invoke(cur))
-                {
-                    acc(cur);
-                    cur = mNext.Invoke(cur);
-                }
+                if ((bool)mfFilter.Invoke(cur))
+                    acc(mfMap.Invoke(cur));
+                cur = mfNext.Invoke(cur);
             }
         }
     }    

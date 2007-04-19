@@ -43,10 +43,14 @@ namespace Cat
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(392, 366);
+            this.ControlBox = false;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "GraphWindow";
             this.Text = "Cat Graphics Window";
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.GraphWindow_Paint);
             this.Resize += new System.EventHandler(this.GraphWindow_Resize);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GraphWindow_FormClosing);
             this.ResumeLayout(false);
 
         }

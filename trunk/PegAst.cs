@@ -39,9 +39,6 @@ namespace Peg
         public void Complete(Parser p)
         {
             mnCount = p.GetPos() - mnBegin;
-            // An AST node with 0 length is probably a mistake. If you do intend 
-            // to have 0 length nodes then change the next line. 
-            Trace.Assert(mnCount > 0);
         }
 
         public AstNode GetParent()
@@ -52,11 +49,6 @@ namespace Peg
         public void Remove(AstNode x)
         {
             mChildren.Remove(x);
-        }
-
-        public bool IsLeaf()
-        {
-            return mChildren.Count == 0;
         }
 
         public string GetXmlDoc()
@@ -75,7 +67,7 @@ namespace Peg
         {
             string s = "<" + msLabel + ">\n";
 
-            if (IsLeaf())
+            if (GetNumChildren() == 0)
             {
                 s += ToString();
             }

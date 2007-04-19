@@ -1,4 +1,3 @@
-//
 // Cat Standard Library
 // by Christopher Diggins
 // http://www.cdiggins.com
@@ -146,24 +145,30 @@ define arg9 : (list -> var list) { 9 nth swap }
 // Used for converting from quotations inside of functions with named
 // arguments to point-free form by prepending the argument list.
 define embed_args
-{ [dup quote] dip compose swap }
+{ [dup qv] dip compose swap }
 
 //=============================================================================
 // Common predicates.
-// Predicate usually have the form: 'A -> 'A bool
 
-define eqz : (int -> int bool)  { dup 0 eq }
-define neqz : (int -> int bool) { eqz not }
-define gtz : (int -> int bool) { dup 0 gt }
-define gteqz : (int -> int bool) { dup 0 gteq }
-define ltz : (int -> int bool) { dup 0 lt }
-define lteqz : (int -> int bool) { dup 0 lteq }
+define eqz : ('a -> 'a bool)  { dup 0 eq }
+define neqz : ('a -> 'a bool) { eqz not }
+define gtz : ('a -> 'a bool) { dup 0 gt }
+define gteqz : ('a -> 'a bool) { dup 0 gteq }
+define ltz : ('a -> 'a bool) { dup 0 lt }
+define lteqz : ('a -> 'a bool) { dup 0 lteq }
 
 // Not really a predicate, but used to generate predicate
-define modn : (int int -> int bool) { dupd mod 0 eq }
+define modn : (int -> int bool) { dupd mod 0 eq }
 
 define even : (int -> int bool) { 2 modn }
 define odd : (int -> int bool) { dup inc mod 0 eq }
+
+define is_eq : ('a 'a -> 'a bool)  { dupd eq }
+define is_neq : ('a 'a -> 'a bool) { dupd neg }
+define is_gt : ('a 'a -> 'a bool) { dupd gt }
+define is_gteq : ('a 'a -> 'a bool) { dupd gteq }
+define is_lt : ('a 'a -> 'a bool) { dupd lt }
+define is_lteq : ('a 'a -> 'a bool) { dupd lteq }
 
 //=============================================================================
 // Predicate generation functions
@@ -211,8 +216,14 @@ define compare : ('a 'a -> 'a 'a bool)
 //=============================================================================
 // Additional mathematical definitions
 
+// Increment a value (sometimes called succ or successor)
 define inc : (int -> int) { 1 add }
+
+// Decrement a value (sometimes called pred or predecesssor)
 define dec : (int -> int) { 1 sub }
+
+// Treats top two values as a fraction 6 2 3 frac = 6 * (2 / 3)
+define frac : (int int int -> int) { [mul] dip div }
 
 //=============================================================================
 // Mathematical symbols
@@ -228,6 +239,7 @@ define <= { lteq }
 define >= { gteq }
 define == { eq }
 define != { neq }
+define /% : (int int -> int int) { dup2 % [/] dip }
 
 //=============================================================================
 // Additional combinators
@@ -267,6 +279,14 @@ define ,
 
 define )
 { cons }
+
+// simple generator
+define gen : (init='a next=('a -> 'a) term=('a -> bool) -> list)
+{ [true] [] gen_filter_map }
+
+// list comprehension
+define lc : (list filterf=('a -> bool) mapf=('a -> 'b) -> list)
+{ [filter] dip map }
 
 define swons : (var list -> list)
 { swap cons }
@@ -312,6 +332,8 @@ define all : (list ('a -> bool) -> bool)
 define rev : (list -> list)
 { nil [cons] fold }
 
+
+
 //=============================================================================
 // Infinite list generators
 
@@ -330,12 +352,12 @@ define negatives : ( -> list)
 //=============================================================================
 // Function manipulation operators
 
-// Quote operation aliases
+// qv operation aliases
 define constantly : ('a -> ( -> 'a))
-{ quote }
+{ qv }
 
 define curry : ('a ('B 'a -> 'C) -> ('B -> 'C))
-{ [quote] dip compose }
+{ [qv] dip compose }
 
 define curry2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
 { curry curry }
@@ -350,7 +372,7 @@ define curry5 : ('a 'b 'c 'd 'e ('F 'a 'b 'c 'd 'e -> 'G) -> ('F -> 'G))
 { curry curry curry curry curry }
 
 define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
-{ quote swap compose }
+{ qv swap compose }
 
 //==============================================================================
 // Looping constructions
@@ -387,7 +409,7 @@ define sum : (list -> var)
 define hash_safe_get : (hash_list key=var default=var -> hash_list var)
 {
   [[hash_contains] keep] dip // => hash_list bool key default
-  quote                      // => hash_list bool key [default]
+  qv                      // => hash_list bool key [default]
   [[hash_get] curry] dip     // => hash_list bool [key hash_get] [default]
   if                         // => hash_list result
 }
@@ -411,3 +433,15 @@ define self_join : (list -> list)
 // performs an inner join on two lists of pairs
 define join : (list list -> list)
 { cat self_join }
+
+//=============================================================================
+// Deprecated operators
+
+define quote
+{ "'quote' has been replaced with 'qv' and 'constantly'" error }
+
+define foldl
+{ "'foldl' has been replaced with 'fold'" error }
+
+define clr
+{ "'clr' has been replaced with 'clear'" error }

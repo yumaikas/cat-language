@@ -4,7 +4,6 @@ define test : (('a -> 'b) list -> bool)
   compare_lists
 }
 
-
 define test_list : ( -> list)
 {
   ((1, "a"),(2, "b"),(3, "a"),(4, "c"),(5, "b"),(6, "a"))
@@ -13,38 +12,6 @@ define test_list : ( -> list)
 define list_to_hash_test
 { test_list self_join }
 
-
-// This is essentially a non-distributed naive implementation of the google MapReduce algorithm
-//
-// In pseduo-code:
-//
-//   map_reduce(input fmap freduce) == input fmap flatten self_join freduce map
-//
-// where:
-//
-//     input = list(pair('input_value, 'input_key))
-//     fmap = pair('input_value, 'input_key)) -> list(pair('output_value, 'output_key))
-//     freduce = pair(list('output_value), 'output_key) -> pair('output_value, 'output_key)
-//
-define map_reduce { [map flatten self_join] dip map }
-
-define test_strings
-{
-  (
-    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1),
-    (("I", "am", "very", "lazy"), 2),
-    (("I", "hope", "this", "is", "over", "quick"), 3),
-    (("I", "have", "high", "hopes", "for", "the", "lazy", "dog"), 4)
-  )
-}
-define test_m
-{ unpair pop [1 swap pair] map }
-
-define test_r
-{ unpair [sum] dip pair }
-
-define test_map_reduce
-{ test_strings [test_m] [test_r] map_reduce print_list }
 
 define if_swap : ('a 'a  ('a 'a -> 'a 'a bool) -> 'a 'a)
 { eval [] [swap] if }
@@ -61,43 +28,5 @@ define sorted_insert : (list 'a -> list)
 define insert_sort
 { }
 
-
 //===========================================================================
 
-Given:
-
-    sum = 0;
-    for (int i = 0; i < array.length; i++)
-        for (int j = i; j < array.length; j++)
-            eval(closure{sum += array[i] * array[j]});
-    return sum;
-
-Step 1:
-
-    sum = 0;
-    subarray = array;
-    foreach (x in array)
-        foreach (y in subarray)
-            eval(closure{sum += x * y});
-            subarray = subarray.tail();
-    return sum;
-
-Step 2:
-
-  define outer : (array -> num)
-  {
-    dup 0 pair
-    [inner] fold
-  }
-
-  define inner : (pair(array, num), num -> pair(array, num))
-  {
-    [unpair] dip // stack=subarray, acc, x
-    [* +] curry fold // stack=subbarray, acc
-    [tail] dip // remove first item from sub array: stack=subarray, acc
-    pair // stack=pair(subarray, acc)
-  }
-
-Notice:
-
-  This is an inner diagonal
