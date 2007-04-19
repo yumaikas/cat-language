@@ -10,6 +10,17 @@ using System.Reflection;
 namespace Cat
 {
     /// <summary>
+    /// Not used much yet. I am playing with the idea of forcing every class to implement this. 
+    /// I am not yet 100% convinced that it would be a good idea. 
+    /// </summary>
+    public interface ICatObject
+    {
+        void pop();
+        ICatObject dup();
+        string str();
+    }
+    
+    /// <summary>
     /// By inheriting from this class, there are some utility functions
     /// which are provided and can be called using an unqualified name. 
     /// </summary>

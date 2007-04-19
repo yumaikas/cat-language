@@ -31,7 +31,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.10.4 April 7th, 2007");
+                    WriteLine("version 0.10.5 April 17th, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -42,12 +42,11 @@ namespace Cat
                 }
 
                 // Load primitive operations 
-                RegisterPrimitives(Scope.Global());
+                RegisterPrimitives(Executor.Main.GetGlobalScope());
                 
                 // Load all files on the command line                
                 foreach (string sFile in MainClass.gsInputFiles)
                     Executor.Main.LoadModule(sFile);
-
 
                 if (gsInputFiles.Count == 0)
                 {
@@ -170,12 +169,12 @@ namespace Cat
 
         public static void OutputDefs(string sLineBegin, string sDiv, string sLineEnd)
         {
-            foreach (Function f in Scope.Global().GetAllFunctions())
+            foreach (Function f in Executor.Main.GetGlobalScope().GetAllFunctions())
             {
                 //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
                 WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
             }
-            foreach (List<Method> list in Scope.Global().GetAllMethods())
+            foreach (List<Method> list in Executor.Main.GetGlobalScope().GetAllMethods())
             {
                 foreach (Method f in list)
                 {
@@ -187,34 +186,13 @@ namespace Cat
         #endregion
 
         #region console/loggging output function
-        public static void WriteArrayList(ArrayList a)
-        {
-            Write("(");
-            for (int i = 0; i < a.Count; ++i)
-            {
-                if (i > 0) {
-                    Write(",");
-                }
-                Write(a[i]);
-            }
-            Write(")");
-        }
         public static void Write(object o)
         {
-            if (o is ArrayList) WriteArrayList(o as ArrayList);
-            else Write(o.ToString());
+            Write(ObjectToString(o));
         }
         public static void WriteLine(object o)
         {
-            if (o is ArrayList)
-            {
-                WriteArrayList(o as ArrayList);
-                WriteLine("");
-            }
-            else
-            {
-                WriteLine(o.ToString());
-            }
+            WriteLine(ObjectToString(o));
         }
         public static void Write(string s, object o)
         {
@@ -240,6 +218,33 @@ namespace Cat
             gpTranscript.WriteLine(s);
         }
 
+        public static string ObjectToString(object o)
+        {
+            if (o is string)
+            {
+                return "\"" + ((string)o) + "\"";
+            }
+            else if (o is ArrayList)
+            {
+                ArrayList a = o as ArrayList;
+                string result = "(";
+                int nMax = 5;
+                int n = Math.Min(a.Count, nMax);
+                for (int i = 0; i < n; ++i)
+                {
+                    if (i > 0) result += ", ";
+                    result += ObjectToString(a[i]);
+                }
+                if (a.Count > nMax)
+                    result += " ... ";
+                result += ")";
+                return result;
+            }
+            else
+            {
+                return o.ToString();
+            }
+        }
         public static void Prompt()
         {
             Write(">> ");
@@ -252,10 +257,8 @@ namespace Cat
             scope.Register(typeof(Primitives));
             scope.Register(typeof(CatList));
             scope.Register(typeof(HashList));
-            scope.Register(typeof(window));
-            scope.Register(typeof(gdi));
+            scope.Register(typeof(WindowManager));
         }
-
         #endregion
     }
 }

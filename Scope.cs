@@ -26,18 +26,10 @@ namespace Cat
         private List<Scope> mpChildren = new List<Scope>();
         private Dictionary<string, List<Method>> mpMethods = new Dictionary<string, List<Method>>();
         private Dictionary<string, Function> mpFunctions = new Dictionary<string, Function>();
-        static Scope gpGlobal = new Scope();
 
         public Scope()
         {
         }
-
-        #region static functions
-        public static Scope Global()
-        {
-            return gpGlobal;
-        }
-        #endregion
 
         #region public functions
         public Scope GetParent()
@@ -126,6 +118,22 @@ namespace Cat
             mpMethods[s].Add(f);
         }
 
+        public void AddObjectBoundMethod(Object o, MethodInfo meth)
+        {
+            if (!meth.IsPublic) 
+                return;
+            if (!meth.IsStatic)
+            {
+                Function f = new ObjectBoundMethod(o, meth);
+                AddFunction(f);
+            }
+            else
+            {
+                Function f = new ObjectBoundMethod(null, meth);
+                AddFunction(f);
+            }
+        }
+
         public Dictionary<String, Function>.ValueCollection GetAllFunctions()
         {
             return mpFunctions.Values;
@@ -166,5 +174,40 @@ namespace Cat
                 }
             }
         }
-   }
+
+        /// <summary>
+        /// Creates an ObjectBoundMethod for each public function in the object
+        /// </summary>
+        /// <param name="o"></param>
+        public void RegisterObject(Object o)
+        {
+            foreach (MemberInfo mi in o.GetType().GetMembers())
+            {
+                if (mi is MethodInfo)
+                {
+                    MethodInfo meth = mi as MethodInfo;
+                    AddObjectBoundMethod(o, meth);
+                }
+            }
+        }
+
+        public void UnregisterObject(Object o)
+        {
+            List<string> keys = new List<string>();
+            foreach (KeyValuePair<string, Function> kvp in mpFunctions)
+            {
+                if (kvp.Value is ObjectBoundMethod)
+                {
+                    ObjectBoundMethod obm = kvp.Value as ObjectBoundMethod;
+                    if (obm.GetObject() == o)
+                    {
+                        keys.Add(kvp.Key);
+                    }
+                }
+            }
+
+            foreach (string s in keys)
+                mpFunctions.Remove(s);
+        }
+    }
 }

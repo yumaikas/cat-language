@@ -91,79 +91,6 @@ namespace Cat
         MethodBase mMethod;
         MethodSignature mSig;
 
-        public static string TypeToString(Type t)
-        {
-            switch (t.Name)
-            {
-                case ("HashList"): return "hash_list";
-                case ("Int32"): return "int";
-                case ("Double"): return "float";
-                case ("CatList"): return "list";
-                case ("Object"): return "var";
-                case ("Function"): return "function";
-                case ("Boolean"): return "bool";
-                case ("String"): return "string";
-                case ("Char"): return "char";
-                default: return t.Name;
-            }
-        }
-
-        public static string MethodToTypeString(MethodBase m)
-        {
-            string s = "(";
-            
-            if (HasThisType(m))
-                s += "this=" + TypeToString(m.DeclaringType) + " ";
-            
-            foreach (ParameterInfo pi in m.GetParameters())
-                s += TypeToString(pi.ParameterType) + " ";
-            
-            s += ") -> (";
-
-            if (HasThisType(m))
-                s += "this ";
-
-            if (HasReturnType(m))
-                s += TypeToString(GetReturnType(m));
-            
-            s += ")";
-            
-            return s;
-        }
-
-        public static Type GetReturnType(MethodBase m)
-        {
-            if (m is ConstructorInfo)
-                return (m as ConstructorInfo).DeclaringType;
-            if (!(m is MethodInfo))
-                throw new Exception("Expected ConstructorInfo or MethodInfo");
-            return (m as MethodInfo).ReturnType;
-        }
-
-        public static bool HasReturnType(MethodBase m)
-        {
-            Type t = GetReturnType(m);
-            return (t != null) && (!t.Equals(typeof(void)));
-        }     
-
-        public static bool HasThisType(MethodBase m)
-        {
-            if (m is ConstructorInfo)
-                return false;
-            return !m.IsStatic;
-        }
-
-        public static Type GetThisType(MethodBase m)
-        {
-            if (m is ConstructorInfo)
-                return null;
-            if (!(m is MethodInfo))
-                throw new Exception("Expected ConstructorInfo or MethodInfo");
-            if (m.IsStatic)
-                return null;
-            return (m as MethodInfo).DeclaringType;
-        }
-
         public static string MethodToDesc(MethodBase mi)
         {
             return "";
@@ -230,8 +157,10 @@ namespace Cat
         /// and the result (if applicable) is pushed onto the stack.
         /// </summary>
         /// <param name="stk"></param>
-        public override void Eval(CatStack stk)
+        public override void Eval(Executor exec)
         {
+            CatStack stk = exec.GetStack();
+
             // Throws an exception if any of the arguments are incorrect
             CheckCallIsValid(stk);
 

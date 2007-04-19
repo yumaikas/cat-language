@@ -109,11 +109,11 @@ namespace Cat
         }
         public static Rule TypeVar()
         {
-            return Seq(LowerCaseLetter(), Star(IdentNextChar()));
+            return AstNode("type_var", Seq(LowerCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule StackVar()
         {
-            return Seq(UpperCaseLetter(), Star(IdentNextChar()));
+            return AstNode("stack_var", Seq(UpperCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule TypeOrStackVar()
         {
@@ -121,7 +121,7 @@ namespace Cat
         }
         public static Rule TypeName()
         {
-            return Token(Ident());
+            return AstNode("type_name", Token(Ident()));
         }
         public static Rule TypeAlias()
         {
@@ -133,11 +133,11 @@ namespace Cat
         }
         public static Rule Production()
         {
-            return NoFail(Token(Star(TypeComponent())), "production matching should never fail");
+            return AstNode("stack", Token(Star(TypeComponent())));
         }
         public static Rule Consumption()
         {
-            return NoFail(Token(Star(TypeComponent())), "consumption matching should never fail");
+            return AstNode("stack", Token(Star(TypeComponent())));
         }
         public static Rule Arrow()
         {
@@ -145,7 +145,7 @@ namespace Cat
         }
         public static Rule FxnType()
         {
-            return Seq(Token("("), Production(), NoFail(Arrow(), "expected either -> or ~>"), Consumption(), NoFail(Token(")"), "expected closing paranthesis"));
+            return AstNode("type_fxn", Seq(Token("("), Production(), NoFail(Arrow(), "expected either -> or ~>"), Consumption(), NoFail(Token(")"), "expected closing paranthesis")));
         }
         public static Rule TypeDecl()
         {
