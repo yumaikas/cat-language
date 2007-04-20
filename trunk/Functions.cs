@@ -96,6 +96,11 @@ namespace Cat
             return delegate(object x, object y) { return Invoke(x, y); };
         }
 
+        public RangeGenFxn ToRangeGenFxn()
+        {
+            return delegate(int n) { return Invoke(n); };
+        }
+
         public virtual Object Invoke(Object[] args)
         {
             foreach (Object arg in args)

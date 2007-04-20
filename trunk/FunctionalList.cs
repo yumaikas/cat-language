@@ -15,9 +15,10 @@ namespace Cat
 
     /// <summary>
     /// This is a quasi-functional list. It implements common functional list operations. 
-    /// Lists that inherit from it are non-mutable, and can customize how they implement particular 
-    /// operations. The key behavior here is that functions generate specialized types to deal with
-    /// particular cases. 
+    /// Lists that inherit from it should be non-mutable, and can customize how they implement particular 
+    /// operations. The key behavior here is that functions generate optimized types to deal with
+    /// particular cases. This approach would be much easier to implement if we could assign values to 
+    /// the "this" pointer. 
     /// </summary>
     public abstract class CForEach
     {
@@ -47,6 +48,16 @@ namespace Cat
             return new CGenerator(o, next, cond);
         }
 
+        public static CForEach RangeGen(RangeGenFxn f, int first, int count)
+        {
+            return new CRangeGenerator(f, first, count);
+        }
+
+        public static CForEach Repeater(Object o)
+        {
+            return new CRepeater(o);
+        }
+
         public static CForEach Nil()
         {
             return nil;
@@ -62,9 +73,9 @@ namespace Cat
             return new CPair(x, y);
         }
 
-        public static CForEach Cons(object x, CForEach lis)
+        public static CForEach Cons(object x, CForEach list)
         {
-            return new CConsCell(list, x);
+            return new CConsCell(x, list);
         }
         #endregion
 
@@ -130,27 +141,15 @@ namespace Cat
         public virtual CForEach DropN(int n)
         {
             int cur = 0;
-            FilterFxn f = delegate(Object o)
-            {
-                if (cur++ < n)
-                    return false;
-                else
-                    return true;
-            };
-            return Filter(f);
+            FilterFxn f = delegate(Object o) { return (cur++ < n); };
+            return DropWhile(f);
         }
 
         public virtual CForEach TakeN(int n)
         {
             int cur = 0;
-            FilterFxn f = delegate(Object o)
-            {
-                if (cur++ < n)
-                    return true;
-                else
-                    return false;
-            };
-            return Filter(f);
+            FilterFxn f = delegate(Object o) { return (cur++ < n); };
+            return TakeWhile(f);
         }
 
         public virtual CForEach TakeRange(int first, int count)
@@ -331,7 +330,6 @@ namespace Cat
             {
                 return Concat(tmp, mSecond);
             }
-
         }
     }
 
@@ -353,13 +351,61 @@ namespace Cat
 
         public override CForEach TakeN(int n)
         {
-            if (n != 0) throw new Exception("list is empty");
             return this;
         }
 
         public override CForEach DropN(int n)
         {
-            if (n != 0) throw new Exception("list is empty");
+            return this;
+        }
+
+        public override CForEach TakeRange(int first, int count)
+        {
+            return this;
+        }
+
+        public override CForEach TakeWhile(FilterFxn f)
+        {
+            return this;
+        }
+
+        public override CForEach DropWhile(FilterFxn f)
+        {
+            return this;
+        }
+
+        public override CForEach Filter(FilterFxn f)
+        {
+            return this;
+        }
+
+        public override CForEach Map(MapFxn f)
+        {
+            return this;
+        }
+
+        public override object Fold(object init, FoldFxn f)
+        {
+            return init;
+        }
+
+        public override object Nth(int n)
+        {
+            throw new Exception("empty list");
+        }
+
+        public override object Last()
+        {
+            throw new Exception("empty list");
+        }
+
+        public override object First()
+        {
+            throw new Exception("empty list");
+        }
+
+        public override CForEach Rest()
+        {
             return this;
         }
     }
@@ -423,6 +469,36 @@ namespace Cat
         public override object Fold(object init, FoldFxn f)
         {
             return f(init, m);
+        }
+
+        public override CForEach DropN(int n)
+        {
+            if (n == 0) return this;
+            else return Nil();
+        }
+    
+        public override CForEach TakeN(int n)
+        {
+            if (n == 0) return Nil();
+            else return this;
+        }
+
+        public override CForEach DropWhile(FilterFxn f)
+        {
+            if (f(m)) return Nil();
+            else return this;
+        }
+
+        public override CForEach TakeWhile(FilterFxn f)
+        {
+            if (f(m)) return this;
+            else return Nil();
+        }
+
+        public override object Nth(int n)
+        {
+            if (n != 0) throw new Exception("out of range");
+            return m;
         }
     }
 
@@ -495,6 +571,61 @@ namespace Cat
         {
             return f(f(init, mFirst), mSecond);
         }
+
+        public override CForEach DropN(int n)
+        {
+            switch (n)
+            {
+                case (0) : 
+                    return this;
+                case (1) :
+                    return Unit(mSecond);
+                default :
+                    return Nil();
+            }
+        }
+
+        public override CForEach TakeN(int n)
+        {
+            switch (n)
+            {
+                case (0):
+                    return Nil();
+                case (1):
+                    return Unit(mFirst);
+                default:
+                    return this;
+            }
+        }
+
+        public override object Nth(int n)
+        {
+            switch (n)
+            {
+                case (0):
+                    return mFirst;
+                case (1):
+                    return mSecond;
+                default:
+                    throw new Exception("out of range");
+            }
+        }
+
+
+        public override CForEach DropWhile(FilterFxn f)
+        {
+            if (!f(mFirst)) return this;
+            if (!f(mSecond)) return Unit(mSecond);
+            return Nil();
+        }
+
+        public override CForEach TakeWhile(FilterFxn f)
+        {
+            if (!f(mFirst)) return Nil();
+            if (!f(mSecond)) return Unit(mFirst);
+            return this;
+        }
+
     }
 
     public class CArray : CForEach
@@ -561,8 +692,11 @@ namespace Cat
 
         public override CForEach TakeRange(int first, int count)
         {
-            if (first + count > m.Length)
-                throw new Exception("Invalid range");
+            if ((first == 0) && (count == Count())) 
+                return this;
+
+            if (first + count > Count())
+                count = Count() - first;
 
             switch (count)
             {
@@ -575,6 +709,28 @@ namespace Cat
                 default: 
                     return new CRangedArray(m, first, count);
             }
+        }
+
+        public override CForEach DropWhile(FilterFxn f)
+        {
+            int i = 0;
+            while (i < m.Length)
+                if (!f(m[i++]))
+                    break;
+            if (i == m.Length) return Nil();
+            if (i == 1) return this;
+            return new CRangedArray(m, i, Count() - i);
+        }
+
+        public override CForEach TakeWhile(FilterFxn f)
+        {
+            int i = 0;
+            while (i < m.Length)
+                if (!f(m[i++]))
+                    break;
+            if (i == m.Length) return this;
+            if (i == 1) return Nil();
+            return new CRangedArray(m, 0, i);
         }
     }
 
@@ -590,8 +746,8 @@ namespace Cat
                 throw new Exception("Invalid range, count must be more than two (otherwise use pair, unit, or nil)");             
             if (first < 0)
                 throw new Exception("Invalid range, first index must be non-negative");
-            if (first + count > a.Length) 
-                throw new Exception("Invalid range");
+            if (first + count > a.Length)
+                count = a.Length - first;
             mArray = a;
             mFirst = first;
             mCount = count;
@@ -785,18 +941,15 @@ namespace Cat
     public class CRepeater : CForEach
     {
         object mObject;
-        int mCount;
 
-        public CRepeater(Object o, int n)
+        public CRepeater(Object o)
         {
             mObject = o;
-            mCount = n;
         }
 
         public override void ForEach(Accessor a)
         {
-            for (int i = 0; i < mCount; ++i)
-            {
+            while (true) {
                 a(mObject);
             }
         }
@@ -804,17 +957,7 @@ namespace Cat
         #region override functions
         public override bool IsEmpty()
         {
-            return mCount == 0;
-        }
-
-        public override int Count() 
-        {
-            return mCount;
-        }
-
-        public override CForEach Map(MapFxn f)
-        {
-            return new CRepeater(f(mObject), mCount);
+            return false;
         }
 
         public override object Nth(int n)
@@ -829,7 +972,7 @@ namespace Cat
 
         public override CForEach Rest()
         {
-            return new CRepeater(mObject, mCount - 1);
+            return this;
         }
 
         public override Object Last()
@@ -845,20 +988,46 @@ namespace Cat
                 return Nil();
         }
 
+        public override int Count()
+        {
+            throw new Exception("infinite list");
+        }
+
+        public override object Fold(object init, FoldFxn f)
+        {
+            throw new Exception("infinite list");
+        }
+
+        public override CForEach Map(MapFxn f)
+        {
+            return new CRepeater(f(mObject));
+        }
+
         public override CForEach DropN(int n)
         {
-            return new CRepeater(mObject, mCount - n);
+            return this;
         }
 
         public override CForEach TakeN(int n)
         {
-            return new CRepeater(mObject, n);
+            return RangeGen(delegate(int i) { return mObject; }, 0, n);
         }
 
         public override CForEach TakeRange(int first, int count)
         {
-            return new CRepeater(mObject, count);
+            return TakeN(count);
         }
+
+        public override CForEach TakeWhile(FilterFxn f)
+        {
+            return Gen(mObject, delegate(Object x) { return mObject; }, f);
+        }
+
+        public override CForEach DropWhile(FilterFxn f)
+        {
+            return this;
+        }
+
         #endregion
     }
 
@@ -916,18 +1085,18 @@ namespace Cat
 
         public override CForEach DropN(int n)
         {
-            return TakeRange(n, mCount - n);
+            return TakeRange(mFirst + n, mCount - n);
         }
 
         public override CForEach TakeN(int n)
         {
-            return TakeRange(0, n);
+            return TakeRange(mFirst, n);
         }
 
         public override CForEach TakeRange(int first, int count)
         {
-            if (count == mCount)
-                return this;
+            if (count + first > mCount)
+                count = mCount - first;
 
             switch (count)
             {

@@ -336,6 +336,47 @@ namespace Cat
             }
         }
 
+        public class IsEmpty : Function
+        {
+            public IsEmpty()
+                : base("empty", "(list -> list bool)", "returns true if the list is empty")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CForEach list = exec.Peek() as CForEach;
+                exec.Push(list.IsEmpty());
+            }
+        }
+
+        public class Count : Function
+        {
+            public Count()
+                : base("count", "(list -> list int)", "returns the number of items in a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CForEach list = exec.Peek() as CForEach;
+                exec.Push(list.Count());
+            }
+        }
+
+        public class Nth : Function
+        {
+            public Nth()
+                : base("nth", "(list int -> list var)", "returns the nth item in a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = (int)exec.Pop();
+                CForEach list = exec.Peek() as CForEach;
+                exec.Push(list.Nth(n));
+            }
+        }
+
+
         public class Gen : Function
         {
             public Gen()
@@ -399,7 +440,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 object x = exec.Pop();
-                CForEach list = exec.Pop();
+                CForEach list = exec.Pop() as CForEach;
  	            exec.Push(CForEach.Cons(x, list));
             }
         }
@@ -499,21 +540,106 @@ namespace Cat
             }
         }
 
-        // TODO: finish (and don't forget TakeRange, TakeWhile, etc/
-        public static int count(CForEach x)
-        { 
-            return x.Count();
-        }
-        public static Object nth(CForEach x, int n)
+        public class TakeN : Function
         {
-            return x.Nth();
+            public TakeN()
+                : base("take", "(list int -> list)", "creates a new list from the first n items")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = (int)exec.Pop();
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.TakeN(n));
+            }
         }
 
-        public static CForEach drop(CForEach x, int n)
+        public class DropN : Function
         {
-            return x.DropN(n);
+            public DropN()
+                : base("drop", "(list int -> list)", "creates a new list without the first n items")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = (int)exec.Pop();
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.DropN(n));
+            }
         }
 
+        public class TakeRange : Function
+        {
+            public TakeRange()
+                : base("take_range", "(list first=int count=int -> list)", "creates a new list which is a sub-range of the original")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int count = (int)exec.Pop();
+                int n = (int)exec.Pop();
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.TakeRange(n, count));
+            }
+        }
+
+        public class TakeWhile : Function
+        {
+            public TakeWhile()
+                : base("take_while", "(list ('a -> bool) -> list)", "creates a new list by taking items while the predicate is true")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.TakeWhile(f.ToFilterFxn()));
+            }
+        }
+
+        public class DropWhile : Function
+        {
+            public DropWhile()
+                : base("drop_while", "(list ('a -> bool) -> list)", "creates a new list by dropping items while the predicate is true")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.DropWhile(f.ToFilterFxn()));
+            }
+        }
+
+        public class RangeGen : Function
+        {
+            public RangeGen()
+                : base("range_gen", "((int -> 'a) first=int count=int -> list)", 
+                    "creates a lazy list from a range of numbers and a generating function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int count = (int)exec.Pop();
+                int n = (int)exec.Pop();
+                Function f = exec.Pop() as Function;
+                exec.Push(CForEach.RangeGen(f.ToRangeGenFxn(), n, count));
+            }
+        }
+
+        public class Repeater : Function
+        {
+            public Repeater()
+                : base("repeater", "(var -> list)", 
+                    "creates a lazy list by repeating a value over and over again")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Pop();
+                exec.Push(CForEach.Repeater(o));
+            }
+        }
         #endregion
 
         #region other function

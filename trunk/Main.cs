@@ -31,7 +31,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.10.5 April 17th, 2007");
+                    WriteLine("version 0.10.5 April 20th, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -210,27 +210,40 @@ namespace Cat
             gpTranscript.WriteLine(s);
         }
 
+        public static string ForEachToString(CForEach x)
+        {
+            string result = "( ";
+
+            int i = 0;
+            Accessor acc = delegate(Object o)
+            {
+                if (i++ > 0)
+                    result += ", ";
+                // we don't print the last one
+                // this way we know there is one more
+                // so the ellipsis (...) is appropriate
+                if (i <= 4)
+                    result += ObjectToString(o);
+            };
+            x.TakeN(5).ForEach(acc);
+
+            if (i == 5)
+                result += "...";
+
+            result += ")";
+
+            return result;
+        }
+
         public static string ObjectToString(object o)
         {
             if (o is string)
             {
                 return "\"" + ((string)o) + "\"";
             }
-            else if (o is ArrayList)
+            else if (o is CForEach )
             {
-                ArrayList a = o as ArrayList;
-                string result = "(";
-                int nMax = 5;
-                int n = Math.Min(a.Count, nMax);
-                for (int i = 0; i < n; ++i)
-                {
-                    if (i > 0) result += ", ";
-                    result += ObjectToString(a[i]);
-                }
-                if (a.Count > nMax)
-                    result += " ... ";
-                result += ")";
-                return result;
+                return ForEachToString(o as CForEach);
             }
             else
             {
