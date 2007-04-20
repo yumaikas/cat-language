@@ -20,22 +20,27 @@ namespace Cat
     {
         #region fields
         static public Executor Main = new Executor();
-        static public Executor Aux = new Executor();
+        static public Executor Aux = new Executor(Main.mpScope);
         private CatStack stack = new CatStack();
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
-        Scope scope = new Scope();
+        Scope mpScope;
         #endregion
 
         #region constructor
         public Executor()
         {
+            mpScope = new Scope();
         }
 
         public Executor(Executor exec)
         {
-            // Copy the old scope
-            scope = new Scope(exec.GetGlobalScope());
+            mpScope = new Scope(exec.GetGlobalScope());
+        }
+
+        public Executor(Scope scope)
+        {
+            mpScope = scope;
         }
         #endregion
 
@@ -119,7 +124,7 @@ namespace Cat
         #region environment serialization
         public Scope GetGlobalScope()
         {
-            return scope;
+            return mpScope;
         }
         public void Import()
         {
