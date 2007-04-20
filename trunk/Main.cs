@@ -174,14 +174,6 @@ namespace Cat
                 //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
                 WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
             }
-            foreach (List<Method> list in Executor.Main.GetGlobalScope().GetAllMethods())
-            {
-                foreach (Method f in list)
-                {
-                    //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
-                    WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
-                }
-            }
         }
         #endregion
 
@@ -254,10 +246,8 @@ namespace Cat
         #region register primitives
         public static void RegisterPrimitives(Scope scope)
         {
-            scope.Register(typeof(Primitives));
-            scope.Register(typeof(CatList));
-            scope.Register(typeof(HashList));
-            scope.Register(typeof(WindowManager));
+            scope.RegisterType(typeof(Primitives));
+            scope.RegisterType(typeof(WindowManager));
         }
         #endregion
     }

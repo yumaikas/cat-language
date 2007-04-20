@@ -103,5 +103,15 @@ namespace Cat
         }
 
         #endregion
+
+        public CForEach ToList()
+        {
+            object[] a = new object[Count];
+            for (int i = 0; i < Count; ++i)
+            {
+                a[Count - i - 1] = this[i];
+            }
+            return new CArray(a);
+        }
     }
 }

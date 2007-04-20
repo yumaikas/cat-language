@@ -332,27 +332,188 @@ namespace Cat
             {
                 Function f = exec.Pop() as Function;
                 f.Eval(Executor.Aux);
-                exec.Push(new StackToList(Executor.Aux.GetStack()));
+                exec.Push(Executor.Aux.GetStack().ToList());
             }
         }
 
-        public class GenFilterMap : Function
+        public class Gen : Function
         {
-            public GenFilterMap()
-                : base("gen_filter_map", "(init='a next=('a -> 'a) cond=('a -> bool) filterf=('a -> bool) mapf=('a -> 'b) -> list)",
-                    "creates a lazily evaluated list comprehension")
+            public Gen()
+                : base("gen", "(init='a next=('a -> 'a) cond=('a -> bool) -> list)",
+                    "creates a lazily evaluated list")
             { }
 
             public override void Eval(Executor exec)
             {
-                Function mapf = exec.Pop() as Function;
-                Function filterf = exec.Pop() as Function;
                 Function term = exec.Pop() as Function;
                 Function next = exec.Pop() as Function;
                 Object init = exec.Pop();
-                exec.Push(new LazyList(init, next, term, filterf, mapf));
+                exec.Push(new CGenerator(init, next.ToMapFxn(), term.ToFilterFxn()));
             }
         }
+
+        public class Nil : Function
+        {
+            public Nil()
+                : base("nil", "( -> list)", "creates an empty list")
+            { }
+
+            public override void  Eval(Executor exec)
+            {
+ 	            exec.Push(CForEach.Nil());
+            }
+        }
+
+        public class Unit : Function
+        {
+            public Unit()
+                : base("unit", "('a -> list)", "creates a list of one item")
+            { }
+
+            public override void  Eval(Executor exec)
+            {
+ 	            exec.Push(CForEach.Unit(exec.Pop()));
+            }
+        }
+
+        public class Pair : Function
+        {
+            public Pair()
+                : base("pair", "('a 'b -> list)", "creates a list from two items")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object x = exec.Pop();
+                Object y = exec.Pop();
+ 	            exec.Push(CForEach.Pair(y, x));
+            }
+        }
+
+        public class Cons : Function
+        {
+            public Cons()
+                : base("cons", "(list 'a -> list)", "prepends an item to a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                object x = exec.Pop();
+                CForEach list = exec.Pop();
+ 	            exec.Push(CForEach.Cons(x, list));
+            }
+        }
+
+        public class First : Function
+        {
+            public First()
+                : base("first", "(list -> var)", "gets the first item from a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CForEach list = exec.Pop() as CForEach;
+ 	            exec.Push(list.First());
+            }
+        }
+
+        public class Last : Function
+        {
+            public Last()
+                : base("last", "(list -> var)", "gets the last item from a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CForEach list = exec.Pop() as CForEach;
+ 	            exec.Push(list.Last());
+            }
+        }
+
+        public class Rest : Function
+        {
+            public Rest()
+                : base("rest", "(list -> list)", "gets a list without the first item")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.Rest());
+            }
+        }
+
+        public class Map : Function
+        {
+            public Map()
+                : base("map", "(list ('a -> 'b) -> list)", "creates a new list by modifying an existing list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.Map(f.ToMapFxn()));
+            }
+        }
+
+        public class Filter : Function
+        {
+            public Filter()
+                : base("filter", "(list ('a -> bool) -> list)", "creates a new list containing elements that pass the condition")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.Filter(f.ToFilterFxn()));
+            }
+        }
+        public class Fold : Function
+        {
+            public Fold()
+                : base("fold", "(list 'a ('a 'b -> 'a) -> 'a)", "recursively applies a function to each an accumlator")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                Object o = exec.Pop();
+                CForEach list = exec.Pop() as CForEach;
+                exec.Push(list.Fold(o, f.ToFoldFxn()));
+            }
+        }
+
+        public class Cat : Function
+        {
+            public Cat()
+                : base("cat", "(list list -> list)", "concatenates two lists")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CForEach second = exec.Pop() as CForEach;
+                CForEach first = exec.Pop() as CForEach;
+                exec.Push(CForEach.Concat(first, second));
+            }
+        }
+
+        // TODO: finish (and don't forget TakeRange, TakeWhile, etc/
+        public static int count(CForEach x)
+        { 
+            return x.Count();
+        }
+        public static Object nth(CForEach x, int n)
+        {
+            return x.Nth();
+        }
+
+        public static CForEach drop(CForEach x, int n)
+        {
+            return x.DropN(n);
+        }
+
         #endregion
 
         #region other function
