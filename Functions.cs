@@ -81,6 +81,21 @@ namespace Cat
             return Executor.Aux.GetStack()[0];
         }
 
+        public MapFxn ToMapFxn()
+        {
+            return delegate(object x) { return Invoke(x); };
+        }
+
+        public FilterFxn ToFilterFxn()
+        {
+            return delegate(object x) { return (bool)Invoke(x); };
+        }
+
+        public FoldFxn ToFoldFxn()
+        {
+            return delegate(object x, object y) { return Invoke(x, y); };
+        }
+
         public virtual Object Invoke(Object[] args)
         {
             foreach (Object arg in args)
@@ -379,34 +394,12 @@ namespace Cat
             msName = s;
         }
 
-        private bool IsBetterMatchThan(Function f, Function g)
-        {
-            // Methods are always better matches.
-            if (f is Method && !(g is Method)) return true;
-            if (!(f is Method) && g is Method) return false;
-
-            // A method with more parameters is always a better match
-            Method fm = f as Method;
-            Method gm = g as Method;
-
-            return fm.GetSignature().IsBetterMatchThan(gm.GetSignature());
-        }
-
         public override void Eval(Executor exec)
         {
             Scope scope = exec.GetGlobalScope();
             if (!scope.FunctionExists(msName))
                 throw new Exception(msName + " is not defined");
-            List<Function> fs = scope.Lookup(exec.GetStack(), msName);
-            if (fs.Count == 0)
-                throw new Exception("unable to find " + msName + " with matching types. Types on stack are " 
-                    + exec.GetStack().GetTopTypesAsString());
-            Function f = fs[0];
-            for (int i=1; i < fs.Count; ++i)
-            {
-                if (IsBetterMatchThan(fs[i], f))
-                    f = fs[i];
-            }
+            Function f = scope.Lookup(exec.GetStack(), msName);
             f.Eval(exec);
         }
     }

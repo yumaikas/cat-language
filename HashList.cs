@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace Cat
 {
-    class HashList
+    class HashList : ICatObject
     {
         HashList mNext;
         Dictionary<Object, Object> mDict = new Dictionary<object,object>();
@@ -18,21 +18,11 @@ namespace Cat
             mNext = this;
         }
 
-        public static HashList hash_list()
-        {
-            return new HashList();
-        }
-
         private HashList(HashList list)
         {
             mDict = list.mDict;
             mNext = list.mNext;
             list.mNext = this;
-        }
-
-        public HashList dup()
-        {
-            return new HashList(this);
         }
 
         private HashList MakeCopy()
@@ -51,45 +41,69 @@ namespace Cat
             return result;
         }
 
-        public static HashList hash_add(HashList h, Object key, Object value)
+        public HashList Add(Object key, Object value)
         {
-            HashList result = h;
+            HashList result = this;
             if (result.mNext != result)
-                result = h.MakeCopy();
+                result = MakeCopy();
             result.mDict.Add(key, value);
             return result;
         }
 
-        public static HashList hash_set(HashList h, Object key, Object value)
+        public HashList Set(Object key, Object value)
         {
-            HashList result = h;
+            HashList result = this;
             if (result.mNext != result)
-                result = h.MakeCopy();
+                result = MakeCopy();
             result.mDict[key] = value;
             return result;
         }
 
-        public Object hash_get(Object key)
+        public Object Get(Object key)
         {
             Object result = mDict[key];
             return result;
         }
 
-        public bool hash_contains(Object key)
+        public bool ContainsKey(Object key)
         {
             return mDict.ContainsKey(key);
         }
 
-        public static CatList hash_to_list(HashList h)
+        public CArray ToArray()
         {
-            CatStack stk = new CatStack();
-            foreach (KeyValuePair<Object, Object> pair in h.mDict)
+            CPair[] a = new CPair[mDict.Count];
+            int i = 0;
+            foreach (KeyValuePair<Object, Object> pair in mDict)
             {
-                CatList tmp = CatList.pair(pair.Value, pair.Key);
-                stk.Push(tmp);
+                a[i].mFirst = pair.Key;
+                a[i].mSecond = pair.Value;
+                ++i;
             }
-            CatList result = new StackToList(stk);
-            return result;
+            return new CArray(a);
         }
+
+        public override string ToString()
+        {
+            return "hash_list";
+        }
+
+        #region ICatObject Members
+
+        public void pop()
+        {
+        }
+
+        ICatObject ICatObject.dup()
+        {
+            return new HashList(this);
+        }
+
+        public string str()
+        {
+            return ToString();
+        }
+
+        #endregion
     }
 }

@@ -27,7 +27,19 @@ namespace Cat
         Scope scope = new Scope();
         #endregion
 
-        #region public functions
+        #region constructor
+        public Executor()
+        {
+        }
+
+        public Executor(Executor exec)
+        {
+            // Copy the old scope
+            scope = new Scope(exec.GetGlobalScope());
+        }
+        #endregion
+
+        #region stack functions
         public CatStack GetStack()
         {
             return stack;

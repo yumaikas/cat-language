@@ -19,10 +19,19 @@ namespace Cat
         List<String> mNames = new List<String>();
         List<Function> mFxns = new List<Function>();
         Mutex mMutex = new Mutex();
+        
+        Executor mExec;
+        Drawer mDrawer;
 
         public GraphWindow()
         {
             InitializeComponent();
+            // Clone the main executor
+            mExec = new Executor(Executor.Main);
+            // create a drawing object that uses this executor
+            mDrawer = new Drawer(mExec);
+            // register the drawing object with the executor
+            mExec.GetGlobalScope().RegisterObject(mDrawer);
         }
 
         public void ClearFxns()
@@ -47,9 +56,9 @@ namespace Cat
             Invoke(p);
         }
 
-        private Point CatListToPoint(CatList l)
+        private Point CatListToPoint(CForEach list)
         {
-            return new Point((int)l.nth(1), (int)l.nth(0));
+            return new Point((int)list.Nth(1), (int)list.Nth(0));
         }
 
         public void SaveToFile(string s)
@@ -57,24 +66,39 @@ namespace Cat
             mMutex.WaitOne();
 
             Bitmap b = new Bitmap(Width, Height, CreateGraphics());
-            gdi g = new gdi(this, Graphics.FromImage(b));
+            mDrawer.Initialize(Graphics.FromImage(b), this);
             foreach (Function f in mFxns) 
-                g.render(f);
+                mDrawer.render(f);
 
             b.Save(s);
 
             mMutex.ReleaseMutex();
         }
 
+        public delegate void Proc();
+
+        public void SafeClose()
+        {
+            if (InvokeRequired)
+            {
+                Proc p = SafeClose;
+                Invoke(p, null);
+            }
+            else
+            {
+                Close();
+            }
+        }
+
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
         {
             mMutex.WaitOne();
-            
-            gdi g = new gdi(this, e.Graphics);
-            foreach (Function f in mFxns)
-                g.render(f);
 
-            g.draw_turtle();
+            mDrawer.Initialize(e.Graphics, this);
+            foreach (Function f in mFxns)
+                mDrawer.render(f);
+
+            mDrawer.draw_turtle();
 
             mMutex.ReleaseMutex();
         }
@@ -86,19 +110,12 @@ namespace Cat
 
         private void GraphWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Note: this doesn't like it can ever be called.
-            if (e.CloseReason == CloseReason.UserClosing)
-            {
-                e.Cancel = true;
-                MessageBox.Show("Pop the window from the stack to close it");
-            }
         }
     }
 
-    public class gdi
+    public class Drawer
     {
-        public Executor mExec = new Executor();
-
+        Executor mExec;
         Pen mPen = new Pen(Color.Black);
         bool mbPenUp = false;
         Pen turtlePen = new Pen(Color.Blue);
@@ -107,10 +124,18 @@ namespace Cat
         GraphWindow mw;
         Graphics mg;
         
-        public gdi(GraphWindow w, Graphics g)
+        public Drawer(Executor exec)
         {
+            mExec = exec;
+        }
+
+        // not intended for the executor to see it, but no way to hide it.
+        public void Initialize(Graphics g, GraphWindow w)
+        {
+            mg = g;
             Point mOrigin = new Point(0, 0);
             mPen.LineJoin = LineJoin.Bevel;
+            turtlePen.Width = 1;
             mw = w;
             mg = g;
             mg.TranslateTransform(mw.Width / 2, mw.Height / 2);
@@ -123,16 +148,16 @@ namespace Cat
             f.Eval(mExec);
         }
 
-        public void rotate(int x)
+        public void rotate(double x)
         {
-            mg.RotateTransform(x);
+            mg.RotateTransform((float)x);
         }
 
-        public void line_to(int x, int y)
+        public void line_to(double x, double y)
         {
             if (!mbPenUp)
-                mg.DrawLine(mPen, 0, 0, x, y);
-            mg.TranslateTransform(x, y);
+                mg.DrawLine(mPen, 0, 0, (float)x, (float)y);
+            mg.TranslateTransform((float)x, (float)y);
         }
 
         public void scale(double x)
@@ -150,22 +175,22 @@ namespace Cat
             return mbPenUp;
         }
 
-        public void line(int x0, int y0, int x1, int y1)
+        public void line(double x0, double y0, double x1, double y1)
         {
             if (!mbPenUp)
-                mg.DrawLine(mPen, x0, y0, x1, y1);
+                mg.DrawLine(mPen, (float)x0, (float)y0, (float)x1, (float)y1);
         }
 
-        public void rectangle(int x, int y, int w, int h)
+        public void rectangle(double x, double y, double w, double h)
         {
             if (!mbPenUp)
-                mg.DrawRectangle(mPen, x, y, w, h);
+                mg.DrawRectangle(mPen, (float)x, (float)y, (float)w, (float)h);
         }
 
-        public void ellipse(int w, int h)
+        public void ellipse(double w, double h)
         {
             if (!mbPenUp)
-                mg.DrawEllipse(mPen, w/2, h/2, w, h);
+                mg.DrawEllipse(mPen, (float)w / 2, (float)h / 2, (float)w, (float)h);
         }
 
         public void draw_turtle_foot(int x, int y)
@@ -178,7 +203,7 @@ namespace Cat
 
         public void draw_turtle()
         {
-            int w = 32; 
+            int w = 26; 
             int h = 26;
 
             // draw feet
@@ -243,32 +268,31 @@ namespace Cat
             mPen.Brush = null;
         }
 
-        public void poly(CatList x)
+        public void poly(CForEach x)
         {
             mg.DrawPolygon(mPen, ListToPointArray(x));
         }
-        
-        public void lines(CatList x)
+
+        public void lines(CForEach x)
         {
             mg.DrawLines(mPen, ListToPointArray(x));
         }
 
         #region helper functions
-        private Point ListToPoint(CatList x)
+        private Point ListToPoint(CForEach x)
         {
-            return new Point((int)x.nth(1), (int)x.nth(0));
+            return new Point((int)x.Nth(1), (int)x.Nth(0));
         }
 
-        private Point[] ListToPointArray(CatList x)
+        private Point[] ListToPointArray(CForEach x)
         {
-            Point[] result = new Point[x.count()];
+            Point[] result = new Point[x.Count()];
             int i = 0;
-            Accessor acc = delegate(Object o)
+            x.ForEach(delegate(Object o)
             {
-                CatList tmp = o as CatList;
+                CForEach tmp = o as CForEach;
                 result[i++] = ListToPoint(tmp);
-            };
-            x.WithEach(acc);
+            });
             return result;
         }
         #endregion
@@ -280,7 +304,7 @@ namespace Cat
         static EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
 
         #region public functions
-        static public open_window()
+        static public void open_window()
         {            
             if (mWindow != null)
                 throw new Exception("window is already open");
@@ -292,9 +316,10 @@ namespace Cat
         static public void close_window()
         {
             mWindow.SafeClose();
+            mWindow = null;
         }
 
-        static public void clear_window()
+        static public void clear_screen()
         {
             mWindow.ClearFxns();
         }

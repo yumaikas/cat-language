@@ -4,6 +4,16 @@
 // this file is public domain
 
 //=============================================================================
+
+define ow
+{ open_window }
+
+define cw
+{ close_window }
+
+define cs
+{ clear_screen } 
+
 define fd
 { [0 line_to] curry render }
 

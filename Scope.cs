@@ -11,24 +11,30 @@ namespace Cat
 {
     /// <summary>
     /// A scope class holds definitions and definition lookup tables. 
+    /// It could have just as easily been called a "context"
     /// Every program and type is associated with a single scope. 
     /// The current implementation of Cat does not support nested scopes, so 
     /// for the time being everything shares the global scope. 
-    /// 
-    /// The inclusion of non-static Scope objects lays the groundwork for extending 
-    /// Cat with the idea of nested functions and namespaces. These are very important 
-    /// concepts for non-trivial software development. 
     /// </summary>
     public class Scope
     {
+        private Dictionary<string, Function> mpFunctions = new Dictionary<string, Function>();
+
+        // The following fields are not yet supported
         private string msName = "";
         private Scope mpParent = null;
-        private List<Scope> mpChildren = new List<Scope>();
-        private Dictionary<string, List<Method>> mpMethods = new Dictionary<string, List<Method>>();
-        private Dictionary<string, Function> mpFunctions = new Dictionary<string, Function>();
+        private List<Scope> mpChildren = null;
 
         public Scope()
         {
+        }
+
+        public Scope(Scope x)
+        {
+            foreach (KeyValuePair<string, Function> kvp in x.mpFunctions)
+            {
+                mpFunctions.Add(kvp.Key, kvp.Value);
+            }
         }
 
         #region public functions
@@ -62,35 +68,20 @@ namespace Cat
 
         public bool FunctionExists(string s)
         {
-            return mpMethods.ContainsKey(s) || mpFunctions.ContainsKey(s);
+            return mpFunctions.ContainsKey(s);
         }
 
-        public List<Function> Lookup(ITypeArray piTypes, string s)
+        public Function Lookup(ITypeArray piTypes, string s)
         {
-            List<Function> results = new List<Function>();
-
-            if (s.Length < 1) 
-                return results;
-
-            if (mpMethods.ContainsKey(s))
-            {
-                List<Method> methods = mpMethods[s];
-
-                foreach (Method m in methods)
-                    if (m.GetSignature().Matches(piTypes))
-                        results.Add(m);
-            }
-
             if (mpFunctions.ContainsKey(s))
-                results.Add(mpFunctions[s]);
-
-            return results;
+                return mpFunctions[s];
+            else
+                return null;
         }
 
         public void Clear()
         {
             mpChildren.Clear();
-            mpMethods.Clear();
             mpFunctions.Clear();
         }
 
@@ -107,15 +98,6 @@ namespace Cat
             {
                 mpFunctions.Add(s, f);
             }
-        }
-
-        public void AddMethod(Method f)
-        {
-            // TODO: someday check that there aren't conflicting method signatures.
-            string s = f.GetName();
-            if (!mpMethods.ContainsKey(s))
-                mpMethods.Add(s, new List<Method>());
-            mpMethods[s].Add(f);
         }
 
         public void AddObjectBoundMethod(Object o, MethodInfo meth)
@@ -138,14 +120,9 @@ namespace Cat
         {
             return mpFunctions.Values;
         }
-
-        public Dictionary<String, List<Method>>.ValueCollection GetAllMethods()
-        {
-            return mpMethods.Values;
-        }
         #endregion
 
-        public void Register(Type t)
+        public void RegisterType(Type t)
         {            
             foreach (Type memberType in t.GetNestedTypes())
             {
@@ -161,16 +138,18 @@ namespace Cat
                 }
                 else
                 {
-                    Register(memberType);
+                    RegisterType(memberType);
                 }
             }
             foreach (MemberInfo mi in t.GetMembers())
             {
-                if ((mi is MethodInfo) || (mi is ConstructorInfo))
+                if (mi is MethodInfo) 
                 {
-                    Method method = Method.Create(mi as MethodBase);
-                    if (method != null)
-                        AddMethod(method);
+                    MethodInfo meth = mi as MethodInfo;
+                    if (meth.IsStatic)
+                    {
+                        AddObjectBoundMethod(null, meth);
+                    }
                 }
             }
         }
