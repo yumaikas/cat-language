@@ -1,25 +1,76 @@
+/*
+  Public domain code by Christopher Diggins
+  this is a file designed to test a minimalist Cat implementation
+  with no standard library loaded.
 
-define test_list : ( -> list)
+  There is not even a console requirement, so a compiled version
+  should be able to be executed directly on hardware.
+*/
+
+define test : (( -> bool) -> )
 {
-  ((1, "a"),(2, "b"),(3, "a"),(4, "c"),(5, "b"),(6, "a"))
+  dup eval [pop] [throw] if
 }
 
-define list_to_hash_test
-{ test_list self_join }
+define test0
+{
+  // if tests
+  [true [true] [false] if] test
+  [false [false] [true] if] test
+  [false [true] [false] if not] test
+  [true [false] [true] if not] test
 
-define if_swap : ('a 'a  ('a 'a -> 'a 'a bool) -> 'a 'a)
-{ eval [] [swap] if }
+  // boolean tests
+  [true] test
+  [true not not] test
+  [false not] test
+  [false not not not] test
 
-//============================================================================
-// Sorting functions
+  // and tests
+  [true true and] test
+  [true false and not] test
+  [false true and not] test
+  [false false and not] test
 
-define ordered_swap : ('a 'a -> 'a 'a)
-{ compare [] [swap] if }
+  // or tests
+  [true true or] test
+  [true false or] test
+  [false true or] test
+  [false false or not] test
 
-define sorted_insert : (list 'a -> list)
-{ nil [uncons] dip [swapd swap cons] [[empty not] dip] while cat }
+  // basic equality tests
+  [0 0 eq] test
+  [1 1 eq] test
+  [0 1 eq not] test
+  [1 0 eq not] test
 
-define insert_sort
-{ }
+  // basic comparison tests
+  [0 0 lteq] test
+  [0 0 gteq] test
+  [0 1 lt] test
+  [0 1 lteq] test
+  [0 1 gt not] test
+  [0 1 gteq not] test
+  [1 0 lt not] test
+  [1 0 lteq not] test
+  [1 0 gt] test
+  [1 0 gteq] test
+  [1 1 lt not] test
+  [1 1 lteq] test
+  [1 1 gt not] test
+  [1 1 gteq] test
 
-//===========================================================================
+  // Swap tests
+  [1 2 pop 1 eq] test
+  [1 2 swap pop 2 eq] test
+  [1 2 swap swap pop 1 eq] test
+
+  // Dip tests
+  [2 [1] dip pop 1 eq] test
+  [1 [2] dip pop 2 eq] test
+  [1 2 3 [swap] dip pop pop 2 eq] test
+  [1 2 3 [pop] dip pop 1 eq] test
+  [1 2 3 [pop pop] dip 3 eq] test
+  [1 2 3 [[pop] dip pop] dip 3 eq] test
+  [1 2 3 [[pop] dip] dip swap pop 3 eq] test
+}
