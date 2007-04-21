@@ -8,6 +8,21 @@ using System.Text;
 
 namespace Cat
 {
+    public class CatException : Exception
+    {
+        object data;
+
+        public CatException(object o)
+        {
+            data = o;
+        }
+
+        public object GetObject()
+        {
+            return data;
+        }
+    }
+
     public class Primitives
     {
         #region primitive function classes
@@ -95,6 +110,48 @@ namespace Cat
             {
                 Function f = exec.Pop() as Function;
                 f.Eval(exec);
+            }
+        }
+
+        public class Throw : Function
+        {
+            public Throw()
+                : base("throw", "(var -> )", "throws an exception")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                object o = exec.Pop();
+                     throw new CatException(o);
+            }
+        }
+
+        public class TryCatch : Function
+        {
+            public TryCatch()
+                : base("try_catch", "('A ('A -> 'B) ('A var -> 'B) -> 'B)", "evaluates a function, and catches any exceptions")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function c = exec.Pop() as Function;
+                Function t = exec.Pop() as Function;
+                object[] stkCopy = new object[exec.GetStack().Count];
+                exec.GetStack().CopyTo(stkCopy);
+                try
+                {
+                    t.Eval(exec);
+                }
+                catch (CatException e)
+                {
+                    exec.GetStack().RemoveRange(stkCopy.Length, stkCopy.Length);
+                    exec.GetStack().SetRange(0, stkCopy);
+
+                    MainClass.WriteLine("exception caught");
+
+                    exec.Push(e.GetObject());
+                    c.Eval(exec);
+                }
             }
         }
 
@@ -306,7 +363,15 @@ namespace Cat
         #endregion
 
         #region string functions
-        public static string cat_str(string x, string y) { return x + y; }
+        public static bool gt(string x, string y) { return x.CompareTo(y) > 0; }
+        public static bool lt(string x, string y) { return x.CompareTo(y) < 0; }
+        public static bool gteq(string x, string y) { return x.CompareTo(y) >= 0; }
+        public static bool lteq(string x, string y) { return x.CompareTo(y) <= 0; }
+        public static bool eq(string x, string y) { return x == y; }
+        public static bool neq(string x, string y) { return x != y; }
+        public static string min(string x, string y) { return lteq(x, y) ? x : y; }
+        public static string max(string x, string y) { return gteq(x, y) ? x : y; }
+        public static string add(string x, string y) { return x + y; }
         public static string sub_str(string x, int i) { return x.Substring(i); }
         public static string sub_str(string x, int i, int n) { return x.Substring(i, n); }
         public static string new_str(char c, int n) { return new string(c, n); }
@@ -375,7 +440,6 @@ namespace Cat
                 exec.Push(list.Nth(n));
             }
         }
-
 
         public class Gen : Function
         {
@@ -639,13 +703,6 @@ namespace Cat
                 Object o = exec.Pop();
                 exec.Push(CForEach.Repeater(o));
             }
-        }
-        #endregion
-
-        #region other function
-        public static void error(string s)
-        {
-            throw new Exception("s");
         }
         #endregion
     }

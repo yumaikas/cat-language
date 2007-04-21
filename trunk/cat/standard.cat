@@ -437,11 +437,27 @@ define join : (list list -> list)
 //=============================================================================
 // Deprecated operators
 
+define deprecated_error : (string -> )
+{ throw }
+
 define quote
-{ "'quote' has been replaced with 'qv' and 'constantly'" error }
+{ "'quote' has been replaced with 'qv' and 'constantly'" deprecated_error }
 
 define foldl
-{ "'foldl' has been replaced with 'fold'" error }
+{ "'foldl' has been replaced with 'fold'" deprecated_error }
 
 define clr
-{ "'clr' has been replaced with 'clear'" error }
+{ "'clr' has been replaced with 'clear'" deprecated_error }
+
+//=============================================================================
+// Exception throwing and handling
+
+define throw_if : (bool var -> )
+{ [throw] curry [] if }
+
+define assert : (bool -> )
+{ "assertion failed" throw_if }
+
+// a default handler for simple procedures
+define try : ('A ('A -> 'A) -> 'A)
+{ ["exception data: " write writeln] try_catch }

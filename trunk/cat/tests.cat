@@ -1,8 +1,3 @@
-define test : (('a -> 'b) list -> bool)
-{
-  [list] dip
-  compare_lists
-}
 
 define test_list : ( -> list)
 {
@@ -11,7 +6,6 @@ define test_list : ( -> list)
 
 define list_to_hash_test
 { test_list self_join }
-
 
 define if_swap : ('a 'a  ('a 'a -> 'a 'a bool) -> 'a 'a)
 { eval [] [swap] if }
@@ -29,4 +23,3 @@ define insert_sort
 { }
 
 //===========================================================================
-

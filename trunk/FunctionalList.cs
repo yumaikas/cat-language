@@ -208,131 +208,6 @@ namespace Cat
         #endregion
     }
 
-    public class CConcatPair : CForEach
-    {
-        CForEach mFirst;
-        int mFirstCount;
-        CForEach mSecond;
-
-        public CConcatPair(CForEach first, CForEach second)
-        {
-            mFirst = first;
-            // Caching the count of the first half could be expensive during construction, 
-            // but it optimizes a lot of algorithms. Infinite lists are not really a problem, 
-            // because concatenating an infinite list with something else is generally a bad idea.
-            mFirstCount = first.Count();
-            mSecond = second;
-        }
-
-        public override void ForEach(Accessor a)
-        {
-            mFirst.ForEach(a);
-            mSecond.ForEach(a);
-        }
-
-        public override bool IsEmpty()
-        {
-            return mFirst.IsEmpty() && mSecond.IsEmpty();
-        }
-
-        public override int Count()
-        {
-            return mFirstCount + mSecond.Count();
-        }
-
-        public override object Nth(int n)
-        {
-            if (n < mFirstCount)
-                return mFirst.Nth(n);
-            else
-                return mSecond.Nth(n - mFirstCount);
-        }
-
-        public override Object First()
-        {
-            return mFirst.First();
-        }
-
-        public override CForEach Rest()
-        {
-            if (mFirst.IsEmpty())
-                return mSecond.Rest();
-            return Concat(mFirst.Rest(), mSecond);
-        }
-
-        public override Object Last()
-        {
-            return mSecond.Last();
-        }
-
-        /// <summary>
-        /// Overriding Filter allows concatenation to retain some of its optimizations.
-        /// </summary>
-        public override CForEach Filter(FilterFxn f)
-        {
-            return new CConcatPair(new CFilteredForEach(mFirst, f), new CFilteredForEach(mSecond, f));
-        }
-
-        /// <summary>
-        /// Overriding Map allows concatenation to retain some of its optimizations.
-        /// </summary>
-        public override CForEach Map(MapFxn f)
-        {
-            return Concat(new CMappedForEach(mFirst, f), new CMappedForEach(mSecond, f));
-        }
-
-        public override CForEach DropN(int n)
-        {
-            if (n >= mFirstCount)
-            {
-                return mSecond.DropN(n - mFirstCount);
-            }
-            else
-            {
-                return Concat(mFirst.DropN(n), mSecond);
-            }
-        }
-
-        public override CForEach TakeN(int n)
-        {
-            if (n >= mFirstCount)
-            {
-                return Concat(mFirst, mSecond.TakeN(mFirstCount));
-            }
-            else
-            {
-                return mFirst.TakeN(n);
-            }
-        }
-
-        public override CForEach TakeWhile(FilterFxn f)
-        {
-            CForEach tmp = mFirst.TakeWhile(f);
-            if (tmp.Count() == mFirstCount)
-            {
-                return Concat(mFirst, mSecond.TakeWhile(f));
-            }
-            else
-            {
-                return tmp;
-            }
-
-        }
-
-        public override CForEach DropWhile(FilterFxn f)
-        {
-            CForEach tmp = mFirst.DropWhile(f);
-            if (tmp.IsEmpty())
-            {
-                return mSecond.DropWhile(f);
-            }
-            else
-            {
-                return Concat(tmp, mSecond);
-            }
-        }
-    }
-
     public class CEmpty : CForEach
     {
         public override void ForEach(Accessor a)
@@ -626,6 +501,131 @@ namespace Cat
             return this;
         }
 
+    }
+
+    public class CConcatPair : CForEach
+    {
+        CForEach mFirst;
+        int mFirstCount;
+        CForEach mSecond;
+
+        public CConcatPair(CForEach first, CForEach second)
+        {
+            mFirst = first;
+            // Caching the count of the first half could be expensive during construction, 
+            // but it optimizes a lot of algorithms. Infinite lists are not really a problem, 
+            // because concatenating an infinite list with something else is generally a bad idea.
+            mFirstCount = first.Count();
+            mSecond = second;
+        }
+
+        public override void ForEach(Accessor a)
+        {
+            mFirst.ForEach(a);
+            mSecond.ForEach(a);
+        }
+
+        public override bool IsEmpty()
+        {
+            return mFirst.IsEmpty() && mSecond.IsEmpty();
+        }
+
+        public override int Count()
+        {
+            return mFirstCount + mSecond.Count();
+        }
+
+        public override object Nth(int n)
+        {
+            if (n < mFirstCount)
+                return mFirst.Nth(n);
+            else
+                return mSecond.Nth(n - mFirstCount);
+        }
+
+        public override Object First()
+        {
+            return mFirst.First();
+        }
+
+        public override CForEach Rest()
+        {
+            if (mFirst.IsEmpty())
+                return mSecond.Rest();
+            return Concat(mFirst.Rest(), mSecond);
+        }
+
+        public override Object Last()
+        {
+            return mSecond.Last();
+        }
+
+        /// <summary>
+        /// Overriding Filter allows concatenation to retain some of its optimizations.
+        /// </summary>
+        public override CForEach Filter(FilterFxn f)
+        {
+            return new CConcatPair(new CFilteredForEach(mFirst, f), new CFilteredForEach(mSecond, f));
+        }
+
+        /// <summary>
+        /// Overriding Map allows concatenation to retain some of its optimizations.
+        /// </summary>
+        public override CForEach Map(MapFxn f)
+        {
+            return Concat(new CMappedForEach(mFirst, f), new CMappedForEach(mSecond, f));
+        }
+
+        public override CForEach DropN(int n)
+        {
+            if (n >= mFirstCount)
+            {
+                return mSecond.DropN(n - mFirstCount);
+            }
+            else
+            {
+                return Concat(mFirst.DropN(n), mSecond);
+            }
+        }
+
+        public override CForEach TakeN(int n)
+        {
+            if (n >= mFirstCount)
+            {
+                return Concat(mFirst, mSecond.TakeN(mFirstCount));
+            }
+            else
+            {
+                return mFirst.TakeN(n);
+            }
+        }
+
+        public override CForEach TakeWhile(FilterFxn f)
+        {
+            CForEach tmp = mFirst.TakeWhile(f);
+            if (tmp.Count() == mFirstCount)
+            {
+                return Concat(mFirst, mSecond.TakeWhile(f));
+            }
+            else
+            {
+                return tmp;
+            }
+
+        }
+
+        public override CForEach DropWhile(FilterFxn f)
+        {
+            CForEach tmp = mFirst.DropWhile(f);
+            if (tmp.IsEmpty())
+            {
+                return mSecond.DropWhile(f);
+            }
+            else
+            {
+                return Concat(tmp, mSecond);
+            }
+        }
     }
 
     public class CArray : CForEach

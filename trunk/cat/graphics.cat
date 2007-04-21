@@ -12,7 +12,7 @@ define cw
 { close_window }
 
 define cs
-{ clear_screen } 
+{ clear_screen }
 
 define fd
 { [0 line_to] curry render }
@@ -20,8 +20,11 @@ define fd
 define bk
 { neg fd }
 
-define rt
+define tr
 { [rotate] curry render }
+
+define tl
+{ neg [rotate] curry render }
 
 define pu
 { [true set_pen_up] render }
@@ -44,21 +47,18 @@ define nf
 define el
 { [ellipse] curry4 render }
 
-define circle
+define ci
 { 0 0 dig dup el }
 
 define rect
 { [rectangle] curry4 render }
 
 define poly
-{ [poly] curry render }
+{ [polygon] curry render }
 
 define fill
 { [set_solid_fill] curry render }
 
-define lt
-{ neg rt }
-
-define square
-{ [fd 90 rt] curry 4 repeat }
+define sq
+{ [fd 90 tr] curry 4 repeat }
 

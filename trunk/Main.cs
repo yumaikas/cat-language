@@ -58,40 +58,33 @@ namespace Cat
                 while (true)
                 {
                     Prompt();
-                    try
+                    string s = Console.ReadLine();
+                    gpTranscript.WriteLine(s);
+                    if (s.Length > 0)
                     {
-                        string s = Console.ReadLine();
-                        gpTranscript.WriteLine(s);
-                        if (s.Length > 0)
+                        // Is this a meta-command?
+                        if (s[0] == '#')
                         {
-                            // Is this a meta-command?
-                            if (s[0] == '#')
-                            {
-                                if (s == "#exit")
-                                    break;
-                                ParseMetaCommand(s);
-                            }
-                            else
-                            {
-                                DateTime begin = DateTime.Now;
-                                Executor.Main.Execute(s + '\n');
-                                TimeSpan elapsed = DateTime.Now - begin;
-                                if (Config.gbOutputTimeElapsed)
-                                    WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
-                                if (Config.gbOutputStack)
-                                    Executor.Main.OutputStack();
-                            }
+                            if (s == "#exit")
+                                break;
+                            ParseMetaCommand(s);
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        MainClass.WriteLine("Exception caught: {0}.", e.Message);
+                        else
+                        {
+                            DateTime begin = DateTime.Now;
+                            Executor.Main.Execute(s + '\n');
+                            TimeSpan elapsed = DateTime.Now - begin;
+                            if (Config.gbOutputTimeElapsed)
+                                WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
+                            if (Config.gbOutputStack)
+                                Executor.Main.OutputStack();
+                        }
                     }
                 }
             }
             catch (Exception e)
             {
-                WriteLine("Untrapped exception occurred: {0}", e.Message);
+                WriteLine("uncaught exception: " + e.Message);
             }
 
             string sTranscript = "transcript.txt";

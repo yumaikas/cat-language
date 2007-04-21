@@ -268,7 +268,7 @@ namespace Cat
             mPen.Brush = null;
         }
 
-        public void poly(CForEach x)
+        public void polygon(CForEach x)
         {
             mg.DrawPolygon(mPen, ListToPointArray(x));
         }

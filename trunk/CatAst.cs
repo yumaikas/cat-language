@@ -64,8 +64,6 @@ namespace Cat
                     return new AstFloat(node);
                 case "int":
                     return new AstInt(node);
-                case "hex":
-                    return new AstHex(node);
                 case "stack":
                     return new AstStack(node);
                 case "type_fxn":
@@ -377,20 +375,6 @@ namespace Cat
         public double GetValue()
         {
             return double.Parse(ToString());
-        }
-    }
-
-    public class AstHex : AstExpr
-    {
-        public AstHex(AstNode node) : base(node)
-        {
-            CheckLabel("hex");
-            CheckIsLeaf(node);
-        }
-
-        public int GetValue()
-        {
-            return int.Parse(ToString(), NumberStyles.HexNumber);
         }
     }
 
