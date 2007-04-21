@@ -161,9 +161,13 @@ namespace Cat
             {
                 Parse(s);
             }
+            catch (CatException e)
+            {
+                MainClass.WriteLine("uncaught user exception: " + MainClass.ObjectToString(e.GetObject()));
+            }
             catch (Exception e)
             {
-                MainClass.WriteLine(e.Message);
+                MainClass.WriteLine("uncaught system exception: " + e.Message);
             }
         }
         #endregion

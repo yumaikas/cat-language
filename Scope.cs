@@ -100,19 +100,33 @@ namespace Cat
             }
         }
 
-        public void AddObjectBoundMethod(Object o, MethodInfo meth)
+        /// <summary>
+        /// Methods allow overloading of function definitions.
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="meth"></param>
+        public void AddMethod(Object o, MethodInfo mi)
         {
-            if (!meth.IsPublic) 
+            if (!mi.IsPublic) 
                 return;
-            if (!meth.IsStatic)
+
+            if (mi.IsStatic)
+                o = null;
+            
+            Method f = new Method(o, mi);
+            string s = f.GetName();
+            
+            if (mpFunctions.ContainsKey(s))
             {
-                Function f = new ObjectBoundMethod(o, meth);
-                AddFunction(f);
+                MethodGroup g = mpFunctions[s] as MethodGroup;
+                if (g == null)
+                    throw new Exception("expected method_group type, instead found " + mpFunctions[s].ToString());
+                g.AddOverload(f);
             }
             else
             {
-                Function f = new ObjectBoundMethod(null, meth);
-                AddFunction(f);
+                MethodGroup g = new MethodGroup(f);
+                mpFunctions.Add(s, g);
             }
         }
 
@@ -148,7 +162,7 @@ namespace Cat
                     MethodInfo meth = mi as MethodInfo;
                     if (meth.IsStatic)
                     {
-                        AddObjectBoundMethod(null, meth);
+                        AddMethod(null, meth);
                     }
                 }
             }
@@ -165,7 +179,7 @@ namespace Cat
                 if (mi is MethodInfo)
                 {
                     MethodInfo meth = mi as MethodInfo;
-                    AddObjectBoundMethod(o, meth);
+                    AddMethod(o, meth);
                 }
             }
         }
@@ -175,9 +189,9 @@ namespace Cat
             List<string> keys = new List<string>();
             foreach (KeyValuePair<string, Function> kvp in mpFunctions)
             {
-                if (kvp.Value is ObjectBoundMethod)
+                if (kvp.Value is Method)
                 {
-                    ObjectBoundMethod obm = kvp.Value as ObjectBoundMethod;
+                    Method obm = kvp.Value as Method;
                     if (obm.GetObject() == o)
                     {
                         keys.Add(kvp.Key);

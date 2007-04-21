@@ -433,15 +433,12 @@ namespace Cat
         }
     }
 
-    /// <summary>
-    /// An ObjectBoundMethod is like a delegate, it a method pointer combined with an object pointer
-    /// </summary>
-    public class ObjectBoundMethod : Function
+    public class Method : Function, ITypeArray
     {
         MethodInfo mMethod;
         Object mObject;
 
-        public ObjectBoundMethod(Object o, MethodInfo mi)
+        public Method(Object o, MethodInfo mi)
             : base(mi.Name, MethodToTypeString(mi))
         {
             mMethod = mi;
@@ -465,6 +462,94 @@ namespace Cat
         public Object GetObject()
         {
             return mObject;
+        }
+
+        public MethodInfo GetMethodInfo()
+        {
+            return mMethod;
+        }
+
+        #region ITypeArray Members
+
+        public int Count
+        {
+            get { return GetMethodInfo().GetParameters().Length; }
+        }
+
+        public Type GetType(int n)
+        {
+            return GetMethodInfo().GetParameters()[n].GetType();
+        }
+
+        #endregion
+    }
+
+    public class MethodGroup : Function
+    {
+        List<Method> mOverloads = new List<Method>();
+
+        public MethodGroup(Method m)
+            : base(m.GetName(), m.GetTypeString())
+        {
+            mOverloads.Add(m);
+        }
+
+        public override void Eval(Executor exec)
+        {
+            Method m = mOverloads[0];
+            for (int i = 1; i < mOverloads.Count; ++i)
+            {
+                m = GetBestMatch(exec.GetStack(), m, mOverloads[i + 1]);
+            }
+            m.Eval(exec);
+        }
+
+        /// <summary>
+        /// Used for computing which types are better matches. 
+        /// </summary>
+        private int AssignMatchScore(ITypeArray stk, ITypeArray sig)
+        {
+            int ret = 0;
+            for (int i = 0; i < sig.Count; ++i)
+            {
+                Type t = stk.GetType(i);
+                Type u = sig.GetType(i);
+                if (t.Equals(u))
+                {
+                    ret += 100;
+                }
+                else if (u.IsAssignableFrom(t))
+                {
+                    ret += 1;
+                }
+                else
+                {
+                    ret -= 10000;
+                }
+            }
+            return ret;
+        }
+
+        private Method GetBestMatch(ITypeArray stk, Method x, Method y)
+        {
+            ITypeArray xt = x;
+            ITypeArray yt = y;
+
+            if (xt.Count != yt.Count)
+                throw new Exception("mismatched number of parameters in overload " + y.ToString());
+
+            int xscore = AssignMatchScore(stk, xt);
+            int yscore = AssignMatchScore(stk, yt);
+
+            return xscore <= yscore ? x : y;
+        }
+
+        public void AddOverload(Method m)
+        {
+            if (m.GetName() != GetName())
+                throw new Exception("overload must share the same name");
+            if (mOverloads == null)
+                mOverloads = new List<Method>();
         }
     }
 }
