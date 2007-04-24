@@ -31,15 +31,15 @@ define fractal1 : (int -> )
 
 define demo1
 {
-  90 tl 80 fractal1
+  [90 tl 80 fractal1] render
 }
 
 define demo2
 {
-  [90 tl demo1] 2 repeat
+  [[90 tl demo1] 2 repeat] render
 }
 
-define fast_demo
+define demo
 {
-  [demo2] render
+  demo2
 }

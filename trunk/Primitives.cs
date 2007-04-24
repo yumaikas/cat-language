@@ -2,6 +2,7 @@
 /// http://www.cat-language.com
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -83,7 +84,14 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(exec.Peek());
+                if (exec.Peek() is FMutableList)
+                {
+                    exec.Push((exec.Peek() as FMutableList).Clone());
+                }
+                else
+                {
+                    exec.Push(exec.Peek());
+                }
             }
         }
 
@@ -321,6 +329,7 @@ namespace Cat
         public static int mul(int x, int y) { return x * y; }
         public static int mod(int x, int y) { return x % y; }
         public static int neg(int x) { return -x; }
+        public static int compl(int x) { return ~x; } 
         public static int shl(int x, int y) { return x << y; }
         public static int shr(int x, int y) { return x >> y; }
         public static bool gt(int x, int y) { return x > y; }
@@ -331,6 +340,29 @@ namespace Cat
         public static int max(int x, int y) { return Math.Max(x, y); }
         public static int abs(int x) { return Math.Abs(x); }
         public static int sqr(int x) { return x * x; }
+        #endregion
+
+        #region byte functions
+        public static byte add(byte x, byte y) { return (byte)(x + y); }
+        public static byte sub(byte x, byte y) { return (byte)(x - y); }
+        public static byte div(byte x, byte y) { return (byte)(x / y); }
+        public static byte mul(byte x, byte y) { return (byte)(x * y); }
+        public static byte mod(byte x, byte y) { return (byte)(x % y); }
+        public static byte neg(byte x) { return (byte)(-x); }
+        public static byte compl(byte x) { return (byte)(~x); } 
+        public static byte shl(byte x, byte y) { return (byte)(x << y); }
+        public static byte shr(byte x, byte y) { return (byte)(x >> y); }
+        public static bool gt(byte x, byte y) { return x > y; }
+        public static bool lt(byte x, byte y) { return x < y; }
+        public static bool gteq(byte x, byte y) { return x >= y; }
+        public static bool lteq(byte x, byte y) { return x <= y; }
+        public static byte min(byte x, byte y) { return Math.Min(x, y); }
+        public static byte max(byte x, byte y) { return Math.Max(x, y); }
+        public static byte abs(byte x) { return (byte)Math.Abs(x); }
+        public static byte sqr(byte x) { return (byte)(x * x); }
+        #endregion
+
+        #region bytes functions
         #endregion
 
         #region double functions
@@ -479,7 +511,6 @@ namespace Cat
                 exec.Push(hash.ToArray());
             }
         }
-
         #endregion 
 
         #region list functions
@@ -855,5 +886,22 @@ namespace Cat
             }
         }
         #endregion
+
+        #region 
+        public class SetAt : Function
+        {
+            public SetAt()
+                : base("set_at", "(list var int -> list)", "sets an item in a mutable list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = (int)exec.Pop();
+                Object o = exec.Pop();
+                FMutableList list = exec.Pop() as FMutableList;
+                list.Set(n, o);
+            }
+        }
+        #endregion 
     }
 }
