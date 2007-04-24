@@ -31,7 +31,15 @@ namespace Cat
             // create a drawing object that uses this executor
             mDrawer = new Drawer(mExec);
             // register the drawing object with the executor
-            mExec.GetGlobalScope().RegisterObject(mDrawer);
+            Scope scope = mExec.GetGlobalScope();
+            scope.RegisterObject(mDrawer);
+            
+            // It is important that we override the render function.
+            // otherwise we are left with two conflicting methods 
+            // internally: the window manager version, and the drawer version.
+            // the window manager version will cause serious problems 
+            scope.RemoveFunctions("render");
+            scope.AddMethod(mDrawer, mDrawer.GetType().GetMethod("render"));
         }
 
         public void ClearFxns()
@@ -56,7 +64,7 @@ namespace Cat
             Invoke(p);
         }
 
-        private Point CatListToPoint(CForEach list)
+        private Point CatListToPoint(FList list)
         {
             return new Point((int)list.Nth(1), (int)list.Nth(0));
         }
@@ -268,29 +276,29 @@ namespace Cat
             mPen.Brush = null;
         }
 
-        public void polygon(CForEach x)
+        public void polygon(FList x)
         {
             mg.DrawPolygon(mPen, ListToPointArray(x));
         }
 
-        public void lines(CForEach x)
+        public void lines(FList x)
         {
             mg.DrawLines(mPen, ListToPointArray(x));
         }
 
         #region helper functions
-        private Point ListToPoint(CForEach x)
+        private Point ListToPoint(FList x)
         {
             return new Point((int)x.Nth(1), (int)x.Nth(0));
         }
 
-        private Point[] ListToPointArray(CForEach x)
+        private Point[] ListToPointArray(FList x)
         {
             Point[] result = new Point[x.Count()];
             int i = 0;
             x.ForEach(delegate(Object o)
             {
-                CForEach tmp = o as CForEach;
+                FList tmp = o as FList;
                 result[i++] = ListToPoint(tmp);
             });
             return result;
@@ -305,9 +313,8 @@ namespace Cat
 
         #region public functions
         static public void open_window()
-        {            
-            if (mWindow != null)
-                throw new Exception("window is already open");
+        {
+            if (mWindow != null) return;
             Thread t = new Thread(new ThreadStart(LaunchWindow));
             t.Start();
             mWait.WaitOne();   
@@ -315,6 +322,7 @@ namespace Cat
 
         static public void close_window()
         {
+            if (mWindow == null) return;
             mWindow.SafeClose();
             mWindow = null;
         }

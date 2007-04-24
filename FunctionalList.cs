@@ -7,6 +7,7 @@ namespace Cat
 {
     #region delegate types
     public delegate void Accessor(object o);
+    public delegate bool PairAccessor(object x, object y);
     public delegate object FoldFxn(object x, object y);
     public delegate object MapFxn(object o);
     public delegate object RangeGenFxn(int n);
@@ -14,81 +15,130 @@ namespace Cat
     #endregion
 
     /// <summary>
-    /// This is a quasi-functional list. It implements common functional list operations. 
-    /// Lists that inherit from it should be non-mutable, and can customize how they implement particular 
-    /// operations. The key behavior here is that functions generate optimized types to deal with
-    /// particular cases. This approach would be much easier to implement if we could assign values to 
-    /// the "this" pointer. 
+    /// This is a quasi-functional list. It implements common functional list operations in a non-mutable 
+    /// manner and behaves as a mutable iterator.  
+    /// There are several different specializations of each class which reduce the complexity of many 
+    /// common algorithms, and offer optimized versions of the classes for different scenarios. 
     /// </summary>
-    public abstract class CForEach
+    public abstract class FList
     {
-        #region delegate functions
+        #region abstract functions
+        public abstract void ForEach(Accessor a);
+        public abstract FList GetIter();
+        public abstract FList GotoNext();
+        public abstract object Head();
+        public abstract bool IsEmpty();
+        #endregion
+
+        #region static delegate functions
         public static FilterFxn ComposeFilters(FilterFxn f, FilterFxn g)
         {
             return delegate(object x) { return f(x) && g(x); };
         }
+        public static FilterFxn NegateFilter(FilterFxn f)
+        {
+            return delegate(object x) { return !f(x); };
+        }
         #endregion
 
         #region static data
-        static CEmpty nil = new CEmpty();
+        static EmptyList nil = new EmptyList();
         #endregion
 
         #region static functions
-        public static CForEach Concat(CForEach first, CForEach second) 
+        public static FList Concat(FList first, FList second) 
         {
             if (second.IsEmpty())
                 return first;
             if (first.IsEmpty())
                 return second;
-            return new CConcatPair(first, second); 
+            return new ConcatPair(first, second); 
         }
 
-        public static CForEach Gen(object o, MapFxn next, FilterFxn cond)
+        public static FList Gen(object o, MapFxn next, FilterFxn cond)
         {
-            return new CGenerator(o, next, cond);
+            return new Generator(o, next, cond);
         }
 
-        public static CForEach RangeGen(RangeGenFxn f, int first, int count)
+        public static FList RangeGen(RangeGenFxn f, int first, int count)
         {
-            return new CRangeGenerator(f, first, count);
+            return new RangeGenerator(f, first, count);
         }
 
-        public static CForEach Repeater(Object o)
+        public static FList MakeRepeater(Object o)
         {
-            return new CRepeater(o);
+            return new FListRepeater(o);
         }
 
-        public static CForEach Nil()
+        public static FList Nil()
         {
             return nil;
         }
 
-        public static CForEach Unit(object x)
+        public static FList MakeUnit(object x)
         {
-            return new CUnit(x);
+            return new Unit(x);
         }
 
-        public static CForEach Pair(object x, object y)
+        public static FList MakePair(object first, object second)
         {
-            return new CPair(x, y);
+            return new Pair(first, second);
         }
 
-        public static CForEach Cons(object x, CForEach list)
+        public static FList Cons(object x, FList list)
         {
-            return new CConsCell(x, list);
+            return new ConsCell(x, list);
         }
-        #endregion
 
-        #region abstract functions
-        public abstract void ForEach(Accessor a);
+        public static void PairwiseForEach(PairAccessor f, FList x, FList y)
+        {
+            if (x.IsEmpty() || y.IsEmpty()) return;
+            if (f(x.Head(), y.Head())) return;
+            PairwiseForEach(f, x.Tail(), y.Tail());
+        }
+
+        public static bool AreListsEqual(FList x, FList y)
+        {
+            // Same memory address? 
+            if (x == y) return true;
+
+            // Known finite lists, and known infinite lists are never equal.
+            if (x.IsKnownFinite() && y.IsKnownInfinite()) return false;
+            if (x.IsKnownInfinite() && y.IsKnownFinite()) return false;
+            
+            // If either list is empty, then we can simply look to see if the other one is as well
+            if (x.IsEmpty()) 
+                return y.IsEmpty();
+            if (y.IsEmpty())
+                return false; // since we know from the previous condition that both x and y aren't empty.
+
+            // Compare the count if it is easy.
+            if (x.IsKnownFinite() && y.IsKnownFinite())
+                if (x.Count() != y.Count()) return false;
+
+            // We have to resort to pairwise comparisons
+            bool ret = true;            
+            PairAccessor f = delegate(Object first, Object second)
+            {
+                if (!first.Equals(second))
+                    return ret = false;
+                return true;
+            };
+            PairwiseForEach(f, x, y);
+            return ret;
+        }
         #endregion
 
         #region virtual functions
-        public virtual bool IsEmpty()
+        public override bool Equals(object obj)
         {
-            bool ret = true;
-            ForEach(delegate(object o) { ret = false; });
-            return ret;
+            if (!(obj is FList)) return false;
+            return AreListsEqual(this, obj as FList);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
 
         public virtual int Count() 
@@ -98,32 +148,44 @@ namespace Cat
             return result;
         }
 
+        public virtual bool IsKnownFinite()
+        {
+            // most lists are known to be finite, so this is the default
+            return true;
+        }
+
+        public virtual bool IsKnownInfinite()
+        {
+            // most lists are finite
+            return false;
+        }
+
         public virtual object Fold(object init, FoldFxn f)
         {
             ForEach(delegate(object o) { init = f(init, o); });
             return init;
         }
 
-        public virtual CForEach Map(MapFxn f)
+        public virtual FList Map(MapFxn f)
         {
-            return new CMappedForEach(this, f);
+            return new MappedFList(this, f);
         }
 
         public virtual object Nth(int n)
         {
-            Object result = null;
-            ForEach(delegate(Object o) { if (n-- == 0) result = o; });
-            return result;
+            FList iter = GetIter();
+            while (!iter.IsEmpty() && n != 0)
+            {
+                iter = iter.GotoNext();
+                --n;
+            }
+            if (n != 0) throw new Exception("out of range");
+            return iter.Head();
         }
 
-        public virtual Object First()
+        public virtual FList Tail()
         {
-            return Nth(0);
-        }
-
-        public virtual CForEach Rest()
-        {
-            return DropN(1);
+            return GetIter().GotoNext();
         }
 
         public virtual Object Last()
@@ -133,128 +195,160 @@ namespace Cat
             return result;
         }
 
-        public virtual CForEach Filter(FilterFxn f)
+        public virtual FList Filter(FilterFxn f)
         {
-            return new CFilteredForEach(this, f);
+            return new FilteredFList(this, f);
         }
 
-        public virtual CForEach DropN(int n)
+        public virtual FList DropN(int n)
         {
-            int cur = 0;
-            FilterFxn f = delegate(Object o) { return (cur++ < n); };
-            return DropWhile(f);
+            FList ret = GetIter();
+            while (!ret.IsEmpty() && n != 0)
+            {
+                ret = ret.GotoNext();
+                --n; 
+            }
+            return ret;
         }
 
-        public virtual CForEach TakeN(int n)
+        public virtual FList TakeN(int n)
         {
-            int cur = 0;
-            FilterFxn f = delegate(Object o) { return (cur++ < n); };
-            return TakeWhile(f);
+            switch (n)
+            {
+                case (0):
+                    return Nil();
+                case (1):
+                    return MakeUnit(Head());
+                case (2):
+                    return MakePair(Head(), Tail().Head());
+            }
+
+            object[] a = new object[n];
+            int i = 0;
+            FList iter = GetIter();
+            while (!iter.IsEmpty() && (i < n))
+            {
+                a[i++] = iter.Head();
+                iter = iter.GotoNext();
+            }
+            if (i < n)
+            {
+                return new RangedArray(a, 0, i);
+            }
+            else
+            {
+                return new FArray(a);
+            }
         }
 
-        public virtual CForEach TakeRange(int first, int count)
+        public virtual FList TakeRange(int first, int count)
         {
             return DropN(first).TakeN(count);
         }
 
-        public virtual CForEach TakeWhile(FilterFxn f)
+        public virtual FList TakeWhile(FilterFxn f)
         {
-            bool b = true;
-            FilterFxn g = delegate(object x)
-            {
-                if (b) { 
-                    if (f(x))
-                    {
-                        return true; 
-                    }
-                    else 
-                    { 
-                        b = false; 
-                        return false;
-                    } 
-                } 
-                else 
-                { 
-                    return false; 
-                }
-            };
-            return Filter(g); 
+            int n = CountWhile(f);
+            return TakeN(n);
         }
 
-        public virtual CForEach DropWhile(FilterFxn f)
+        public virtual FList DropWhile(FilterFxn f)
         {
-            bool b = false;
-            FilterFxn g = delegate(object x)
+            FList ret = GetIter();
+            while (!ret.IsEmpty() && f(ret.Head()))
+                ret = ret.GotoNext();
+            return ret;
+        }
+
+        public virtual int CountWhile(FilterFxn f)
+        {
+            int cnt = 0;
+            FList ret = GetIter();
+            while (!ret.IsEmpty() && f(ret.Head()))
             {
-                if (!b)
-                {
-                    if (f(x))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        b = true;
-                        return true;
-                    }
-                }
-                else
-                {
-                    return true;
-                }
-            };
-            return Filter(g);
+                ret = ret.GotoNext();
+                ++cnt;
+            }
+            return cnt;
+        }
+
+        public virtual FList Flatten()
+        {
+            return new FlattenedFList(this);
         }
         #endregion
     }
 
-    public class CEmpty : CForEach
+    public class EmptyList : FList
     {
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
+        }
+
+        public override FList GetIter()
+        {
+            return this;
+        }
+
+        public override FList GotoNext()
+        {
+            return this;
+        }
+
+        public override object Head()
+        {
+            throw new Exception("empty list");
         }
 
         public override bool IsEmpty()
         {
             return true;
         }
+        #endregion 
 
+        #region virtual function overrides
         public override int Count()
         {
             return 0;
         }
 
-        public override CForEach TakeN(int n)
+        public override int CountWhile(FilterFxn f)
+        {
+            return 0;
+        }
+
+        public override FList TakeN(int n)
         {
             return this;
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             return this;
         }
 
-        public override CForEach TakeRange(int first, int count)
+        public override FList TakeRange(int first, int count)
         {
             return this;
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override FList TakeWhile(FilterFxn f)
         {
             return this;
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
             return this;
         }
 
-        public override CForEach Filter(FilterFxn f)
+        public override FList Filter(FilterFxn f)
         {
             return this;
         }
 
-        public override CForEach Map(MapFxn f)
+        public override FList Map(MapFxn f)
         {
             return this;
         }
@@ -274,29 +368,40 @@ namespace Cat
             throw new Exception("empty list");
         }
 
-        public override object First()
-        {
-            throw new Exception("empty list");
-        }
-
-        public override CForEach Rest()
+        public override FList Tail()
         {
             return this;
         }
+        #endregion
     }
 
-    public class CUnit : CForEach
+    public class Unit : FList
     {
-        object m;
+        #region fields
+        object m; 
+        #endregion
 
-        public CUnit(object x)
+        #region constructors
+        public Unit(object x)
         {
             m = x;
-        }
-        
+        } 
+        #endregion
+
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             a(m);
+        }
+
+        public override FList GetIter()
+        {
+            return this;
+        }
+
+        public override FList GotoNext()
+        {
+            return Nil();
         }
 
         public override bool IsEmpty()
@@ -304,14 +409,21 @@ namespace Cat
             return false;
         }
 
+        public override object Head()
+        {
+            return m;
+        }
+        #endregion 
+
+        #region virtual function overrides
         public override int Count()
         {
             return 1;
         }
 
-        public override object First()
+        public override int CountWhile(FilterFxn f)
         {
-            return m;
+            return f(m) ? 1 : 0;
         }
 
         public override object Last()
@@ -319,17 +431,17 @@ namespace Cat
             return m;
         }
 
-        public override CForEach Rest()
+        public override FList Tail()
         {
             return Nil();
         }
 
-        public override CForEach Map(MapFxn f)
+        public override FList Map(MapFxn f)
         {
-            return Unit(f(m));
+            return MakeUnit(f(m));
         }
 
-        public override CForEach Filter(FilterFxn f)
+        public override FList Filter(FilterFxn f)
         {
             if (f(m))
             {
@@ -346,25 +458,25 @@ namespace Cat
             return f(init, m);
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             if (n == 0) return this;
             else return Nil();
         }
     
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             if (n == 0) return Nil();
             else return this;
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
             if (f(m)) return Nil();
             else return this;
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override FList TakeWhile(FilterFxn f)
         {
             if (f(m)) return this;
             else return Nil();
@@ -375,17 +487,39 @@ namespace Cat
             if (n != 0) throw new Exception("out of range");
             return m;
         }
+        #endregion
     }
 
-    public class CPair : CForEach
+    public class Pair : FList
     {
+        #region fields
         public object mFirst;
-        public object mSecond;
+        public object mSecond; 
+        #endregion
 
-        public CPair(object first, object second)
+        #region constructors
+        public Pair(object first, object second)
         {
             mFirst = first;
             mSecond = second;
+        } 
+        #endregion
+
+        #region abstract function overrides
+        public override void ForEach(Accessor a)
+        {
+            a(mFirst);
+            a(mSecond);
+        }
+
+        public override FList GetIter()
+        {
+            return this;
+        }
+
+        public override FList GotoNext()
+        {
+            return MakeUnit(mSecond);
         }
 
         public override bool IsEmpty()
@@ -393,19 +527,21 @@ namespace Cat
             return false;
         }
 
-        public override object First()
+        public override object Head()
         {
             return mFirst;
         }
+        #endregion
 
+        #region virtual function overrides
         public override object Last()
         {
             return mSecond;
         }
 
-        public override CForEach Rest()
+        public override FList Tail()
         {
-            return Unit(mSecond);
+            return MakeUnit(mSecond);
         }
 
         public override int Count()
@@ -413,30 +549,29 @@ namespace Cat
             return 2;
         }
 
-        public override void ForEach(Accessor a)
+        public override int CountWhile(FilterFxn f)
         {
-            a(mFirst);
-            a(mSecond);
-        }
-        
-        public override CForEach Map(MapFxn f)
-        {
-            return Pair(f(mFirst), f(mSecond));
+            return (f(mFirst) ? 1 : 0) + (f(mSecond) ? 1 : 0);
         }
 
-        public override CForEach Filter(FilterFxn f)
+        public override FList Map(MapFxn f)
+        {
+            return MakePair(f(mFirst), f(mSecond));
+        }
+
+        public override FList Filter(FilterFxn f)
         {
             if (f(mFirst))
             {
                 if (f(mSecond))
                     return this;
                 else
-                    return Unit(mFirst);
+                    return MakeUnit(mFirst);
             }
             else
             {
                 if (f(mSecond))
-                    return Unit(mSecond);
+                    return MakeUnit(mSecond);
                 else
                     return Nil();
             }
@@ -447,27 +582,27 @@ namespace Cat
             return f(f(init, mFirst), mSecond);
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             switch (n)
             {
                 case (0) : 
                     return this;
                 case (1) :
-                    return Unit(mSecond);
+                    return MakeUnit(mSecond);
                 default :
                     return Nil();
             }
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             switch (n)
             {
                 case (0):
                     return Nil();
                 case (1):
-                    return Unit(mFirst);
+                    return MakeUnit(mFirst);
                 default:
                     return this;
             }
@@ -486,43 +621,78 @@ namespace Cat
             }
         }
 
-
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
             if (!f(mFirst)) return this;
-            if (!f(mSecond)) return Unit(mSecond);
+            if (!f(mSecond)) return MakeUnit(mSecond);
             return Nil();
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override FList TakeWhile(FilterFxn f)
         {
             if (!f(mFirst)) return Nil();
-            if (!f(mSecond)) return Unit(mFirst);
+            if (!f(mSecond)) return MakeUnit(mFirst);
             return this;
         }
-
+        #endregion
     }
 
-    public class CConcatPair : CForEach
+    public class ConcatPair : FList
     {
-        CForEach mFirst;
+        #region fields
+        FList mFirst;
         int mFirstCount;
-        CForEach mSecond;
+        FList mSecond; 
+        #endregion
 
-        public CConcatPair(CForEach first, CForEach second)
+        #region constructors
+        public ConcatPair(FList first, FList second)
+            : this(first, second, first.Count())
         {
-            mFirst = first;
-            // Caching the count of the first half could be expensive during construction, 
-            // but it optimizes a lot of algorithms. Infinite lists are not really a problem, 
-            // because concatenating an infinite list with something else is generally a bad idea.
-            mFirstCount = first.Count();
-            mSecond = second;
         }
 
+        public ConcatPair(FList first, FList second, int firstCount)
+        {
+            mFirst = first;
+            mFirstCount = firstCount;
+            mSecond = second;
+        } 
+        #endregion
+
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             mFirst.ForEach(a);
             mSecond.ForEach(a);
+        }
+
+        public override FList GetIter()
+        {
+            if (mFirstCount == 0)
+            {
+                return mSecond.GetIter();
+            }
+            else
+            {
+                return new ConcatPair(mFirst.GetIter(), mSecond, mFirstCount);
+            }
+        }
+
+        public override FList GotoNext()
+        {
+            if (mFirstCount == 0)
+                throw new Exception("internal error, corrupt ConcatPair");
+
+            if (mFirstCount == 1)
+            {
+                return mSecond.GetIter();
+            }
+            else
+            {
+                mFirst.GotoNext();
+                --mFirstCount;
+            }
+            return this;
         }
 
         public override bool IsEmpty()
@@ -530,9 +700,24 @@ namespace Cat
             return mFirst.IsEmpty() && mSecond.IsEmpty();
         }
 
+        public override Object Head()
+        {
+            if (mFirstCount != 0)
+                return mFirst.Head();
+            else
+                return mSecond.Head();
+        }
+        #endregion
+
+        #region abstract function overrides
         public override int Count()
         {
             return mFirstCount + mSecond.Count();
+        }
+
+        public override int CountWhile(FilterFxn f)
+        {
+            return mFirst.CountWhile(f) + mSecond.CountWhile(f);
         }
 
         public override object Nth(int n)
@@ -543,16 +728,11 @@ namespace Cat
                 return mSecond.Nth(n - mFirstCount);
         }
 
-        public override Object First()
-        {
-            return mFirst.First();
-        }
-
-        public override CForEach Rest()
+        public override FList Tail()
         {
             if (mFirst.IsEmpty())
-                return mSecond.Rest();
-            return Concat(mFirst.Rest(), mSecond);
+                return mSecond.Tail();
+            return Concat(mFirst.Tail(), mSecond);
         }
 
         public override Object Last()
@@ -563,20 +743,20 @@ namespace Cat
         /// <summary>
         /// Overriding Filter allows concatenation to retain some of its optimizations.
         /// </summary>
-        public override CForEach Filter(FilterFxn f)
+        public override FList Filter(FilterFxn f)
         {
-            return new CConcatPair(new CFilteredForEach(mFirst, f), new CFilteredForEach(mSecond, f));
+            return new ConcatPair(new FilteredFList(mFirst, f), new FilteredFList(mSecond, f));
         }
 
         /// <summary>
         /// Overriding Map allows concatenation to retain some of its optimizations.
         /// </summary>
-        public override CForEach Map(MapFxn f)
+        public override FList Map(MapFxn f)
         {
-            return Concat(new CMappedForEach(mFirst, f), new CMappedForEach(mSecond, f));
+            return Concat(new MappedFList(mFirst, f), new MappedFList(mSecond, f));
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             if (n >= mFirstCount)
             {
@@ -588,7 +768,7 @@ namespace Cat
             }
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             if (n >= mFirstCount)
             {
@@ -600,9 +780,9 @@ namespace Cat
             }
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override FList TakeWhile(FilterFxn f)
         {
-            CForEach tmp = mFirst.TakeWhile(f);
+            FList tmp = mFirst.TakeWhile(f);
             if (tmp.Count() == mFirstCount)
             {
                 return Concat(mFirst, mSecond.TakeWhile(f));
@@ -614,9 +794,9 @@ namespace Cat
 
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
-            CForEach tmp = mFirst.DropWhile(f);
+            FList tmp = mFirst.DropWhile(f);
             if (tmp.IsEmpty())
             {
                 return mSecond.DropWhile(f);
@@ -626,38 +806,54 @@ namespace Cat
                 return Concat(tmp, mSecond);
             }
         }
+        #endregion
     }
 
-    public class CArray : CForEach
+    public class FArray : FList
     {
-        object[] m;
-        
-        public CArray(CForEach list, int n)
+        #region fields
+        object[] m; 
+        #endregion
+
+        #region constructors
+        public FArray(FList list, int n)
         {
             m = new object[n];
             int i = 0;
             list.ForEach(delegate(Object x) { if (i < n) m[i++] = x; });
         }
 
-        public CArray(CForEach list)
+        public FArray(FList list)
             : this(list, list.Count())
         {
         }
 
-        public CArray(object[] x)
+        public FArray(object[] x)
         {
             m = x;
-        }
+        } 
+        #endregion
 
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             foreach (object o in m)
                 a(o);
         }
 
+        public override FList GetIter()
+        {
+            return new RangedArray(m, 0, m.Length);
+        }
+
+        public override FList GotoNext()
+        {
+            throw new Exception("CArray used CRangedArray as an iterator, therefore GotoNext() can never be called on it.");
+        }
+
         public override bool IsEmpty()
         {
-            return Count() > 0;
+            return Count() == 0;
         }
 
         public override int Count()
@@ -665,32 +861,34 @@ namespace Cat
             return m.Length;
         }
 
+        public override Object Head()
+        {
+            return m[0];
+        }
+        #endregion 
+
+        #region virtual function overrides
         public override object Nth(int n)
         {
             return m[n];
         }
 
-        public override Object First()
-        {
-            return m[0];
-        }
-
         public override Object Last()
         {
-            return m[m.Length - 1];
+            return m[Count() - 1];
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             return TakeRange(n, Count() - n);
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             return TakeRange(0, n);
         }
 
-        public override CForEach TakeRange(int first, int count)
+        public override FList TakeRange(int first, int count)
         {
             if ((first == 0) && (count == Count())) 
                 return this;
@@ -703,132 +901,180 @@ namespace Cat
                 case (0):
                     return Nil();
                 case (1):
-                    return Unit(Nth(first));
+                    return MakeUnit(m[0]);
                 case (2):
-                    return Pair(Nth(first), Nth(first + 1));
+                    return MakePair(m[0], m[1]);
                 default: 
-                    return new CRangedArray(m, first, count);
+                    return new RangedArray(m, first, count);
             }
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
-            int i = 0;
-            while (i < m.Length)
-                if (!f(m[i++]))
-                    break;
-            if (i == m.Length) return Nil();
-            if (i == 1) return this;
-            return new CRangedArray(m, i, Count() - i);
+            int n = CountWhile(f);
+            return TakeRange(n, Count() - n);
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override int CountWhile(FilterFxn f)
         {
-            int i = 0;
-            while (i < m.Length)
-                if (!f(m[i++]))
-                    break;
-            if (i == m.Length) return this;
-            if (i == 1) return Nil();
-            return new CRangedArray(m, 0, i);
+            for (int i = 0; i < Count(); ++i)
+            {
+                if (!f(Nth(i)))
+                    return i;
+            }
+            return Count();
         }
+        
+        #endregion 
     }
 
-    public class CRangedArray : CForEach
+    public class RangedArray : FList
     {
-        object[] mArray;
+        #region fields
+        object[] m;
         int mFirst;
-        int mCount; 
+        int mCount;  
+        #endregion
 
-        public CRangedArray(object[] a, int first, int count)
+        #region cosntructors
+        public RangedArray(object[] a, int first, int count)
         {
-            if (count < 2) 
-                throw new Exception("Invalid range, count must be more than two (otherwise use pair, unit, or nil)");             
+            if (count < 0)
+                throw new Exception("Invalid count");
             if (first < 0)
                 throw new Exception("Invalid range, first index must be non-negative");
             if (first + count > a.Length)
                 count = a.Length - first;
-            mArray = a;
+            m = a;
             mFirst = first;
             mCount = count;
-        }
+        } 
+        #endregion
 
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             for (int i = mFirst; i < mFirst + mCount; ++i)
             {
-                a(mArray[i]);
+                a(m[i]);
             }
+        }
+
+        public override FList GetIter()
+        {
+            return new RangedArray(m, mFirst, mCount);
+        }
+
+        public override FList GotoNext()
+        {
+            mFirst += 1; 
+            mCount -= 1;
+            return this;
         }
 
         public override bool IsEmpty()
         {
-            return Count() > 0;
+            return mCount == 0;
         }
 
+        public override Object Head()
+        {
+            return m[mFirst];
+        }
+        #endregion 
+
+        #region virtual function overrides
         public override int Count()
         {
             return mCount;
         }
 
-        public override object Nth(int n)
+        public override int CountWhile(FilterFxn f)
         {
-            return mArray[n + mFirst];
+            for (int i = 0; i < Count(); ++i)
+            {
+                if (!f(Nth(i)))
+                    return i;
+            }
+            return Count();
         }
 
-        public override Object First()
+        public override FList DropWhile(FilterFxn f)
         {
-            return mArray[mFirst];
+            int n = CountWhile(f);
+            return TakeRange(n, mCount - n);
+        }
+
+        public override object Nth(int n)
+        {
+            return m[n + mFirst];
         }
 
         public override Object Last()
         {
-            return mArray[mFirst + mCount - 1];
+            return m[mFirst + mCount - 1];
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             return TakeRange(n, Count() - n);
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             return TakeRange(0, n);
         }
 
-        public override CForEach TakeRange(int first, int count)
+        public override FList TakeRange(int first, int count)
         {
             if (first + count > mCount)
-                throw new Exception("Invalid range");
+                count = mCount - first;
 
             switch (count)
             {
                 case (0):
                     return Nil();
                 case (1):
-                    return Unit(Nth(first + mFirst));
+                    return MakeUnit(m[first + mFirst]);
                 case (2):
-                    return Pair(Nth(first + mFirst), Nth(first + mFirst + 1));
+                    return MakePair(m[first + mFirst], m[first + mFirst + 1]);
                 default:
-                    return new CRangedArray(mArray, mFirst, count);
+                    return new RangedArray(m, mFirst, count);
             }
         }
+        #endregion 
     }
 
-    public class CMappedForEach : CForEach
+    public class MappedFList : FList
     {
+        #region fields
         MapFxn mMap;
-        CForEach mList;
+        FList mList; 
+        #endregion
 
-        public CMappedForEach(CForEach list, MapFxn map)
+        #region constructors
+        public MappedFList(FList list, MapFxn map)
         {
             mList = list;
             mMap = map;
-        }
+        } 
+        #endregion
 
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             mList.ForEach(delegate(object x) { a(mMap(x)); });
+        }
+
+        public override FList GetIter()
+        {
+            return new MappedFList(mList.GetIter(), mMap);
+        }
+
+        public override FList GotoNext()
+        {
+            mList = mList.GotoNext();
+            return this;
         }
 
         public override bool IsEmpty()
@@ -836,14 +1082,21 @@ namespace Cat
             return mList.IsEmpty();
         }
 
+        public override object Head()
+        {
+            return mMap(mList.Head());
+        }
+        #endregion 
+
+        #region virtual function overrides
+        public override bool IsKnownFinite()
+        {
+            return mList.IsKnownFinite();
+        }
+
         public override int Count()
         {
             return mList.Count();
-        }
-
-        public override object First()
-        {
-            return mMap(mList.First());
         }
 
         public override object Last()
@@ -856,54 +1109,124 @@ namespace Cat
             return mMap(mList.Nth(n));
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
-            return new CMappedForEach(mList.DropN(n), mMap);
+            return new MappedFList(mList.DropN(n), mMap);
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
-            return new CMappedForEach(mList.TakeN(n), mMap);
+            return new MappedFList(mList.TakeN(n), mMap);
         }
 
-        public override CForEach TakeRange(int first, int count)
+        public override FList TakeRange(int first, int count)
         {
-            return new CMappedForEach(mList.TakeRange(first, count), mMap);
+            return new MappedFList(mList.TakeRange(first, count), mMap);
         }
+        #endregion 
     }
 
-    public class CFilteredForEach : CForEach
+    public class FilteredFList : FList
     {
-        FilterFxn mFilter;
-        CForEach mList;
+        #region fields
+		FilterFxn mFilter;
+        FList mList; 
+	    #endregion
 
-        public CFilteredForEach(CForEach list, FilterFxn filter)
+        #region constructors
+        public FilteredFList(FList list, FilterFxn filter)
         {
-            mList = list;
+            // this way we are guaranteed that either mList has a first value 
+            // satisfying the filter, or is empty. 
+            mList = list.DropWhile(NegateFilter(filter));
             mFilter = filter;
-        }
+        }        
+        #endregion
 
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             mList.ForEach(delegate(object x) { if (mFilter(x)) a(x); });
         }
-    }
 
-    public class CConsCell : CForEach
-    {
-        object mHead;
-        CForEach mRest;
-
-        public CConsCell(object head, CForEach rest)
+        public override FList GetIter()
         {
-            mHead = head;
-            mRest = rest;
+            return new FilteredFList(mList.GetIter(), mFilter);
         }
 
+        public override FList GotoNext()
+        {
+            mList = mList.GotoNext();
+            while (!mList.IsEmpty() && !mFilter(mList.Head()))
+            {
+                mList = mList.GotoNext();
+            }
+            if (mList.IsEmpty())
+                return Nil();
+            return this;
+        }
+
+        public override object Head()
+        {
+            return mList.Head();   
+        }
+
+        public override bool IsEmpty()
+        {
+            return mList.IsEmpty();
+        }
+        #endregion
+
+        #region virtual function overrides
+        public override int CountWhile(FilterFxn f)
+        {
+            return mList.CountWhile(ComposeFilters(f, mFilter));
+        }
+
+        public override bool IsKnownFinite()
+        {
+            return mList.IsKnownFinite();
+        }
+        #endregion
+    }
+
+    public class ConsCell : FList
+    {
+        #region fields
+        object mHead;
+        FList mTail; 
+        #endregion
+
+        #region constructors
+        public ConsCell(object head, FList rest)
+        {
+            mHead = head;
+            mTail = rest;
+        } 
+        #endregion
+
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             a(mHead);
-            mRest.ForEach(a);
+            mTail.ForEach(a);
+        }
+
+        public override FList GetIter()
+        {
+            return new ConsCell(mHead, mTail);
+        }
+
+        public override FList GotoNext()
+        {
+            if (mTail.IsEmpty())
+            {
+                return Nil();
+            }
+
+            mHead = mTail.Head();
+            mTail = mTail.Tail();
+            return this;
         }
 
         public override bool IsEmpty()
@@ -911,14 +1234,32 @@ namespace Cat
             return false;
         }
 
-        public override int Count()
-        {
-            return 1 + mRest.Count();
-        }
-
-        public override object First()
+        public override object Head()
         {
             return mHead;
+        }
+        #endregion
+
+        #region virtual function overrides
+        public override bool IsKnownFinite()
+        {
+            return false;
+        }
+
+        public override bool IsKnownInfinite()
+        {
+            return false;
+        }
+
+        public override int Count()
+        {
+            return 1 + mTail.Count();
+        }
+
+        public override int CountWhile(FilterFxn f)
+        {
+            if (!f(mHead)) return 0;
+            return 1 + mTail.CountWhile(f);
         }
 
         public override object Nth(int n)
@@ -926,38 +1267,72 @@ namespace Cat
             if (n == 0) 
                 return mHead;
             else
-                return mRest.Nth(n - 1);
+                return mTail.Nth(n - 1);
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             if (n == 0)
                 return this;
             else
-                return mRest.DropN(n - 1);
+                return mTail.DropN(n - 1);
         }
+        #endregion
     }
 
-    public class CRepeater : CForEach
+    public class FListRepeater : FList
     {
-        object mObject;
+        #region fields
+        object mObject; 
+        #endregion
 
-        public CRepeater(Object o)
+        #region constructors
+        public FListRepeater(Object o)
         {
             mObject = o;
-        }
+        } 
+        #endregion
 
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
-            while (true) {
+            // Breaks only when a throws an exception
+            while (true)
+            {
                 a(mObject);
             }
         }
 
-        #region override functions
+        public override FList GetIter()
+        {
+            return this;
+        }
+
+        public override FList GotoNext()
+        {
+            return this;
+        }
+
         public override bool IsEmpty()
         {
             return false;
+        }
+
+        public override Object Head()
+        {
+            return mObject;
+        }
+        #endregion 
+
+        #region virtual override functions
+        public override bool IsKnownFinite()
+        {
+            return false;
+        }
+
+        public override bool IsKnownInfinite()
+        {
+            return true;
         }
 
         public override object Nth(int n)
@@ -965,12 +1340,7 @@ namespace Cat
             return mObject;
         }
 
-        public override Object First()
-        {
-            return mObject;
-        }
-
-        public override CForEach Rest()
+        public override FList Tail()
         {
             return this;
         }
@@ -980,7 +1350,7 @@ namespace Cat
             return mObject;
         }
 
-        public override CForEach Filter(FilterFxn f)        
+        public override FList Filter(FilterFxn f)        
         {
             if (f(mObject))
                 return this;
@@ -993,37 +1363,40 @@ namespace Cat
             throw new Exception("infinite list");
         }
 
+        public override int CountWhile(FilterFxn f)
+        {
+            if (!f(mObject)) return 0;
+            throw new Exception("inifinite");
+        }
+
+
         public override object Fold(object init, FoldFxn f)
         {
-            throw new Exception("infinite list");
+            if (f(init, mObject) != init) throw new Exception("diverges");
+            else return init;
         }
 
-        public override CForEach Map(MapFxn f)
+        public override FList Map(MapFxn f)
         {
-            return new CRepeater(f(mObject));
+            return new FListRepeater(f(mObject));
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             return this;
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             return RangeGen(delegate(int i) { return mObject; }, 0, n);
         }
 
-        public override CForEach TakeRange(int first, int count)
-        {
-            return TakeN(count);
-        }
-
-        public override CForEach TakeWhile(FilterFxn f)
+        public override FList TakeWhile(FilterFxn f)
         {
             return Gen(mObject, delegate(Object x) { return mObject; }, f);
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
             return this;
         }
@@ -1031,19 +1404,24 @@ namespace Cat
         #endregion
     }
 
-    public class CRangeGenerator : CForEach
+    public class RangeGenerator : FList
     {
+        #region fields
         RangeGenFxn mFxn;
         int mFirst;
-        int mCount;
+        int mCount; 
+        #endregion
 
-        public CRangeGenerator(RangeGenFxn f, int first, int count)
+        #region constructors
+        public RangeGenerator(RangeGenFxn f, int first, int count)
         {
             mFxn = f;
             mFirst = first;
             mCount = count;
-        }
+        } 
+        #endregion
 
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             for (int i = mFirst; i < mCount; ++i)
@@ -1052,10 +1430,38 @@ namespace Cat
             }
         }
 
-        #region override functions
+        public override FList GetIter()
+        {
+            return new RangeGenerator(mFxn, mFirst, mCount);
+        }
+
+        public override FList GotoNext()
+        {
+            ++mFirst;
+            --mCount;
+            return this;
+        }
+
         public override bool IsEmpty()
         {
             return mCount == 0;
+        }
+
+        public override Object Head()
+        {
+            return mFxn(mFirst);
+        }
+        #endregion 
+
+        #region virtual function overrides
+        public override bool IsKnownFinite()
+        {
+            return true;
+        }
+
+        public override bool IsKnownInfinite()
+        {
+            return false;
         }
 
         public override int Count()
@@ -1068,12 +1474,7 @@ namespace Cat
             return mFxn(n + mFirst);
         }
 
-        public override Object First()
-        {
-            return mFxn(mFirst);
-        }
-
-        public override CForEach Rest()
+        public override FList Tail()
         {
             return DropN(1);
         }
@@ -1083,17 +1484,17 @@ namespace Cat
             return mFxn(mFirst + mCount - 1);
         }
 
-        public override CForEach DropN(int n)
+        public override FList DropN(int n)
         {
             return TakeRange(mFirst + n, mCount - n);
         }
 
-        public override CForEach TakeN(int n)
+        public override FList TakeN(int n)
         {
             return TakeRange(mFirst, n);
         }
 
-        public override CForEach TakeRange(int first, int count)
+        public override FList TakeRange(int first, int count)
         {
             if (count + first > mCount)
                 count = mCount - first;
@@ -1103,71 +1504,51 @@ namespace Cat
                 case (0):
                     return Nil();
                 case (1):
-                    return Unit(mFxn(mFirst + first));
+                    return MakeUnit(mFxn(mFirst + first));
                 case (2):
-                    return Pair(mFxn(mFirst + first), mFxn(mFirst + first + 1));
+                    return MakePair(mFxn(mFirst + first), mFxn(mFirst + first + 1));
                 default:
-                    return new CRangeGenerator(mFxn, mFirst, count);
+                    return new RangeGenerator(mFxn, mFirst + first, count);
             }
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override int CountWhile(FilterFxn f)
         {
-            int cur = mFirst;
-            while (cur < mFirst + mCount)
+            for (int i = 0; i < mCount; ++i)
             {
-                if (!f(mFxn(cur)))
-                {
-                    int n = cur - mFirst;
-                    if (n == 0) return Nil();
-                    return new CRangeGenerator(mFxn, mFirst, n);                   
-                }
-                cur++;
+                if (!f(mFxn(i + mFirst)))
+                    return i;
             }
-            return this;
+            return mCount;
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override FList DropWhile(FilterFxn f)
         {
-            int cur = mFirst;
-            while (cur < mFirst + mCount)
-            {
-                if (!f(mFxn(cur)))
-                {
-                    int n = mCount - (cur - mFirst);
-                    if (cur == mFirst) return this;
-                    return new CRangeGenerator(mFxn, cur, n);
-                }
-                cur++;
-            }
-            return Nil();
+            int n = CountWhile(f);
+            return TakeRange(n, mCount - n);
         }
         #endregion
     }
 
-    public class CGenerator : CForEach
+    public class Generator : FList
     {
+        #region fields
         object mFirst;
         MapFxn mNext;
-        FilterFxn mCond;
+        FilterFxn mCond; 
+        #endregion
 
-        public CGenerator(object first, MapFxn next, FilterFxn cond)
+        #region constructors
+        public Generator(object first, MapFxn next, FilterFxn cond)
         {
             mFirst = first;
             mNext = next;
             mCond = cond;
         }
 
-        public override object First()
-        {
-            return mFirst;
-        }
+        #endregion
 
-        public override CForEach Rest()
-        {
-            return Gen(mNext(mFirst), mNext, mCond);
-        }
-
+        #region abstract function overrides
         public override void ForEach(Accessor a)
         {
             object cur = mFirst;
@@ -1178,18 +1559,63 @@ namespace Cat
             }
         }
 
+        public override FList GetIter()
+        {
+            return new Generator(mFirst, mNext, mCond);
+        }
+
+        public override object Head()
+        {
+            return mFirst;
+        }
+
         public override bool IsEmpty()
         {
             return !mCond(mFirst);
         }
 
-        public override CForEach TakeWhile(FilterFxn f)
+        public override FList GotoNext()
+        {
+            mFirst = mNext(mFirst);
+            return this;
+        }
+        #endregion 
+
+        #region virtual function overrides
+        public override bool IsKnownFinite()
+        {
+            return false;
+        }
+
+        public override bool IsKnownInfinite()
+        {
+            return false;
+        }
+
+        public override FList Tail()
+        {
+            return Gen(mNext(mFirst), mNext, mCond);
+        }
+
+        public override FList TakeWhile(FilterFxn f)
         {
             if (!mCond(mFirst) || !f(mFirst)) return Nil();
             return Gen(mFirst, mNext, ComposeFilters(f, mCond));
         }
 
-        public override CForEach DropWhile(FilterFxn f)
+        public override int CountWhile(FilterFxn f)
+        {
+            int n = 0;
+            object cur = mFirst;
+            while (mCond(cur))
+            {
+                ++n;
+                cur = mNext(cur);
+            }
+            return n;
+        }
+
+        public override FList DropWhile(FilterFxn f)
         {
             object cur = mFirst;
             while (mCond(cur) && f(cur))
@@ -1199,5 +1625,49 @@ namespace Cat
             if (mCond(cur)) return Nil();
             return Gen(cur, mNext, mCond);
         }
+        #endregion 
+    }
+
+
+    public class FlattenedFList : FList
+    {
+        #region fields
+        FList mList;
+        #endregion
+
+        #region constructor
+        public FlattenedFList(FList list)
+        {
+            mList = list;
+        }
+        #endregion 
+
+        #region abstract function overrides
+        public override void ForEach(Accessor a)
+        {
+            mList.ForEach(delegate(object o) { (o as FList).ForEach(a); });
+        }
+
+        public override FList GetIter()
+        {
+            return new FlattenedFList(mList.GetIter());
+        }
+
+        public override FList GotoNext()
+        {
+            mList = mList.GotoNext();
+            return this;
+        }
+
+        public override object Head()
+        {
+            return (mList.Head() as FList).Head();
+        }
+
+        public override bool IsEmpty()
+        {
+            return (!IsEmpty()) && ((mList.Head() as FList).IsEmpty());
+        }
+        #endregion
     }
 }

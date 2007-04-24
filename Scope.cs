@@ -130,6 +130,11 @@ namespace Cat
             }
         }
 
+        public void RemoveFunctions(string s)
+        {
+            mpFunctions.Remove(s);
+        }
+
         public Dictionary<String, Function>.ValueCollection GetAllFunctions()
         {
             return mpFunctions.Values;

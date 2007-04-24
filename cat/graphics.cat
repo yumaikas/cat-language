@@ -62,3 +62,8 @@ define fill
 define sq
 { [fd 90 tr] curry 4 repeat }
 
+define st
+{ show_turtle }
+
+define ht
+{ hide_turtle }

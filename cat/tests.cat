@@ -1,17 +1,17 @@
-/*
-  Public domain code by Christopher Diggins
-  this is a file designed to test a minimalist Cat implementation
-  with no standard library loaded.
-
-  There is not even a console requirement, so a compiled version
-  should be able to be executed directly on hardware.
-*/
+// Cat Standard Tests
+// by Christopher Diggins
+// http://www.cdiggins.com
+// this file is public domain
+//
+// These tests are ordered in terms of increasing sophistiction of a Cat implementation
+// simpler implementations would not be expected to support the whole range.
 
 define test : (( -> bool) -> )
 {
   dup eval [pop] [throw] if
 }
 
+// This is designed to test a minimalist Cat implementation
 define test0
 {
   // if tests
@@ -46,6 +46,60 @@ define test0
 
   // basic comparison tests
   [0 0 lteq] test
+  [0 1 lteq] test
+  [1 0 lteq not] test
+  [1 1 lteq] test
+
+  // swap tests
+  [1 2 pop 1 eq] test
+  [1 2 swap pop 2 eq] test
+  [1 2 swap swap pop 1 eq] test
+
+  // dip tests
+  [1 1 2 [eq] dip pop] test
+  [1 2 1 [neq] dip pop] test
+  [2 [1] dip pop 1 eq] test
+  [1 [2] dip pop 2 eq] test
+  [2 1 [pop] dip 1 eq] test
+  [1 2 [pop] dip 2 eq] test
+  [1 2 3 [swap] dip pop pop 2 eq] test
+  [1 2 3 [pop] dip pop 1 eq] test
+  [1 2 3 [pop pop] dip 3 eq] test
+  [1 2 3 [[pop] dip pop] dip 3 eq] test
+  [1 2 3 [[pop] dip] dip swap pop 3 eq] test
+}
+
+define _43210
+{ 0 [1 add] [5 lt] gen }
+
+define _3210
+{ 0 4 [id] range_gen }
+
+define _234
+{ [2 3 4] list }
+
+define _01234
+{ [0 1 2 3 4] list }
+
+define _0123
+{ _01 _23 cat }
+
+define _23
+{ 2 3 pair }
+
+define _012
+{ nil 0 cons 1 cons 2 cons }
+
+define _01
+{ 0 1 pair }
+
+define _0
+{ 0 unit }
+
+define test1
+{
+  // comparison tests
+  [0 0 lteq] test
   [0 0 gteq] test
   [0 1 lt] test
   [0 1 lteq] test
@@ -60,17 +114,236 @@ define test0
   [1 1 gt not] test
   [1 1 gteq] test
 
-  // Swap tests
-  [1 2 pop 1 eq] test
-  [1 2 swap pop 2 eq] test
-  [1 2 swap swap pop 1 eq] test
+  // core equality tests
+  [nil nil eq] test
+  [_0 _0 eq] test
+  [_01 _01 eq] test
+  [_012 _012 eq] test
+  [_0123 _0123 eq] test
 
-  // Dip tests
-  [2 [1] dip pop 1 eq] test
-  [1 [2] dip pop 2 eq] test
-  [1 2 3 [swap] dip pop pop 2 eq] test
-  [1 2 3 [pop] dip pop 1 eq] test
-  [1 2 3 [pop pop] dip 3 eq] test
-  [1 2 3 [[pop] dip pop] dip 3 eq] test
-  [1 2 3 [[pop] dip] dip swap pop 3 eq] test
+  // list generator
+  [[0] list _0 eq] test
+  [[0 1] list _01 eq] test
+  [[0 1 2] list _012 eq] test
+  [[0 1 2 3] list _0123 eq] test
+
+  // cons
+  [nil 1 cons 1 unit eq] test
+
+  // head items
+  [_0 head 0 eq] test
+  [_01 head 1 eq] test
+  [_012 head 2 eq] test
+  [_0123 head 3 eq] test
+  [_01234 head 4 eq] test
+  [_43210 head 0 eq] test
+  [_3210 head 0 eq] test
+  [_234 head 4 eq] test
+  [_23 head 3 eq] test
+
+  // first=head
+  [_0 first swap head eq] test
+  [_01 first swap head eq] test
+  [_012 first swap head eq] test
+  [_0123 first swap head eq] test
+  [_01234 first swap head eq] test
+  [_43210 first swap head eq] test
+  [_3210 first swap head eq] test
+  [_234 first swap head eq] test
+  [_23 first swap head eq] test
+
+  // last items
+  [_0 last swap pop 0 eq] test
+  [_01 last swap pop 0 eq] test
+  [_012 last swap pop 0 eq] test
+  [_0123 last swap pop 0 eq] test
+  [_01234 last swap pop 0 eq] test
+  [_43210 last swap pop 4 eq] test
+  [_3210 last swap pop 3 eq] test
+  [_234 last swap pop 2 eq] test
+  [_23 last swap pop 2 eq] test
+
+  // list to non-list comparison
+  [nil 0 neq] test
+  [0 nil neq] test
+
+  // empty
+  [nil empty swap pop] test
+  [_0123 empty swap pop not] test
+  [_012 empty swap pop not] test
+  [_01 empty swap pop not] test
+  [_0 empty swap pop not] test
+
+  // count
+  [_0123 count swap pop 4 eq] test
+  [_012 count swap pop 3 eq] test
+  [_01 count swap pop 2 eq] test
+  [_0 count swap pop 1 eq] test
+  [nil count swap pop 0 eq] test
+
+  // cat
+  [_01 _23 cat _0123 eq] test
+  [0 unit 1 unit cat _01 eq] test
+
+  // nth test
+  [_0123 0 nth swap pop 3 eq] test
+  [_0123 1 nth swap pop 2 eq] test
+  [_0123 2 nth swap pop 1 eq] test
+  [_0123 3 nth swap pop 0 eq] test
+  [_012 0 nth swap pop 2 eq] test
+  [_012 1 nth swap pop 1 eq] test
+  [_012 2 nth swap pop 0 eq] test
+  [_01 0 nth swap pop 1 eq] test
+  [_01 1 nth swap pop 0 eq] test
+  [_0 0 nth swap pop 0 eq] test
+
+  // map test
+  [_0123 [2 *] map [0 2 4 6] list eq] test
+  [_012 [2 *] map [0 2 4] list eq] test
+  [_01 [2 *] map [0 2] list eq] test
+  [_0 [2 *] map [0] list eq] test
+  [nil [2 *] map nil eq] test
+  [_0123 [1 +] map [1 2 3 4] list eq] test
+  [_012 [1 +] map [1 2 3] list eq] test
+  [_01 [1 +] map [1 2] list eq] test
+  [_0 [1 +] map [1] list eq] test
+  [nil [1 +] map nil eq] test
+
+  // filter
+  [_0123 [1 gt] filter [2 3] list eq] test
+  [_012 [1 gt] filter [2] list eq] test
+  [_01 [1 gt] filter nil eq] test
+  [_0 [1 gt] filter nil eq] test
+  [nil [1 gt] filter nil eq] test
+  [_0123 [2 lt] filter _01 eq] test
+  [_012 [2 lt] filter _01 eq] test
+  [_01 [2 lt] filter _01 eq] test
+  [_0 [2 lt] filter _0 eq] test
+  [nil [2 lt] filter nil eq] test
+  [_0123 [2 mod 0 eq] filter [0 2] list eq] test
+  [_012 [2 mod 0 eq] filter [0 2] list eq] test
+  [_01 [2 mod 0 eq] filter _0 eq] test
+  [_0 [2 mod 0 eq] filter _0 eq] test
+  [nil [2 mod 0 eq] filter nil eq] test
+
+  // fold
+  [_0123 0 [+] fold 6 eq] test
+  [_012 0 [+] fold 3 eq] test
+  [_01 0 [+] fold 1 eq] test
+  [_0 0 [+] fold 0 eq] test
+  [nil 0 [+] fold 0 eq] test
+  [_0123 nil [cons] fold [3 2 1 0] list eq] test
+
+  // take
+  [_01234 0 take nil eq] test
+  [_0123 0 take nil eq] test
+  [_012 0 take nil eq] test
+  [_01 0 take nil eq] test
+  [_0 0 take nil eq] test
+  [nil 0 take nil eq] test
+  [_01234 1 take 4 unit eq] test
+  [_0123 1 take 3 unit eq] test
+  [_012 1 take 2 unit eq] test
+  [_01 1 take 1 unit eq] test
+  [_0 1 take _0 eq] test
+  [nil 1 take nil eq] test
+  [_01234 5 take _01234 eq] test
+  [_0123 5 take _0123 eq] test
+  [_012 5 take _012 eq] test
+  [_01 5 take _01 eq] test
+  [_0 5 take _0 eq] test
+  [nil 5 take nil eq] test
+
+  // drop
+  [_01234 0 drop _01234 eq] test
+  [_0123 0 drop _0123 eq] test
+  [_012 0 drop _012 eq] test
+  [_01 0 drop _01 eq] test
+  [_0 0 drop _0 eq] test
+  [nil 0 drop nil eq] test
+  [_01234 5 drop nil eq] test
+  [_0123 5 drop nil eq] test
+  [_012 5 drop nil eq] test
+  [_01 5 drop nil eq] test
+  [_0 5 drop nil eq] test
+  [nil 5 drop nil eq] test
+  [_01234 1 drop _0123 eq] test
+  [_0123 1 drop _012 eq] test
+  [_012 1 drop _01 eq] test
+  [_01 1 drop _0 eq] test
+  [_0 1 drop nil eq] test
+  [nil 1 drop nil eq] test
+
+  // tail
+  [_01234 tail _0123 eq] test
+  [_0123 tail _012 eq] test
+  [_012 tail _01 eq] test
+  [_01 tail _0 eq] test
+  [_0 tail nil eq] test
+  [nil tail nil eq] test
+
+  // take while
+  [[1 0 3 2 1 0] list [2 lt] take_while [1 0] list eq] test
+
+  // drop while
+  [[1 0 3 2 1 0] list [2 lt] drop_while [1 0 3 2] list eq] test
 }
+
+define test_strings
+{
+  (
+    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1),
+    (("I", "am", "very", "lazy"), 2),
+    (("I", "hope", "this", "is", "over", "quick"), 3),
+    (("I", "have", "high", "hopes", "for", "the", "lazy", "dog"), 4)
+  )
+}
+
+define test_pair_list : ( -> list)
+{
+  ((1, "a"),(2, "b"),(3, "a"),(4, "c"),(5, "b"),(6, "a"))
+}
+
+define test_joined_list : ( -> list)
+{
+  (
+    ((4), "c"),
+    ((5, 2), "b"),
+    ((6, 3, 1), "a")
+  )
+}
+
+define test_m
+{ unpair pop [1 swap pair] map }
+
+define test_r
+{ unpair [sum] dip pair }
+
+define test_map_reduce
+{ test_strings [test_m] [test_r] map_reduce print_list }
+
+define test2
+{
+  [1 2 pair [1 2] list eq] test
+  [1 2 pair (1, 2) eq] test
+  [[1 2] list (1, 2) eq] test
+  [(1, 2) unpair pair (1, 2) eq] test
+  [hash_list hash_to_list nil eq] test
+  [hash_list "a" 1 hash_add hash_to_list ((1, "a")) eq] test
+  [hash_list 1 hash_contains swap pop not] test
+  [hash_list "hello" hash_contains swap pop not] test
+  [hash_list "a" 1 hash_add "a" hash_contains swap pop] test
+  [hash_list "a" 1 hash_add "b" hash_contains swap pop not] test
+  [hash_list 24 "a" hash_add 24 hash_get swap pop "a" eq] test
+  [hash_list "a" 42 hash_add "a" hash_get swap pop 42 eq] test
+  [test_pair_list self_join test_joined_list eq] test
+}
+
+define run_tests
+{
+  test0
+  test1
+  test2
+  "tests completed successfully" writeln
+}
+

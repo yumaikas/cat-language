@@ -61,24 +61,31 @@ namespace Cat
         public abstract void Eval(Executor exec);
 
         public virtual Object Invoke()
-        {            
+        {
             Eval(Executor.Aux);
-            return Executor.Aux.GetStack()[0];
+            if (Executor.Aux.GetStack().Count != 1)
+                throw new Exception("internal error: after invoking " + GetName() + " auxiliary stack should have exactly one value.");
+            return Executor.Aux.GetStack().Pop();
         }
 
         public virtual Object Invoke(Object o)
         {
             Executor.Aux.Push(o);
-            Eval(Executor.Aux);
-            return Executor.Aux.GetStack()[0];
+            return Invoke();
         }
 
         public virtual Object Invoke(Object o1, Object o2)
         {
             Executor.Aux.Push(o1);
             Executor.Aux.Push(o2);
-            Eval(Executor.Aux);
-            return Executor.Aux.GetStack()[0];
+            return Invoke();
+        }
+
+        public virtual Object Invoke(Object[] args)
+        {
+            foreach (Object arg in args)
+                Executor.Aux.Push(arg);
+            return Invoke();
         }
 
         public MapFxn ToMapFxn()
@@ -99,14 +106,6 @@ namespace Cat
         public RangeGenFxn ToRangeGenFxn()
         {
             return delegate(int n) { return Invoke(n); };
-        }
-
-        public virtual Object Invoke(Object[] args)
-        {
-            foreach (Object arg in args)
-                Executor.Aux.Push(arg);
-            Eval(Executor.Aux);
-            return Executor.Aux.GetStack()[0];
         }
 
         #region static functions
