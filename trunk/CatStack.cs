@@ -104,14 +104,15 @@ namespace Cat
 
         #endregion
 
-        public CForEach ToList()
+        public FList ToList()
         {
             object[] a = new object[Count];
+            // Can't use CopyTo as I originally though because stacks 
+            // use reversed indexes. The head of a list has to be the top of the stack.
+            // Which is notated by this[0]
             for (int i = 0; i < Count; ++i)
-            {
-                a[Count - i - 1] = this[i];
-            }
-            return new CArray(a);
+                a[i] = this[i];
+            return new FArray(a);
         }
     }
 }

@@ -37,6 +37,20 @@ namespace Cat
             }
         }
 
+        public class Eq : Function
+        {
+            public Eq()
+                : base("eq", "(var var -> bool)", "returns true if both items on stack are the same type, and have same value")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object x = exec.Pop();
+                Object y = exec.Pop();
+                exec.Push(x.Equals(y));
+            }
+        }
+
         public class True : Function
         {
             public True()
@@ -301,7 +315,6 @@ namespace Cat
         #endregion
 
         #region int functions
-        public static bool xor(bool x, bool y) { return x ^ y; }
         public static int add(int x, int y) { return x + y; }
         public static int sub(int x, int y) { return x - y; }
         public static int div(int x, int y) { return x / y; }
@@ -314,11 +327,10 @@ namespace Cat
         public static bool lt(int x, int y) { return x < y; }
         public static bool gteq(int x, int y) { return x >= y; }
         public static bool lteq(int x, int y) { return x <= y; }
-        public static bool eq(int x, int y) { return x == y; }
-        public static bool neq(int x, int y) { return x != y; }
         public static int min(int x, int y) { return Math.Min(x, y); }
         public static int max(int x, int y) { return Math.Max(x, y); }
         public static int abs(int x) { return Math.Abs(x); }
+        public static int sqr(int x) { return x * x; }
         #endregion
 
         #region double functions
@@ -334,8 +346,6 @@ namespace Cat
         public static bool lt(double x, double y) { return x < y; }
         public static bool gteq(double x, double y) { return x >= y; }
         public static bool lteq(double x, double y) { return x <= y; }
-        public static bool eq(double x, double y) { return x == y; }
-        public static bool neq(double x, double y) { return x != y; }
         public static double min(double x, double y) { return Math.Min(x, y); }
         public static double max(double x, double y) { return Math.Max(x, y); }
         public static double sin(double x) { return Math.Sin(x); }
@@ -350,6 +360,7 @@ namespace Cat
         public static double tanh(double x) { return Math.Tanh(x); }
         public static double abs(double x) { return Math.Abs(x); }
         public static double pow(double x, double y) { return Math.Pow(x, y); }
+        public static double sqr(double x) { return x * x; }
         public static double sqrt(double x) { return Math.Sqrt(x); }
         public static double trunc(double x) { return Math.Truncate(x); }
         public static double round(double x) { return Math.Round(x); }
@@ -367,8 +378,6 @@ namespace Cat
         public static bool lt(string x, string y) { return x.CompareTo(y) < 0; }
         public static bool gteq(string x, string y) { return x.CompareTo(y) >= 0; }
         public static bool lteq(string x, string y) { return x.CompareTo(y) <= 0; }
-        public static bool eq(string x, string y) { return x == y; }
-        public static bool neq(string x, string y) { return x != y; }
         public static string min(string x, string y) { return lteq(x, y) ? x : y; }
         public static string max(string x, string y) { return gteq(x, y) ? x : y; }
         public static string add(string x, string y) { return x + y; }
@@ -380,11 +389,98 @@ namespace Cat
         #endregion
 
         #region console functions
-        public static void write(Object o) { MainClass.Write(o.ToString()); }
-        public static void writeln(Object o) { MainClass.WriteLine(o.ToString()); }
+        public static void write(Object o) { MainClass.Write(MainClass.ObjectToString(o)); }
+        public static void writeln(Object o) { MainClass.WriteLine(MainClass.ObjectToString(o)); }
         public static string readln() { return Console.ReadLine(); }
         public static char readkey() { return Console.ReadKey().KeyChar; }
         #endregion
+
+        #region hash functions
+        public class MakeHashList : Function
+        {
+            public MakeHashList()
+                : base("hash_list", "( -> hash_list)", "makes an empty hash list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(new HashList());
+            }
+        }
+
+        public class HashGet : Function
+        {
+            public HashGet()
+                : base("hash_get", "(hash_list var -> hash_list var)", "gets a value from a hash list using a key")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object key = exec.Pop();
+                HashList hash = exec.Peek() as HashList;
+                Object value = hash.Get(key);
+                exec.Push(value);
+            }
+        }
+
+        public class HashSet : Function
+        {
+            public HashSet()
+                : base("hash_set", "(hash_list key=var value=var -> hash_list)", "associates a value with a key in a hash list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object value = exec.Pop();
+                Object key = exec.Pop();
+                HashList hash = exec.Pop() as HashList;
+                exec.Push(hash.Set(key, value));
+            }
+        }
+
+        public class HashAdd : Function
+        {
+            public HashAdd()
+                : base("hash_add", "(hash_list key=var value=var -> hash_list)", "associates a value with a key in a hash list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object value = exec.Pop();
+                Object key = exec.Pop();
+                HashList hash = exec.Pop() as HashList;
+                exec.Push(hash.Add(key, value));
+            }
+        }
+
+        public class HashContains : Function
+        {
+            public HashContains()
+                : base("hash_contains", "(hash_list key=var -> hash_list bool)", "returns true if hash list contains key")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object key = exec.Pop();
+                HashList hash = exec.Peek() as HashList;
+                exec.Push(hash.ContainsKey(key));
+            }
+        }
+
+        public class HashToList : Function
+        {
+            public HashToList()
+                : base("hash_to_list", "(hash_list -> list)", "converts a hash_list to a list of pairs")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                HashList hash = exec.Pop() as HashList;
+                exec.Push(hash.ToArray());
+            }
+        }
+
+        #endregion 
 
         #region list functions
         public class List : Function
@@ -398,6 +494,7 @@ namespace Cat
                 Function f = exec.Pop() as Function;
                 f.Eval(Executor.Aux);
                 exec.Push(Executor.Aux.GetStack().ToList());
+                Executor.Aux.GetStack().Clear();
             }
         }
 
@@ -409,7 +506,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                CForEach list = exec.Peek() as CForEach;
+                FList list = exec.Peek() as FList;
                 exec.Push(list.IsEmpty());
             }
         }
@@ -422,7 +519,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                CForEach list = exec.Peek() as CForEach;
+                FList list = exec.Peek() as FList;
                 exec.Push(list.Count());
             }
         }
@@ -436,7 +533,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 int n = (int)exec.Pop();
-                CForEach list = exec.Peek() as CForEach;
+                FList list = exec.Peek() as FList;
                 exec.Push(list.Nth(n));
             }
         }
@@ -453,7 +550,7 @@ namespace Cat
                 Function term = exec.Pop() as Function;
                 Function next = exec.Pop() as Function;
                 Object init = exec.Pop();
-                exec.Push(new CGenerator(init, next.ToMapFxn(), term.ToFilterFxn()));
+                exec.Push(new Generator(init, next.ToMapFxn(), term.ToFilterFxn()));
             }
         }
 
@@ -465,7 +562,7 @@ namespace Cat
 
             public override void  Eval(Executor exec)
             {
- 	            exec.Push(CForEach.Nil());
+ 	            exec.Push(FList.Nil());
             }
         }
 
@@ -477,21 +574,21 @@ namespace Cat
 
             public override void  Eval(Executor exec)
             {
- 	            exec.Push(CForEach.Unit(exec.Pop()));
+ 	            exec.Push(FList.MakeUnit(exec.Pop()));
             }
         }
 
         public class Pair : Function
         {
             public Pair()
-                : base("pair", "('a 'b -> list)", "creates a list from two items")
+                : base("pair", "('second 'first -> list)", "creates a list from two items")
             { }
 
             public override void Eval(Executor exec)
             {
                 Object x = exec.Pop();
                 Object y = exec.Pop();
- 	            exec.Push(CForEach.Pair(y, x));
+ 	            exec.Push(FList.MakePair(x, y));
             }
         }
 
@@ -504,47 +601,87 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 object x = exec.Pop();
-                CForEach list = exec.Pop() as CForEach;
- 	            exec.Push(CForEach.Cons(x, list));
+                FList list = exec.Pop() as FList;
+ 	            exec.Push(FList.Cons(x, list));
+            }
+        }
+
+        public class Head : Function
+        {
+            public Head()
+                : base("head", "(list -> var)", "replaces a list with the first item")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                FList list = exec.Pop() as FList;
+ 	            exec.Push(list.Head());
             }
         }
 
         public class First : Function
         {
             public First()
-                : base("first", "(list -> var)", "gets the first item from a list")
+                : base("first", "(list -> list var)", "gets the first item from a list")
             { }
 
             public override void Eval(Executor exec)
             {
-                CForEach list = exec.Pop() as CForEach;
- 	            exec.Push(list.First());
+                FList list = exec.Peek() as FList;
+                exec.Push(list.Head());
             }
         }
 
         public class Last : Function
         {
             public Last()
-                : base("last", "(list -> var)", "gets the last item from a list")
+                : base("last", "(list -> list var)", "gets the last item from a list")
             { }
 
             public override void Eval(Executor exec)
             {
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Peek() as FList;
  	            exec.Push(list.Last());
+            }
+        }
+
+        public class Tail : Function
+        {
+            public Tail()
+                : base("tail", "(list -> list)", "removes first item from a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                FList list = exec.Pop() as FList;
+                exec.Push(list.Tail());
             }
         }
 
         public class Rest : Function
         {
             public Rest()
-                : base("rest", "(list -> list)", "gets a list without the first item")
+                : base("rest", "(list -> list list)", "gets a copy of the list with one item")
             { }
 
             public override void Eval(Executor exec)
             {
-                CForEach list = exec.Pop() as CForEach;
-                exec.Push(list.Rest());
+                FList list = exec.Peek() as FList;
+                exec.Push(list.Tail());
+            }
+        }
+
+        public class Uncons : Function
+        {
+            public Uncons()
+                : base("uncons", "(list -> list var)", "returns the top of the list, and the rest of a list")
+            {}
+
+            public override void Eval(Executor exec)
+            {
+                FList list = exec.Pop() as FList;
+                exec.Push(list.Tail());
+                exec.Push(list.Head());
             }
         }
 
@@ -557,7 +694,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.Pop() as Function;
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.Map(f.ToMapFxn()));
             }
         }
@@ -571,7 +708,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.Pop() as Function;
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.Filter(f.ToFilterFxn()));
             }
         }
@@ -585,7 +722,7 @@ namespace Cat
             {
                 Function f = exec.Pop() as Function;
                 Object o = exec.Pop();
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.Fold(o, f.ToFoldFxn()));
             }
         }
@@ -598,9 +735,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                CForEach second = exec.Pop() as CForEach;
-                CForEach first = exec.Pop() as CForEach;
-                exec.Push(CForEach.Concat(first, second));
+                FList first = exec.Pop() as FList;
+                FList second = exec.Pop() as FList;
+                exec.Push(FList.Concat(first, second));
             }
         }
 
@@ -613,7 +750,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 int n = (int)exec.Pop();
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.TakeN(n));
             }
         }
@@ -627,7 +764,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 int n = (int)exec.Pop();
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.DropN(n));
             }
         }
@@ -642,7 +779,7 @@ namespace Cat
             {
                 int count = (int)exec.Pop();
                 int n = (int)exec.Pop();
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.TakeRange(n, count));
             }
         }
@@ -656,7 +793,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.Pop() as Function;
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.TakeWhile(f.ToFilterFxn()));
             }
         }
@@ -670,7 +807,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.Pop() as Function;
-                CForEach list = exec.Pop() as CForEach;
+                FList list = exec.Pop() as FList;
                 exec.Push(list.DropWhile(f.ToFilterFxn()));
             }
         }
@@ -678,16 +815,16 @@ namespace Cat
         public class RangeGen : Function
         {
             public RangeGen()
-                : base("range_gen", "((int -> 'a) first=int count=int -> list)", 
+                : base("range_gen", "(int int (int -> 'a) -> list)", 
                     "creates a lazy list from a range of numbers and a generating function")
             { }
 
             public override void Eval(Executor exec)
             {
+                Function f = exec.Pop() as Function;
                 int count = (int)exec.Pop();
                 int n = (int)exec.Pop();
-                Function f = exec.Pop() as Function;
-                exec.Push(CForEach.RangeGen(f.ToRangeGenFxn(), n, count));
+                exec.Push(FList.RangeGen(f.ToRangeGenFxn(), n, count));
             }
         }
 
@@ -701,7 +838,20 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Object o = exec.Pop();
-                exec.Push(CForEach.Repeater(o));
+                exec.Push(FList.MakeRepeater(o));
+            }
+        }
+
+        public class Flatten : Function
+        {
+            public Flatten()
+                : base("flatten", "(list -> list)", "concatenates all sub-lists in a list of lists")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                FList list = exec.Pop() as FList;
+                exec.Push(list.Flatten());
             }
         }
         #endregion

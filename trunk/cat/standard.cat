@@ -4,6 +4,14 @@
 // this file is public domain
 
 //=============================================================================
+
+define noop
+{ }
+
+define clr
+{ clear }
+
+//=============================================================================
 // Basic shuffling operators
 
 define swapd : ('a 'b 'c -> 'b 'a 'c)
@@ -148,8 +156,9 @@ define embed_args
 { [dup qv] dip compose swap }
 
 //=============================================================================
-// Common predicates.
+// Predicates and comparison functions
 
+define neq : (var var -> bool) { eq not }
 define eqz : ('a -> 'a bool)  { dup 0 eq }
 define neqz : ('a -> 'a bool) { eqz not }
 define gtz : ('a -> 'a bool) { dup 0 gt }
@@ -280,19 +289,12 @@ define ,
 define )
 { cons }
 
-// simple generator
-define gen : (init='a next=('a -> 'a) term=('a -> bool) -> list)
-{ [true] [] gen_filter_map }
-
 // list comprehension
 define lc : (list filterf=('a -> bool) mapf=('a -> 'b) -> list)
 { [filter] dip map }
 
 define swons : (var list -> list)
 { swap cons }
-
-define uncons : (list -> list var)
-{ head [tail nip] dip }
 
 define uncons2 : (list -> list var var)
 { uncons [uncons] dip }
@@ -304,7 +306,7 @@ define uncons4 : (list -> list var var var var)
 { uncons [uncons3] dip }
 
 define unpair : (list -> var var)
-{ uncons [first] dip }
+{ uncons [head] dip }
 
 define range : (int int -> list)
 { ltf [inc] gen }
@@ -312,27 +314,17 @@ define range : (int int -> list)
 define n : (int -> list)
 { 0 swap range }
 
-define foldl
-{ "foldl has been renamed to fold" fail }
-
-define flatten : (list -> list)
-{ nil [cat] fold }
-
 // Returns true iff any value satisfies the condition
-// Could be optimized
 define any : (list ('a -> bool) -> bool)
 { dupd [or] compose false swap fold }
 
 // Returns true iff all values satisfy the condition
-// Could be optimized
 define all : (list ('a -> bool) -> bool)
 { dupd [and] compose true swap fold }
 
 // Reverse a list
 define rev : (list -> list)
 { nil [cons] fold }
-
-
 
 //=============================================================================
 // Infinite list generators
@@ -388,9 +380,9 @@ define repeat : ('A body=('A -> 'A) int -> 'A)
 define rfor : ('A ('A int -> 'A) int -> 'A)
 { swap [sweep dec] curry [neqz] while pop }
 
-// For operating over a list, but not modifying it
+// Forcing an operation to be evaluated on every item
 define for_each : (list (var ~> ) ~> list)
-{ [dup] rcompose map }
+{ [dup] dip [uncons] rcompose [empty not] while pop }
 
 // Output
 define print_list : (list ~> list)
@@ -409,7 +401,7 @@ define sum : (list -> var)
 define hash_safe_get : (hash_list key=var default=var -> hash_list var)
 {
   [[hash_contains] keep] dip // => hash_list bool key default
-  qv                      // => hash_list bool key [default]
+  qv                         // => hash_list bool key [default]
   [[hash_get] curry] dip     // => hash_list bool [key hash_get] [default]
   if                         // => hash_list result
 }
@@ -446,9 +438,6 @@ define quote
 define foldl
 { "'foldl' has been replaced with 'fold'" deprecated_error }
 
-define clr
-{ "'clr' has been replaced with 'clear'" deprecated_error }
-
 //=============================================================================
 // Exception throwing and handling
 
@@ -461,3 +450,20 @@ define assert : (bool -> )
 // a default handler for simple procedures
 define try : ('A ('A -> 'A) -> 'A)
 { ["exception data: " write writeln] try_catch }
+
+//=============================================================================
+// A simple implementation of the google MapReduce algorithm
+//
+// In pseduo-code:
+//
+//   map_reduce(input fmap freduce) == input fmap flatten self_join freduce map
+//
+// where:
+//
+//     input = list(pair('input_value, 'input_key))
+//     fmap = pair('input_value, 'input_key)) -> list(pair('output_value, 'output_key))
+//     freduce = pair(list('output_value), 'output_key) -> pair('output_value, 'output_key)
+//
+
+define map_reduce { [map flatten self_join] dip map }
+

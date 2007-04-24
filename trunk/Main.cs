@@ -203,7 +203,7 @@ namespace Cat
             gpTranscript.WriteLine(s);
         }
 
-        public static string ForEachToString(CForEach x)
+        public static string ForEachToString(FList x)
         {
             string result = "( ";
 
@@ -234,9 +234,9 @@ namespace Cat
             {
                 return "\"" + ((string)o) + "\"";
             }
-            else if (o is CForEach )
+            else if (o is FList )
             {
-                return ForEachToString(o as CForEach);
+                return ForEachToString(o as FList);
             }
             else
             {

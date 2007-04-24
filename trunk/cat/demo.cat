@@ -29,8 +29,17 @@ define fractal1 : (int -> )
   if
 }
 
-define demo
+define demo1
 {
-  open_window 90 tl 80 fractal1
+  90 tl 80 fractal1
 }
 
+define demo2
+{
+  [90 tl demo1] 2 repeat
+}
+
+define fast_demo
+{
+  [demo2] render
+}
