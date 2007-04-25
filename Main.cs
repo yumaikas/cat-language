@@ -31,7 +31,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.11.0 April 23rd, 2007");
+                    WriteLine("version 0.11.1 April 24th, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -234,9 +234,14 @@ namespace Cat
             {
                 return "\"" + ((string)o) + "\"";
             }
-            else if (o is FList )
+            else if (o is FList)
             {
                 return ForEachToString(o as FList);
+            }
+            else if (o is Double)
+            {
+                double d = (double)o;
+                return d.ToString("F");
             }
             else
             {

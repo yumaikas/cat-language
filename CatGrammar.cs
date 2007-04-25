@@ -45,7 +45,7 @@ namespace Cat
         }
         public static Rule IntegerLiteral() 
         { 
-            return AstNode("int", Seq(Plus(Digit()), Not(CharSet(".")))); 
+            return AstNode("int", Seq(Opt(SingleChar('-')), Plus(Digit()), Not(CharSet(".")))); 
         }
         public static Rule EscapeChar() 
         { 
@@ -64,12 +64,8 @@ namespace Cat
             return AstNode("string", Seq(SingleChar('\"'), Star(StringCharLiteral()), SingleChar('\"'))); 
         }
         public static Rule FloatLiteral() 
-        { 
-            return AstNode("float", Seq(Plus(Digit()), SingleChar('.'), Plus(Digit()))); 
-        }
-        public static Rule HexLiteral() 
-        { 
-            return AstNode("hex", Seq(CharSeq("0x"), Star(HexDigit()))); 
+        {
+            return AstNode("float", Seq(Opt(SingleChar('-')), Plus(Digit()), SingleChar('.'), Plus(Digit()))); 
         }
         public static Rule Literal() 
         {
@@ -93,7 +89,7 @@ namespace Cat
         }
         public static Rule Expr()
         {
-            return Token(Choice(Name(), Literal(), Quote()));
+            return Token(Choice(Literal(), Name(), Quote()));
         }
         public static Rule CodeBlock()
         {

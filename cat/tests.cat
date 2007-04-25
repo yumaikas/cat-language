@@ -339,11 +339,66 @@ define test2
   [test_pair_list self_join test_joined_list eq] test
 }
 
+define test3
+{
+  [0 0 range nil eq] test
+  [0 1 range (0) eq] test
+  [0 2 range (1, 0) eq] test
+  [0 3 range (2, 1, 0) eq] test
+  [0 4 range (3, 2, 1, 0) eq] test
+  [0 5 range (4, 3, 2, 1, 0) eq] test
+  [1 1 range (1) eq] test
+  [1 2 range (2, 1) eq] test
+  [1 3 range (3, 2, 1) eq] test
+  [1 4 range (4, 3, 2, 1) eq] test
+  [1 5 range (5, 4, 3, 2, 1) eq] test
+  [2 1 range (2) eq] test
+  [2 2 range (3, 2) eq] test
+  [2 3 range (4, 3, 2) eq] test
+  [2 4 range (5, 4, 3, 2) eq] test
+  [2 5 range (6, 5, 4, 3, 2) eq] test
+}
+
+define test4
+{
+  [5 n head 0 eq] test
+  [5 n tail 1 4 range eq] test
+  [5 n count swap pop 5 eq] test
+  [5 n [pop true] count_while swap pop 5 eq] test
+  [5 n empty swap pop not] test
+  [5 n (4, 3, 2, 1, 0) eq] test
+  [5 n [4 3 2 1 0] list eq] test
+  [5 n 0 5 range eq] test
+  [5 n 0 5 [inc dec] range_gen eq] test
+  [5 n 0 [inc] [5 <] gen eq] test
+  [5 n naturals 5 take eq] test
+  [5 n naturals [5 <] take_while eq] test
+  [5 n [3 <] take_while 3 n eq] test
+  [5 n 3 take 3 n eq] test
+  [5 n naturals [5 <] [] lc eq] test
+}
+
+define test5
+{
+  [1.0 2.0 <=] test
+  [1 2.0 <=] test
+  [1.0 2 <=] test
+  [2.0 1.0 >=] test
+  [2 1.0 >=] test
+  [2.0 1 >=] test
+}
+
 define run_tests
 {
   test0
   test1
   test2
+  test3
+  test4
+  test5
   "tests completed successfully" writeln
 }
 
+define girard (n x) {
+  x n pow 1 neg n pow *
+}

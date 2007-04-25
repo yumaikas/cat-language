@@ -1424,7 +1424,7 @@ namespace Cat
         #region abstract function overrides
         public override void ForEach(Accessor a)
         {
-            for (int i = mFirst; i < mCount; ++i)
+            for (int i = mFirst; i < mFirst + mCount; ++i)
             {
                 a(mFxn(i));
             }
@@ -1486,12 +1486,12 @@ namespace Cat
 
         public override FList DropN(int n)
         {
-            return TakeRange(mFirst + n, mCount - n);
+            return TakeRange(n, mCount - n);
         }
 
         public override FList TakeN(int n)
         {
-            return TakeRange(mFirst, n);
+            return TakeRange(0, n);
         }
 
         public override FList TakeRange(int first, int count)

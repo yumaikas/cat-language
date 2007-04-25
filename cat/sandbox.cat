@@ -23,21 +23,6 @@ define list_to_hash_test
 define if_swap : ('a 'a  ('a 'a -> 'a 'a bool) -> 'a 'a)
 { eval [] [swap] if }
 
-//=============================================================================
-// This is essentially a non-distributed naive implementation of the google MapReduce algorithm
-//
-// In pseduo-code:
-//
-//   map_reduce(input fmap freduce) == input fmap flatten self_join freduce map
-//
-// where:
-//
-//     input = list(pair('input_value, 'input_key))
-//     fmap = pair('input_value, 'input_key)) -> list(pair('output_value, 'output_key))
-//     freduce = pair(list('output_value), 'output_key) -> pair('output_value, 'output_key)
-//
-define map_reduce { [map flatten self_join] dip map }
-
 define test_strings
 {
   (
