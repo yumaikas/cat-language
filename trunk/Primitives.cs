@@ -403,6 +403,8 @@ namespace Cat
         public static double ln(double x) { return Math.Log(x); }
         public static double e() { return Math.E; }
         public static double pi() { return Math.PI; }
+        public static string format_scientific(double x) { return x.ToString("E"); }
+        public static string format_currency(double x) { return x.ToString("C"); }
         #endregion
 
         #region string functions
@@ -840,6 +842,20 @@ namespace Cat
                 Function f = exec.Pop() as Function;
                 FList list = exec.Pop() as FList;
                 exec.Push(list.DropWhile(f.ToFilterFxn()));
+            }
+        }
+
+        public class CountWhile : Function
+        {
+            public CountWhile()
+                : base("count_while", "(list ('a -> bool) -> list count)", "creates a new list by dropping items while the predicate is true")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.Pop() as Function;
+                FList list = exec.Peek() as FList;
+                exec.Push(list.CountWhile(f.ToFilterFxn()));
             }
         }
 

@@ -65,7 +65,7 @@ namespace Cat
         /// <summary>
         /// Output the amount of time elapsed after each entry in the interpreter.
         /// </summary>
-        public static bool gbOutputTimeElapsed = false;
+        public static bool gbOutputTimeElapsed = true;
 
         /// <summary>
         /// The number of worker threads that the interpreter can spawn at one time. 

@@ -64,7 +64,10 @@ namespace Cat
         {
             Eval(Executor.Aux);
             if (Executor.Aux.GetStack().Count != 1)
+            {
+                Executor.Aux.GetStack().Clear();
                 throw new Exception("internal error: after invoking " + GetName() + " auxiliary stack should have exactly one value.");
+            }
             return Executor.Aux.GetStack().Pop();
         }
 
@@ -477,7 +480,7 @@ namespace Cat
 
         public Type GetType(int n)
         {
-            return GetMethodInfo().GetParameters()[n].GetType();
+            return GetMethodInfo().GetParameters()[n].ParameterType;
         }
 
         #endregion
@@ -498,9 +501,20 @@ namespace Cat
             Method m = mOverloads[0];
             for (int i = 1; i < mOverloads.Count; ++i)
             {
-                m = GetBestMatch(exec.GetStack(), m, mOverloads[i + 1]);
+                m = GetBestMatch(exec.GetStack(), m, mOverloads[i]);
             }
             m.Eval(exec);
+        }
+        
+        private bool CanCastTo(Type from, Type to)
+        {
+            if (from.Equals(typeof(int)))
+                return to.Equals(typeof(double));
+
+            if (from.Equals(typeof(byte)))
+                return to.Equals(typeof(double)) || to.Equals(typeof(int));
+
+            return false;
         }
 
         /// <summary>
@@ -513,11 +527,15 @@ namespace Cat
             {
                 Type t = stk.GetType(i);
                 Type u = sig.GetType(i);
-                if (t.Equals(u))
+                if (u.Equals(t))
                 {
                     ret += 100;
                 }
                 else if (u.IsAssignableFrom(t))
+                {
+                    ret += 10;
+                }
+                else if (CanCastTo(t, u))
                 {
                     ret += 1;
                 }
@@ -537,10 +555,13 @@ namespace Cat
             if (xt.Count != yt.Count)
                 throw new Exception("mismatched number of parameters in overload " + y.ToString());
 
+            if (stk.Count < xt.Count)
+                throw new Exception("insufficient number of items on the stack");
+
             int xscore = AssignMatchScore(stk, xt);
             int yscore = AssignMatchScore(stk, yt);
 
-            return xscore <= yscore ? x : y;
+            return xscore >= yscore ? x : y;
         }
 
         public void AddOverload(Method m)
@@ -549,6 +570,7 @@ namespace Cat
                 throw new Exception("overload must share the same name");
             if (mOverloads == null)
                 mOverloads = new List<Method>();
+            mOverloads.Add(m);
         }
     }
 }

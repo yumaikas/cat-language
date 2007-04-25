@@ -11,6 +11,9 @@ define noop
 define clr
 { clear }
 
+define the_answer
+{ 42 }
+
 //=============================================================================
 // Basic shuffling operators
 
@@ -290,8 +293,8 @@ define )
 { cons }
 
 // list comprehension
-define lc : (list filterf=('a -> bool) mapf=('a -> 'b) -> list)
-{ [filter] dip map }
+define lc : (list ('a -> bool) ('a -> 'b) -> list)
+{ [take_while] dip map }
 
 define swons : (var list -> list)
 { swap cons }
@@ -308,12 +311,6 @@ define uncons4 : (list -> list var var var var)
 define unpair : (list -> var var)
 { uncons [head] dip }
 
-define range : (int int -> list)
-{ ltf [inc] gen }
-
-define n : (int -> list)
-{ 0 swap range }
-
 // Returns true iff any value satisfies the condition
 define any : (list ('a -> bool) -> bool)
 { dupd [or] compose false swap fold }
@@ -329,17 +326,29 @@ define rev : (list -> list)
 //=============================================================================
 // Infinite list generators
 
+define range : (int int -> list)
+{ [] range_gen }
+
+define n : (int -> list)
+{ 0 swap range }
+
 define naturals : ( -> list)
-{ 0 [true] [inc] gen }
+{ 0 [inc] [pop true] gen }
 
 define odds : ( -> list)
-{ 1 [true] [inc] gen  }
+{ 1 [2 +] [pop true] gen  }
 
 define evens : ( -> list)
-{ 0 [true] [inc] gen  }
+{ 0 [2 +] [pop true] gen  }
 
 define negatives : ( -> list)
-{ 1 neg [true] [dec] gen }
+{ 1 neg [dec] [pop true] gen }
+
+define zeros : ( -> list)
+{ 0 repeater }
+
+define ones : ( -> list)
+{ 1 repeater }
 
 //=============================================================================
 // Function manipulation operators
@@ -466,4 +475,3 @@ define try : ('A ('A -> 'A) -> 'A)
 //
 
 define map_reduce { [map flatten self_join] dip map }
-
