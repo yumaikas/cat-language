@@ -10,6 +10,14 @@ namespace Cat
 {
     public class CatGrammar : Grammar
     {
+        public static Rule CatIdentChar()
+        {
+            return Choice(IdentNextChar(), CharSet("~`!@#$%^&*-+=|\\:;<>.?/"));
+        }
+        public static Rule CatIdent()
+        {
+            return Plus(CatIdentChar()); ;
+        }
         public static Rule Token(string s) 
         { 
             return Token(CharSeq(s)); 
@@ -71,25 +79,18 @@ namespace Cat
         {
             return Choice(StringLiteral(), CharLiteral(), FloatLiteral(), IntegerLiteral()); 
         }        
-        public static Rule SingleSymbol() 
+        public static Rule Symbol() 
         { 
-            return CharSet("(),"); 
-        }
-        public static Rule MultiSymbol() 
-        { 
-            return CharSet("~`!@#$%^&*-+=|\\:;<>.?/"); 
-        }
-        public static Rule SymbolGroup() 
-        {
-            return Choice(SingleSymbol(), Plus(MultiSymbol())); 
+            // The "()" together is treated as a single symbol
+            return Choice(CharSeq("()"), CharSet("(),")); 
         }
         public static Rule Name() 
         {
-            return Token(AstNode("name", Choice(Ident(), SymbolGroup()))); 
+            return Token(AstNode("name", Choice(Symbol(), CatIdent()))); 
         }
         public static Rule Expr()
         {
-            return Token(Choice(Literal(), Name(), Quote()));
+            return Token(Choice(Literal(), Quote(), Name()));
         }
         public static Rule CodeBlock()
         {

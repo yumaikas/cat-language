@@ -292,6 +292,9 @@ define ,
 define )
 { cons }
 
+define ()
+{ nil }
+
 // list comprehension
 define lc : (list ('a -> bool) ('a -> 'b) -> list)
 { [take_while] dip map }

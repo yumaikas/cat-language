@@ -172,7 +172,7 @@ namespace Cat
             foreach (ParameterInfo pi in m.GetParameters())
                 s += TypeToString(pi.ParameterType) + " ";
 
-            s += ") -> (";
+            s += " -> ";
 
             if (HasThisType(m))
                 s += "this ";

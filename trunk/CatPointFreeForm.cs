@@ -17,7 +17,7 @@ namespace Cat
     {
         public static void Convert(AstProgram p)
         {
-            foreach (AstDef x in p.Defs)
+            foreach (AstDefNode x in p.Defs)
                 Convert(x);
         }
 
@@ -26,47 +26,47 @@ namespace Cat
         /// and is maintained there. 
         /// </summary>
         /// <param name="terms"></param>
-        public static void ConvertTerms(List<string> args, List<AstExpr> terms)
+        public static void ConvertTerms(List<string> args, List<AstExprNode> terms)
         {
             // Convert terms so that they make sense. 
             int i = 0;
             while (i < terms.Count)
             {
-                AstExpr x = terms[i];
-                if (x is AstQuote)
+                AstExprNode x = terms[i];
+                if (x is AstQuoteNode)
                 {
-                    AstQuote q = x as AstQuote;
+                    AstQuoteNode q = x as AstQuoteNode;
 
                     // Recursively convert all terms in the quotation to use the argument list as well.
                     ConvertTerms(args, q.Terms);
                     i++;
 
                     // compose the new quotation with function generated from the argument list
-                    terms.Insert(i, new AstName("embed_args", "appends argument list to the the front of the quotation, and pops it afterwards"));
+                    terms.Insert(i, new AstNameNode("embed_args", "appends argument list to the the front of the quotation, and pops it afterwards"));
                     i++;                    
                 }
                 else if (x.ToString() == "args")
                 {
-                    terms[i] = new AstName("dup", "access argument list");
+                    terms[i] = new AstNameNode("dup", "access argument list");
                     i++;
                 }
                 else if (args.Contains(x.ToString()))
                 {
                     int n = args.IndexOf(x.ToString());
                     if (n > 9) throw new Exception("Currently only up to 9 parameters are supported");
-                    terms[i] = new AstName("arg" + n.ToString(), "access argument '" + x.ToString() + "'");
+                    terms[i] = new AstNameNode("arg" + n.ToString(), "access argument '" + x.ToString() + "'");
                     i++;
                 }
                 else
                 {
                     // This says ... execute the function, below the argument list.
-                    terms[i] = new AstQuote(x);
+                    terms[i] = new AstQuoteNode(x);
                     i++;
-                    terms.Insert(i, new AstName("dip", "execute operation below argument list"));
+                    terms.Insert(i, new AstNameNode("dip", "execute operation below argument list"));
                     i++;
                 }
             }
-            terms.Add(new AstName("pop", "remove argument list"));
+            terms.Add(new AstNameNode("pop", "remove argument list"));
         }    
 
         /// <summary>
@@ -74,13 +74,13 @@ namespace Cat
         /// a form with named parameters to point-free form.
         /// </summary>
         /// <param name="d"></param>
-        public static void Convert(AstDef d)
+        public static void Convert(AstDefNode d)
         {
             if (IsPointFree(d)) 
                 return;
 
             List<string> args = new List<string>();
-            foreach (AstParam p in d.mParams)
+            foreach (AstParamNode p in d.mParams)
                 args.Add(p.ToString());
 
             // Recursively convert the terms in the function, and in all anonymous 
@@ -91,15 +91,15 @@ namespace Cat
             // Must be done after the conversion of other terms
             for (int i = 0; i < d.mParams.Count; ++i)
             {
-                d.mTerms.Insert(0, new AstName("swons", "append argument '" + d.mParams[i].ToString() + "' to argument list"));
+                d.mTerms.Insert(0, new AstNameNode("swons", "append argument '" + d.mParams[i].ToString() + "' to argument list"));
             }
 
-            d.mTerms.Insert(0, new AstName("arg_list", "create an argument list"));
+            d.mTerms.Insert(0, new AstNameNode("arg_list", "create an argument list"));
 
             if (Config.gbShowPointFreeConversion)
             {
                 Console.Write(d.mName + " == ");
-                foreach (AstExpr expr in d.mTerms)
+                foreach (AstExprNode expr in d.mTerms)
                     Console.Write(expr.ToString() + " ");
                 Console.WriteLine();
             }
@@ -108,13 +108,13 @@ namespace Cat
 
         public static bool IsPointFree(AstProgram p)
         {
-            foreach (AstDef d in p.Defs)
+            foreach (AstDefNode d in p.Defs)
                 if (!IsPointFree(d))
                     return false;
             return true;
         }
 
-        public static bool IsPointFree(AstDef d)
+        public static bool IsPointFree(AstDefNode d)
         {
             return d.mParams.Count == 0;
         }

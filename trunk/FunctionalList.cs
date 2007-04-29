@@ -110,7 +110,7 @@ namespace Cat
             if (x.IsEmpty()) 
                 return y.IsEmpty();
             if (y.IsEmpty())
-                return false; // since we know from the previous condition that both x and y aren't empty.
+                return false; // since we know from the previous condition that both top and y aren't empty.
 
             // Compare the count if it is easy.
             if (x.IsKnownFinite() && y.IsKnownFinite())

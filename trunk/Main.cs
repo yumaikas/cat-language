@@ -31,7 +31,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.11.1 April 24th, 2007");
+                    WriteLine("version 0.12.0 April 27th, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -62,23 +62,13 @@ namespace Cat
                     gpTranscript.WriteLine(s);
                     if (s.Length > 0)
                     {
-                        // Is this a meta-command?
-                        if (s[0] == '#')
-                        {
-                            if (s == "#exit")
-                                break;
-                            ParseMetaCommand(s);
-                        }
-                        else
-                        {
-                            DateTime begin = DateTime.Now;
-                            Executor.Main.Execute(s + '\n');
-                            TimeSpan elapsed = DateTime.Now - begin;
-                            if (Config.gbOutputTimeElapsed)
-                                WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
-                            if (Config.gbOutputStack)
-                                Executor.Main.OutputStack();
-                        }
+                        DateTime begin = DateTime.Now;
+                        Executor.Main.Execute(s + '\n');
+                        TimeSpan elapsed = DateTime.Now - begin;
+                        if (Config.gbOutputTimeElapsed)
+                            WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
+                        if (Config.gbOutputStack)
+                            Executor.Main.OutputStack();
                     }
                 }
             }
@@ -101,48 +91,12 @@ namespace Cat
                 WriteLine("Error occured while writing transcript: " + e.Message);
             }
 
-            WriteLine("goodbye!");
-
+            WriteLine("goodbye! Press any key to exit ...");
+            Console.ReadKey();
         }
 
         #region meta-commands (commands intended for the interpreter)
-        public static void ParseMetaCommand(string s)
-        {
-            Trace.Assert(s.Length > 0);
-            Trace.Assert(s[0] == '#');
-
-            string[] tokens = s.Split(new char[] { ' ' });
-
-            Trace.Assert(tokens.Length > 0);
-
-            switch (tokens[0])
-            {
-                case "#help":
-                    WriteLine("#defs will provide a list of available functions.");
-                    WriteLine("#exit will allow you to exit the program.");
-                    WriteLine("#load filename loads a file during execution.");
-                    WriteLine("More help will be available in later versions.");
-                    break;
-                case "#load":
-                    if (tokens.Length != 2)
-                        throw new Exception("The #load meta-command requires an additional argument");
-                    Executor.Main.LoadModule(tokens[1]);
-                    break;
-                case "#defs":
-                    OutputTextDefs();
-                    break;
-                case "#wikidefs":
-                    OutputWikiDefs();
-                    break;
-                case "#htmldefs":
-                    OutputHtmlDefs();
-                    break;
-                default:
-                    WriteLine("unrecognized meta-command " + tokens[0]);
-                    break;
-            }
-        }
-
+        /*
         public static void OutputWikiDefs()
         {
             OutputDefs("|| ", " || ", " ||");
@@ -160,12 +114,31 @@ namespace Cat
             OutputDefs("", "\t", "");
         }
 
-        public static void OutputDefs(string sLineBegin, string sDiv, string sLineEnd)
+        public static void OutputDefs(Executor exec, string sLineBegin, string sDiv, string sLineEnd)
         {
-            foreach (Function f in Executor.Main.GetGlobalScope().GetAllFunctions())
+            List<Function> fxns = exec.GetGlobalScope().GetAllFunctions();
+
+            foreach (Function f in fxns)
             {
                 //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
+                //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
                 WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
+            }
+        }
+         */
+
+        public static void OutputDefs(Executor exec)
+        {
+            Function[] fxns = new Function[exec.GetGlobalScope().GetAllFunctions().Count];
+            exec.GetGlobalScope().GetAllFunctions().CopyTo(fxns, 0);
+            Comparison<Function> comp = delegate(Function x, Function y) { return x.GetName().CompareTo(y.GetName()); };
+            
+            Array.Sort(fxns, comp);                
+            
+
+            foreach (Function f in fxns)
+            {
+                Write(f.GetName() + "\t");
             }
         }
         #endregion
@@ -257,6 +230,7 @@ namespace Cat
         #region register primitives
         public static void RegisterPrimitives(Scope scope)
         {
+            scope.RegisterType(typeof(MetaCommands));
             scope.RegisterType(typeof(Primitives));
             scope.RegisterType(typeof(WindowManager));
         }

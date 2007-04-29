@@ -79,6 +79,14 @@ namespace Cat
                 return null;
         }
 
+        public Function Lookup(string s)
+        {
+            if (mpFunctions.ContainsKey(s))
+                return mpFunctions[s];
+            else
+                return null;
+        }
+
         public void Clear()
         {
             mpChildren.Clear();
