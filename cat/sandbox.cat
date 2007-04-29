@@ -40,3 +40,7 @@ define test_r
 
 define test_map_reduce
 { test_strings [test_m] [test_r] map_reduce print_list }
+
+define girard (n x) {
+  x n pow 1 neg n pow *
+}

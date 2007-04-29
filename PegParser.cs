@@ -9,14 +9,14 @@ namespace Peg
     {
         int mIndex;
         string mData;
-        AstNode mTree;
-        AstNode mCur;
+        Ast mTree;
+        Ast mCur;
 
         public Parser(string s)
         {
             mIndex = 0;
             mData = s;
-            mTree = new AstNode("ast", 0, mData, null);
+            mTree = new Ast("ast", 0, mData, null);
             mCur = mTree;
         }
 
@@ -61,7 +61,7 @@ namespace Peg
             return mData[mIndex];
         }
 
-        public AstNode CreateNode(string sLabel)
+        public Ast CreateNode(string sLabel)
         {
             Trace.Assert(mCur != null);
             mCur = mCur.Add(sLabel, this);
@@ -72,7 +72,7 @@ namespace Peg
         public void AbandonNode()
         {
             Trace.Assert(mCur != null);
-            AstNode tmp = mCur;
+            Ast tmp = mCur;
             mCur = mCur.GetParent();
             Trace.Assert(mCur != null);
             mCur.Remove(tmp);
@@ -86,7 +86,7 @@ namespace Peg
             Trace.Assert(mCur != null);
         }
 
-        public AstNode GetAst()
+        public Ast GetAst()
         {
             return mTree;
         }

@@ -11,16 +11,16 @@ namespace Peg
     /// <summary>
     /// Abstract Syntax Tree node.  
     /// </summary>
-    public class AstNode
+    public class Ast
     {
         int mnBegin;
         int mnCount;
         string msLabel;
         String msText;
-        AstNode mpParent;
-        List<AstNode> mChildren = new List<AstNode>();
+        Ast mpParent;
+        List<Ast> mChildren = new List<Ast>();
 
-        public AstNode(string label, int n, String text, AstNode p)
+        public Ast(string label, int n, String text, Ast p)
         {
             msLabel = label;
             msText = text;
@@ -29,9 +29,9 @@ namespace Peg
             mpParent = p;
         }
 
-        public AstNode Add(string sLabel, Parser p)
+        public Ast Add(string sLabel, Parser p)
         {
-            AstNode ret = new AstNode(sLabel, p.GetPos(), msText, this);
+            Ast ret = new Ast(sLabel, p.GetPos(), msText, this);
             mChildren.Add(ret);
             return ret;
         }
@@ -41,12 +41,12 @@ namespace Peg
             mnCount = p.GetPos() - mnBegin;
         }
 
-        public AstNode GetParent()
+        public Ast GetParent()
         {
             return mpParent;
         }
 
-        public void Remove(AstNode x)
+        public void Remove(Ast x)
         {
             mChildren.Remove(x);
         }
@@ -73,7 +73,7 @@ namespace Peg
             }
             else
             {
-                foreach (AstNode node in mChildren)
+                foreach (Ast node in mChildren)
                 {
                     s += node.GetXmlText();
                 }
@@ -87,7 +87,7 @@ namespace Peg
             return msLabel;
         }
 
-        public List<AstNode> GetChildren()
+        public List<Ast> GetChildren()
         {
             return mChildren;
         }
@@ -97,7 +97,7 @@ namespace Peg
             return mChildren.Count;
         }
 
-        public AstNode GetChild(int n)
+        public Ast GetChild(int n)
         {
             return mChildren[n];
         }

@@ -24,6 +24,140 @@ namespace Cat
         }
     }
 
+    public class MetaCommands
+    {
+        public class Load : Function
+        {
+            public Load()
+                : base("#load", "(string ~> )", "loads and executes a source code file")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.LoadModule(exec.PopString());
+            }
+        }
+
+        public class Defs : Function
+        {
+            public Defs()
+                : base("#defs", "( ~> )", "lists all loaded definitions")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                MainClass.OutputDefs(exec);
+            }
+        }
+
+        public class TypeOf : Function
+        {
+            public TypeOf()
+                : base("#t", "(function -> )", "experimental")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string sName = exec.PopString();
+                Function f = exec.GetGlobalScope().Lookup(sName);
+                if (f == null) throw new Exception("could not find function " + sName);
+                string sType = f.GetTypeString();
+                MainClass.WriteLine(f.GetName() + " : " + sType);
+                CatFxnType t = CatFxnType.CreateFxnType(sType);
+                MainClass.WriteLine(f.GetName() + " : " + t.ToString());
+            }
+        }
+
+        public class AllTypes : Function
+        {
+            public AllTypes()
+                : base("#at", "(function -> )", "experimental")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                foreach (Function f in exec.GetGlobalScope().GetAllFunctions())
+                {
+                    string s = f.GetTypeString();
+                    if (!s.Equals("untyped"))
+                    {
+                        try
+                        {
+                            CatFxnType t = CatFxnType.CreateFxnType(s);
+                            Console.WriteLine(f.GetName() + "\t" + s + "\t" + t.ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(f.GetName() + "\t" + s + "\t" + "error:" + e.Message);
+                        }
+                    }
+                }
+            }
+        }
+
+        public class ComposedType : Function
+        {
+            public ComposedType()
+                : base("#ct", "(function function -> ", "experimental")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                String gs = exec.PopString();
+                String fs = exec.PopString();
+                Function g = exec.GetGlobalScope().Lookup(gs);
+                Function f = exec.GetGlobalScope().Lookup(fs);
+                CatFxnType ft = CatFxnType.CreateFxnType(f.GetTypeString());
+                CatFxnType gt = CatFxnType.CreateFxnType(g.GetTypeString());
+                Constraints c = new Constraints();
+                CatComposedFxnType t = new CatComposedFxnType(null, ft, gt, c);
+                Console.WriteLine(f.GetName() + " : " + ft.ToString());
+                Console.WriteLine(g.GetName() + " : " + gt.ToString());
+                Console.WriteLine("composed : " + t.ToString());                
+                c.OutputConstraints();
+                c.ResolveConstraints();
+                c.OutputConstraints();
+            }
+        }
+
+        public class Help : Function
+        {
+            public Help()
+                : base("#help", "( ~> )", "prints some helpful tips")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                MainClass.WriteLine("The following are some useful meta-commands for the interpreter.");
+                MainClass.WriteLine("  #exit - exits the interpreter.");
+                MainClass.WriteLine("  #defs - lists available functions.");
+                MainClass.WriteLine("  \"command\" #h  - provides more information about a command.");
+                MainClass.WriteLine("  \"filename\" #load - load and execute a code file");
+            }
+        }
+
+        public class CommandHelp : Function
+        {
+            public CommandHelp()
+                : base("#h", "(string ~> )", "prints help about a command")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.GetGlobalScope().Lookup(exec.PopString());
+                if (f != null)
+                {
+                    Console.WriteLine(f.GetName() + "\t" + f.GetTypeString() + "\t" + f.GetDesc());
+                }
+                else
+                {
+                    Console.WriteLine(exec.PopString() + " is not defined");
+                }
+            }
+        }
+
+    }
+
     public class Primitives
     {
         #region primitive function classes
@@ -348,7 +482,6 @@ namespace Cat
         public static byte div(byte x, byte y) { return (byte)(x / y); }
         public static byte mul(byte x, byte y) { return (byte)(x * y); }
         public static byte mod(byte x, byte y) { return (byte)(x % y); }
-        public static byte neg(byte x) { return (byte)(-x); }
         public static byte compl(byte x) { return (byte)(~x); } 
         public static byte shl(byte x, byte y) { return (byte)(x << y); }
         public static byte shr(byte x, byte y) { return (byte)(x >> y); }
@@ -360,6 +493,52 @@ namespace Cat
         public static byte max(byte x, byte y) { return Math.Max(x, y); }
         public static byte abs(byte x) { return (byte)Math.Abs(x); }
         public static byte sqr(byte x) { return (byte)(x * x); }
+        #endregion
+
+        public struct Bit
+        {
+            public bool m;
+            public Bit(int n) { m = n != 0; }
+            public Bit(bool x) { m = x; }
+            public Bit add(Bit x) { return bit(m ^ x.m); }
+            public Bit sub(Bit x) { return bit(m && !x.m); }
+            public Bit mul(Bit x) { return bit(m && !x.m); }
+            public Bit div(Bit x) { return bit(m && !x.m); }
+            public Bit mod(Bit x) { return bit(m && !x.m); }
+            public bool lteq(Bit x) { return !m || x.m; }
+            public bool eq(Bit x) { return m == x.m; }
+            public override bool Equals(object obj)
+            {
+                return (obj is Bit) && (((Bit)obj).m == m);
+            }
+            public override int GetHashCode()
+            {
+                return m.GetHashCode();
+            }
+            public override string ToString()
+            {
+                return m ? "b1" : "b0";
+            }
+        }
+
+        #region Bit functions
+        public static Bit b0() { return bit(0); }
+        public static Bit b1() { return bit(1); }
+        public static Bit bit(int x) { return new Bit(x); }
+        public static Bit bit(bool x) { return new Bit(x); }
+        public static Bit add(Bit x, Bit y) { return x.add(y); }
+        public static Bit sub(Bit x, Bit y) { return x.sub(y); }
+        public static Bit mul(Bit x, Bit y) { return x.mul(y); }
+        public static Bit div(Bit x, Bit y) { return x.div(y); }
+        public static Bit mod(Bit x, Bit y) { return x.mod(y); }
+        public static Bit compl(Bit x) { return bit(!x.m); }
+        public static bool neq(Bit x, Bit y) { return !x.eq(y); }
+        public static bool gt(Bit x, Bit y) { return !x.lteq(y); }
+        public static bool lt(Bit x, Bit y) { return !x.eq(y) && x.lteq(y); }
+        public static bool gteq(Bit x, Bit y) { return x.eq(y) || !x.lteq(y); }
+        public static bool lteq(Bit x, Bit y) { return x.lteq(y); }
+        public static Bit min(Bit x, Bit y) { return bit(x.m && y.m); }
+        public static Bit max(Bit x, Bit y) { return bit(x.m || y.m); }
         #endregion
 
         #region bytes functions

@@ -196,54 +196,54 @@ namespace Cat
         #endregion
 
         #region parsing functions
-        private Quotation MakeQuoteFunction(AstQuote node)
+        private Quotation MakeQuoteFunction(AstQuoteNode node)
         {
             List<Function> fxns = new List<Function>();
-            foreach (AstExpr child in node.Terms)
+            foreach (AstExprNode child in node.Terms)
                 fxns.Add(ExprToFunction(child));
             return new Quotation(fxns);
         }
 
-        private Function ExprToFunction(AstExpr node)
+        private Function ExprToFunction(AstExprNode node)
         {
-            if (node is AstInt)
-                return new IntFunction((node as AstInt).GetValue());
-            if (node is AstFloat)
-                return new FloatFunction((node as AstFloat).GetValue());
-            if (node is AstString)
-                return new StringFunction((node as AstString).GetValue());
-            if (node is AstChar)
-                return new CharFunction((node as AstChar).GetValue());
-            if (node is AstName)
+            if (node is AstIntNode)
+                return new IntFunction((node as AstIntNode).GetValue());
+            if (node is AstFloatNode)
+                return new FloatFunction((node as AstFloatNode).GetValue());
+            if (node is AstStringNode)
+                return new StringFunction((node as AstStringNode).GetValue());
+            if (node is AstCharNode)
+                return new CharFunction((node as AstCharNode).GetValue());
+            if (node is AstNameNode)
                 return new FunctionName(node.ToString());
-            if (node is AstQuote)
-                return MakeQuoteFunction(node as AstQuote);
+            if (node is AstQuoteNode)
+                return MakeQuoteFunction(node as AstQuoteNode);
             throw new Exception("node " + node.ToString() + " does not have associated function");
         }
 
-        private void ProcessDefinition(AstDef node)
+        private void ProcessDefinition(AstDefNode node)
         {
             if (Config.gbAllowNamedParams)
                 CatPointFreeForm.Convert(node);
             else if (node.mParams.Count > 0)
                 throw new Exception("named parameters are not enabled");
             List<Function> fxns = new List<Function>();
-            foreach (AstExpr term in node.mTerms)
+            foreach (AstExprNode term in node.mTerms)
                 fxns.Add(ExprToFunction(term));
             DefinedFunction def = new DefinedFunction(node.mName, fxns);
             Executor.Main.GetGlobalScope().AddFunction(def);
         }
 
-        private void ProcessNode(CatAstNode node)
+        private void ProcessNode(AstNode node)
         {   
-            if (node is AstExpr)
+            if (node is AstExprNode)
             {
-                Function f = ExprToFunction(node as AstExpr);
+                Function f = ExprToFunction(node as AstExprNode);
                 f.Eval(this);
             }
-            else if (node is AstDef)
+            else if (node is AstDefNode)
             {
-                ProcessDefinition(node as AstDef);
+                ProcessDefinition(node as AstDefNode);
             }
             else
             {
@@ -257,10 +257,10 @@ namespace Cat
             bool bResult = parser.Parse(CatGrammar.Line());
             if (!bResult)
                 throw new Exception("failed to parse: " + s);
-            Peg.AstNode node = parser.GetAst();
+            Peg.Ast node = parser.GetAst();
 
-            foreach (Peg.AstNode child in node.GetChildren())
-                ProcessNode(CatAstNode.Create(child));
+            foreach (Peg.Ast child in node.GetChildren())
+                ProcessNode(AstNode.Create(child));
         }
         #endregion
 
