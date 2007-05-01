@@ -104,8 +104,8 @@ namespace Cat
         }
 
         public override FList TakeN(int n)
-        {
-            MArray<T> ret = new MArray<T>(n);
+        {                         
+            MArray<T> ret = new MArray<T>(Count() < n ? Count() : 5);
             m.CopyTo(ret.m, 0);
             return ret;
         }

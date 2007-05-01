@@ -804,6 +804,20 @@ namespace Cat
                 f.Write(mb.m, 0, mb.Count());
             }
         }
+
+        public class CloseStream : Function
+        {
+            public CloseStream()
+                : base("close_stream", "(stream -> )", "closes a stream")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Stream f = exec.Pop() as Stream;
+                f.Close();
+                f.Dispose();
+            }
+        }
         #endregion
 
         #region hash functions
