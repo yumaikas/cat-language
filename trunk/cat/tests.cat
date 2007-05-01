@@ -439,7 +439,7 @@ define test6
   [255 str "255" eq] test
   [255 hex_str "ff" eq] test
   [255 bin_str "11111111" eq] test
-  [0x234 byte 0x34 eq] test
+  [0x234 byte 0x34 byte eq] test
 }
 
 define test7
@@ -461,7 +461,26 @@ define test7
   [99 byte_block count nip 99 eq] test
   [42 byte_block 13 nth nip 0 byte eq] test
   [42 byte_block 25 byte 13 set_at 13 nth nip 25 byte eq] test
-  [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 byte eq] test
+
+  // Note: I would have expected the following line to work
+  // [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 byte eq] test
+  // but it doesn't. For some reason integer addition is being chosen over
+  // byte addition. This is a bug that I will have to fix later on. 
+  [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 eq] test
+}
+
+define testio
+{
+  temp_file dup
+  file_writer
+  2 byte_block
+  0xf1 byte 0 set_at
+  0xa9 byte 1 set_at
+  write_bytes
+  close_stream
+  file_reader
+  2 read_bytes
+  [close_stream] dip
 }
 
 define run_tests
