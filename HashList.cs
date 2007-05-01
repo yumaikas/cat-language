@@ -70,7 +70,7 @@ namespace Cat
             return mDict.ContainsKey(key);
         }
 
-        public FArray ToArray()
+        public FArray<object> ToArray()
         {
             Pair[] a = new Pair[mDict.Count];
             int i = 0;
@@ -78,7 +78,7 @@ namespace Cat
             {
                 a[i++] = FList.MakePair(pair.Key, pair.Value) as Pair;
             }
-            return new FArray(a);
+            return new FArray<object>(a);
         }
 
         public override string ToString()

@@ -314,6 +314,9 @@ define uncons4 : (list -> list var var var var)
 define unpair : (list -> var var)
 { uncons [head] dip }
 
+define fold : (list 'a ('a 'b -> 'a) -> 'a)
+{ swapd gfold }
+
 // Returns true iff any value satisfies the condition
 define any : (list ('a -> bool) -> bool)
 { dupd [or] compose false swap fold }
@@ -325,6 +328,31 @@ define all : (list ('a -> bool) -> bool)
 // Reverse a list
 define rev : (list -> list)
 { nil [cons] fold }
+
+// Returns true if a list contains one element or is empty
+define small : (list -> list bool)
+{ empty [true] [rest empty nip] if }
+
+// Splits a list into two new lists
+define split : (list ('a -> bool) -> list list)
+{
+  nil bury nil bury
+  [dup] rcompose
+  [[swap [cons] dip] [cons] if] compose
+  gfold
+}
+
+// Appends item to first list in a pair of lists
+define cons_first
+{
+  [unpair] dip cons pair
+}
+
+// Appends item to second list in a pair of lists
+define cons_second
+{
+  [unpair] dip swap [cons] dip pair
+}
 
 //=============================================================================
 // Infinite list generators
@@ -478,3 +506,22 @@ define try : ('A ('A -> 'A) -> 'A)
 //
 
 define map_reduce { [map flatten self_join] dip map }
+
+//========================================================================================
+// Quick sort algorithm
+
+define qsort : (list -> list)
+{
+  // Does list have 0 or 1 elements?
+  [small]
+  // Base case do nothing
+  []
+  // Split the list using the head as a pivot
+  // storing the pivot under for later use
+  [uncons under [lt] curry split]
+  // Append the pivot to the first list
+  // then concatenate the two lists.
+  [[swap cons] dip cat]
+  bin_rec
+}
+

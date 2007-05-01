@@ -293,10 +293,10 @@ namespace Cat
 
             if (parent == null)
             {
-                CatStackVar rho = new CatStackVar(this, "rho");
-
-                mCons = CreateStackKind(rho, mCons);
-                mProd = CreateStackKind(rho, mProd);
+                // For the time being I am always writing the correct type.
+                //CatStackVar rho = new CatStackVar(this, "rho");
+                //mCons = CreateStackKind(rho, mCons);
+                //mProd = CreateStackKind(rho, mProd);
 
                 // Only bother incrementing the id counter if there is no parent
                 mnId = gnId++;

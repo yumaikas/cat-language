@@ -160,6 +160,34 @@ namespace Cat
 
     public class Primitives
     {
+        #region conversion functions
+        public class Str : Function
+        {
+            public Str()
+                : base("str", "(var -> string)", "converts any value into a string representation.")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(MainClass.ObjectToString(exec.Pop()));
+            }
+        }
+
+        public class MakeByte : Function
+        {
+            public MakeByte()
+                : base("byte", "(int -> byte)", "converts an integer into a byte, throwing away sign and ignoring higher bits")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                byte b = (byte)n;
+                exec.Push(b);
+            }
+        }
+        #endregion 
+
         #region primitive function classes
         public class Id : Function
         {
@@ -169,6 +197,47 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {                
+            }
+        }
+
+        public class BinStr : Function
+        {
+            public BinStr()
+                : base("bin_str", "(int -> string)", "converts a number into a binary string representation.")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                string s = "";
+
+                if (n == 0) s = "0";
+                while (n > 0)
+                {
+                    if (n % 2 == 1)
+                    {
+                        s = "1" + s;
+                    }
+                    else
+                    {
+                        s = "0" + s;
+                    }
+                    n /= 2;
+                }
+                exec.Push(n.ToString(s));
+            }
+        }
+
+        public class HexStr : Function
+        {
+            public HexStr()
+                : base("hex_str", "(int -> string)", "converts a number into a hexadecimal string representation.")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                exec.Push(n.ToString("x"));
             }
         }
 
@@ -213,7 +282,7 @@ namespace Cat
         public class Dup : Function
         {
             public Dup()
-                : base("dup", "('a -> 'a 'a)", "duplicate the top item on the stack")
+                : base("dup", "('R 'a -> 'R 'a 'a)", "duplicate the top item on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -232,7 +301,7 @@ namespace Cat
         public class Pop : Function
         {
             public Pop()
-                : base("pop", "('a -> )", "removes the top item from the stack")
+                : base("pop", "('R 'a -> 'R)", "removes the top item from the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -244,7 +313,7 @@ namespace Cat
         public class Swap : Function
         {
             public Swap()
-                : base("swap", "('a 'b -> 'b 'a)", "swap the top two items on the stack")
+                : base("swap", "('R 'a 'b -> 'R 'b 'a)", "swap the top two items on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -329,7 +398,7 @@ namespace Cat
         public class Compose : Function
         {
             public Compose()
-                : base("compose", "(('A -> 'B) ('B -> 'C) -> ('A -> 'C))", 
+                : base("compose", "('R ('A -> 'B) ('B -> 'C) -> 'R ('A -> 'C))", 
                     "creates a function by composing (concatenating) two existing functions")
             { }
 
@@ -345,7 +414,7 @@ namespace Cat
         public class Quote : Function
         {
             public Quote()
-                : base("qv", "('a -> ( -> 'a))", 
+                : base("qv", "('R 'a -> 'R ('S -> 'S 'a))", 
                     "short for 'quote value', creates a constant generating function from the top value on the stack")
             { }
 
@@ -368,7 +437,9 @@ namespace Cat
                 exec.GetStack().Clear();
             }
         }
+        #endregion
 
+        #region control flow primitives 
         public class While : Function
         {
             public While()
@@ -410,6 +481,39 @@ namespace Cat
                 {
                     onfalse.Eval(exec);
                 }
+            }
+        }
+
+        public class BinRec : Function
+        {
+            // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
+            // I may ignore it later on.
+            public BinRec()
+                : base("bin_rec", "('A cond=('A -> 'A bool) base=('A -> 'b) arg_rel=('A -> 'C 'A 'A) result_rel('C 'b 'b -> 'b) -> 'b)",
+                    "execute a binary recursion process")
+            { }
+
+            public void Helper(Executor exec, Function fResultRelation, Function fArgRelation, Function fBaseCase, Function fCondition)
+            {
+                fCondition.Eval(exec);
+                if (exec.PopBool())
+                {
+                    fBaseCase.Eval(exec);
+                }
+                else
+                {
+                    fArgRelation.Eval(exec);
+                    Helper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
+                    Object o = exec.Pop();
+                    Helper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
+                    exec.Push(o);
+                    fResultRelation.Eval(exec);
+                }
+            }
+
+            public override void Eval(Executor exec)
+            {
+                Helper(exec, exec.PopFunction(), exec.PopFunction(), exec.PopFunction(), exec.PopFunction());
             }
         }
         #endregion 
@@ -495,6 +599,7 @@ namespace Cat
         public static byte sqr(byte x) { return (byte)(x * x); }
         #endregion
 
+        #region bit functions
         public struct Bit
         {
             public bool m;
@@ -517,13 +622,9 @@ namespace Cat
             }
             public override string ToString()
             {
-                return m ? "b1" : "b0";
+                return m ? "0b1" : "0b0";
             }
         }
-
-        #region Bit functions
-        public static Bit b0() { return bit(0); }
-        public static Bit b1() { return bit(1); }
         public static Bit bit(int x) { return new Bit(x); }
         public static Bit bit(bool x) { return new Bit(x); }
         public static Bit add(Bit x, Bit y) { return x.add(y); }
@@ -539,9 +640,6 @@ namespace Cat
         public static bool lteq(Bit x, Bit y) { return x.lteq(y); }
         public static Bit min(Bit x, Bit y) { return bit(x.m && y.m); }
         public static Bit max(Bit x, Bit y) { return bit(x.m || y.m); }
-        #endregion
-
-        #region bytes functions
         #endregion
 
         #region double functions
@@ -606,6 +704,106 @@ namespace Cat
         public static void writeln(Object o) { MainClass.WriteLine(MainClass.ObjectToString(o)); }
         public static string readln() { return Console.ReadLine(); }
         public static char readkey() { return Console.ReadKey().KeyChar; }
+        #endregion
+
+        #region byte block functions
+        public class MakeByteBlock : Function
+        {
+            public MakeByteBlock()
+                : base("byte_block", "(int -> byte_block)", "creates a mutable array of bytes")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                ByteBlock bb = new ByteBlock(n);
+                bb.ZeroMemory();
+                exec.Push(bb);
+            }
+        }
+        #endregion 
+
+        #region i/o functions
+        public class OpenFileReader : Function
+        {
+            public OpenFileReader()
+                : base("file_reader", "(string -> istream)", "creates an input stream from a file name")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.PopString();
+                exec.Push(File.OpenRead(s));
+            }
+        }
+
+        public class OpenWriter : Function
+        {
+            public OpenWriter()
+                : base("file_writer", "(string -> ostream)", "creates an output stream from a file name")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.PopString();
+                exec.Push(File.Create(s));
+            }
+        }
+
+        public class FileExists : Function
+        {
+            public FileExists()
+                : base("file_exists", "(string -> string bool)", "returns a boolean value indicating whether a file or directory exists")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.PeekString();
+                exec.Push(Directory.Exists(s));
+            }
+        }
+
+        public class TmpFileName : Function
+        {
+            public TmpFileName()
+                : base("temp_file", "( -> string)", "creates a unique temporary file")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(Path.GetTempFileName());
+            }
+        }
+
+        public class ReadBytes : Function
+        {
+            public ReadBytes()
+                : base("read_bytes", "(istream int -> istream bytes)", "reads a number of bytes into an array from an input stream")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                Stream f = exec.Peek() as Stream;
+                byte[] ab = new byte[n];
+                f.Read(ab, 0, n);
+                exec.Push(new MArray<byte>(ab)); 
+            }
+        }
+
+        public class WriteBytes : Function
+        {
+            public WriteBytes()
+                : base("write_bytes", "(ostream bytes -> ostream)", "writes a byte array to an output stream")
+            { }
+
+            public override void Eval(Executor exec)
+            {                
+                MArray<byte> mb = exec.Pop() as MArray<byte>;
+                Stream f = exec.Peek() as Stream;
+                f.Write(mb.m, 0, mb.Count());
+            }
+        }
         #endregion
 
         #region hash functions
@@ -827,7 +1025,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 FList list = exec.Pop() as FList;
- 	            exec.Push(list.Head());
+ 	            exec.Push(list.GetHead());
             }
         }
 
@@ -840,7 +1038,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 FList list = exec.Peek() as FList;
-                exec.Push(list.Head());
+                exec.Push(list.GetHead());
             }
         }
 
@@ -893,7 +1091,7 @@ namespace Cat
             {
                 FList list = exec.Pop() as FList;
                 exec.Push(list.Tail());
-                exec.Push(list.Head());
+                exec.Push(list.GetHead());
             }
         }
 
@@ -927,15 +1125,20 @@ namespace Cat
         public class Fold : Function
         {
             public Fold()
-                : base("fold", "(list 'a ('a 'b -> 'a) -> 'a)", "recursively applies a function to each an accumlator")
+                : base("gfold", "('A list ('A var -> 'A) -> 'A)", "recursively applies a function to each element in a list")
             { }
 
             public override void Eval(Executor exec)
             {
                 Function f = exec.Pop() as Function;
-                Object o = exec.Pop();
                 FList list = exec.Pop() as FList;
-                exec.Push(list.Fold(o, f.ToFoldFxn()));
+                FList iter = list.GetIter();
+                while (!iter.IsEmpty())
+                {
+                    exec.Push(iter.GetHead());
+                    f.Eval(exec);
+                    iter = iter.GotoNext();
+                }
             }
         }
 
@@ -1082,7 +1285,7 @@ namespace Cat
         }
         #endregion
 
-        #region 
+        #region mutable list instructions
         public class SetAt : Function
         {
             public SetAt()
@@ -1093,8 +1296,16 @@ namespace Cat
             {
                 int n = (int)exec.Pop();
                 Object o = exec.Pop();
-                FMutableList list = exec.Pop() as FMutableList;
-                list.Set(n, o);
+                if (exec.Peek() is FMutableList)
+                {
+                    FMutableList list = exec.Peek() as FMutableList;
+                    list.Set(n, o);
+                }
+                else
+                {
+                    FList list = exec.Pop() as FList;
+                    FMutableList mut = new MArray<Object>(list);
+                }
             }
         }
         #endregion 

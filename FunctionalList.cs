@@ -26,7 +26,7 @@ namespace Cat
         public abstract void ForEach(Accessor a);
         public abstract FList GetIter();
         public abstract FList GotoNext();
-        public abstract object Head();
+        public abstract object GetHead();
         public abstract bool IsEmpty();
         #endregion
 
@@ -93,7 +93,7 @@ namespace Cat
         public static void PairwiseForEach(PairAccessor f, FList x, FList y)
         {
             if (x.IsEmpty() || y.IsEmpty()) return;
-            if (f(x.Head(), y.Head())) return;
+            if (f(x.GetHead(), y.GetHead())) return;
             PairwiseForEach(f, x.Tail(), y.Tail());
         }
 
@@ -180,7 +180,7 @@ namespace Cat
                 --n;
             }
             if (n != 0) throw new Exception("out of range");
-            return iter.Head();
+            return iter.GetHead();
         }
 
         public virtual FList Tail()
@@ -218,9 +218,9 @@ namespace Cat
                 case (0):
                     return Nil();
                 case (1):
-                    return MakeUnit(Head());
+                    return MakeUnit(GetHead());
                 case (2):
-                    return MakePair(Head(), Tail().Head());
+                    return MakePair(GetHead(), Tail().GetHead());
             }
 
             object[] a = new object[n];
@@ -228,16 +228,16 @@ namespace Cat
             FList iter = GetIter();
             while (!iter.IsEmpty() && (i < n))
             {
-                a[i++] = iter.Head();
+                a[i++] = iter.GetHead();
                 iter = iter.GotoNext();
             }
             if (i < n)
             {
-                return new RangedArray(a, 0, i);
+                return new RangedArray<object>(a, 0, i);
             }
             else
             {
-                return new FArray(a);
+                return new FArray<object>(a);
             }
         }
 
@@ -255,7 +255,7 @@ namespace Cat
         public virtual FList DropWhile(FilterFxn f)
         {
             FList ret = GetIter();
-            while (!ret.IsEmpty() && f(ret.Head()))
+            while (!ret.IsEmpty() && f(ret.GetHead()))
                 ret = ret.GotoNext();
             return ret;
         }
@@ -264,7 +264,7 @@ namespace Cat
         {
             int cnt = 0;
             FList ret = GetIter();
-            while (!ret.IsEmpty() && f(ret.Head()))
+            while (!ret.IsEmpty() && f(ret.GetHead()))
             {
                 ret = ret.GotoNext();
                 ++cnt;
@@ -296,7 +296,7 @@ namespace Cat
             return this;
         }
 
-        public override object Head()
+        public override object GetHead()
         {
             throw new Exception("empty list");
         }
@@ -409,7 +409,7 @@ namespace Cat
             return false;
         }
 
-        public override object Head()
+        public override object GetHead()
         {
             return m;
         }
@@ -527,7 +527,7 @@ namespace Cat
             return false;
         }
 
-        public override object Head()
+        public override object GetHead()
         {
             return mFirst;
         }
@@ -689,7 +689,7 @@ namespace Cat
             }
             else
             {
-                mFirst.GotoNext();
+                mFirst = mFirst.GotoNext();
                 --mFirstCount;
             }
             return this;
@@ -700,12 +700,12 @@ namespace Cat
             return mFirst.IsEmpty() && mSecond.IsEmpty();
         }
 
-        public override Object Head()
+        public override Object GetHead()
         {
             if (mFirstCount != 0)
-                return mFirst.Head();
+                return mFirst.GetHead();
             else
-                return mSecond.Head();
+                return mSecond.GetHead();
         }
         #endregion
 
@@ -809,18 +809,18 @@ namespace Cat
         #endregion
     }
 
-    public class FArray : FList
+    public class FArray<T> : FList
     {
         #region fields
-        object[] m; 
+        T[] m; 
         #endregion
 
         #region constructors
         public FArray(FList list, int n)
         {
-            m = new object[n];
+            m = new T[n];
             int i = 0;
-            list.ForEach(delegate(Object x) { if (i < n) m[i++] = x; });
+            list.ForEach(delegate(Object x) { if (i < n) m[i++] = (T)x; });
         }
 
         public FArray(FList list)
@@ -828,7 +828,7 @@ namespace Cat
         {
         }
 
-        public FArray(object[] x)
+        public FArray(T[] x)
         {
             m = x;
         } 
@@ -843,7 +843,7 @@ namespace Cat
 
         public override FList GetIter()
         {
-            return new RangedArray(m, 0, m.Length);
+            return new RangedArray<T>(m, 0, m.Length);
         }
 
         public override FList GotoNext()
@@ -861,7 +861,7 @@ namespace Cat
             return m.Length;
         }
 
-        public override Object Head()
+        public override Object GetHead()
         {
             return m[0];
         }
@@ -904,8 +904,8 @@ namespace Cat
                     return MakeUnit(m[0]);
                 case (2):
                     return MakePair(m[0], m[1]);
-                default: 
-                    return new RangedArray(m, first, count);
+                default:
+                    return new RangedArray<T>(m, first, count);
             }
         }
 
@@ -928,16 +928,16 @@ namespace Cat
         #endregion 
     }
 
-    public class RangedArray : FList
+    public class RangedArray<T> : FList
     {
         #region fields
-        object[] m;
+        T[] m;
         int mFirst;
         int mCount;  
         #endregion
 
         #region cosntructors
-        public RangedArray(object[] a, int first, int count)
+        public RangedArray(T[] a, int first, int count)
         {
             if (count < 0)
                 throw new Exception("Invalid count");
@@ -962,7 +962,7 @@ namespace Cat
 
         public override FList GetIter()
         {
-            return new RangedArray(m, mFirst, mCount);
+            return new RangedArray<T>(m, mFirst, mCount);
         }
 
         public override FList GotoNext()
@@ -977,7 +977,7 @@ namespace Cat
             return mCount == 0;
         }
 
-        public override Object Head()
+        public override Object GetHead()
         {
             return m[mFirst];
         }
@@ -1039,7 +1039,7 @@ namespace Cat
                 case (2):
                     return MakePair(m[first + mFirst], m[first + mFirst + 1]);
                 default:
-                    return new RangedArray(m, mFirst, count);
+                    return new RangedArray<T>(m, mFirst, count);
             }
         }
         #endregion 
@@ -1082,9 +1082,9 @@ namespace Cat
             return mList.IsEmpty();
         }
 
-        public override object Head()
+        public override object GetHead()
         {
-            return mMap(mList.Head());
+            return mMap(mList.GetHead());
         }
         #endregion 
 
@@ -1157,7 +1157,7 @@ namespace Cat
         public override FList GotoNext()
         {
             mList = mList.GotoNext();
-            while (!mList.IsEmpty() && !mFilter(mList.Head()))
+            while (!mList.IsEmpty() && !mFilter(mList.GetHead()))
             {
                 mList = mList.GotoNext();
             }
@@ -1166,9 +1166,9 @@ namespace Cat
             return this;
         }
 
-        public override object Head()
+        public override object GetHead()
         {
-            return mList.Head();   
+            return mList.GetHead();   
         }
 
         public override bool IsEmpty()
@@ -1224,7 +1224,7 @@ namespace Cat
                 return Nil();
             }
 
-            mHead = mTail.Head();
+            mHead = mTail.GetHead();
             mTail = mTail.Tail();
             return this;
         }
@@ -1234,7 +1234,7 @@ namespace Cat
             return false;
         }
 
-        public override object Head()
+        public override object GetHead()
         {
             return mHead;
         }
@@ -1318,7 +1318,7 @@ namespace Cat
             return false;
         }
 
-        public override Object Head()
+        public override Object GetHead()
         {
             return mObject;
         }
@@ -1447,7 +1447,7 @@ namespace Cat
             return mCount == 0;
         }
 
-        public override Object Head()
+        public override Object GetHead()
         {
             return mFxn(mFirst);
         }
@@ -1564,7 +1564,7 @@ namespace Cat
             return new Generator(mFirst, mNext, mCond);
         }
 
-        public override object Head()
+        public override object GetHead()
         {
             return mFirst;
         }
@@ -1659,14 +1659,14 @@ namespace Cat
             return this;
         }
 
-        public override object Head()
+        public override object GetHead()
         {
-            return (mList.Head() as FList).Head();
+            return (mList.GetHead() as FList).GetHead();
         }
 
         public override bool IsEmpty()
         {
-            return (!IsEmpty()) && ((mList.Head() as FList).IsEmpty());
+            return (!mList.IsEmpty()) && ((mList.GetHead() as FList).IsEmpty());
         }
         #endregion
     }

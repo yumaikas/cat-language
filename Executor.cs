@@ -208,17 +208,22 @@ namespace Cat
         {
             if (node is AstIntNode)
                 return new IntFunction((node as AstIntNode).GetValue());
-            if (node is AstFloatNode)
+            else if (node is AstBinNode)
+                return new IntFunction((node as AstBinNode).GetValue());
+            else if (node is AstHexNode)
+                return new IntFunction((node as AstHexNode).GetValue());
+            else if (node is AstFloatNode)
                 return new FloatFunction((node as AstFloatNode).GetValue());
-            if (node is AstStringNode)
+            else if (node is AstStringNode)
                 return new StringFunction((node as AstStringNode).GetValue());
-            if (node is AstCharNode)
+            else if (node is AstCharNode)
                 return new CharFunction((node as AstCharNode).GetValue());
-            if (node is AstNameNode)
+            else if (node is AstNameNode)
                 return new FunctionName(node.ToString());
-            if (node is AstQuoteNode)
+            else if (node is AstQuoteNode)
                 return MakeQuoteFunction(node as AstQuoteNode);
-            throw new Exception("node " + node.ToString() + " does not have associated function");
+            else 
+                throw new Exception("node " + node.ToString() + " does not have associated function");
         }
 
         private void ProcessDefinition(AstDefNode node)

@@ -565,6 +565,7 @@ namespace Peg
         public static Rule Letter() { return Choice(LowerCaseLetter(), UpperCaseLetter()); }
         public static Rule Digit() { return CharRange('0', '9'); }
         public static Rule HexDigit() { return Choice(Digit(), Choice(CharRange('a', 'f'), CharRange('A', 'F'))); }
+        public static Rule BinaryDigit() { return CharSet("01"); }
         public static Rule IdentFirstChar() { return Choice(SingleChar('_'), Letter()); }
         public static Rule IdentNextChar() { return Choice(IdentFirstChar(), Digit()); }
         public static Rule Ident() { return Seq(IdentFirstChar(), Star(IdentNextChar())); }

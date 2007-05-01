@@ -64,6 +64,10 @@ namespace Cat
                     return new AstFloatNode(node);
                 case "int":
                     return new AstIntNode(node);
+                case "bin":
+                    return new AstBinNode(node);
+                case "hex":
+                    return new AstHexNode(node);
                 case "stack":
                     return new AstStackNode(node);
                 case "type_fxn":
@@ -331,6 +335,52 @@ namespace Cat
         public int GetValue()
         {
             return int.Parse(ToString());
+        }
+    }
+
+    public class AstBinNode : AstExprNode
+    {
+        public AstBinNode(Ast node)
+            : base(node)
+        {
+            CheckLabel("bin");
+            CheckIsLeaf(node);
+        }
+
+        public int GetValue()
+        {
+            string s = ToString();
+            int n = 0;
+            int place = 1;
+            for (int i = s.Length; i > 0; --i)
+            {
+                if (s[i - 1] == '1')
+                {
+                    n += place;
+                }
+                else
+                {
+                    if (s[i - 1] != '0')
+                        throw new Exception("Invalid binary number");
+                }
+                place *= 2;
+            }
+            return n;
+        }
+    }
+
+    public class AstHexNode : AstExprNode
+    {
+        public AstHexNode(Ast node)
+            : base(node)
+        {
+            CheckLabel("hex");
+            CheckIsLeaf(node);
+        }
+
+        public int GetValue()
+        {
+            return int.Parse(ToString(), NumberStyles.AllowHexSpecifier);
         }
     }
 
