@@ -112,7 +112,7 @@ namespace Cat
             // Which is notated by this[0]
             for (int i = 0; i < Count; ++i)
                 a[i] = this[i];
-            return new FArray(a);
+            return new FArray<object>(a);
         }
     }
 }

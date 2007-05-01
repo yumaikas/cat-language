@@ -31,7 +31,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.12.0 April 27th, 2007");
+                    WriteLine("version 0.12.0 April 30th, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -178,25 +178,25 @@ namespace Cat
 
         public static string ForEachToString(FList x)
         {
-            string result = "( ";
+            string result = ")";
 
             int i = 0;
             Accessor acc = delegate(Object o)
             {
                 if (i++ > 0)
-                    result += ", ";
+                    result = ", " + result;
                 // we don't print the last one
                 // this way we know there is one more
                 // so the ellipsis (...) is appropriate
                 if (i <= 4)
-                    result += ObjectToString(o);
+                    result = ObjectToString(o) + result;
             };
             x.TakeN(5).ForEach(acc);
 
             if (i == 5)
-                result += "...";
+                result = "..." + result;
 
-            result += ")";
+            result = "(" + result;
 
             return result;
         }
@@ -210,6 +210,11 @@ namespace Cat
             else if (o is FList)
             {
                 return ForEachToString(o as FList);
+            }
+            else if (o is Byte)
+            {
+                byte b = (byte)o;
+                return "0x" + b.ToString("x2");
             }
             else if (o is Double)
             {

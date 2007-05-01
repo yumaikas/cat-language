@@ -8,32 +8,47 @@ namespace Cat
         public abstract FMutableList Clone();
     }
 
-    public class Bytes : FMutableList
+    public class MArray<T> : FMutableList
     {
         #region fields
-        byte[] m; 
+        public T[] m; 
         #endregion
 
         #region constructors
-        public Bytes(int n)
+        public MArray(int n)
         {
-            m = new byte[n];
+            m = new T[n];
         }
 
-        public Bytes(byte[] x)
+        public MArray(T[] x)
         {
-            m = x.Clone() as byte[];
-        } 
+            m = x.Clone() as T[];
+        }
+
+        public MArray(FList f)
+        {
+            if (f.IsKnownInfinite())
+                throw new Exception("Can not create a mutable copy of an infinite list");
+            int n = f.Count();
+            m = new T[n];
+            FList iter = f.GetIter();
+            int i = 0;
+            while (!iter.IsEmpty())
+            {
+                m[i++] = (T)iter.GetHead();
+                iter = iter.GotoNext();
+            }
+        }
         #endregion
 
         #region mutating function overrides 
         public override void Set(int n, Object o)
         {
-            m[n] = (byte)o;
+            m[n] = (T)o;
         }
         public override FMutableList Clone()
         {
-            return new Bytes(m);
+            return new MArray<T>(m);
         }
         #endregion 
 
@@ -46,7 +61,7 @@ namespace Cat
 
         public override FList GetIter()
         {
-            throw new Exception("not implemented");
+            return new RangedArray<T>(m, 0, m.Length);
         }
 
         public override FList GotoNext()
@@ -64,7 +79,7 @@ namespace Cat
             return m.Length;
         }
 
-        public override Object Head()
+        public override Object GetHead()
         {
             return m[0];
         }
@@ -83,21 +98,21 @@ namespace Cat
 
         public override FList DropN(int n)
         {
-            Bytes ret = new Bytes(Count() - n);
+            MArray<T> ret = new MArray<T>(Count() - n);
             m.CopyTo(ret.m, n);
             return ret;
         }
 
         public override FList TakeN(int n)
         {
-            Bytes ret = new Bytes(n);
+            MArray<T> ret = new MArray<T>(n);
             m.CopyTo(ret.m, 0);
             return ret;
         }
 
         public override FList TakeRange(int first, int count)
         {
-            Bytes ret = new Bytes(count);
+            MArray<T> ret = new MArray<T>(count);
             m.CopyTo(ret.m, first);
             return ret;
         }
@@ -118,6 +133,18 @@ namespace Cat
             return Count();
         }
         
-        #endregion 
+        #endregion     
+   }
+
+    public class ByteBlock : MArray<byte>
+    {
+        public ByteBlock(int n) : base(n) { }
+        public ByteBlock(byte[] x) : base(x) { }
+        public ByteBlock(FList f) : base(f) { }
+
+        public void ZeroMemory()
+        {
+            m.Initialize();
+        }
     }
 }

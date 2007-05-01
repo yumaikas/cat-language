@@ -75,9 +75,29 @@ namespace Cat
         {
             return AstNode("float", Seq(Opt(SingleChar('-')), Plus(Digit()), SingleChar('.'), Plus(Digit()))); 
         }
+        public static Rule HexValue()
+        {
+            return AstNode("hex", Plus(HexDigit()));
+        }
+        public static Rule HexLiteral()
+        {
+            return Seq(CharSeq("0x"), NoFail(HexValue(), "expected at least one hexadecimal digit"));
+        }
+        public static Rule BinaryValue()
+        {
+            return AstNode("bin", Plus(BinaryDigit()));
+        }
+        public static Rule BinaryLiteral()
+        {
+            return Seq(CharSeq("0b"), NoFail(BinaryValue(), "expected at least one binary digit"));
+        }
+        public static Rule NumLiteral()
+        {            
+            return Choice(HexLiteral(), BinaryLiteral(), FloatLiteral(), IntegerLiteral());
+        }
         public static Rule Literal() 
         {
-            return Choice(StringLiteral(), CharLiteral(), FloatLiteral(), IntegerLiteral()); 
+            return Choice(StringLiteral(), CharLiteral(), NumLiteral()); 
         }        
         public static Rule Symbol() 
         { 
