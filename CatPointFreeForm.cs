@@ -73,7 +73,7 @@ namespace Cat
         /// This is known as an abstraction algorithm. It converts from 
         /// a form with named parameters to point-free form.
         /// </summary>
-        /// <param name="d"></param>
+        /// <param name="sRightConsequent"></param>
         public static void Convert(AstDefNode d)
         {
             if (IsPointFree(d)) 
@@ -103,7 +103,6 @@ namespace Cat
                     Console.Write(expr.ToString() + " ");
                 Console.WriteLine();
             }
-
         }
 
         public static bool IsPointFree(AstProgram p)

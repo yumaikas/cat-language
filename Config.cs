@@ -9,32 +9,16 @@ namespace Cat
 {
     /// <summary>
     /// The config class contain global switches for controlling the behaviour 
-    /// of the interpreter and compiler. 
+    /// of the interpreter and compiler. This is not actively maintained, and could
+    /// easily be out of sync with the rest of the code
     /// </summary>
     static class Config
     {
         /// <summary>
         /// Controls whether inferred types will be output to the console.
         /// </summary>
-        public static bool gbLogTypeInference = false;
-        
-        /// <summary>
-        /// Controls whether interpreter will run unit tests on start-up
-        /// </summary>
-        public static bool gbUnitTesting = false;
-        
-        /// <summary>
-        /// Turns on tests which may throw exceptions. This is useful
-        /// to trun off when in debug mode, and exception handling is 
-        /// done from within the IDE.
-        /// </summary>
-        public static bool gbUnitTestingWithExceptions = false;
-        
-        /// <summary>
-        /// Forces the interpreter to run the failing test set. 
-        /// </summary>
-        public static bool gbTestKnownIssues = false;
-        
+        public static bool gbLogTypeInference = true;
+               
         /// <summary>
         /// Controls how names are assigned to type variable declarations and type variables
         /// </summary>
