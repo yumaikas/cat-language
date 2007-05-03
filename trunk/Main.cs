@@ -51,7 +51,7 @@ namespace Cat
                 if (gsInputFiles.Count == 0)
                 {
                     Console.WriteLine("warning: no files were passed as command line arguments, therefore the standard library hasn't been loaded.");
-                    Console.WriteLine("you can load the standard library by writing: #load path\\standard.cat");
+                    Console.WriteLine("you can load the standard library by writing: \"path\\standard.cat\" #load");
                 }
 
                 // main execution loop
@@ -59,6 +59,8 @@ namespace Cat
                 {
                     Prompt();
                     string s = Console.ReadLine();
+                    if (s.Equals("#exit"))
+                        break;
                     gpTranscript.WriteLine(s);
                     if (s.Length > 0)
                     {

@@ -27,7 +27,7 @@ namespace Peg
         /// phrases in a programming language. A production rule also
         /// corresponds to a pattern matcher in a recursive-descent parser. 
         /// 
-        /// Each instance of a Rule class has a Match function which 
+        /// Each instance of a Fact class has a Match function which 
         /// has the responsibility to look at the current input 
         /// (which is managed by a Parser object) and return true or false, 
         /// depending on whether the current input corresponds

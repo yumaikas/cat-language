@@ -5,10 +5,9 @@ using System.Diagnostics;
 
 namespace Cat
 {
-    class Constraints
+    public class TypeConstraints
     {
-        Dictionary<string, List<CatKind>> mConstraints
-            = new Dictionary<string, List<CatKind>>();
+        Dictionary<string, List<CatKind>> mConstraints = new Dictionary<string, List<CatKind>>();
 
         public void AddStackConstraint(CatStackKind x, CatStackKind y)
         {
@@ -19,8 +18,16 @@ namespace Cat
             {
                 CatSimpleStackKind a = x as CatSimpleStackKind;
                 CatSimpleStackKind b = y as CatSimpleStackKind;
-                AddTypeConstraint(a.GetTop(), b.GetTop());
+                AddTypeConstraint(a.GetTop() as CatTypeKind, b.GetTop() as CatTypeKind);
                 AddStackConstraint(a.GetRest(), b.GetRest());
+            }
+            else if (x is CatStackPairKind)
+            {
+                CatStackKind left_top = (x as CatStackPairKind).GetTop() as CatStackKind;
+                CatStackKind left_rest = (x as CatStackPairKind).GetRest();
+            }
+            else if (y is CatStackPairKind)
+            {
             }
         }
 
@@ -50,6 +57,8 @@ namespace Cat
 
         public void MergeConstraints(string sKey, List<CatKind> list)
         {
+            throw new Exception("not implemented yet");
+            /*
             List<CatKind> tmp;            
 
             if (mConstraints.TryGetValue(sKey, out tmp))
@@ -61,6 +70,7 @@ namespace Cat
                     MergeConstraints(k.ToString(), list);
                 }
             }
+             */
         }
 
         public CatFxnType ResolveConstraints()

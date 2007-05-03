@@ -109,7 +109,7 @@ namespace Cat
                 Function f = exec.GetGlobalScope().Lookup(fs);
                 CatFxnType ft = CatFxnType.CreateFxnType(f.GetTypeString());
                 CatFxnType gt = CatFxnType.CreateFxnType(g.GetTypeString());
-                Constraints c = new Constraints();
+                TypeConstraints c = new TypeConstraints();
                 CatComposedFxnType t = new CatComposedFxnType(null, ft, gt, c);
                 Console.WriteLine(f.GetName() + " : " + ft.ToString());
                 Console.WriteLine(g.GetName() + " : " + gt.ToString());
@@ -131,8 +131,8 @@ namespace Cat
                 MainClass.WriteLine("The following are some useful meta-commands for the interpreter.");
                 MainClass.WriteLine("  #exit - exits the interpreter.");
                 MainClass.WriteLine("  #defs - lists available functions.");
-                MainClass.WriteLine("  \"command\" #h  - provides more information about a command.");
-                MainClass.WriteLine("  \"filename\" #load - load and execute a code file");
+                MainClass.WriteLine("  \"command\" #h  - provides more information abousLeftAntecedensAntecedensAntecedent a command.");
+                MainClass.WriteLine("  \"filename\" #load - load and executsLeftAntecedensAntecedensAntecedent a code file");
             }
         }
 
@@ -313,7 +313,7 @@ namespace Cat
         public class Swap : Function
         {
             public Swap()
-                : base("swap", "('R 'a 'b -> 'R 'b 'a)", "swap the top two items on the stack")
+                : base("swap", "('R 'a 'sLeftConsequent -> 'R 'sLeftConsequent 'a)", "swap the top two items on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -383,7 +383,7 @@ namespace Cat
         public class Dip : Function
         {
             public Dip()
-                : base("dip", "('A 'b ('A -> 'C) -> 'C 'b)", "evaluates function, temporarily removing second item")
+                : base("dip", "('A 'sLeftConsequent ('A -> 'C) -> 'C 'sLeftConsequent)", "evaluates function, temporarily removing second item")
             { }
 
             public override void Eval(Executor exec)
@@ -486,10 +486,10 @@ namespace Cat
 
         public class BinRec : Function
         {
-            // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
+            // The fact that it takes 'sLeftConsequent instead of 'B is a minor optimization for untyped implementations
             // I may ignore it later on.
             public BinRec()
-                : base("bin_rec", "('A cond=('A -> 'A bool) base=('A -> 'b) arg_rel=('A -> 'C 'A 'A) result_rel('C 'b 'b -> 'b) -> 'b)",
+                : base("bin_rec", "('A cond=('A -> 'A bool) base=('A -> 'sLeftConsequent) arg_rel=('A -> 'C 'A 'A) result_rel('C 'sLeftConsequent 'sLeftConsequent -> 'sLeftConsequent) -> 'sLeftConsequent)",
                     "execute a binary recursion process")
             { }
 
@@ -1112,7 +1112,7 @@ namespace Cat
         public class Map : Function
         {
             public Map()
-                : base("map", "(list ('a -> 'b) -> list)", "creates a new list by modifying an existing list")
+                : base("map", "(list ('a -> 'sLeftConsequent) -> list)", "creates a new list by modifying an existing list")
             { }
 
             public override void Eval(Executor exec)

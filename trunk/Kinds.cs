@@ -8,7 +8,7 @@ namespace Cat
     /// <summary>
     /// All CatKinds should be immutable. This avoids a lot of problems and confusion.
     /// </summary>
-    class CatKind : IEqualityComparer<CatKind>
+    public class CatKind : IEqualityComparer<CatKind>
     {
         public CatFxnType mParent;
 
@@ -126,14 +126,14 @@ namespace Cat
     /// <summary>
     /// Base class for the different Cat types
     /// </summary>
-    class CatTypeKind : CatKind
+    public class CatTypeKind : CatKind
     {
         public CatTypeKind(CatFxnType parent) 
             : base(parent)
         { }
     }
 
-    class CatSimpleTypeKind : CatTypeKind
+    public class CatSimpleTypeKind : CatTypeKind
     {
         string msName;
 
@@ -149,28 +149,36 @@ namespace Cat
         }
     }
 
-    class CatStackKind : CatKind
+    public abstract class CatStackKind : CatKind
     {
         public CatStackKind(CatFxnType parent)
             : base(parent)
         { }
+
+        public bool IsEmpty()
+        {
+            return this is CatEmptyStackKind;
+        }
+
+        public abstract CatKind GetTop();
+        public abstract CatStackKind GetRest();
     }
 
-    class CatEmptyStackKind : CatStackKind
+    public class CatEmptyStackKind : CatStackKind
     {
         public CatEmptyStackKind(CatFxnType parent)
             : base(parent)
         {
         }
 
-        public CatTypeKind GetTop()
+        public override CatKind GetTop()
         {
-            return null;
+            throw new Exception("empty stacks have no top");
         }
 
-        public CatStackKind GetRest()
+        public override CatStackKind GetRest()
         {
-            return null;
+            throw new Exception("empty stacks have no bottom");
         }
 
         public override string ToString()
@@ -179,7 +187,7 @@ namespace Cat
         }
     }
 
-    class CatSimpleStackKind : CatStackKind
+    public class CatSimpleStackKind : CatStackKind
     {
         public CatSimpleStackKind(CatFxnType parent, CatStackKind r, CatTypeKind t)
             : base(parent)
@@ -193,12 +201,12 @@ namespace Cat
         CatTypeKind top;
         CatStackKind rest;
 
-        public CatTypeKind GetTop()
+        public override CatKind GetTop()
         {
             return top;
         }
 
-        public CatStackKind GetRest()
+        public override CatStackKind GetRest()
         {
             return rest;
         }
@@ -212,7 +220,7 @@ namespace Cat
     /// <summary>
     /// Represents a stack with a stack on top.
     /// </summary>
-    class CatStackPairKind : CatStackKind
+    public class CatStackPairKind : CatStackKind
     {
         CatStackKind top;
         CatStackKind rest;
@@ -226,12 +234,12 @@ namespace Cat
             rest = pRest;
         }
 
-        public CatStackKind GetTop()
+        public override CatKind GetTop()
         {
             return top;
         }
 
-        public CatStackKind GetRest()
+        public override CatStackKind GetRest()
         {
             return rest;
         }
@@ -242,7 +250,7 @@ namespace Cat
         }
     }
 
-    class CatStackVar : CatStackKind
+    public class CatStackVar : CatStackKind
     {
         string msName;
 
@@ -252,13 +260,23 @@ namespace Cat
             msName = s;
         }
 
+        public override CatKind GetTop()
+        {
+            throw new Exception("stack variables have no top");
+        }
+
+        public override CatStackKind GetRest()
+        {
+            throw new Exception("stack variables have no bottom");
+        }
+
         public override string ToString()
         {
             return "$" + msName + GetIdString();
         }
     }
 
-    class CatFxnType : CatTypeKind
+    public class CatFxnType : CatTypeKind
     {
         static int gnId;
         int mnId; 
@@ -336,9 +354,9 @@ namespace Cat
         }
     }
 
-    class CatComposedFxnType : CatFxnType
+    public class CatComposedFxnType : CatFxnType
     {
-        public CatComposedFxnType(CatFxnType parent, CatFxnType x, CatFxnType y, Constraints c)
+        public CatComposedFxnType(CatFxnType parent, CatFxnType x, CatFxnType y, TypeConstraints c)
             : base(parent)
         {
             AddToConsumption(x.GetCons());
@@ -347,7 +365,7 @@ namespace Cat
         }
     }
 
-    class CatQuotedFxnType : CatFxnType
+    public class CatQuotedFxnType : CatFxnType
     {
         public CatQuotedFxnType(CatFxnType parent, CatFxnType f)
             : base(parent)
@@ -356,7 +374,7 @@ namespace Cat
         }
     }
 
-    class CatTypeVar : CatTypeKind
+    public class CatTypeVar : CatTypeKind
     {
         string msName;
 
@@ -372,7 +390,7 @@ namespace Cat
         }
     }
 
-    class CatPrimitiveType : CatTypeKind
+    public class CatPrimitiveType : CatTypeKind
     {
         string msName;
 
@@ -388,7 +406,7 @@ namespace Cat
         }
     }
 
-    class CatParameterizedType : CatTypeKind
+    public class CatParameterizedType : CatTypeKind
     {
         CatTypeKind mType;
         string msName;
@@ -406,7 +424,7 @@ namespace Cat
         }
     }
 
-    class CatAlgebraicType : CatTypeKind
+    public class CatAlgebraicType : CatTypeKind
     {
         public CatAlgebraicType(CatFxnType parent)
             : base(parent)
@@ -416,7 +434,7 @@ namespace Cat
         public CatTypeKind second;
     }
 
-    class CatUnionType : CatAlgebraicType
+    public class CatUnionType : CatAlgebraicType
     {
         public CatUnionType(CatFxnType parent, CatTypeKind x, CatTypeKind y)
             : base(parent)
@@ -431,7 +449,7 @@ namespace Cat
         }
     }
 
-    class CatSumType : CatAlgebraicType
+    public class CatSumType : CatAlgebraicType
     {
         public CatSumType(CatFxnType parent, CatTypeKind x, CatTypeKind y)
             : base(parent)
@@ -446,7 +464,7 @@ namespace Cat
         }
     }
 
-    class CatProductType : CatAlgebraicType
+    public class CatProductType : CatAlgebraicType
     {
         public CatProductType(CatFxnType parent, CatTypeKind x, CatTypeKind y)
             : base(parent)

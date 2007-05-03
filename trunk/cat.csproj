@@ -74,6 +74,7 @@
   <ItemGroup>
     <Compile Include="CatAst.cs" />
     <Compile Include="CatGrammar.cs" />
+    <Compile Include="TheoremProver.cs" />
     <Compile Include="Kinds.cs" />
     <Compile Include="FunctionalList.cs" />
     <Compile Include="MutableList.cs" />
