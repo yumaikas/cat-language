@@ -32,6 +32,7 @@ namespace Cat
         public string msName = "_unnamed_"; 
         public string msDesc = "";
         public string msType = "";
+        public CatFxnType mpType = null;
         #endregion
 
         public Function()
@@ -40,6 +41,13 @@ namespace Cat
         public void SetType(string s)
         {
             msType = s;
+        }
+        public CatFxnType GetCatType()
+        {
+            // compute as requested
+            if (mpType == null)
+                mpType = CatFxnType.CreateFxnType(msType);
+            return mpType;
         }
         public string GetDesc()
         {
@@ -403,11 +411,15 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
+            Lookup(exec).Eval(exec);
+        }
+
+        public Function Lookup(Executor exec)
+        {
             Scope scope = exec.GetGlobalScope();
             if (!scope.FunctionExists(msName))
                 throw new Exception(msName + " is not defined");
-            Function f = scope.Lookup(exec.GetStack(), msName);
-            f.Eval(exec);
+            return scope.Lookup(exec.GetStack(), msName);
         }
     }
 
