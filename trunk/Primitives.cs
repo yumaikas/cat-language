@@ -95,28 +95,30 @@ namespace Cat
             }
         }
 
-        public class ComposedType : Function
+        public class InferType : Function
         {
-            public ComposedType()
-                : base("#ct", "(function function -> ", "experimental")
+            public InferType()
+                : base("#it", "(function -> ", "experimental")
             { }
 
             public override void Eval(Executor exec)
             {
-                String gs = exec.PopString();
-                String fs = exec.PopString();
-                Function g = exec.GetGlobalScope().Lookup(gs);
-                Function f = exec.GetGlobalScope().Lookup(fs);
-                CatFxnType ft = CatFxnType.CreateFxnType(f.GetTypeString());
-                CatFxnType gt = CatFxnType.CreateFxnType(g.GetTypeString());
-                TypeConstraints c = new TypeConstraints();
-                CatComposedFxnType t = new CatComposedFxnType(null, ft, gt, c);
-                Console.WriteLine(f.GetName() + " : " + ft.ToString());
-                Console.WriteLine(g.GetName() + " : " + gt.ToString());
-                Console.WriteLine("composed : " + t.ToString());                
-                c.OutputConstraints();
-                c.ResolveConstraints();
-                c.OutputConstraints();
+                Function f = exec.PopFunction();
+                if (!(f is QuotedFunction))
+                    throw new Exception("can only infer types of quotations consisting of two primitives");
+                QuotedFunction q = f as QuotedFunction;
+                if (q.GetChildren().Count != 2)
+                    throw new Exception("can only infer types of quotations consisting of two primitives");
+                Function x = q.GetChildren()[0];
+                Function y = q.GetChildren()[1];
+                if (!(x is FunctionName)) throw new Exception("expected a function name");
+                if (!(y is FunctionName)) throw new Exception("expected a function name");
+                x = (x as FunctionName).Lookup(exec);
+                y = (y as FunctionName).Lookup(exec);
+                TypeInferer ti = new TypeInferer();
+                CatFxnType ft = ti.InferType(x.GetCatType(), y.GetCatType());
+                MainClass.WriteLine("inferred type = " + ft.ToString());
+                ti.OutputConstraints();
             }
         }
 

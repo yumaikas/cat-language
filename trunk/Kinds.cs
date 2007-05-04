@@ -10,40 +10,33 @@ namespace Cat
     /// </summary>
     public class CatKind : IEqualityComparer<CatKind>
     {
-        public CatFxnType mParent;
-
-        public CatStackKind CreateStackKind(CatStackKind rest, CatKind top)
+        public static CatStackKind CreateStackKind(CatStackKind rest, CatKind top)
         {
             if (top is CatTypeKind)
             {
-                return new CatSimpleStackKind(GetParentOrSelf(), rest, top as CatTypeKind);
-            }
-            else if (top is CatStackKind)
-            {
-                if (rest is CatEmptyStackKind)
-                {
-                    // A stack with nothing under it, is the same thing as the stack.
-                    return top as CatStackKind;
-                }
-                else 
-                {
-                    if (top is CatEmptyStackKind)
-                        return rest;
-                    return new CatStackPairKind(GetParentOrSelf(), rest, top as CatStackKind);
-                }
+                return new CatSimpleStackKind(rest, top as CatTypeKind);
             }
             else if (top == null)
             {
                 return rest;
             }
+            else if (top is CatStackKind)
+            {
+                if ((rest == null) || (rest.IsEmpty()))
+                {
+                    return top as CatStackKind;
+                }
+
+                throw new Exception("stacks can not be placed on stacks");
+            }
             else
             {
-                throw new Exception("unhandled kind " + top.ToString());
+                throw new Exception("unrecognized kind " + top.ToString());
             }
         }
         public CatStackKind CreateStackFromNode(AstStackNode node)
         {
-            CatStackKind ret = new CatEmptyStackKind(GetParentOrSelf());
+            CatStackKind ret = new CatEmptyStackKind();
             foreach (AstTypeNode t in node.mTypes)
                 ret = CreateStackKind(ret, CreateKindFromNode(t));
             return ret;
@@ -53,19 +46,19 @@ namespace Cat
         {
             if (node is AstSimpleTypeNode)
             {
-                return new CatSimpleTypeKind(GetParentOrSelf(), node.ToString());
+                return new CatSimpleTypeKind(node.ToString());
             }
             else if (node is AstTypeVarNode)
             {
-                return new CatTypeVar(GetParentOrSelf(), node.ToString());
+                return new CatTypeVar(node.ToString());
             }
             else if (node is AstStackVarNode)
             {
-                return new CatStackVar(GetParentOrSelf(), node.ToString());
+                return new CatStackVar(node.ToString());
             }
             else if (node is AstFxnTypeNode)
             {
-                return new CatFxnType(GetParentOrSelf(), node as AstFxnTypeNode);
+                return new CatFxnType(node as AstFxnTypeNode);
             }
             else
             {
@@ -73,33 +66,8 @@ namespace Cat
             }
         }
 
-        public CatKind(CatFxnType parent)
+        public CatKind()
         {
-            if (parent == null)
-                if (!(this is CatFxnType))
-                    throw new Exception("only function types can be top-level nodes (e.g. have no parents)");
-            mParent = parent;
-        }
-
-        public CatFxnType GetParentOrSelf()
-        {
-            if (mParent != null)
-            {
-                return mParent;
-            }
-            else
-            {
-                if (!(this is CatFxnType))
-                    throw new Exception("only function types can be top-level nodes (e.g. have no parents)");
-                return this as CatFxnType;
-            }
-        }
-
-        public virtual string GetIdString()
-        {
-            if (mParent != null)
-                return mParent.GetIdString();
-            throw new Exception("internal error: GetIdString() should be implemented in CatFxnType and not call base class");
         }
 
         public override string ToString()
@@ -128,8 +96,7 @@ namespace Cat
     /// </summary>
     public class CatTypeKind : CatKind
     {
-        public CatTypeKind(CatFxnType parent) 
-            : base(parent)
+        public CatTypeKind() 
         { }
     }
 
@@ -137,8 +104,7 @@ namespace Cat
     {
         string msName;
 
-        public CatSimpleTypeKind(CatFxnType parent, string s)
-            : base(parent)
+        public CatSimpleTypeKind(string s)
         {
             msName = s;
         }
@@ -151,8 +117,7 @@ namespace Cat
 
     public abstract class CatStackKind : CatKind
     {
-        public CatStackKind(CatFxnType parent)
-            : base(parent)
+        public CatStackKind()
         { }
 
         public bool IsEmpty()
@@ -160,18 +125,17 @@ namespace Cat
             return this is CatEmptyStackKind;
         }
 
-        public abstract CatKind GetTop();
+        public abstract CatTypeKind GetTop();
         public abstract CatStackKind GetRest();
     }
 
     public class CatEmptyStackKind : CatStackKind
     {
-        public CatEmptyStackKind(CatFxnType parent)
-            : base(parent)
+        public CatEmptyStackKind()
         {
         }
 
-        public override CatKind GetTop()
+        public override CatTypeKind GetTop()
         {
             throw new Exception("empty stacks have no top");
         }
@@ -189,8 +153,7 @@ namespace Cat
 
     public class CatSimpleStackKind : CatStackKind
     {
-        public CatSimpleStackKind(CatFxnType parent, CatStackKind r, CatTypeKind t)
-            : base(parent)
+        public CatSimpleStackKind(CatStackKind r, CatTypeKind t)
         {
             Trace.Assert(r != null);
             Trace.Assert(t != null);
@@ -201,7 +164,7 @@ namespace Cat
         CatTypeKind top;
         CatStackKind rest;
 
-        public override CatKind GetTop()
+        public override CatTypeKind GetTop()
         {
             return top;
         }
@@ -217,50 +180,16 @@ namespace Cat
         }
     }
 
-    /// <summary>
-    /// Represents a stack with a stack on top.
-    /// </summary>
-    public class CatStackPairKind : CatStackKind
-    {
-        CatStackKind top;
-        CatStackKind rest;
-
-        public CatStackPairKind(CatFxnType parent, CatStackKind pRest, CatStackKind pTop)
-            : base(parent)
-        {
-            Trace.Assert(pTop != null);
-            Trace.Assert(pRest  != null);
-            top = pTop;
-            rest = pRest;
-        }
-
-        public override CatKind GetTop()
-        {
-            return top;
-        }
-
-        public override CatStackKind GetRest()
-        {
-            return rest;
-        }
-
-        public override string ToString()
-        {
-            return GetRest().ToString() + "." + GetTop().ToString();
-        }
-    }
-
     public class CatStackVar : CatStackKind
     {
         string msName;
 
-        public CatStackVar(CatFxnType parent, string s)
-            : base(parent)
+        public CatStackVar(string s)
         {
             msName = s;
         }
 
-        public override CatKind GetTop()
+        public override CatTypeKind GetTop()
         {
             throw new Exception("stack variables have no top");
         }
@@ -272,15 +201,12 @@ namespace Cat
 
         public override string ToString()
         {
-            return "$" + msName + GetIdString();
+            return msName;
         }
     }
 
     public class CatFxnType : CatTypeKind
     {
-        static int gnId;
-        int mnId; 
-
         CatStackKind mProd;
         CatStackKind mCons;
 
@@ -293,39 +219,26 @@ namespace Cat
             if (ast.GetNumChildren() != 1)
                 throw new Exception("invalid number of children in abstract syntax tree");
             AstFxnTypeNode node = new AstFxnTypeNode(ast.GetChild(0));
-            return new CatFxnType(null, node);
+            return new CatFxnType(node);
         }
 
-        public CatFxnType(CatFxnType parent)
-            : base(parent)
+        public CatFxnType(CatStackKind cons, CatStackKind prod)
         {
-            mCons = new CatEmptyStackKind(GetParentOrSelf());
-            mProd = new CatEmptyStackKind(GetParentOrSelf());
+            AddToConsumption(cons);
+            AddToProduction(prod);
         }
 
-        public CatFxnType(CatFxnType parent, AstFxnTypeNode node)
-            : base(parent)
+
+        public CatFxnType()
+        {
+            mCons = new CatEmptyStackKind();
+            mProd = new CatEmptyStackKind();
+        }
+
+        public CatFxnType(AstFxnTypeNode node)
         {
             mCons = CreateStackFromNode(node.mCons);
             mProd = CreateStackFromNode(node.mProd);
-
-            if (parent == null)
-            {
-                // For the time being I am always writing the correct type.
-                //CatStackVar rho = new CatStackVar(this, "rho");
-                //mCons = CreateStackKind(rho, mCons);
-                //mProd = CreateStackKind(rho, mProd);
-
-                // Only bother incrementing the id counter if there is no parent
-                mnId = gnId++;
-            }
-        }
-
-        public override string GetIdString()
-        {
-            if (mParent != null)
-                return mParent.GetIdString();
-            return mnId.ToString();
         }
 
         public void AddToProduction(CatKind x)
@@ -354,21 +267,9 @@ namespace Cat
         }
     }
 
-    public class CatComposedFxnType : CatFxnType
-    {
-        public CatComposedFxnType(CatFxnType parent, CatFxnType x, CatFxnType y, TypeConstraints c)
-            : base(parent)
-        {
-            AddToConsumption(x.GetCons());
-            AddToProduction(y.GetProd());
-            c.AddStackConstraint(x.GetProd(), y.GetCons());
-        }
-    }
-
     public class CatQuotedFxnType : CatFxnType
     {
-        public CatQuotedFxnType(CatFxnType parent, CatFxnType f)
-            : base(parent)
+        public CatQuotedFxnType(CatFxnType f)
         {
             AddToProduction(f.GetProd());
         }
@@ -378,15 +279,14 @@ namespace Cat
     {
         string msName;
 
-        public CatTypeVar(CatFxnType parent, string s)
-            : base(parent)
+        public CatTypeVar(string s)
         {
             msName = s;
         }
 
         public override string ToString()
         {
-            return "$" + msName + GetIdString();
+            return msName;
         }
     }
 
@@ -394,8 +294,7 @@ namespace Cat
     {
         string msName;
 
-        public CatPrimitiveType(CatFxnType parent, string s)
-            : base(parent)
+        public CatPrimitiveType(string s)
         {
             msName = s;
         }
@@ -411,8 +310,7 @@ namespace Cat
         CatTypeKind mType;
         string msName;
 
-        public CatParameterizedType(CatFxnType parent, string s, CatTypeKind t)
-            : base(parent)
+        public CatParameterizedType(string s, CatTypeKind t)
         {
             msName = s;
             mType = t;
@@ -424,11 +322,13 @@ namespace Cat
         }
     }
 
+    #region algebraic types, not used yet      
     public class CatAlgebraicType : CatTypeKind
     {
-        public CatAlgebraicType(CatFxnType parent)
-            : base(parent)
-        { }
+        public CatAlgebraicType()
+        { 
+            throw new Exception("algebraic types are not yet supported");
+        }
 
         public CatTypeKind first;
         public CatTypeKind second;
@@ -436,8 +336,7 @@ namespace Cat
 
     public class CatUnionType : CatAlgebraicType
     {
-        public CatUnionType(CatFxnType parent, CatTypeKind x, CatTypeKind y)
-            : base(parent)
+        public CatUnionType(CatTypeKind x, CatTypeKind y)
         {
             first = x;
             second = y;
@@ -451,8 +350,7 @@ namespace Cat
 
     public class CatSumType : CatAlgebraicType
     {
-        public CatSumType(CatFxnType parent, CatTypeKind x, CatTypeKind y)
-            : base(parent)
+        public CatSumType(CatTypeKind x, CatTypeKind y)
         {
             first = x;
             second = y;
@@ -466,8 +364,7 @@ namespace Cat
 
     public class CatProductType : CatAlgebraicType
     {
-        public CatProductType(CatFxnType parent, CatTypeKind x, CatTypeKind y)
-            : base(parent)
+        public CatProductType(CatTypeKind x, CatTypeKind y)
         {
             first = x;
             second = y;
@@ -478,4 +375,5 @@ namespace Cat
             return "product(" + first.ToString() + "," + second.ToString() + ")";
         }
     }
+    #endregion
 }
