@@ -38,6 +38,18 @@ namespace Cat
             }
         }
 
+        public class Save : Function
+        {
+            public Save()
+                : base("#save", "(string ~> )", "saves a transcript of the session so far")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                MainClass.SaveTranscript(exec.PopString());
+            }
+        }
+
         public class Defs : Function
         {
             public Defs()
@@ -58,13 +70,40 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                string sName = exec.PopString();
-                Function f = exec.GetGlobalScope().Lookup(sName);
-                if (f == null) throw new Exception("could not find function " + sName);
-                string sType = f.GetTypeString();
-                MainClass.WriteLine(f.GetName() + " : " + sType);
-                CatFxnType t = CatFxnType.CreateFxnType(sType);
-                MainClass.WriteLine(f.GetName() + " : " + t.ToString());
+                Renamer.ResetId();
+                Function f = exec.PopFunction();
+                if (!(f is QuotedFunction))
+                    throw new Exception("You can only request the type of a quotation of named primitives");
+
+                QuotedFunction q = f as QuotedFunction;
+                if (q.GetChildren().Count == 0)
+                {
+                    MainClass.WriteLine("( -> )");
+                }
+                else if (q.GetChildren().Count == 1)
+                {
+                    Function x = q.GetChildren()[0];
+                    if (!(x is FunctionName)) throw new Exception("expected a function name");
+                    x = (x as FunctionName).Lookup(exec);
+                    CatFxnType ft = x.GetCatType();
+                    MainClass.WriteLine(x.ToString() + " : " + ft.ToString());
+                }
+                else
+                {
+                    Function x = q.GetChildren()[0];
+                    if (!(x is FunctionName)) throw new Exception("expected a function name");
+                    x = (x as FunctionName).Lookup(exec);
+                    CatFxnType ft = x.GetCatType();
+
+                    TypeInferer ti = new TypeInferer();
+                    for (int i = 1; i < q.GetChildren().Count; ++i)
+                    {
+                        Function y = q.GetChildren()[i];
+                        if (!(y is FunctionName)) throw new Exception("expected a function name");
+                        y = (y as FunctionName).Lookup(exec);
+                        ft = ti.InferType(ft, y.GetCatType());
+                    }
+                }
             }
         }
 
@@ -84,41 +123,14 @@ namespace Cat
                         try
                         {
                             CatFxnType t = CatFxnType.CreateFxnType(s);
-                            Console.WriteLine(f.GetName() + "\t" + s + "\t" + t.ToString());
+                            MainClass.WriteLine(f.GetName() + "\t" + s + "\t" + t.ToString());
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine(f.GetName() + "\t" + s + "\t" + "error:" + e.Message);
+                            MainClass.WriteLine(f.GetName() + "\t" + s + "\t" + "error:" + e.Message);
                         }
                     }
                 }
-            }
-        }
-
-        public class InferType : Function
-        {
-            public InferType()
-                : base("#it", "(function -> ", "experimental")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.PopFunction();
-                if (!(f is QuotedFunction))
-                    throw new Exception("can only infer types of quotations consisting of two primitives");
-                QuotedFunction q = f as QuotedFunction;
-                if (q.GetChildren().Count != 2)
-                    throw new Exception("can only infer types of quotations consisting of two primitives");
-                Function x = q.GetChildren()[0];
-                Function y = q.GetChildren()[1];
-                if (!(x is FunctionName)) throw new Exception("expected a function name");
-                if (!(y is FunctionName)) throw new Exception("expected a function name");
-                x = (x as FunctionName).Lookup(exec);
-                y = (y as FunctionName).Lookup(exec);
-                TypeInferer ti = new TypeInferer();
-                CatFxnType ft = ti.InferType(x.GetCatType(), y.GetCatType());
-                MainClass.WriteLine("inferred type = " + ft.ToString());
-                ti.OutputConstraints();
             }
         }
 
@@ -130,11 +142,14 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                MainClass.WriteLine("The following are some useful meta-commands for the interpreter.");
+                MainClass.WriteLine("The following are some useful commands:");
+                MainClass.WriteLine("  \"filename\" #load - loads and executes a Cat file");
+                MainClass.WriteLine("  \"filename\" #save - saves a transcript of session");
                 MainClass.WriteLine("  #exit - exits the interpreter.");
                 MainClass.WriteLine("  #defs - lists available functions.");
-                MainClass.WriteLine("  \"command\" #h  - provides more information abousLeftAntecedensAntecedensAntecedent a command.");
-                MainClass.WriteLine("  \"filename\" #load - load and executsLeftAntecedensAntecedensAntecedent a code file");
+                MainClass.WriteLine("  [...] #t - attempts to infer the type of a quotation");
+                MainClass.WriteLine("  \"command\" #h  - provides more information about a command.");
+                MainClass.WriteLine("  clr - clears the stack");
             }
         }
 
@@ -149,15 +164,14 @@ namespace Cat
                 Function f = exec.GetGlobalScope().Lookup(exec.PopString());
                 if (f != null)
                 {
-                    Console.WriteLine(f.GetName() + "\t" + f.GetTypeString() + "\t" + f.GetDesc());
+                    MainClass.WriteLine(f.GetName() + "\t" + f.GetTypeString() + "\t" + f.GetDesc());
                 }
                 else
                 {
-                    Console.WriteLine(exec.PopString() + " is not defined");
+                    MainClass.WriteLine(exec.PopString() + " is not defined");
                 }
             }
         }
-
     }
 
     public class Primitives
@@ -315,7 +329,7 @@ namespace Cat
         public class Swap : Function
         {
             public Swap()
-                : base("swap", "('R 'a 'sLeftConsequent -> 'R 'sLeftConsequent 'a)", "swap the top two items on the stack")
+                : base("swap", "('R 'a 'b -> 'R 'b 'a)", "swap the top two items on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -385,7 +399,7 @@ namespace Cat
         public class Dip : Function
         {
             public Dip()
-                : base("dip", "('A 'sLeftConsequent ('A -> 'C) -> 'C 'sLeftConsequent)", "evaluates function, temporarily removing second item")
+                : base("dip", "('A 'b ('A -> 'C) -> 'C 'b)", "evaluates function, temporarily removing second item")
             { }
 
             public override void Eval(Executor exec)
@@ -488,10 +502,10 @@ namespace Cat
 
         public class BinRec : Function
         {
-            // The fact that it takes 'sLeftConsequent instead of 'B is a minor optimization for untyped implementations
+            // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
             // I may ignore it later on.
             public BinRec()
-                : base("bin_rec", "('A cond=('A -> 'A bool) base=('A -> 'sLeftConsequent) arg_rel=('A -> 'C 'A 'A) result_rel('C 'sLeftConsequent 'sLeftConsequent -> 'sLeftConsequent) -> 'sLeftConsequent)",
+                : base("bin_rec", "('A cond=('A -> 'A bool) base=('A -> 'b) arg_rel=('A -> 'C 'A 'A) result_rel('C 'b 'b -> 'b) -> 'b)",
                     "execute a binary recursion process")
             { }
 
@@ -1114,7 +1128,7 @@ namespace Cat
         public class Map : Function
         {
             public Map()
-                : base("map", "(list ('a -> 'sLeftConsequent) -> list)", "creates a new list by modifying an existing list")
+                : base("map", "(list ('a -> 'b) -> list)", "creates a new list by modifying an existing list")
             { }
 
             public override void Eval(Executor exec)

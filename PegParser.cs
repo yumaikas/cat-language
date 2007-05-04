@@ -1,3 +1,6 @@
+/// Public domain code by Christopher Diggins
+/// http://www.cat-language.com
+
 using System;
 using System.Collections.Generic;
 using System.Text;
