@@ -31,13 +31,13 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.13.0 May 3rd, 2007");
+                    WriteLine("version 0.12.1 May 4rd, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
                     WriteLine("http://www.cat-language.com");
                     WriteLine("");
-                    WriteLine("Type in #help for help, and #exit to exit.");
+                    WriteLine("Type in #help for help and #exit to exit.");
                     WriteLine("");
                 }
 
@@ -50,8 +50,10 @@ namespace Cat
 
                 if (gsInputFiles.Count == 0)
                 {
-                    Console.WriteLine("warning: no files were passed as command line arguments, therefore the standard library hasn't been loaded.");
-                    Console.WriteLine("you can load the standard library by writing: \"path\\standard.cat\" #load");
+                    Console.WriteLine("warning: no files were passed as command line arguments."); 
+                    Console.WriteLine("This means the standard library hasn't been loaded.");
+                    Console.WriteLine("You can load the standard library by writing: \"path\\standard.cat\" #load");
+                    Console.WriteLine("");
                 }
 
                 // main execution loop
@@ -79,21 +81,9 @@ namespace Cat
                 WriteLine("uncaught exception: " + e.Message);
             }
 
-            string sTranscript = "transcript.txt";
-            try
-            {
-                StreamWriter sw = new StreamWriter("transcript.txt");
-                gpTranscript.Flush();
-                sw.Write(gpTranscript.ToString());
-                sw.Close();
-                WriteLine("A transcript of your session has been saved in the file " + sTranscript.ToString());
-            }
-            catch(Exception e)
-            {
-                WriteLine("Error occured while writing transcript: " + e.Message);
-            }
+            SaveTranscript(Path.GetTempFileName());
 
-            WriteLine("goodbye! Press any key to exit ...");
+            WriteLine("Press any key to exit ...");
             Console.ReadKey();
         }
 
@@ -232,7 +222,22 @@ namespace Cat
         {
             Write(">> ");
         }
-        #endregion
+        public static void SaveTranscript(string sTranscript)
+        {
+            try
+            {
+                StreamWriter sw = new StreamWriter(sTranscript);
+                gpTranscript.Flush();
+                sw.Write(gpTranscript.ToString());
+                sw.Close();
+                WriteLine("A transcript of your session has been saved to the file " + sTranscript);
+            }
+            catch (Exception e)
+            {
+                WriteLine("Error occured while attempting to write transcript: " + e.Message);
+            }
+        }
+       #endregion
 
         #region register primitives
         public static void RegisterPrimitives(Scope scope)

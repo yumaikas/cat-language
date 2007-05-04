@@ -76,5 +76,15 @@ namespace Cat
         /// with named arguments to a point-free form.
         /// </summary>
         public static bool gbShowPointFreeConversion = false;
+
+        /// <summary>
+        /// Outputs detailed information of each of the inference mechanism works
+        /// </summary>
+        public static bool gbShowInferenceProcess = true;
+
+        /// <summary>
+        /// Outputs the result of a type inference
+        /// </summary>
+        public static bool gbShowInferredType = true;
     }
 }

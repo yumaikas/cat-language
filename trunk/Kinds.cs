@@ -1,3 +1,6 @@
+/// Public domain code by Christopher Diggins
+/// http://www.cat-language.com
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -88,6 +91,16 @@ namespace Cat
             return obj.ToString().GetHashCode();
         }
 
+        public override bool Equals(object obj)
+        {
+            // TODO: refine this so that it is more accurate.
+            return obj.ToString() == this.ToString();
+        }
+
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        } 
         #endregion
     }
 
@@ -153,6 +166,10 @@ namespace Cat
 
     public class CatSimpleStackKind : CatStackKind
     {
+        // Note: I am not sure I am happy about implementing this the way I did. 
+        // It currently behaves like a cons-list cell but I think it might 
+        // be more elegant to simply use a list of types.
+
         public CatSimpleStackKind(CatStackKind r, CatTypeKind t)
         {
             Trace.Assert(r != null);
@@ -176,7 +193,7 @@ namespace Cat
 
         public override string ToString()
         {
-            return (rest.ToString() + "." + top.ToString());
+            return (rest.ToString() + " " + top.ToString());
         }
     }
 
@@ -263,7 +280,7 @@ namespace Cat
 
         public override string ToString()
         {
-            return "(" + GetCons().ToString() + "->" + GetProd().ToString() + ")";
+            return "(" + GetCons().ToString() + " -> " + GetProd().ToString() + ")";
         }
     }
 

@@ -465,11 +465,11 @@ define test7
   // Note: I would have expected the following line to work
   // [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 byte eq] test
   // but it doesn't. For some reason integer addition is being chosen over
-  // byte addition. This is a bug that I will have to fix later on. 
+  // byte addition. This is a bug that I will have to fix later on.
   [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 eq] test
 }
 
-define testio
+define test_io
 {
   temp_file dup
   file_writer
@@ -481,6 +481,40 @@ define testio
   file_reader
   2 read_bytes
   [close_stream] dip
+}
+
+define test_types
+{
+  [] #t
+  [id] #t
+  [id id] #t
+  [id id id] #t
+  [dup] #t
+  [dup dup] #t
+  [dup dup dup] #t
+  [pop] #t
+  [pop pop] #t
+  [pop pop pop] #t
+  [swap] #t
+  [swap swap] #t
+  [swap swap swap] #t
+  [swap pop] #t
+  [pop swap] #t
+  [swap dup] #t
+  [dup swap] #t
+  [swap pop dup] #t
+  [swap dup pop] #t
+  [dup swap pop] #t
+  [pop swap dup] #t
+  [pop dup swap] #t
+  [dup pop swap] #t
+  [eval] #t
+  [eval eval] #t
+  [eval eval eval] #t
+  [dup dip] #t
+  [dup eval] #t
+  [dip dip] #t
+  [dip dup] #t
 }
 
 define run_tests
@@ -495,4 +529,3 @@ define run_tests
   test7
   "tests completed successfully" writeln
 }
-
