@@ -188,7 +188,8 @@ namespace Cat
         public static bool IsStackVarName(string s)
         {
             Trace.Assert(s.Length > 0);
-            char c = s[0];
+            Trace.Assert(s[0] == '\'');
+            char c = s[1];
             if (char.IsLower(c))
                 return false;
             else
@@ -312,56 +313,19 @@ namespace Cat
         Dictionary<string, CatTypeKind> mTypeVars = new Dictionary<string, CatTypeKind>();
         Unifier mu = new Unifier();
 
-        private void ResolveStackVars(string name, CatStackKind stk, Dictionary<string, CatKind> unifiers)
+        static TypeInferer gInferer = new TypeInferer();
+
+        public static CatFxnType Infer(CatFxnType f, CatFxnType g)
         {
-            /*
-            if (stk is CatStackVar)
-                throw new Exception("Stack variable equalties should already have been added to the unifier");
+            gInferer.Initialize();
+            return gInferer.InferType(f, g);
+        }
 
-            CatStackKind result = null;
+        public void Initialize()
+        {
+            mStackVars.Clear();
+            mTypeVars.Clear();
 
-            // Used for manual reconstruction of the stack.
-            List<CatTypeKind> types = new List<CatTypeKind>();
-
-            // This is more or less the same algorithm
-            // as the renaming algorithm
-            while (!stk.IsEmpty())
-            {
-                if (stk is CatStackVar)
-                {
-                    string s = stk.ToString();
-                    if (unifiers.ContainsKey(s))
-                        result = unifiers[s] as CatStackKind;
-                    else
-                        result = stk;
-                    break;
-                }
-                else
-                {
-                    CatTypeKind t = stk.GetTop();
-                    
-                    // TODO: fix!
-                    // t = RenameVars(t, unifiers);
-                    
-                    types.Add(t);
-                }
-            }
-
-            // This really makes me think that I designed the stack kind class rather badly 
-            // I've made a note to fix it some day.
-            if (result == null)
-            {
-                // if we get to the bottom of the stack, and didn't find a stack variable
-                // then something is horribly wrong with the code.
-                throw new Exception("Stacks must always have a stack variable at the bottom");
-            }
-
-            // Reconstruct the stack
-            foreach (CatTypeKind t in types)
-                result = CatKind.CreateStackKind(result, t);
-
-            unifiers.Add(name, result);
-             */
         }
 
         private void AddTypeVar(string s, CatTypeKind t)
@@ -519,7 +483,6 @@ namespace Cat
                 throw new KindException(x, y);
         }
 
-        #region public functions
         /// <summary>
         /// A composed function satisfy the type equation 
         /// 
@@ -531,7 +494,7 @@ namespace Cat
         /// observation that the production of the left function must be equal to the 
         /// consumption of the second function
         /// </summary>
-        public CatFxnType InferType(CatFxnType left, CatFxnType right)
+        private CatFxnType InferType(CatFxnType left, CatFxnType right)
         {
             Renamer r = new Renamer();
             left = r.Rename(left);
@@ -618,6 +581,5 @@ namespace Cat
             foreach (KeyValuePair<string, CatKind> kvp in unifiers)
                 MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
         }
-        #endregion 
     }
 }

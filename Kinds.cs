@@ -100,7 +100,8 @@ namespace Cat
         public override int GetHashCode()
         {
             return ToString().GetHashCode();
-        } 
+        }
+ 
         #endregion
     }
 
@@ -140,6 +141,13 @@ namespace Cat
 
         public abstract CatTypeKind GetTop();
         public abstract CatStackKind GetRest();
+        
+        public CatStackKind GetBottom()
+        {
+            if (this is CatEmptyStackKind || this is CatStackVar) 
+                return this;
+            return GetRest().GetBottom();
+        }
     }
 
     public class CatEmptyStackKind : CatStackKind
@@ -218,7 +226,7 @@ namespace Cat
 
         public override string ToString()
         {
-            return msName;
+            return "'" + msName;
         }
     }
 
@@ -227,8 +235,14 @@ namespace Cat
         CatStackKind mProd;
         CatStackKind mCons;
 
-        public static CatFxnType CreateFxnType(string sType)
+        // This is for simple memoization of results from calling CreateFxnType
+        static Dictionary<string, CatFxnType> gFxnTypePool = new Dictionary<string, CatFxnType>();
+
+        public static CatFxnType Create(string sType)
         {
+            if (gFxnTypePool.ContainsKey(sType))
+                return gFxnTypePool[sType];
+
             Peg.Parser p = new Peg.Parser(sType);
             if (!p.Parse(CatGrammar.FxnType()))
                 throw new Exception(sType + " is not a valid function type");
@@ -236,7 +250,9 @@ namespace Cat
             if (ast.GetNumChildren() != 1)
                 throw new Exception("invalid number of children in abstract syntax tree");
             AstFxnTypeNode node = new AstFxnTypeNode(ast.GetChild(0));
-            return new CatFxnType(node);
+            CatFxnType ret = new CatFxnType(node);
+            gFxnTypePool.Add(sType, ret);
+            return ret;
         }
 
         public CatFxnType(CatStackKind cons, CatStackKind prod)
@@ -245,17 +261,27 @@ namespace Cat
             AddToProduction(prod);
         }
 
-
         public CatFxnType()
         {
-            mCons = new CatEmptyStackKind();
-            mProd = new CatEmptyStackKind();
+            CatStackVar rho = new CatStackVar("R");
+            mCons = rho;
+            mProd = rho;
         }
 
         public CatFxnType(AstFxnTypeNode node)
         {
             mCons = CreateStackFromNode(node.mCons);
             mProd = CreateStackFromNode(node.mProd);
+            /*
+             * This is a big problem. I can have stack vars on top of stack vars.
+             * 
+            if (!(mCons.GetBottom() is CatStackVar) || !(mProd.GetBottom() is CatStackVar)
+            {
+                CatStackVar rho = new CatStackVar("R");
+                mCons = CreateStackKind(rho, mCons);
+                mProd = CreateStackKind(rho, mProd);
+            }
+             */
         }
 
         public void AddToProduction(CatKind x)
@@ -287,7 +313,7 @@ namespace Cat
     public class CatQuotedFxnType : CatFxnType
     {
         public CatQuotedFxnType(CatFxnType f)
-        {
+        {            
             AddToProduction(f.GetProd());
         }
     }
@@ -303,7 +329,7 @@ namespace Cat
 
         public override string ToString()
         {
-            return msName;
+            return "'" + msName;
         }
     }
 

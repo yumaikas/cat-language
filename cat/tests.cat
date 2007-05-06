@@ -76,13 +76,10 @@ define _3210
 { 0 4 [id] range_gen }
 
 define _234
-{ [2 3 4] list }
+{ [2 3 4] to_list }
 
 define _01234
-{ [0 1 2 3 4] list }
-
-define _0123
-{ _01 _23 cat }
+{ [0 1 2 3 4] to_list }
 
 define _23
 { 2 3 pair }
@@ -95,6 +92,9 @@ define _01
 
 define _0
 { 0 unit }
+
+define _0123
+{ _01 _23 cat }
 
 define test1
 {
@@ -121,11 +121,11 @@ define test1
   [_012 _012 eq] test
   [_0123 _0123 eq] test
 
-  // list generator
-  [[0] list _0 eq] test
-  [[0 1] list _01 eq] test
-  [[0 1 2] list _012 eq] test
-  [[0 1 2 3] list _0123 eq] test
+  // to_list generator
+  [[0] to_list _0 eq] test
+  [[0 1] to_list _01 eq] test
+  [[0 1 2] to_list _012 eq] test
+  [[0 1 2 3] to_list _0123 eq] test
 
   // cons
   [nil 1 cons 1 unit eq] test
@@ -163,7 +163,7 @@ define test1
   [_234 last swap pop 2 eq] test
   [_23 last swap pop 2 eq] test
 
-  // list to non-list comparison
+  // to_list to non-list comparison
   [nil 0 neq] test
   [0 nil neq] test
 
@@ -198,20 +198,20 @@ define test1
   [_0 0 nth swap pop 0 eq] test
 
   // map test
-  [_0123 [2 *] map [0 2 4 6] list eq] test
-  [_012 [2 *] map [0 2 4] list eq] test
-  [_01 [2 *] map [0 2] list eq] test
-  [_0 [2 *] map [0] list eq] test
+  [_0123 [2 *] map [0 2 4 6] to_list eq] test
+  [_012 [2 *] map [0 2 4] to_list eq] test
+  [_01 [2 *] map [0 2] to_list eq] test
+  [_0 [2 *] map [0] to_list eq] test
   [nil [2 *] map nil eq] test
-  [_0123 [1 +] map [1 2 3 4] list eq] test
-  [_012 [1 +] map [1 2 3] list eq] test
-  [_01 [1 +] map [1 2] list eq] test
-  [_0 [1 +] map [1] list eq] test
+  [_0123 [1 +] map [1 2 3 4] to_list eq] test
+  [_012 [1 +] map [1 2 3] to_list eq] test
+  [_01 [1 +] map [1 2] to_list eq] test
+  [_0 [1 +] map [1] to_list eq] test
   [nil [1 +] map nil eq] test
 
   // filter
-  [_0123 [1 gt] filter [2 3] list eq] test
-  [_012 [1 gt] filter [2] list eq] test
+  [_0123 [1 gt] filter [2 3] to_list eq] test
+  [_012 [1 gt] filter [2] to_list eq] test
   [_01 [1 gt] filter nil eq] test
   [_0 [1 gt] filter nil eq] test
   [nil [1 gt] filter nil eq] test
@@ -220,8 +220,8 @@ define test1
   [_01 [2 lt] filter _01 eq] test
   [_0 [2 lt] filter _0 eq] test
   [nil [2 lt] filter nil eq] test
-  [_0123 [2 mod 0 eq] filter [0 2] list eq] test
-  [_012 [2 mod 0 eq] filter [0 2] list eq] test
+  [_0123 [2 mod 0 eq] filter [0 2] to_list eq] test
+  [_012 [2 mod 0 eq] filter [0 2] to_list eq] test
   [_01 [2 mod 0 eq] filter _0 eq] test
   [_0 [2 mod 0 eq] filter _0 eq] test
   [nil [2 mod 0 eq] filter nil eq] test
@@ -232,7 +232,7 @@ define test1
   [_01 0 [+] fold 1 eq] test
   [_0 0 [+] fold 0 eq] test
   [nil 0 [+] fold 0 eq] test
-  [_0123 nil [cons] fold [3 2 1 0] list eq] test
+  [_0123 nil [cons] fold [3 2 1 0] to_list eq] test
 
   // take
   [_01234 0 take nil eq] test
@@ -283,10 +283,10 @@ define test1
   [nil tail nil eq] test
 
   // take while
-  [[1 0 3 2 1 0] list [2 lt] take_while [1 0] list eq] test
+  [[1 0 3 2 1 0] to_list [2 lt] take_while [1 0] to_list eq] test
 
   // drop while
-  [[1 0 3 2 1 0] list [2 lt] drop_while [1 0 3 2] list eq] test
+  [[1 0 3 2 1 0] to_list [2 lt] drop_while [1 0 3 2] to_list eq] test
 }
 
 define test_strings
@@ -334,13 +334,13 @@ define test2
   [((0,1),(2,3),(4),nil,(5,6,7)) flatten (0,1,2,3,4,5,6,7) eq] test
 
   // pair tests
-  [1 2 pair [1 2] list eq] test
+  [1 2 pair [1 2] to_list eq] test
   [1 2 pair (1, 2) eq] test
-  [[1 2] list (1, 2) eq] test
+  [[1 2] to_list (1, 2) eq] test
   [(1, 2) unpair pair (1, 2) eq] test
   [(1, (2,3)) unpair swap pop (2, 3) eq] test
 
-  // Hash list tests
+  // Hash to_list tests
   [hash_list hash_to_list nil eq] test
   [hash_list "a" 1 hash_add hash_to_list ((1, "a")) eq] test
   [hash_list 1 hash_contains swap pop not] test
@@ -351,7 +351,7 @@ define test2
   [hash_list "a" 42 hash_add "a" hash_get swap pop 42 eq] test
   [test_pair_list self_join test_joined_list eq] test
 
-  // pair list tests
+  // pair to_list tests
   [nil nil pair ((),()) eq] test
   [nil nil pair 1 cons_first (nil,(1)) eq] test
   [nil nil pair 1 cons_second ((1),nil) eq] test
@@ -401,7 +401,7 @@ define test4
   [5 n [pop true] count_while swap pop 5 eq] test
   [5 n empty swap pop not] test
   [5 n (4, 3, 2, 1, 0) eq] test
-  [5 n [4 3 2 1 0] list eq] test
+  [5 n [4 3 2 1 0] to_list eq] test
   [5 n 0 5 range eq] test
   [5 n 0 5 [inc dec] range_gen eq] test
   [5 n 0 [inc] [5 <] gen eq] test

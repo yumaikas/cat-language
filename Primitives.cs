@@ -83,25 +83,18 @@ namespace Cat
                 else if (q.GetChildren().Count == 1)
                 {
                     Function x = q.GetChildren()[0];
-                    if (!(x is FunctionName)) throw new Exception("expected a function name");
-                    x = (x as FunctionName).Lookup(exec);
-                    CatFxnType ft = x.GetCatType();
+                    CatFxnType ft = x.GetFxnType();
                     MainClass.WriteLine(x.ToString() + " : " + ft.ToString());
                 }
                 else
                 {
                     Function x = q.GetChildren()[0];
-                    if (!(x is FunctionName)) throw new Exception("expected a function name");
-                    x = (x as FunctionName).Lookup(exec);
-                    CatFxnType ft = x.GetCatType();
+                    CatFxnType ft = x.GetFxnType();
 
-                    TypeInferer ti = new TypeInferer();
                     for (int i = 1; i < q.GetChildren().Count; ++i)
                     {
                         Function y = q.GetChildren()[i];
-                        if (!(y is FunctionName)) throw new Exception("expected a function name");
-                        y = (y as FunctionName).Lookup(exec);
-                        ft = ti.InferType(ft, y.GetCatType());
+                        ft = TypeInferer.Infer(ft, y.GetFxnType());
                     }
                 }
             }
@@ -122,7 +115,7 @@ namespace Cat
                     {
                         try
                         {
-                            CatFxnType t = CatFxnType.CreateFxnType(s);
+                            CatFxnType t = CatFxnType.Create(s);
                             MainClass.WriteLine(f.GetName() + "\t" + s + "\t" + t.ToString());
                         }
                         catch (Exception e)
@@ -202,20 +195,6 @@ namespace Cat
                 exec.Push(b);
             }
         }
-        #endregion 
-
-        #region primitive function classes
-        public class Id : Function
-        {
-            public Id()
-                : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.")
-            { }
-
-            public override void Eval(Executor exec)
-            {                
-            }
-        }
-
         public class BinStr : Function
         {
             public BinStr()
@@ -257,6 +236,20 @@ namespace Cat
             }
         }
 
+        #endregion 
+
+        #region primitive function classes
+        public class Id : Function
+        {
+            public Id()
+                : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.")
+            { }
+
+            public override void Eval(Executor exec)
+            {                
+            }
+        }
+
         public class Eq : Function
         {
             public Eq()
@@ -268,30 +261,6 @@ namespace Cat
                 Object x = exec.Pop();
                 Object y = exec.Pop();
                 exec.Push(x.Equals(y));
-            }
-        }
-
-        public class True : Function
-        {
-            public True()
-                : base("true", "( -> bool)")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                exec.Push(true);
-            }
-        }
-
-        public class False : Function
-        {
-            public False()
-                : base("false", "( -> bool)")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                exec.Push(false);
             }
         }
 
@@ -341,6 +310,20 @@ namespace Cat
             }
         }
 
+        public class Clr : Function
+        {
+            public Clr()
+                : base("clear", "('A) -> ()", "removes all items from the stack")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.GetStack().Clear();
+            }
+        }
+        #endregion
+
+        #region function functions
         public class EvalFxn : Function
         {
             public EvalFxn()
@@ -351,48 +334,6 @@ namespace Cat
             {
                 Function f = exec.Pop() as Function;
                 f.Eval(exec);
-            }
-        }
-
-        public class Throw : Function
-        {
-            public Throw()
-                : base("throw", "(var -> )", "throws an exception")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                object o = exec.Pop();
-                     throw new CatException(o);
-            }
-        }
-
-        public class TryCatch : Function
-        {
-            public TryCatch()
-                : base("try_catch", "('A ('A -> 'B) ('A var -> 'B) -> 'B)", "evaluates a function, and catches any exceptions")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function c = exec.Pop() as Function;
-                Function t = exec.Pop() as Function;
-                object[] stkCopy = new object[exec.GetStack().Count];
-                exec.GetStack().CopyTo(stkCopy);
-                try
-                {
-                    t.Eval(exec);
-                }
-                catch (CatException e)
-                {
-                    exec.GetStack().RemoveRange(stkCopy.Length, stkCopy.Length);
-                    exec.GetStack().SetRange(0, stkCopy);
-
-                    MainClass.WriteLine("exception caught");
-
-                    exec.Push(e.GetObject());
-                    c.Eval(exec);
-                }
             }
         }
 
@@ -414,7 +355,7 @@ namespace Cat
         public class Compose : Function
         {
             public Compose()
-                : base("compose", "('R ('A -> 'B) ('B -> 'C) -> 'R ('A -> 'C))", 
+                : base("compose", "('R ('A -> 'B) ('B -> 'C) -> 'R ('A -> 'C))",
                     "creates a function by composing (concatenating) two existing functions")
             { }
 
@@ -430,7 +371,7 @@ namespace Cat
         public class Quote : Function
         {
             public Quote()
-                : base("qv", "('R 'a -> 'R ('S -> 'S 'a))", 
+                : base("qv", "('R 'a -> 'R ('S -> 'S 'a))",
                     "short for 'quote value', creates a constant generating function from the top value on the stack")
             { }
 
@@ -442,15 +383,36 @@ namespace Cat
             }
         }
 
-        public class Clr : Function
+        public class Dispatch : Function
         {
-            public Clr()
-                : base("clear", "('A) -> ()", "removes all items from the stack")
+            public Dispatch()
+                : base("dispatch", "('A type (list) -> 'C)", "dispatches a function based on the type of the top stack item")
             { }
 
             public override void Eval(Executor exec)
             {
-                exec.GetStack().Clear();
+                FList list = exec.Pop() as FList;
+                Type t = exec.Peek().GetType();
+                FList iter = list.GetIter();
+                while (!iter.IsEmpty())
+                {
+                    Pair p = iter.GetHead() as Pair;
+                    if (p == null) 
+                        throw new Exception("dispatch requires a list of pairs; types and functiosn");
+                    Type u = p.Second() as Type;
+                    if (u == null) 
+                        throw new Exception("dispatch requires a list of pairs; types and functiosn");
+                    if (u.IsAssignableFrom(t))
+                    {
+                        Function f = p.First() as Function;
+                        if (f == null) 
+                            throw new Exception("dispatch requires a list of pairs; types and functiosn");
+                        f.Eval(exec);
+                        return;
+                    }
+                    iter = iter.GotoNext();
+                }
+                throw new Exception("could not find appropriate function to dispatch to");
             }
         }
         #endregion
@@ -532,9 +494,75 @@ namespace Cat
                 Helper(exec, exec.PopFunction(), exec.PopFunction(), exec.PopFunction(), exec.PopFunction());
             }
         }
+
+        public class Throw : Function
+        {
+            public Throw()
+                : base("throw", "(var -> )", "throws an exception")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                object o = exec.Pop();
+                throw new CatException(o);
+            }
+        }
+
+        public class TryCatch : Function
+        {
+            public TryCatch()
+                : base("try_catch", "('A ('A -> 'B) ('A var -> 'B) -> 'B)", "evaluates a function, and catches any exceptions")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function c = exec.Pop() as Function;
+                Function t = exec.Pop() as Function;
+                object[] stkCopy = new object[exec.GetStack().Count];
+                exec.GetStack().CopyTo(stkCopy);
+                try
+                {
+                    t.Eval(exec);
+                }
+                catch (CatException e)
+                {
+                    exec.GetStack().RemoveRange(stkCopy.Length, stkCopy.Length);
+                    exec.GetStack().SetRange(0, stkCopy);
+
+                    MainClass.WriteLine("exception caught");
+
+                    exec.Push(e.GetObject());
+                    c.Eval(exec);
+                }
+            }
+        }
         #endregion 
 
         #region boolean functions
+        public class True : Function
+        {
+            public True()
+                : base("true", "( -> bool)")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(true);
+            }
+        }
+
+        public class False : Function
+        {
+            public False()
+                : base("false", "( -> bool)")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(false);
+            }
+        }
+
         public class And : Function
         {
             public And()
@@ -576,43 +604,140 @@ namespace Cat
         }
         #endregion
 
+        #region type functions
+        public class TypeId : Function
+        {
+            public TypeId()
+                : base("type_of", "(var -> type)", "returns a type tag for an object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Peek();
+                Type t = o.GetType();
+                if (o is FList)
+                    t = typeof(FList);
+                exec.Push(t);
+            }
+        }
+        public class TypeType : Function
+        {
+            public TypeType()
+                : base("type", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(Type));
+            }
+        }
+        public class IntType : Function
+        {
+            public IntType()
+                : base("int", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(int));
+            }
+        }
+        public class StrType : Function
+        {
+            public StrType()
+                : base("string", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(string));
+            }
+        }
+        public class DblType : Function
+        {
+            public DblType()
+                : base("double", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(double));
+            }
+        }
+        public class ByteType : Function
+        {
+            public ByteType()
+                : base("byte", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(byte));
+            }
+        }
+        public class BitType : Function
+        {
+            public BitType()
+                : base("bit", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(Bit));
+            }
+        }
+        public class BoolType : Function
+        {
+            public BoolType()
+                : base("bool", "( -> type)", "")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(typeof(Bit));
+            }
+        }
+        public static bool type_eq(Type t, Type u) { return t.Equals(u) || u.Equals(t); } 
+        #endregion 
+
         #region int functions
-        public static int add(int x, int y) { return x + y; }
-        public static int sub(int x, int y) { return x - y; }
-        public static int div(int x, int y) { return x / y; }
-        public static int mul(int x, int y) { return x * y; }
-        public static int mod(int x, int y) { return x % y; }
-        public static int neg(int x) { return -x; }
-        public static int compl(int x) { return ~x; } 
-        public static int shl(int x, int y) { return x << y; }
-        public static int shr(int x, int y) { return x >> y; }
-        public static bool gt(int x, int y) { return x > y; }
-        public static bool lt(int x, int y) { return x < y; }
-        public static bool gteq(int x, int y) { return x >= y; }
-        public static bool lteq(int x, int y) { return x <= y; }
-        public static int min(int x, int y) { return Math.Min(x, y); }
-        public static int max(int x, int y) { return Math.Max(x, y); }
-        public static int abs(int x) { return Math.Abs(x); }
-        public static int sqr(int x) { return x * x; }
+        public static int add_int(int x, int y) { return x + y; }
+        public static int sub_int(int x, int y) { return x - y; }
+        public static int div_int(int x, int y) { return x / y; }
+        public static int mul_int(int x, int y) { return x * y; }
+        public static int mod_int(int x, int y) { return x % y; }
+        public static int neg_int(int x) { return -x; }
+        public static int compl_int(int x) { return ~x; } 
+        public static int shl_int(int x, int y) { return x << y; }
+        public static int shr_int(int x, int y) { return x >> y; }
+        public static bool gt_int(int x, int y) { return x > y; }
+        public static bool lt_int(int x, int y) { return x < y; }
+        public static bool gteq_int(int x, int y) { return x >= y; }
+        public static bool lteq_int(int x, int y) { return x <= y; }
+        public static int min_int(int x, int y) { return Math.Min(x, y); }
+        public static int max_int(int x, int y) { return Math.Max(x, y); }
+        public static int abs_int(int x) { return Math.Abs(x); }
+        public static int pow_int(int x, int y) { return (int)Math.Pow(x, y); }
+        public static int sqr_int(int x) { return x * x; }
         #endregion
 
         #region byte functions
-        public static byte add(byte x, byte y) { return (byte)(x + y); }
-        public static byte sub(byte x, byte y) { return (byte)(x - y); }
-        public static byte div(byte x, byte y) { return (byte)(x / y); }
-        public static byte mul(byte x, byte y) { return (byte)(x * y); }
-        public static byte mod(byte x, byte y) { return (byte)(x % y); }
-        public static byte compl(byte x) { return (byte)(~x); } 
-        public static byte shl(byte x, byte y) { return (byte)(x << y); }
-        public static byte shr(byte x, byte y) { return (byte)(x >> y); }
-        public static bool gt(byte x, byte y) { return x > y; }
-        public static bool lt(byte x, byte y) { return x < y; }
-        public static bool gteq(byte x, byte y) { return x >= y; }
-        public static bool lteq(byte x, byte y) { return x <= y; }
-        public static byte min(byte x, byte y) { return Math.Min(x, y); }
-        public static byte max(byte x, byte y) { return Math.Max(x, y); }
-        public static byte abs(byte x) { return (byte)Math.Abs(x); }
-        public static byte sqr(byte x) { return (byte)(x * x); }
+        public static byte add_byte(byte x, byte y) { return (byte)(x + y); }
+        public static byte sub_byte(byte x, byte y) { return (byte)(x - y); }
+        public static byte div_byte(byte x, byte y) { return (byte)(x / y); }
+        public static byte mul_byte(byte x, byte y) { return (byte)(x * y); }
+        public static byte mod_byte(byte x, byte y) { return (byte)(x % y); }
+        public static byte compl_byte(byte x) { return (byte)(~x); }
+        public static byte shl_byte(byte x, byte y) { return (byte)(x << y); }
+        public static byte shr_byte(byte x, byte y) { return (byte)(x >> y); }
+        public static bool gt_byte(byte x, byte y) { return x > y; }
+        public static bool lt_byte(byte x, byte y) { return x < y; }
+        public static bool gteq_byte(byte x, byte y) { return x >= y; }
+        public static bool lteq_byte(byte x, byte y) { return x <= y; }
+        public static byte min_byte(byte x, byte y) { return Math.Min(x, y); }
+        public static byte max_byte(byte x, byte y) { return Math.Max(x, y); }
+        public static byte abs_byte(byte x) { return (byte)Math.Abs(x); }
+        public static byte sqr_byte(byte x) { return (byte)(x * x); }
         #endregion
 
         #region bit functions
@@ -621,11 +746,11 @@ namespace Cat
             public bool m;
             public Bit(int n) { m = n != 0; }
             public Bit(bool x) { m = x; }
-            public Bit add(Bit x) { return bit(m ^ x.m); }
-            public Bit sub(Bit x) { return bit(m && !x.m); }
-            public Bit mul(Bit x) { return bit(m && !x.m); }
-            public Bit div(Bit x) { return bit(m && !x.m); }
-            public Bit mod(Bit x) { return bit(m && !x.m); }
+            public Bit add(Bit x) { return new Bit(m ^ x.m); }
+            public Bit sub(Bit x) { return new Bit(m && !x.m); }
+            public Bit mul(Bit x) { return new Bit(m && !x.m); }
+            public Bit div(Bit x) { return new Bit(m && !x.m); }
+            public Bit mod(Bit x) { return new Bit(m && !x.m); }
             public bool lteq(Bit x) { return !m || x.m; }
             public bool eq(Bit x) { return m == x.m; }
             public override bool Equals(object obj)
@@ -641,38 +766,39 @@ namespace Cat
                 return m ? "0b1" : "0b0";
             }
         }
-        public static Bit bit(int x) { return new Bit(x); }
-        public static Bit bit(bool x) { return new Bit(x); }
-        public static Bit add(Bit x, Bit y) { return x.add(y); }
-        public static Bit sub(Bit x, Bit y) { return x.sub(y); }
-        public static Bit mul(Bit x, Bit y) { return x.mul(y); }
-        public static Bit div(Bit x, Bit y) { return x.div(y); }
-        public static Bit mod(Bit x, Bit y) { return x.mod(y); }
-        public static Bit compl(Bit x) { return bit(!x.m); }
-        public static bool neq(Bit x, Bit y) { return !x.eq(y); }
-        public static bool gt(Bit x, Bit y) { return !x.lteq(y); }
-        public static bool lt(Bit x, Bit y) { return !x.eq(y) && x.lteq(y); }
-        public static bool gteq(Bit x, Bit y) { return x.eq(y) || !x.lteq(y); }
-        public static bool lteq(Bit x, Bit y) { return x.lteq(y); }
-        public static Bit min(Bit x, Bit y) { return bit(x.m && y.m); }
-        public static Bit max(Bit x, Bit y) { return bit(x.m || y.m); }
+        public static Bit add_bit(Bit x, Bit y) { return x.add(y); }
+        public static Bit sub_bit(Bit x, Bit y) { return x.sub(y); }
+        public static Bit mul_bit(Bit x, Bit y) { return x.mul(y); }
+        public static Bit div_bit(Bit x, Bit y) { return x.div(y); }
+        public static Bit mod_bit(Bit x, Bit y) { return x.mod(y); }
+        public static Bit compl_bit(Bit x) { return new Bit(!x.m); }
+        public static bool neq_bit(Bit x, Bit y) { return !x.eq(y); }
+        public static bool gt_bit(Bit x, Bit y) { return !x.lteq(y); }
+        public static bool lt_bit(Bit x, Bit y) { return !x.eq(y) && x.lteq(y); }
+        public static bool gteq_bit(Bit x, Bit y) { return x.eq(y) || !x.lteq(y); }
+        public static bool lteq_bit(Bit x, Bit y) { return x.lteq(y); }
+        public static Bit min_bit(Bit x, Bit y) { return new Bit(x.m && y.m); }
+        public static Bit max_bit(Bit x, Bit y) { return new Bit(x.m || y.m); }
         #endregion
 
         #region double functions
-        public static double add(double x, double y) { return x + y; }
-        public static double sub(double x, double y) { return x - y; }
-        public static double div(double x, double y) { return x / y; }
-        public static double mul(double x, double y) { return x * y; }
-        public static double mod(double x, double y) { return x % y; }
-        public static double inc(double x) { return x + 1; }
-        public static double dec(double x) { return x - 1; }
-        public static double neg(double x) { return -x; }
-        public static bool gt(double x, double y) { return x > y; }
-        public static bool lt(double x, double y) { return x < y; }
-        public static bool gteq(double x, double y) { return x >= y; }
-        public static bool lteq(double x, double y) { return x <= y; }
-        public static double min(double x, double y) { return Math.Min(x, y); }
-        public static double max(double x, double y) { return Math.Max(x, y); }
+        public static double add_dbl(double x, double y) { return x + y; }
+        public static double sub_dbl(double x, double y) { return x - y; }
+        public static double div_dbl(double x, double y) { return x / y; }
+        public static double mul_dbl(double x, double y) { return x * y; }
+        public static double mod_dbl(double x, double y) { return x % y; }
+        public static double inc_dbl(double x) { return x + 1; }
+        public static double dec_dbl(double x) { return x - 1; }
+        public static double neg_dbl(double x) { return -x; }
+        public static bool gt_dbl(double x, double y) { return x > y; }
+        public static bool lt_dbl(double x, double y) { return x < y; }
+        public static bool gteq_dbl(double x, double y) { return x >= y; }
+        public static bool lteq_dbl(double x, double y) { return x <= y; }
+        public static double min_dbl(double x, double y) { return Math.Min(x, y); }
+        public static double max_dbl(double x, double y) { return Math.Max(x, y); }
+        public static double abs_dbl(double x) { return Math.Abs(x); }
+        public static double pow_dbl(double x, double y) { return Math.Pow(x, y); }
+        public static double sqr_dbl(double x) { return x * x; }
         public static double sin(double x) { return Math.Sin(x); }
         public static double cos(double x) { return Math.Cos(x); }
         public static double tan(double x) { return Math.Tan(x); }
@@ -683,9 +809,6 @@ namespace Cat
         public static double sinh(double x) { return Math.Sinh(x); }
         public static double cosh(double x) { return Math.Cosh(x); }
         public static double tanh(double x) { return Math.Tanh(x); }
-        public static double abs(double x) { return Math.Abs(x); }
-        public static double pow(double x, double y) { return Math.Pow(x, y); }
-        public static double sqr(double x) { return x * x; }
         public static double sqrt(double x) { return Math.Sqrt(x); }
         public static double trunc(double x) { return Math.Truncate(x); }
         public static double round(double x) { return Math.Round(x); }
@@ -701,14 +824,13 @@ namespace Cat
         #endregion
 
         #region string functions
-        public static bool gt(string x, string y) { return x.CompareTo(y) > 0; }
-        public static bool lt(string x, string y) { return x.CompareTo(y) < 0; }
-        public static bool gteq(string x, string y) { return x.CompareTo(y) >= 0; }
-        public static bool lteq(string x, string y) { return x.CompareTo(y) <= 0; }
-        public static string min(string x, string y) { return lteq(x, y) ? x : y; }
-        public static string max(string x, string y) { return gteq(x, y) ? x : y; }
-        public static string add(string x, string y) { return x + y; }
-        public static string sub_str(string x, int i) { return x.Substring(i); }
+        public static bool gt_str(string x, string y) { return x.CompareTo(y) > 0; }
+        public static bool lt_str(string x, string y) { return x.CompareTo(y) < 0; }
+        public static bool gteq_str(string x, string y) { return x.CompareTo(y) >= 0; }
+        public static bool lteq_str(string x, string y) { return x.CompareTo(y) <= 0; }
+        public static string min_str(string x, string y) { return lteq_str(x, y) ? x : y; }
+        public static string max_str(string x, string y) { return gteq_str(x, y) ? x : y; }
+        public static string add_str(string x, string y) { return x + y; }
         public static string sub_str(string x, int i, int n) { return x.Substring(i, n); }
         public static string new_str(char c, int n) { return new string(c, n); }
         public static int index_of(string x, string y) { return x.IndexOf(y); }
@@ -926,7 +1048,7 @@ namespace Cat
         public class List : Function
         {
             public List()
-                : base("list", "(( -> 'A) -> list)", "creates a list from a function")
+                : base("to_list", "(( -> 'A) -> list)", "creates a list from a function")
             { }
 
             public override void Eval(Executor exec)
@@ -1018,9 +1140,9 @@ namespace Cat
             }
         }
 
-        public class Pair : Function
+        public class MakePair : Function
         {
-            public Pair()
+            public MakePair()
                 : base("pair", "('second 'first -> list)", "creates a list from two items")
             { }
 
