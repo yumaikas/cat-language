@@ -219,10 +219,15 @@ namespace Cat
             else if (node is AstCharNode)
                 return new CharFunction((node as AstCharNode).GetValue());
             else if (node is AstNameNode)
-                return new FunctionName(node.ToString());
+            {
+                Function f = Executor.Main.GetGlobalScope().Lookup(node.ToString());
+                if (f == null) 
+                    throw new Exception("could not find function " + node.ToString());
+                return f;
+            }
             else if (node is AstQuoteNode)
                 return MakeQuoteFunction(node as AstQuoteNode);
-            else 
+            else
                 throw new Exception("node " + node.ToString() + " does not have associated function");
         }
 

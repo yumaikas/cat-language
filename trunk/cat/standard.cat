@@ -4,6 +4,7 @@
 // this file is public domain
 
 //=============================================================================
+// Odd ducks
 
 define noop
 { }
@@ -13,6 +14,104 @@ define clr
 
 define the_answer
 { 42 }
+
+//=============================================================================
+// Function manipulation operators
+
+// qv operation aliases
+define constantly : ('a -> ( -> 'a))
+{ qv }
+
+define curry : ('a ('B 'a -> 'C) -> ('B -> 'C))
+{ [qv] dip compose }
+
+define curry2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
+{ curry curry }
+
+define curry3 : ('a 'b 'c ('D 'a 'b 'c -> 'E) -> ('D -> 'E))
+{ curry curry curry }
+
+define curry4 : ('a 'b 'c 'd ('E 'a 'b 'c 'd -> 'F) -> ('E -> 'F))
+{ curry curry curry curry }
+
+define curry5 : ('a 'b 'c 'd 'e ('F 'a 'b 'c 'd 'e -> 'G) -> ('F -> 'G))
+{ curry curry curry curry curry }
+
+define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
+{ qv swap compose }
+
+//=============================================================================
+// Dynamically dispatched functions
+
+define neg : ('a -> 'a)
+{ [int [neg_int] pair double [neg_dbl] pair] to_list dispatch }
+
+define abs : ('a -> 'a)
+{ [int [abs_int] pair double [abs_dbl] pair] to_list dispatch }
+
+define add : ('a 'a -> 'a)
+{ [int [add_int] pair double [add_dbl] pair byte [add_byte] pair bit [add_bit] pair string [add_str] pair] to_list dispatch }
+
+define sub : ('a 'a -> 'a)
+{ [int [sub_int] pair double [sub_dbl] pair byte [sub_byte] pair bit [sub_bit] pair] to_list dispatch }
+
+define mul : ('a 'a -> 'a)
+{ [int [mul_int] pair double [mul_dbl] pair byte [mul_byte] pair bit [mul_bit] pair] to_list dispatch }
+
+define mod : ('a 'a -> 'a)
+{ [int [mod_int] pair double [mod_dbl] pair byte [mod_byte] pair bit [mod_bit] pair] to_list dispatch }
+
+define div : ('a 'a -> 'a)
+{ [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch }
+
+define pow : ('a 'a -> 'a)
+{ [int [pow_int] pair double [pow_dbl] pair] to_list dispatch }
+
+define lt : ('a 'a -> bool)
+{ [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch }
+
+define gt : ('a 'a -> bool)
+{ [int [gt_int] pair double [gt_dbl] pair byte [gt_byte] pair bit [gt_bit] pair string [lt_str] pair] to_list dispatch }
+
+define lteq : ('a 'a -> bool)
+{ [int [lteq_int] pair double [lteq_dbl] pair byte [lteq_byte] pair bit [lteq_bit] pair string [lt_str] pair] to_list dispatch }
+
+define gteq : ('a 'a -> bool)
+{ [int [gteq_int] pair double [gteq_dbl] pair byte [gteq_byte] pair bit [gteq_bit] pair string [lt_str] pair] to_list dispatch }
+
+//=============================================================================
+// Mathematical definitions
+
+// Not equals
+define neq
+{ eq not }
+
+// Increment a value (sometimes called succ or successor)
+define inc : (int -> int) { 1 add }
+
+// Decrement a value (sometimes called pred or predecesssor)
+define dec : (int -> int) { 1 sub }
+
+// Multiply a value by itself
+define sqr : ('a 'a -> 'a) { dup mul }
+
+// Treats top two values as a fraction 6 2 3 frac = 6 * (2 / 3)
+define frac : (int int int -> int) { [mul] dip div }
+
+//=============================================================================
+// Mathematical symbols
+
+define + { add }
+define - { sub }
+define * { mul }
+define % { mod }
+define / { div }
+define < { lt }
+define > { gt }
+define <= { lteq }
+define >= { gteq }
+define == { eq }
+define != { neq }
 
 //=============================================================================
 // Basic shuffling operators
@@ -135,9 +234,9 @@ define dup5 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a 'b 'c 'd 'e)
 { peek4 peek4 peek4 peek4 peek4 }
 
 //==============================================================================
-// Argument list manipulation
+// Argument to_list manipulation
 
-// Declares an empty argument list
+// Declares an empty argument to_list
 define arg_list : ( -> list)
 { nil }
 
@@ -226,34 +325,6 @@ define compare : ('a 'a -> 'a 'a bool)
 { compare_lteq }
 
 //=============================================================================
-// Additional mathematical definitions
-
-// Increment a value (sometimes called succ or successor)
-define inc : (int -> int) { 1 add }
-
-// Decrement a value (sometimes called pred or predecesssor)
-define dec : (int -> int) { 1 sub }
-
-// Treats top two values as a fraction 6 2 3 frac = 6 * (2 / 3)
-define frac : (int int int -> int) { [mul] dip div }
-
-//=============================================================================
-// Mathematical symbols
-
-define + { add }
-define - { sub }
-define * { mul }
-define % { mod }
-define / { div }
-define < { lt }
-define > { gt }
-define <= { lteq }
-define >= { gteq }
-define == { eq }
-define != { neq }
-define /% : (int int -> int int) { dup2 % [/] dip }
-
-//=============================================================================
 // Additional combinators
 
 // swap then compose (or reverse compose)
@@ -281,7 +352,7 @@ define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 { swap [dip3] dip }
 
 //=============================================================================
-// List operators
+// list operators
 
 define (
 { nil }
@@ -325,7 +396,6 @@ define any : (list ('a -> bool) -> bool)
 define all : (list ('a -> bool) -> bool)
 { dupd [and] compose true swap fold }
 
-// Reverse a list
 define rev : (list -> list)
 { nil [cons] fold }
 
@@ -381,31 +451,6 @@ define zeros : ( -> list)
 define ones : ( -> list)
 { 1 repeater }
 
-//=============================================================================
-// Function manipulation operators
-
-// qv operation aliases
-define constantly : ('a -> ( -> 'a))
-{ qv }
-
-define curry : ('a ('B 'a -> 'C) -> ('B -> 'C))
-{ [qv] dip compose }
-
-define curry2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
-{ curry curry }
-
-define curry3 : ('a 'b 'c ('D 'a 'b 'c -> 'E) -> ('D -> 'E))
-{ curry curry curry }
-
-define curry4 : ('a 'b 'c 'd ('E 'a 'b 'c 'd -> 'F) -> ('E -> 'F))
-{ curry curry curry curry }
-
-define curry5 : ('a 'b 'c 'd 'e ('F 'a 'b 'c 'd 'e -> 'G) -> ('F -> 'G))
-{ curry curry curry curry curry }
-
-define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
-{ qv swap compose }
-
 //==============================================================================
 // Looping constructions
 
@@ -458,7 +503,7 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 define list_to_hash : (list -> hash_list)
 {  hash_list [unpair swap hash_add_chain] fold }
 
-// performs an inner self-join on a list of pairs based the first item.
+// performs an inner self-join on a to_list of pairs based the first item.
 define self_join : (list -> list)
 { list_to_hash hash_to_list }
 
@@ -512,16 +557,15 @@ define map_reduce { [map flatten self_join] dip map }
 
 define qsort : (list -> list)
 {
-  // Does list have 0 or 1 elements?
+  // Does to_list have 0 or 1 elements?
   [small]
   // Base case do nothing
   []
-  // Split the list using the head as a pivot
+  // Split the to_list using the head as a pivot
   // storing the pivot under for later use
   [uncons under [lt] curry split]
-  // Append the pivot to the first list
+  // Append the pivot to the first to_list
   // then concatenate the two lists.
   [[swap cons] dip cat]
   bin_rec
 }
-

@@ -138,7 +138,7 @@ namespace Cat
         }
         public static Rule TypeName()
         {
-            return AstNode("type_name", Token(Ident()));
+            return Token(AstNode("type_name", Ident()));
         }
         public static Rule TypeAlias()
         {

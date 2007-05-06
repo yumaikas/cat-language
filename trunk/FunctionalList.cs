@@ -635,6 +635,17 @@ namespace Cat
             return this;
         }
         #endregion
+
+        #region other functions
+        public object First()
+        {
+            return mFirst;
+        }
+        public object Second()
+        {
+            return mSecond;
+        }
+        #endregion
     }
 
     public class ConcatPair : FList

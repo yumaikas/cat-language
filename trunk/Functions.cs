@@ -42,11 +42,11 @@ namespace Cat
         {
             msType = s;
         }
-        public CatFxnType GetCatType()
+        public CatFxnType GetFxnType()
         {
             // compute as requested
             if (mpType == null)
-                mpType = CatFxnType.CreateFxnType(msType);
+                mpType = CatFxnType.Create(msType);
             return mpType;
         }
         public string GetDesc()
@@ -172,7 +172,7 @@ namespace Cat
 
         public static string MethodToTypeString(MethodBase m)
         {
-            string s = "(";
+            string s = "('R ";
 
             if (HasThisType(m))
                 s += "this=" + TypeToString(m.DeclaringType) + " ";
@@ -180,13 +180,13 @@ namespace Cat
             foreach (ParameterInfo pi in m.GetParameters())
                 s += TypeToString(pi.ParameterType) + " ";
 
-            s += " -> ";
+            s += "-> 'R";
 
             if (HasThisType(m))
-                s += "this ";
+                s += " this";
 
             if (HasReturnType(m))
-                s += TypeToString(GetReturnType(m));
+                s += " " + TypeToString(GetReturnType(m));
 
             s += ")";
 
@@ -205,7 +205,7 @@ namespace Cat
         public IntFunction(int x) 
         {
             msName = x.ToString();
-            SetType("( -> int)");
+            SetType("('R -> 'R int)");
             mnValue = x;
         }
         public override void Eval(Executor exec) 
@@ -231,7 +231,7 @@ namespace Cat
         public FloatFunction(double x)
         {
             msName = x.ToString();
-            SetType("( -> int)");
+            SetType("('R -> 'R double)");
             mdValue = x;
         }
         public override void Eval(Executor exec)
@@ -254,7 +254,7 @@ namespace Cat
         {
             msName = "\"" + x + "\"";
             msValue = x;
-            SetType("( -> string)");
+            SetType("('R -> 'R string)");
         }
         public override void Eval(Executor exec)
         {
@@ -276,7 +276,7 @@ namespace Cat
         {
             msName = x.ToString();
             mcValue = x;
-            SetType("( -> char)");
+            SetType("('R -> 'R char)");
         }
         public override void Eval(Executor exec)
         {
@@ -322,7 +322,7 @@ namespace Cat
         {
             mChildren = children;
             msDesc = "pushes an anonymous function onto the stack";
-            msType = "( -> ('A -> 'B))";
+            msType = "('R -> 'R ('A -> 'B))";
             msName = "[";
             for (int i = 0; i < mChildren.Count; ++i)
             {
@@ -395,35 +395,6 @@ namespace Cat
     }
 
     /// <summary>
-    /// This represents a function call. 
-    /// 
-    /// For now the only scope is global, but the apporach is that the function call 
-    /// is bound to the scope where the call is declared, not where it is called. 
-    /// This would matter only if implicit redefines are allowed in the semantics.
-    /// </summary>
-    public class FunctionName : Function
-    {
-        public FunctionName(string s)
-            : base(s, "???", "")
-        {
-            msName = s;
-        }
-
-        public override void Eval(Executor exec)
-        {
-            Lookup(exec).Eval(exec);
-        }
-
-        public Function Lookup(Executor exec)
-        {
-            Scope scope = exec.GetGlobalScope();
-            if (!scope.FunctionExists(msName))
-                throw new Exception(msName + " is not defined");
-            return scope.Lookup(exec.GetStack(), msName);
-        }
-    }
-
-    /// <summary>
     /// Represents a function defined by the user
     /// </summary>
     public class DefinedFunction : Function
@@ -433,6 +404,7 @@ namespace Cat
         public DefinedFunction(string s, List<Function> terms)
         {
             msName = s;
+            // TODO: get the type from the annotation, and verify it or trust it.
             msType = "untyped";
             mTerms = terms;
             msDesc = "";
