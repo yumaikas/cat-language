@@ -26,7 +26,7 @@ namespace Cat
 
     public class MetaCommands
     {
-        public class Load : Function
+        public class Load : PrimitiveFunction
         {
             public Load()
                 : base("#load", "(string ~> )", "loads and executes a source code file")
@@ -38,7 +38,7 @@ namespace Cat
             }
         }
 
-        public class Save : Function
+        public class Save : PrimitiveFunction
         {
             public Save()
                 : base("#save", "(string ~> )", "saves a transcript of the session so far")
@@ -50,7 +50,7 @@ namespace Cat
             }
         }
 
-        public class Defs : Function
+        public class Defs : PrimitiveFunction
         {
             public Defs()
                 : base("#defs", "( ~> )", "lists all loaded definitions")
@@ -62,7 +62,7 @@ namespace Cat
             }
         }
 
-        public class TypeOf : Function
+        public class TypeOf : PrimitiveFunction
         {
             public TypeOf()
                 : base("#t", "(function -> )", "experimental")
@@ -74,33 +74,16 @@ namespace Cat
                 Function f = exec.PopFunction();
                 if (!(f is QuotedFunction))
                     throw new Exception("You can only request the type of a quotation of named primitives");
-
-                QuotedFunction q = f as QuotedFunction;
-                if (q.GetChildren().Count == 0)
-                {
-                    MainClass.WriteLine("( -> )");
-                }
-                else if (q.GetChildren().Count == 1)
-                {
-                    Function x = q.GetChildren()[0];
-                    CatFxnType ft = x.GetFxnType();
-                    MainClass.WriteLine(x.ToString() + " : " + ft.ToString());
-                }
+                Config.gbVerboseInference = true;
+                CatFxnType ft = TypeInferer.Infer((f as QuotedFunction).GetChildren(), false);
+                if (ft == null)
+                    MainClass.WriteLine("type could not be inferred");
                 else
-                {
-                    Function x = q.GetChildren()[0];
-                    CatFxnType ft = x.GetFxnType();
-
-                    for (int i = 1; i < q.GetChildren().Count; ++i)
-                    {
-                        Function y = q.GetChildren()[i];
-                        ft = TypeInferer.Infer(ft, y.GetFxnType());
-                    }
-                }
+                    MainClass.WriteLine(f.ToString() + " : " + ft.ToString());
             }
         }
 
-        public class AllTypes : Function
+        public class AllTypes : PrimitiveFunction
         {
             public AllTypes()
                 : base("#at", "(function -> )", "experimental")
@@ -127,7 +110,7 @@ namespace Cat
             }
         }
 
-        public class Help : Function
+        public class Help : PrimitiveFunction
         {
             public Help()
                 : base("#help", "( ~> )", "prints some helpful tips")
@@ -146,7 +129,7 @@ namespace Cat
             }
         }
 
-        public class CommandHelp : Function
+        public class CommandHelp : PrimitiveFunction
         {
             public CommandHelp()
                 : base("#h", "(string ~> )", "prints help about a command")
@@ -165,12 +148,45 @@ namespace Cat
                 }
             }
         }
+
+        public class Expand : PrimitiveFunction
+        {
+            public Expand()
+                : base("#expand", "('A -> 'B) ~> ('A -> 'B)", "makes an inline expansion of a function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.PopFunction();
+                List<Function> list = new List<Function>();
+                f.Expand(list);
+                QuotedFunction q = new QuotedFunction(list);
+                exec.Push(q);
+            }
+        }
+
+        public class Optimize : PrimitiveFunction
+        {
+            public Optimize()
+                : base("#oz", "('A -> 'B) ~> ('A -> 'B)", "applies macros to a function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.PopFunction();
+                List<Function> list = new List<Function>();
+                f.Expand(list);
+                Macros.GetGlobalMacros().ApplyMacros(list);
+                QuotedFunction q = new QuotedFunction(list);
+                exec.Push(q);
+            }
+        }
     }
 
     public class Primitives
     {
         #region conversion functions
-        public class Str : Function
+        public class Str : PrimitiveFunction
         {
             public Str()
                 : base("str", "(var -> string)", "converts any value into a string representation.")
@@ -182,7 +198,7 @@ namespace Cat
             }
         }
 
-        public class MakeByte : Function
+        public class MakeByte : PrimitiveFunction
         {
             public MakeByte()
                 : base("byte", "(int -> byte)", "converts an integer into a byte, throwing away sign and ignoring higher bits")
@@ -195,7 +211,7 @@ namespace Cat
                 exec.Push(b);
             }
         }
-        public class BinStr : Function
+        public class BinStr : PrimitiveFunction
         {
             public BinStr()
                 : base("bin_str", "(int -> string)", "converts a number into a binary string representation.")
@@ -223,7 +239,7 @@ namespace Cat
             }
         }
 
-        public class HexStr : Function
+        public class HexStr : PrimitiveFunction
         {
             public HexStr()
                 : base("hex_str", "(int -> string)", "converts a number into a hexadecimal string representation.")
@@ -239,7 +255,7 @@ namespace Cat
         #endregion 
 
         #region primitive function classes
-        public class Id : Function
+        public class Id : PrimitiveFunction
         {
             public Id()
                 : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.")
@@ -250,7 +266,7 @@ namespace Cat
             }
         }
 
-        public class Eq : Function
+        public class Eq : PrimitiveFunction
         {
             public Eq()
                 : base("eq", "(var var -> bool)", "returns true if both items on stack are the same type, and have same value")
@@ -264,7 +280,7 @@ namespace Cat
             }
         }
 
-        public class Dup : Function
+        public class Dup : PrimitiveFunction
         {
             public Dup()
                 : base("dup", "('R 'a -> 'R 'a 'a)", "duplicate the top item on the stack")
@@ -283,7 +299,7 @@ namespace Cat
             }
         }
 
-        public class Pop : Function
+        public class Pop : PrimitiveFunction
         {
             public Pop()
                 : base("pop", "('R 'a -> 'R)", "removes the top item from the stack")
@@ -295,7 +311,7 @@ namespace Cat
             }
         }
 
-        public class Swap : Function
+        public class Swap : PrimitiveFunction
         {
             public Swap()
                 : base("swap", "('R 'a 'b -> 'R 'b 'a)", "swap the top two items on the stack")
@@ -310,10 +326,10 @@ namespace Cat
             }
         }
 
-        public class Clr : Function
+        public class Clr : PrimitiveFunction
         {
             public Clr()
-                : base("clear", "('A) -> ()", "removes all items from the stack")
+                : base("clear", "('A -> )", "removes all items from the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -324,7 +340,7 @@ namespace Cat
         #endregion
 
         #region function functions
-        public class EvalFxn : Function
+        public class EvalFxn : PrimitiveFunction
         {
             public EvalFxn()
                 : base("eval", "('A ('A -> 'B) -> 'B)", "evaluates a function")
@@ -337,7 +353,7 @@ namespace Cat
             }
         }
 
-        public class Dip : Function
+        public class Dip : PrimitiveFunction
         {
             public Dip()
                 : base("dip", "('A 'b ('A -> 'C) -> 'C 'b)", "evaluates function, temporarily removing second item")
@@ -352,7 +368,7 @@ namespace Cat
             }
         }
 
-        public class Compose : Function
+        public class Compose : PrimitiveFunction
         {
             public Compose()
                 : base("compose", "('R ('A -> 'B) ('B -> 'C) -> 'R ('A -> 'C))",
@@ -368,7 +384,7 @@ namespace Cat
             }
         }
 
-        public class Quote : Function
+        public class Quote : PrimitiveFunction
         {
             public Quote()
                 : base("qv", "('R 'a -> 'R ('S -> 'S 'a))",
@@ -383,10 +399,10 @@ namespace Cat
             }
         }
 
-        public class Dispatch : Function
+        public class Dispatch : PrimitiveFunction
         {
             public Dispatch()
-                : base("dispatch", "('A type (list) -> 'C)", "dispatches a function based on the type of the top stack item")
+                : base("dispatch", "('A type list -> 'C)", "dispatches a function based on the type of the top stack item")
             { }
 
             public override void Eval(Executor exec)
@@ -418,7 +434,7 @@ namespace Cat
         #endregion
 
         #region control flow primitives 
-        public class While : Function
+        public class While : PrimitiveFunction
         {
             public While()
                 : base("while", "(input='A body=('A -> 'A) condition=('A -> 'A bool) -> 'A)",
@@ -439,7 +455,7 @@ namespace Cat
             }
         }
 
-        public class If : Function
+        public class If : PrimitiveFunction
         {
             public If()
                 : base("if", "('A bool ontrue=('A -> 'B) onfalse=('A -> 'B) -> 'B)",
@@ -462,12 +478,12 @@ namespace Cat
             }
         }
 
-        public class BinRec : Function
+        public class BinRec : PrimitiveFunction
         {
             // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
             // I may ignore it later on.
             public BinRec()
-                : base("bin_rec", "('A cond=('A -> 'A bool) base=('A -> 'b) arg_rel=('A -> 'C 'A 'A) result_rel('C 'b 'b -> 'b) -> 'b)",
+                : base("bin_rec", "('a cond=('a -> 'a bool) base=('a -> 'b) arg_rel=('a -> 'C 'a 'a) result_rel('C 'b 'b -> 'b) -> 'b)",
                     "execute a binary recursion process")
             { }
 
@@ -495,7 +511,7 @@ namespace Cat
             }
         }
 
-        public class Throw : Function
+        public class Throw : PrimitiveFunction
         {
             public Throw()
                 : base("throw", "(var -> )", "throws an exception")
@@ -508,7 +524,7 @@ namespace Cat
             }
         }
 
-        public class TryCatch : Function
+        public class TryCatch : PrimitiveFunction
         {
             public TryCatch()
                 : base("try_catch", "('A ('A -> 'B) ('A var -> 'B) -> 'B)", "evaluates a function, and catches any exceptions")
@@ -539,10 +555,10 @@ namespace Cat
         #endregion 
 
         #region boolean functions
-        public class True : Function
+        public class True : PrimitiveFunction
         {
             public True()
-                : base("true", "( -> bool)")
+                : base("true", "( -> bool)", "pushes the boolean value true on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -551,10 +567,10 @@ namespace Cat
             }
         }
 
-        public class False : Function
+        public class False : PrimitiveFunction
         {
             public False()
-                : base("false", "( -> bool)")
+                : base("false", "( -> bool)", "pushes the boolean value false on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -563,7 +579,7 @@ namespace Cat
             }
         }
 
-        public class And : Function
+        public class And : PrimitiveFunction
         {
             public And()
                 : base("and", "(bool bool -> bool)", "returns true if both of the top two values on the stack are true")
@@ -577,7 +593,7 @@ namespace Cat
             }
         }
 
-        public class Or : Function
+        public class Or : PrimitiveFunction
         {
             public Or()
                 : base("or", "(bool bool -> bool)", "returns true if either of the top two values on the stack are true")
@@ -591,7 +607,7 @@ namespace Cat
             }
         }
 
-        public class Not : Function
+        public class Not : PrimitiveFunction
         {
             public Not()
                 : base("not", "(bool -> bool)", "returns true if the top value on the stack is false")
@@ -605,7 +621,7 @@ namespace Cat
         #endregion
 
         #region type functions
-        public class TypeId : Function
+        public class TypeId : PrimitiveFunction
         {
             public TypeId()
                 : base("type_of", "(var -> type)", "returns a type tag for an object")
@@ -620,7 +636,7 @@ namespace Cat
                 exec.Push(t);
             }
         }
-        public class TypeType : Function
+        public class TypeType : PrimitiveFunction
         {
             public TypeType()
                 : base("type", "( -> type)", "")
@@ -631,7 +647,7 @@ namespace Cat
                 exec.Push(typeof(Type));
             }
         }
-        public class IntType : Function
+        public class IntType : PrimitiveFunction
         {
             public IntType()
                 : base("int", "( -> type)", "")
@@ -642,7 +658,7 @@ namespace Cat
                 exec.Push(typeof(int));
             }
         }
-        public class StrType : Function
+        public class StrType : PrimitiveFunction
         {
             public StrType()
                 : base("string", "( -> type)", "")
@@ -653,7 +669,7 @@ namespace Cat
                 exec.Push(typeof(string));
             }
         }
-        public class DblType : Function
+        public class DblType : PrimitiveFunction
         {
             public DblType()
                 : base("double", "( -> type)", "")
@@ -664,7 +680,7 @@ namespace Cat
                 exec.Push(typeof(double));
             }
         }
-        public class ByteType : Function
+        public class ByteType : PrimitiveFunction
         {
             public ByteType()
                 : base("byte", "( -> type)", "")
@@ -675,7 +691,7 @@ namespace Cat
                 exec.Push(typeof(byte));
             }
         }
-        public class BitType : Function
+        public class BitType : PrimitiveFunction
         {
             public BitType()
                 : base("bit", "( -> type)", "")
@@ -686,7 +702,7 @@ namespace Cat
                 exec.Push(typeof(Bit));
             }
         }
-        public class BoolType : Function
+        public class BoolType : PrimitiveFunction
         {
             public BoolType()
                 : base("bool", "( -> type)", "")
@@ -845,7 +861,7 @@ namespace Cat
         #endregion
 
         #region byte block functions
-        public class MakeByteBlock : Function
+        public class MakeByteBlock : PrimitiveFunction
         {
             public MakeByteBlock()
                 : base("byte_block", "(int -> byte_block)", "creates a mutable array of bytes")
@@ -862,7 +878,7 @@ namespace Cat
         #endregion 
 
         #region i/o functions
-        public class OpenFileReader : Function
+        public class OpenFileReader : PrimitiveFunction
         {
             public OpenFileReader()
                 : base("file_reader", "(string -> istream)", "creates an input stream from a file name")
@@ -875,7 +891,7 @@ namespace Cat
             }
         }
 
-        public class OpenWriter : Function
+        public class OpenWriter : PrimitiveFunction
         {
             public OpenWriter()
                 : base("file_writer", "(string -> ostream)", "creates an output stream from a file name")
@@ -888,7 +904,7 @@ namespace Cat
             }
         }
 
-        public class FileExists : Function
+        public class FileExists : PrimitiveFunction
         {
             public FileExists()
                 : base("file_exists", "(string -> string bool)", "returns a boolean value indicating whether a file or directory exists")
@@ -901,7 +917,7 @@ namespace Cat
             }
         }
 
-        public class TmpFileName : Function
+        public class TmpFileName : PrimitiveFunction
         {
             public TmpFileName()
                 : base("temp_file", "( -> string)", "creates a unique temporary file")
@@ -913,7 +929,7 @@ namespace Cat
             }
         }
 
-        public class ReadBytes : Function
+        public class ReadBytes : PrimitiveFunction
         {
             public ReadBytes()
                 : base("read_bytes", "(istream int -> istream bytes)", "reads a number of bytes into an array from an input stream")
@@ -929,7 +945,7 @@ namespace Cat
             }
         }
 
-        public class WriteBytes : Function
+        public class WriteBytes : PrimitiveFunction
         {
             public WriteBytes()
                 : base("write_bytes", "(ostream bytes -> ostream)", "writes a byte array to an output stream")
@@ -943,7 +959,7 @@ namespace Cat
             }
         }
 
-        public class CloseStream : Function
+        public class CloseStream : PrimitiveFunction
         {
             public CloseStream()
                 : base("close_stream", "(stream -> )", "closes a stream")
@@ -959,7 +975,7 @@ namespace Cat
         #endregion
 
         #region hash functions
-        public class MakeHashList : Function
+        public class MakeHashList : PrimitiveFunction
         {
             public MakeHashList()
                 : base("hash_list", "( -> hash_list)", "makes an empty hash list")
@@ -971,7 +987,7 @@ namespace Cat
             }
         }
 
-        public class HashGet : Function
+        public class HashGet : PrimitiveFunction
         {
             public HashGet()
                 : base("hash_get", "(hash_list var -> hash_list var)", "gets a value from a hash list using a key")
@@ -986,7 +1002,7 @@ namespace Cat
             }
         }
 
-        public class HashSet : Function
+        public class HashSet : PrimitiveFunction
         {
             public HashSet()
                 : base("hash_set", "(hash_list key=var value=var -> hash_list)", "associates a value with a key in a hash list")
@@ -1001,7 +1017,7 @@ namespace Cat
             }
         }
 
-        public class HashAdd : Function
+        public class HashAdd : PrimitiveFunction
         {
             public HashAdd()
                 : base("hash_add", "(hash_list key=var value=var -> hash_list)", "associates a value with a key in a hash list")
@@ -1016,7 +1032,7 @@ namespace Cat
             }
         }
 
-        public class HashContains : Function
+        public class HashContains : PrimitiveFunction
         {
             public HashContains()
                 : base("hash_contains", "(hash_list key=var -> hash_list bool)", "returns true if hash list contains key")
@@ -1030,7 +1046,7 @@ namespace Cat
             }
         }
 
-        public class HashToList : Function
+        public class HashToList : PrimitiveFunction
         {
             public HashToList()
                 : base("hash_to_list", "(hash_list -> list)", "converts a hash_list to a list of pairs")
@@ -1045,7 +1061,7 @@ namespace Cat
         #endregion 
 
         #region list functions
-        public class List : Function
+        public class List : PrimitiveFunction
         {
             public List()
                 : base("to_list", "(( -> 'A) -> list)", "creates a list from a function")
@@ -1060,7 +1076,7 @@ namespace Cat
             }
         }
 
-        public class IsEmpty : Function
+        public class IsEmpty : PrimitiveFunction
         {
             public IsEmpty()
                 : base("empty", "(list -> list bool)", "returns true if the list is empty")
@@ -1073,7 +1089,7 @@ namespace Cat
             }
         }
 
-        public class Count : Function
+        public class Count : PrimitiveFunction
         {
             public Count()
                 : base("count", "(list -> list int)", "returns the number of items in a list")
@@ -1086,7 +1102,7 @@ namespace Cat
             }
         }
 
-        public class Nth : Function
+        public class Nth : PrimitiveFunction
         {
             public Nth()
                 : base("nth", "(list int -> list var)", "returns the nth item in a list")
@@ -1100,7 +1116,7 @@ namespace Cat
             }
         }
 
-        public class Gen : Function
+        public class Gen : PrimitiveFunction
         {
             public Gen()
                 : base("gen", "(init='a next=('a -> 'a) cond=('a -> bool) -> list)",
@@ -1116,7 +1132,7 @@ namespace Cat
             }
         }
 
-        public class Nil : Function
+        public class Nil : PrimitiveFunction
         {
             public Nil()
                 : base("nil", "( -> list)", "creates an empty list")
@@ -1128,7 +1144,7 @@ namespace Cat
             }
         }
 
-        public class Unit : Function
+        public class Unit : PrimitiveFunction
         {
             public Unit()
                 : base("unit", "('a -> list)", "creates a list of one item")
@@ -1140,7 +1156,7 @@ namespace Cat
             }
         }
 
-        public class MakePair : Function
+        public class MakePair : PrimitiveFunction
         {
             public MakePair()
                 : base("pair", "('second 'first -> list)", "creates a list from two items")
@@ -1154,7 +1170,7 @@ namespace Cat
             }
         }
 
-        public class Cons : Function
+        public class Cons : PrimitiveFunction
         {
             public Cons()
                 : base("cons", "(list 'a -> list)", "prepends an item to a list")
@@ -1168,7 +1184,7 @@ namespace Cat
             }
         }
 
-        public class Head : Function
+        public class Head : PrimitiveFunction
         {
             public Head()
                 : base("head", "(list -> var)", "replaces a list with the first item")
@@ -1181,7 +1197,7 @@ namespace Cat
             }
         }
 
-        public class First : Function
+        public class First : PrimitiveFunction
         {
             public First()
                 : base("first", "(list -> list var)", "gets the first item from a list")
@@ -1194,7 +1210,7 @@ namespace Cat
             }
         }
 
-        public class Last : Function
+        public class Last : PrimitiveFunction
         {
             public Last()
                 : base("last", "(list -> list var)", "gets the last item from a list")
@@ -1207,7 +1223,7 @@ namespace Cat
             }
         }
 
-        public class Tail : Function
+        public class Tail : PrimitiveFunction
         {
             public Tail()
                 : base("tail", "(list -> list)", "removes first item from a list")
@@ -1220,7 +1236,7 @@ namespace Cat
             }
         }
 
-        public class Rest : Function
+        public class Rest : PrimitiveFunction
         {
             public Rest()
                 : base("rest", "(list -> list list)", "gets a copy of the list with one item")
@@ -1233,7 +1249,7 @@ namespace Cat
             }
         }
 
-        public class Uncons : Function
+        public class Uncons : PrimitiveFunction
         {
             public Uncons()
                 : base("uncons", "(list -> list var)", "returns the top of the list, and the rest of a list")
@@ -1247,7 +1263,7 @@ namespace Cat
             }
         }
 
-        public class Map : Function
+        public class Map : PrimitiveFunction
         {
             public Map()
                 : base("map", "(list ('a -> 'b) -> list)", "creates a new list by modifying an existing list")
@@ -1261,7 +1277,7 @@ namespace Cat
             }
         }
 
-        public class Filter : Function
+        public class Filter : PrimitiveFunction
         {
             public Filter()
                 : base("filter", "(list ('a -> bool) -> list)", "creates a new list containing elements that pass the condition")
@@ -1274,7 +1290,7 @@ namespace Cat
                 exec.Push(list.Filter(f.ToFilterFxn()));
             }
         }
-        public class Fold : Function
+        public class Fold : PrimitiveFunction
         {
             public Fold()
                 : base("gfold", "('A list ('A var -> 'A) -> 'A)", "recursively applies a function to each element in a list")
@@ -1294,7 +1310,7 @@ namespace Cat
             }
         }
 
-        public class Cat : Function
+        public class Cat : PrimitiveFunction
         {
             public Cat()
                 : base("cat", "(list list -> list)", "concatenates two lists")
@@ -1308,7 +1324,7 @@ namespace Cat
             }
         }
 
-        public class TakeN : Function
+        public class TakeN : PrimitiveFunction
         {
             public TakeN()
                 : base("take", "(list int -> list)", "creates a new list from the first n items")
@@ -1322,7 +1338,7 @@ namespace Cat
             }
         }
 
-        public class DropN : Function
+        public class DropN : PrimitiveFunction
         {
             public DropN()
                 : base("drop", "(list int -> list)", "creates a new list without the first n items")
@@ -1336,7 +1352,7 @@ namespace Cat
             }
         }
 
-        public class TakeRange : Function
+        public class TakeRange : PrimitiveFunction
         {
             public TakeRange()
                 : base("take_range", "(list first=int count=int -> list)", "creates a new list which is a sub-range of the original")
@@ -1351,7 +1367,7 @@ namespace Cat
             }
         }
 
-        public class TakeWhile : Function
+        public class TakeWhile : PrimitiveFunction
         {
             public TakeWhile()
                 : base("take_while", "(list ('a -> bool) -> list)", "creates a new list by taking items while the predicate is true")
@@ -1365,7 +1381,7 @@ namespace Cat
             }
         }
 
-        public class DropWhile : Function
+        public class DropWhile : PrimitiveFunction
         {
             public DropWhile()
                 : base("drop_while", "(list ('a -> bool) -> list)", "creates a new list by dropping items while the predicate is true")
@@ -1379,7 +1395,7 @@ namespace Cat
             }
         }
 
-        public class CountWhile : Function
+        public class CountWhile : PrimitiveFunction
         {
             public CountWhile()
                 : base("count_while", "(list ('a -> bool) -> list count)", "creates a new list by dropping items while the predicate is true")
@@ -1393,7 +1409,7 @@ namespace Cat
             }
         }
 
-        public class RangeGen : Function
+        public class RangeGen : PrimitiveFunction
         {
             public RangeGen()
                 : base("range_gen", "(int int (int -> 'a) -> list)", 
@@ -1409,7 +1425,7 @@ namespace Cat
             }
         }
 
-        public class Repeater : Function
+        public class Repeater : PrimitiveFunction
         {
             public Repeater()
                 : base("repeater", "(var -> list)", 
@@ -1423,7 +1439,7 @@ namespace Cat
             }
         }
 
-        public class Flatten : Function
+        public class Flatten : PrimitiveFunction
         {
             public Flatten()
                 : base("flatten", "(list -> list)", "concatenates all sub-lists in a list of lists")
@@ -1438,7 +1454,7 @@ namespace Cat
         #endregion
 
         #region mutable list instructions
-        public class SetAt : Function
+        public class SetAt : PrimitiveFunction
         {
             public SetAt()
                 : base("set_at", "(list var int -> list)", "sets an item in a mutable list")

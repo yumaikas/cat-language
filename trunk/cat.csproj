@@ -77,7 +77,6 @@
     <Compile Include="Kinds.cs" />
     <Compile Include="FunctionalList.cs" />
     <Compile Include="Macros.cs" />
-    <Compile Include="MetaCatGrammar.cs" />
     <Compile Include="MutableList.cs" />
     <Compile Include="TypeInferer.cs" />
     <Compile Include="HashList.cs" />

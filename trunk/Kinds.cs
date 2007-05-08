@@ -246,7 +246,7 @@ namespace Cat
             Peg.Parser p = new Peg.Parser(sType);
             if (!p.Parse(CatGrammar.FxnType()))
                 throw new Exception(sType + " is not a valid function type");
-            Peg.Ast ast = p.GetAst();
+            Peg.PegAstNode ast = p.GetAst();
             if (ast.GetNumChildren() != 1)
                 throw new Exception("invalid number of children in abstract syntax tree");
             AstFxnTypeNode node = new AstFxnTypeNode(ast.GetChild(0));
@@ -272,16 +272,50 @@ namespace Cat
         {
             mCons = CreateStackFromNode(node.mCons);
             mProd = CreateStackFromNode(node.mProd);
-            /*
-             * This is a big problem. I can have stack vars on top of stack vars.
-             * 
-            if (!(mCons.GetBottom() is CatStackVar) || !(mProd.GetBottom() is CatStackVar)
+        }
+
+        public int GetMaxProduction()
+        {
+            CatStackKind stk = mProd;
+            int nCnt = 0;
+
+            // Count the number of individual types. The bottom is a stack variable.
+            while (!(stk is CatStackVar))
             {
-                CatStackVar rho = new CatStackVar("R");
-                mCons = CreateStackKind(rho, mCons);
-                mProd = CreateStackKind(rho, mProd);
+                if (stk.IsEmpty())
+                    return nCnt;
+                stk = stk.GetRest();
+                nCnt++;
             }
-             */
+
+            CatStackKind consBottom = mCons.GetBottom();
+
+            if (stk.Equals(consBottom))
+                return nCnt;
+            else
+                return -1; 
+        }
+
+        public int GetMaxConsumption()
+        {
+            CatStackKind stk = mCons;
+            int nCnt = 0;
+
+            // Count the number of individual types. The bottom is a stack variable.
+            while (!(stk is CatStackVar))
+            {
+                if (stk.IsEmpty())
+                    return nCnt;
+                stk = stk.GetRest();
+                nCnt++;
+            }
+
+            CatStackKind prodBottom = mProd.GetBottom();
+
+            if (stk.Equals(prodBottom))
+                return nCnt;
+            else
+                return -1;
         }
 
         public void AddToProduction(CatKind x)

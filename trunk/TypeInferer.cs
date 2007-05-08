@@ -318,7 +318,39 @@ namespace Cat
         public static CatFxnType Infer(CatFxnType f, CatFxnType g)
         {
             gInferer.Initialize();
+            if (f == null) return null;
+            if (g == null) return null;
             return gInferer.InferType(f, g);
+        }
+
+        public static CatFxnType Infer(List<Function> f, bool bSilent)
+        {
+            Config.gbVerboseInference = !bSilent;
+
+            if (f.Count == 0)
+            {
+                return CatFxnType.Create("( -> )");
+            }
+            else if (f.Count == 1)
+            {
+                Function x = f[0];
+                return x.GetFxnType();
+            }
+            else
+            {
+                Function x = f[0];
+                CatFxnType ft = x.GetFxnType();
+
+                for (int i = 1; i < f.Count; ++i)
+                {
+                    if (ft == null) 
+                        return ft;
+                    Function y = f[i];
+                    ft = TypeInferer.Infer(ft, y.GetFxnType());
+                }
+                return ft;
+            }
+                                      
         }
 
         public void Initialize()
@@ -496,6 +528,13 @@ namespace Cat
         /// </summary>
         private CatFxnType InferType(CatFxnType left, CatFxnType right)
         {
+            /*
+             * not imlpemented yet, but could be a pretty effective optimization
+            string sKey = left.ToString() + "," + right.ToString();
+            if (gTypePool.ContainsKey(sKey))
+                return gTypePool[sKey];
+             */
+
             Renamer r = new Renamer();
             left = r.Rename(left);
             r.ResetNames();
@@ -508,7 +547,7 @@ namespace Cat
             // the consumption of the second function
             AddStackConstraint(stkRightCons, stkLeftProd);
 
-            if (Config.gbShowInferenceProcess)
+            if (Config.gbVerboseInference)
             {
                 // Create a temporary function type showing the type before 
                 // unfification
@@ -555,7 +594,7 @@ namespace Cat
             Dictionary<string, CatKind> unifiers = mu.GetUnifiers();
             r = new Renamer(unifiers);
 
-            if (Config.gbShowInferenceProcess)
+            if (Config.gbVerboseInference)
             {
                 MainClass.WriteLine("Unifiers:");
                 foreach (KeyValuePair<string, CatKind> kvp in unifiers)
@@ -569,7 +608,7 @@ namespace Cat
             // Finally create and return the result type
             CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd);
 
-            if (Config.gbShowInferenceProcess || Config.gbShowInferredType)
+            if (Config.gbVerboseInference)
                 MainClass.WriteLine("Type: " + ret.ToString());
             
             return ret;
