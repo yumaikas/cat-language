@@ -111,8 +111,6 @@ namespace Cat
         /// <summary>
         /// Methods allow overloading of function definitions.
         /// </summary>
-        /// <param name="o"></param>
-        /// <param name="meth"></param>
         public void AddMethod(Object o, MethodInfo mi)
         {
             if (!mi.IsPublic) 
@@ -126,14 +124,11 @@ namespace Cat
             
             if (mpFunctions.ContainsKey(s))
             {
-                MethodGroup g = mpFunctions[s] as MethodGroup;
-                if (g == null)
-                    throw new Exception("expected method_group type, instead found " + mpFunctions[s].ToString());
-                g.AddOverload(f);
+                throw new Exception("unable to overload methods");                
             }
             else
             {
-                MethodGroup g = new MethodGroup(f);
+                Method g = new Method(o, mi);
                 mpFunctions.Add(s, g);
             }
         }

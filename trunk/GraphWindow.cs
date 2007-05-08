@@ -337,10 +337,12 @@ namespace Cat
             mWindow.SaveToFile(s);
         }
 
+        /*
         static public void render(Function f)
         {
             mWindow.AddFxn(f);
         }
+         */
         #endregion 
 
         #region color functions
