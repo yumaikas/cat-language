@@ -244,7 +244,12 @@ namespace Cat
             Executor.Main.GetGlobalScope().AddFunction(def);
         }
 
-        private void ProcessNode(AstNode node)
+        private void ProcessMacro(AstMacroNode node)
+        {
+            Macros.GetGlobalMacros().AddMacro(node);
+        }
+
+        private void ProcessNode(CatAstNode node)
         {   
             if (node is AstExprNode)
             {
@@ -254,6 +259,10 @@ namespace Cat
             else if (node is AstDefNode)
             {
                 ProcessDefinition(node as AstDefNode);
+            }
+            else if (node is AstMacroNode)
+            {
+                ProcessMacro(node as AstMacroNode);
             }
             else
             {
@@ -267,10 +276,10 @@ namespace Cat
             bool bResult = parser.Parse(CatGrammar.Line());
             if (!bResult)
                 throw new Exception("failed to parse: " + s);
-            Peg.Ast node = parser.GetAst();
+            Peg.PegAstNode node = parser.GetAst();
 
-            foreach (Peg.Ast child in node.GetChildren())
-                ProcessNode(AstNode.Create(child));
+            foreach (Peg.PegAstNode child in node.GetChildren())
+                ProcessNode(CatAstNode.Create(child));
         }
         #endregion
 

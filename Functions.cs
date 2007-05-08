@@ -14,40 +14,25 @@ namespace Cat
     /// </summary>
     public abstract class Function : CatBase
     {
-        public Function(string sName, string sType, string sDesc)
+        public Function(string sName, string sDesc)
         {
             msName = sName;
-            msType = sType;
             msDesc = sDesc;
         }
 
-        public Function(string sName, string sType)
+        public Function(string sName)
         {
             msName = sName;
-            msType = sType;
             msDesc = "";
         }
 
         #region Fields
         public string msName = "_unnamed_"; 
         public string msDesc = "";
-        public string msType = "";
-        public CatFxnType mpType = null;
         #endregion
 
         public Function()
         {
-        }
-        public void SetType(string s)
-        {
-            msType = s;
-        }
-        public CatFxnType GetFxnType()
-        {
-            // compute as requested
-            if (mpType == null)
-                mpType = CatFxnType.Create(msType);
-            return mpType;
         }
         public string GetDesc()
         {
@@ -63,11 +48,25 @@ namespace Cat
         }
         public string GetTypeString()
         {
-            return msType;
+            if (GetFxnType() == null)
+                return "untyped";
+            else
+                return GetFxnType().ToString();
         }
 
+        #region virtual functions
+        public virtual CatFxnType GetFxnType()
+        {
+            return null;
+        }
+        public virtual void Expand(List<Function> fxns)
+        {
+            fxns.Add(this);
+        }
         public abstract void Eval(Executor exec);
+        #endregion
 
+        #region invocation functions
         public virtual Object Invoke()
         {
             Eval(Executor.Aux);
@@ -98,7 +97,9 @@ namespace Cat
                 Executor.Aux.Push(arg);
             return Invoke();
         }
+        #endregion
 
+        #region conversion functions
         public MapFxn ToMapFxn()
         {
             return delegate(object x) { return Invoke(x); };
@@ -118,6 +119,7 @@ namespace Cat
         {
             return delegate(int n) { return Invoke(n); };
         }
+        #endregion
 
         #region static functions
         public static string TypeToString(Type t)
@@ -201,25 +203,28 @@ namespace Cat
     /// </summary>
     public class IntFunction : Function
     {
-        int mnValue;        
+        int mnValue;
+        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R int)");
+            
         public IntFunction(int x) 
         {
             msName = x.ToString();
-            SetType("('R -> 'R int)");
             mnValue = x;
-        }
-        public override void Eval(Executor exec) 
-        { 
-            exec.Push(GetValue());
-        }
-        public override string ToString()
-        {
-            return msName;
         }
         public int GetValue()
         {
             return mnValue;
         }
+        #region overrides
+        public override void Eval(Executor exec) 
+        { 
+            exec.Push(GetValue());
+        }
+        public override CatFxnType GetFxnType()
+        {
+            return gpFxnType;
+        }
+        #endregion 
     }
 
     /// <summary>
@@ -228,20 +233,26 @@ namespace Cat
     public class FloatFunction : Function
     {
         double mdValue;
+        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R double)");
         public FloatFunction(double x)
         {
             msName = x.ToString();
-            SetType("('R -> 'R double)");
             mdValue = x;
-        }
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
         }
         public double GetValue()
         {
             return mdValue;
         }
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.Push(GetValue());
+        }
+        public override CatFxnType GetFxnType()
+        {
+            return gpFxnType;
+        }
+        #endregion
     }
 
     /// <summary>
@@ -250,20 +261,26 @@ namespace Cat
     public class StringFunction : Function
     {
         string msValue;
+        CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R string)");
         public StringFunction(string x) 
         {
             msName = "\"" + x + "\"";
             msValue = x;
-            SetType("('R -> 'R string)");
-        }
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
         }
         public string GetValue()
         {
             return msValue;
         }
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.Push(GetValue());
+        }
+        public override CatFxnType GetFxnType()
+        {
+            return gpFxnType;
+        }
+        #endregion
     }
 
     /// <summary>
@@ -272,20 +289,26 @@ namespace Cat
     public class CharFunction : Function
     {
         char mcValue;
+        CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R char)");
         public CharFunction(char x)
         {
             msName = x.ToString();
             mcValue = x;
-            SetType("('R -> 'R char)");
-        }
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
         }
         public char GetValue()
         {
             return mcValue;
         }
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.Push(GetValue());
+        }
+        public override CatFxnType GetFxnType()
+        {
+            return gpFxnType;
+        }
+        #endregion 
     }
 
     /// <summary>
@@ -294,21 +317,27 @@ namespace Cat
     /// </summary>
     public class QuoteValue : Function
     {
-        Object mpValue;        
-        
+        Object mpValue;
+        CatFxnType gpFxnType = CatFxnType.Create("('R 'a -> 'R ('S -> 'S 'a))");
         public QuoteValue(Object x) 
         {
             mpValue = x;
             msName = mpValue.ToString();
         }
-        public override void Eval(Executor exec)
-        {
-            exec.Push(mpValue);
-        }
         public Object GetValue()
         {
             return mpValue;
         }
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.Push(GetValue());
+        }
+        public override CatFxnType GetFxnType()
+        {
+            return gpFxnType;
+        }
+        #endregion
     }
 
     /// <summary>
@@ -320,9 +349,8 @@ namespace Cat
         
         public Quotation(List<Function> children)
         {
-            mChildren = children;
+            mChildren = children.GetRange(0, children.Count);
             msDesc = "pushes an anonymous function onto the stack";
-            msType = "('R -> 'R ('A -> 'B))";
             msName = "[";
             for (int i = 0; i < mChildren.Count; ++i)
             {
@@ -341,6 +369,14 @@ namespace Cat
         {
             return mChildren;
         }
+
+        public override void Expand(List<Function> fxns)
+        {
+            List<Function> list = new List<Function>();
+            foreach (Function f in GetChildren())
+                f.Expand(list);
+            fxns.Add(new Quotation(list));
+        }
     }
 
     public class QuotedFunction : Function
@@ -349,9 +385,8 @@ namespace Cat
         
         public QuotedFunction(List<Function> children)
         {
-            mChildren = children;
+            mChildren = children.GetRange(0, children.Count);
             msDesc = "anonymous function";
-            msType = "('A -> 'B)";
             msName = "";
             for (int i = 0; i < mChildren.Count; ++i)
             {
@@ -369,6 +404,12 @@ namespace Cat
         public List<Function> GetChildren()
         {
             return mChildren;
+        }
+
+        public override void Expand(List<Function> fxns)
+        {
+            foreach (Function f in GetChildren())
+                f.Expand(fxns);
         }
     }
 
@@ -404,8 +445,8 @@ namespace Cat
         public DefinedFunction(string s, List<Function> terms)
         {
             msName = s;
-            // TODO: get the type from the annotation, and verify it or trust it.
-            msType = "untyped";
+            // TODO: eventually get the type from the annotation.
+            // we then have to either verify it or trust it.
             mTerms = terms;
             msDesc = "";
             foreach (Function f in mTerms)
@@ -417,8 +458,17 @@ namespace Cat
             foreach (Function f in mTerms)
                 f.Eval(exec);
         }
+
+        public override void Expand(List<Function> fxns)
+        {
+            foreach (Function f in mTerms)
+                fxns.Add(f);
+        }
     }
 
+    /// <summary>
+    /// Todo: remove all of the dynamic dispatching code. 
+    /// </summary>
     public class Method : Function, ITypeArray
     {
         MethodInfo mMethod;
@@ -555,6 +605,22 @@ namespace Cat
             if (mOverloads == null)
                 mOverloads = new List<Method>();
             mOverloads.Add(m);
+        }
+    }
+
+    public abstract class PrimitiveFunction : Function
+    {
+        CatFxnType mpType;
+
+        public PrimitiveFunction(string sName, string sType, string sDesc)
+            : base(sName, sDesc)
+        {
+            mpType = CatFxnType.Create(sType);
+        }
+
+        public override CatFxnType  GetFxnType()
+        {
+            return mpType;
         }
     }
 }

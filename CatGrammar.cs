@@ -168,18 +168,56 @@ namespace Cat
         {
             return Seq(Token(":"), NoFail(FxnType(), "expected function type declaration"), WS());
         }
-        public static Rule Def()
+        public static Rule FxnDef()
         {
             return AstNode("def", Seq(Word("define"), NoFail(Name(), "expected name"),
                 Opt(Params()), Opt(TypeDecl()), NoFail(CodeBlock(), "expected a code block")));
         }
+        #region macros
+        public static Rule MacroTypeVar()
+        {
+            return AstNode("macro_type_var", Seq(LowerCaseLetter(), Star(IdentNextChar())));
+        }
+        public static Rule MacroStackVar()
+        {
+            return AstNode("macro_stack_var", Seq(UpperCaseLetter(), Star(IdentNextChar())));
+        }
+        public static Rule MacroVar()
+        {
+            return Seq(SingleChar('$'), NoFail(Choice(MacroTypeVar(), MacroStackVar()), "expected a valid macro type variable or stack variable"));
+        }
+        public static Rule MacroName()
+        {
+            return AstNode("macro_name", Choice(Symbol(), CatIdent()));
+        }
+        public static Rule MacroTerm()
+        {
+            return Token(Choice(MacroQuote(), MacroVar(), MacroName()));
+        }
+        public static Rule MacroQuote()
+        {
+            return AstNode("macro_quote", Seq(Token("["), Delay(MacroTerm), NoFail(Token("]"), "missing ']'")));
+        }
+        public static Rule MacroPattern()
+        {
+            return AstNode("macro_pattern", Seq(Token("{"), Star(MacroTerm()), NoFail(Token("}"), "missing '}'")));
+        }
+        public static Rule MacroDef()
+        {
+            return AstNode("macro", Seq(Word("macro"), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
+        }
+        #endregion
         public static Rule Line()
         {
-            return Seq(WS(), Star(Choice(Def(), Expr())));
+            return Seq(WS(), Star(Choice(FxnDef(), MacroDef(), Expr())));
         }
-        public static Rule Program()
+        public static Rule PlainCatProgram()
         {
-            return Star(Token(Def()));
+            return Star(Token(FxnDef()));
+        }
+        public static Rule MetaCatProgram()
+        {
+            return Star(Choice(Token(FxnDef()), Token(MacroDef())));
         }
     }
 }

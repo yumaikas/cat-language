@@ -11,16 +11,16 @@ namespace Peg
     /// <summary>
     /// Abstract Syntax Tree node.  
     /// </summary>
-    public class Ast
+    public class PegAstNode
     {
         int mnBegin;
         int mnCount;
         string msLabel;
         String msText;
-        Ast mpParent;
-        List<Ast> mChildren = new List<Ast>();
+        PegAstNode mpParent;
+        List<PegAstNode> mChildren = new List<PegAstNode>();
 
-        public Ast(string label, int n, String text, Ast p)
+        public PegAstNode(string label, int n, String text, PegAstNode p)
         {
             msLabel = label;
             msText = text;
@@ -29,9 +29,9 @@ namespace Peg
             mpParent = p;
         }
 
-        public Ast Add(string sLabel, Parser p)
+        public PegAstNode Add(string sLabel, Parser p)
         {
-            Ast ret = new Ast(sLabel, p.GetPos(), msText, this);
+            PegAstNode ret = new PegAstNode(sLabel, p.GetPos(), msText, this);
             mChildren.Add(ret);
             return ret;
         }
@@ -41,12 +41,12 @@ namespace Peg
             mnCount = p.GetPos() - mnBegin;
         }
 
-        public Ast GetParent()
+        public PegAstNode GetParent()
         {
             return mpParent;
         }
 
-        public void Remove(Ast x)
+        public void Remove(PegAstNode x)
         {
             mChildren.Remove(x);
         }
@@ -73,7 +73,7 @@ namespace Peg
             }
             else
             {
-                foreach (Ast node in mChildren)
+                foreach (PegAstNode node in mChildren)
                 {
                     s += node.GetXmlText();
                 }
@@ -87,7 +87,7 @@ namespace Peg
             return msLabel;
         }
 
-        public List<Ast> GetChildren()
+        public List<PegAstNode> GetChildren()
         {
             return mChildren;
         }
@@ -97,7 +97,7 @@ namespace Peg
             return mChildren.Count;
         }
 
-        public Ast GetChild(int n)
+        public PegAstNode GetChild(int n)
         {
             return mChildren[n];
         }
