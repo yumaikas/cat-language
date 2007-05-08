@@ -473,12 +473,15 @@ namespace Cat
     {
         MethodInfo mMethod;
         Object mObject;
+        CatFxnType mFxnType;
 
         public Method(Object o, MethodInfo mi)
             : base(mi.Name, MethodToTypeString(mi))
         {
             mMethod = mi;
             mObject = o;
+            string sType = MethodToTypeString(mi);
+            mFxnType = CatFxnType.Create(sType);
         }
 
         public override void Eval(Executor exec)
@@ -493,6 +496,11 @@ namespace Cat
             Object ret = mMethod.Invoke(mObject, a);
             if (!mMethod.ReturnType.Equals(typeof(void)))
                 exec.Push(ret);
+        }
+
+        public override CatFxnType GetFxnType()
+        {
+            return mFxnType;
         }
 
         public Object GetObject()
@@ -518,94 +526,6 @@ namespace Cat
         }
 
         #endregion
-    }
-
-    public class MethodGroup : Function
-    {
-        List<Method> mOverloads = new List<Method>();
-
-        public MethodGroup(Method m)
-            : base(m.GetName(), m.GetTypeString())
-        {
-            mOverloads.Add(m);
-        }
-
-        public override void Eval(Executor exec)
-        {
-            Method m = mOverloads[0];
-            for (int i = 1; i < mOverloads.Count; ++i)
-            {
-                m = GetBestMatch(exec.GetStack(), m, mOverloads[i]);
-            }
-            m.Eval(exec);
-        }
-        
-        private bool CanCastTo(Type from, Type to)
-        {
-            if (from.Equals(typeof(int)))
-                return to.Equals(typeof(double));
-
-            if (from.Equals(typeof(byte)))
-                return to.Equals(typeof(double)) || to.Equals(typeof(int));
-
-            return false;
-        }
-
-        /// <summary>
-        /// Used for computing which types are better matches. 
-        /// </summary>
-        private int AssignMatchScore(ITypeArray stk, ITypeArray sig)
-        {
-            int ret = 0;
-            for (int i = 0; i < sig.Count; ++i)
-            {
-                Type t = stk.GetType(i);
-                Type u = sig.GetType(i);
-                if (u.Equals(t))
-                {
-                    ret += 100;
-                }
-                else if (u.IsAssignableFrom(t))
-                {
-                    ret += 10;
-                }
-                else if (CanCastTo(t, u))
-                {
-                    ret += 1;
-                }
-                else
-                {
-                    ret -= 10000;
-                }
-            }
-            return ret;
-        }
-
-        private Method GetBestMatch(ITypeArray stk, Method x, Method y)
-        {
-            ITypeArray xt = x;
-            ITypeArray yt = y;
-
-            if (xt.Count != yt.Count)
-                throw new Exception("mismatched number of parameters in overload " + y.ToString());
-
-            if (stk.Count < xt.Count)
-                throw new Exception("insufficient number of items on the stack");
-
-            int xscore = AssignMatchScore(stk, xt);
-            int yscore = AssignMatchScore(stk, yt);
-
-            return xscore >= yscore ? x : y;
-        }
-
-        public void AddOverload(Method m)
-        {
-            if (m.GetName() != GetName())
-                throw new Exception("overload must share the same name");
-            if (mOverloads == null)
-                mOverloads = new List<Method>();
-            mOverloads.Add(m);
-        }
     }
 
     public abstract class PrimitiveFunction : Function

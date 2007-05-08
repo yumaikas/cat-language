@@ -1,0 +1,30 @@
+
+// No-op reductions
+macro { swap swap } => { }
+macro { noop } => { }
+macro { dup pop } => { }
+
+// Simple optimizations
+macro { dup swap } => { dup }
+macro { dup eq } => { pop true }
+
+// Identities
+macro { $a $b swap } => { $b $a }
+macro { $a dup } => { $a $a }
+macro { $a pop } => { }
+macro { $b [$A] dip } => { $A $b }
+macro { true [$A] [$B] if } => { $A }
+macro { false [$A] [$B] if } => { $B }
+macro { [$A] eval } => { $A }
+macro { $a qv } => { [$a] }
+macro { [$A] [$B] compose } => { [$A $B] }
+
+// Possible infinite reduction
+// macro { [$A] [$B] while } => { $B [[$A] [$B] while] [] if }
+
+// Standard library functions
+macro { $a $b nip } => { $b }
+macro { $a $b 
+
+
+
