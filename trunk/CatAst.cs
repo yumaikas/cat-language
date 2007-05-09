@@ -82,6 +82,8 @@ namespace Cat
                     return new AstMacroNode(node);
                 case "macro_pattern":
                     return new AstMacroPattern(node);
+                case "macro_quote":
+                    return new AstMacroQuote(node);
                 case "macro_type_var":
                     return new AstMacroTypeVar(node);
                 case "macro_stack_var":
@@ -544,7 +546,7 @@ namespace Cat
 
     public class AstMacroPattern : CatAstNode
     {
-        public List<AstMacroToken> mPattern = new List<AstMacroToken>();
+        public List<AstMacroTerm> mPattern = new List<AstMacroTerm>();
 
         public AstMacroPattern(PegAstNode node)
             : base(node)
@@ -552,7 +554,7 @@ namespace Cat
             CheckLabel("macro_pattern");
             foreach (PegAstNode child in node.GetChildren())
             {
-                AstMacroToken tmp = CatAstNode.Create(child) as AstMacroToken;
+                AstMacroTerm tmp = CatAstNode.Create(child) as AstMacroTerm;
                 if (tmp == null)
                     throw new Exception("invalid grammar: only macro terms can be children of an ast macro mPattern");
                 mPattern.Add(tmp);
@@ -562,45 +564,64 @@ namespace Cat
         public override string ToString()
         {
             string ret = "";
-            foreach (AstMacroToken t in mPattern)
+            foreach (AstMacroTerm t in mPattern)
                 ret += " " + t.ToString();
             ret = ret.Substring(1);
             return ret;
         }
     }
 
-    public class AstMacroToken : CatAstNode
+    public class AstMacroTerm : CatAstNode
     {
-        public AstMacroToken(PegAstNode node)
+        public AstMacroTerm(PegAstNode node)
             : base(node)
         {
-            CheckChildCount(node, 0);
         }
     }
 
-    public class AstMacroTypeVar : AstMacroToken
+    public class AstMacroQuote : AstMacroTerm
+    {
+        public List<AstMacroTerm> mTerms = new List<AstMacroTerm>();
+
+        public AstMacroQuote(PegAstNode node)
+            : base(node)
+        {
+            foreach (PegAstNode child in node.GetChildren())
+            {
+                AstMacroTerm term = Create(child) as AstMacroTerm;
+                if (term == null)
+                    throw new Exception("internal grammar error: macro quotations can only contain macro terms");
+                mTerms.Add(term);
+            }
+        }
+    }
+
+    public class AstMacroTypeVar : AstMacroTerm
     {
         public AstMacroTypeVar(PegAstNode node)
             : base(node)
         {
+            CheckChildCount(node, 0);
             CheckLabel("macro_type_var");
         }
     }
 
-    public class AstMacroStackVar : AstMacroToken
+    public class AstMacroStackVar : AstMacroTerm
     {
         public AstMacroStackVar(PegAstNode node)
             : base(node)
         {
+            CheckChildCount(node, 0);
             CheckLabel("macro_stack_var");
         }
     }
 
-    public class AstMacroName : AstMacroToken
+    public class AstMacroName : AstMacroTerm
     {
         public AstMacroName(PegAstNode node)
             : base(node)
         {
+            CheckChildCount(node, 0);
             CheckLabel("macro_name");
         }
     }

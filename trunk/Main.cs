@@ -70,7 +70,7 @@ namespace Cat
                         Executor.Main.Execute(s + '\n');
                         TimeSpan elapsed = DateTime.Now - begin;
                         if (Config.gbOutputTimeElapsed)
-                            WriteLine("Time elapsed : {0:F} msec", elapsed.TotalMilliseconds);
+                            WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
                         if (Config.gbOutputStack)
                             Executor.Main.OutputStack();
                     }
@@ -138,22 +138,17 @@ namespace Cat
         #region console/loggging output function
         public static void Write(object o)
         {
-            Write(ObjectToString(o));
+            if (o is String)
+                Write(o as String);
+            else 
+                Write(ObjectToString(o));
         }
         public static void WriteLine(object o)
         {
-            WriteLine(ObjectToString(o));
-        }
-        public static void Write(string s, object o)
-        {
-            Console.Write(s, o);
-            gpTranscript.Write(s, o);
-        }
-
-        public static void WriteLine(string s, object o)
-        {
-            Console.WriteLine(s, o);
-            gpTranscript.WriteLine(s, o);
+            if (o is String)
+                WriteLine(o as String);
+            else
+                WriteLine(ObjectToString(o));
         }
 
         public static void Write(string s)
@@ -179,7 +174,7 @@ namespace Cat
                     result = ", " + result;
                 // we don't print the last one
                 // this way we know there is one more
-                // so the ellipsis (...) is appropriate
+                // and that the ellipsis (...) is appropriate
                 if (i <= 4)
                     result = ObjectToString(o) + result;
             };

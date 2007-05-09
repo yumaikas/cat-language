@@ -173,12 +173,32 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
+                // This only scratches the surface of what is possible. 
+                // One of the goals is to reduce the byte-code as much as possible first. 
+                // I wonder also if I can identify common sequences and reduce the size this way first.
+
                 Function f = exec.PopFunction();
-                List<Function> list = new List<Function>();
-                f.Expand(list);
+                List<Function> list = new List<Function>((f as QuotedFunction).GetChildren().ToArray());
                 Macros.GetGlobalMacros().ApplyMacros(list);
+               
+                Macros.GetGlobalMacros().ApplyMacros(list);
+                
                 QuotedFunction q = new QuotedFunction(list);
                 exec.Push(q);
+            }
+        }
+
+        public class Compile : PrimitiveFunction
+        {
+            public Compile()
+                : base("#c", "('A -> 'B) -> assembly", "creates a dynamic assembly from a function")
+            { 
+            }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.PopFunction();
+                List<Function> list = new List<Function>((f as QuotedFunction).GetChildren().ToArray());
             }
         }
     }
@@ -854,8 +874,8 @@ namespace Cat
         #endregion
 
         #region console functions
-        public static void write(Object o) { MainClass.Write(MainClass.ObjectToString(o)); }
-        public static void writeln(Object o) { MainClass.WriteLine(MainClass.ObjectToString(o)); }
+        public static void write(Object o) { MainClass.Write(o); }
+        public static void writeln(Object o) { MainClass.WriteLine(o); }
         public static string readln() { return Console.ReadLine(); }
         public static char readkey() { return Console.ReadKey().KeyChar; }
         #endregion

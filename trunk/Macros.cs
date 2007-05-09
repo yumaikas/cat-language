@@ -16,11 +16,17 @@ namespace Cat
         public CatExpr(List<Function> fxns, int nFirst, int nLast)
         {
             mpFxns = fxns.GetRange(nFirst, (nLast - nFirst) + 1);
-            mpFxnType = TypeInferer.Infer(mpFxns, true);
+        }
+
+        public CatExpr(List<Function> fxns)
+        {
+            mpFxns = fxns;
         }
 
         public CatFxnType GetFxnType()
         {
+            if (mpFxnType == null) 
+                mpFxnType = TypeInferer.Infer(mpFxns, true);
             return mpFxnType;
         }
 
@@ -29,14 +35,21 @@ namespace Cat
             return mpFxns;
         }
         
+        public bool IsSimpleNullaryFunction()
+        {
+            if (mpFxns.Count == 0)
+                return false;
+            return HasSingleProduction() && HasNoConsumption();
+        }
+
         public bool HasSingleProduction()
         {
-            return mpFxnType.GetMaxProduction() == 1;
+            return GetFxnType().GetMaxProduction() == 1;
         }
 
         public bool HasNoConsumption()
         {
-            return mpFxnType.GetMaxConsumption() == 0;
+            return GetFxnType().GetMaxConsumption() == 0;
         }
     }
 
@@ -67,7 +80,7 @@ namespace Cat
                 mMacro = m;
             }
 
-            public bool DoesTokenMatch(AstMacroToken tkn, CatExpr x, out bool bRecoverable)
+            public bool DoesTokenMatch(AstMacroTerm tkn, CatExpr x, out bool bRecoverable)
             {
                 bRecoverable = true;
 
@@ -93,23 +106,44 @@ namespace Cat
                         return true;
                     }
                 }
+                else if (tkn is AstMacroQuote)
+                {
+                    AstMacroQuote macroQuote = tkn as AstMacroQuote;
+                    if ((macroQuote.mTerms.Count != 1) || (! (macroQuote.mTerms[0] is AstMacroStackVar)))
+                        throw new Exception("currently only quotations containing a single stack variable are supported as macro patterns");
+                    AstMacroStackVar v = macroQuote.mTerms[0] as AstMacroStackVar;
+
+                    // Currently we only match literal quotations 
+                    if (x.GetFxns().Count != 1)
+                        return false;
+                    Quotation quote = x.GetFxns()[0] as Quotation;
+                    if (quote == null)
+                        return false; 
+
+                    // Capture the quotation. 
+                    mCapturedVars.Add(v.ToString(), new CatExpr(quote.GetChildren()));
+                    return true;
+                }
+                else if (tkn is AstMacroStackVar)
+                {
+                    throw new Exception("illegal location for a stack variable " + tkn.ToString());
+                }
                 else
                 {
-                    throw new Exception("unhandled macro tkn");
+                    throw new Exception("unrecognized macro term " + tkn.ToString());
                 }
 
                 return false;
             }
 
-            public void Replace(List<Function> fxns)
-            {   
-                List<AstMacroToken> pattern = mMacro.mDest.mPattern;
-
-                fxns.RemoveRange(mnFxnIndex, mnFxnCount);
+            public void Replace(List<Function> fxns, List<AstMacroTerm> pattern)
+            {
+                if (mnFxnIndex < fxns.Count)
+                    fxns.RemoveRange(mnFxnIndex, mnFxnCount);
 
                 for (int i = pattern.Count - 1; i >= 0; --i)
                 {
-                    AstMacroToken t = pattern[i];
+                    AstMacroTerm t = pattern[i];
                     if (t is AstMacroTypeVar)
                     {
                         string s = t.ToString();
@@ -117,13 +151,15 @@ namespace Cat
                             throw new Exception("macro variable " + s + " was not captured");
                         CatExpr expr = mCapturedVars[s];
                         for (int j = expr.GetFxns().Count - 1; j >= 0; --j)
-                        {
                             fxns.Insert(mnFxnIndex, expr.GetFxns()[j]);
-                        }
                     }
                     else if (t is AstMacroStackVar)
                     {
-                        throw new Exception("macro stack variables are not yet supported");
+                        string s = t.ToString();
+                        if (!mCapturedVars.ContainsKey(s))
+                            throw new Exception("macro variable " + s + " was not captured");
+                        CatExpr expr = mCapturedVars[s];
+                        fxns.InsertRange(mnFxnIndex, expr.GetFxns());
                     }
                     else if (t is AstMacroName)
                     {
@@ -137,6 +173,21 @@ namespace Cat
 
                         fxns.Insert(mnFxnIndex, f);
                     }
+                    else if (t is AstMacroQuote)
+                    {
+                        AstMacroQuote macroQuote = t as AstMacroQuote;
+                        List<Function> localFxns = new List<Function>();
+
+                        List<AstMacroTerm> localPattern = macroQuote.mTerms;
+                        Replace(localFxns, localPattern);
+                        Quotation q = new Quotation(localFxns);
+
+                        fxns.Insert(mnFxnIndex, q);
+                    }
+                    else
+                    {
+                        throw new Exception("unrecognized macro term " + t.ToString());
+                    }
                 }
             }
 
@@ -147,7 +198,7 @@ namespace Cat
                 if (nFxnIndex >= fxns.Count) 
                     return null;
 
-                List<AstMacroToken> pattern = m.mSrc.mPattern;
+                List<AstMacroTerm> pattern = m.mSrc.mPattern;
 
                 MacroMatch match = new MacroMatch(m);
                                
@@ -157,7 +208,7 @@ namespace Cat
                 int nTokenIndex = pattern.Count - 1;
                                
                 // Start at the end of the pattern and move backwards comparing expressions
-                while (nFirst >= nPrevMatchPos)
+                while (nFirst > nPrevMatchPos)
                 {
                     Trace.Assert(nTokenIndex <= pattern.Count);
                     Trace.Assert(nFirst >= 0);
@@ -167,7 +218,7 @@ namespace Cat
                     // get the current sub-expression that we are evaluating 
                     CatExpr expr = new CatExpr(fxns, nFirst, nLast);
                     
-                    AstMacroToken tkn = pattern[nTokenIndex];
+                    AstMacroTerm tkn = pattern[nTokenIndex];
 
                     bool bRecoverable = false;
                     if (match.DoesTokenMatch(tkn, expr, out bRecoverable))
@@ -228,7 +279,7 @@ namespace Cat
             int nMaxSubExpr = 5;
 
             // Find matches
-            int nLastMatchPos = 0;
+            int nLastMatchPos = -1;
             for (int nPos = 0; nPos < fxns.Count; ++nPos)
             {
                 for (int nMacro = 0; nMacro < mMacros.Count; ++nMacro)
@@ -249,7 +300,8 @@ namespace Cat
             for (int i = matches.Count - 1; i >= 0; --i)
             {
                 MacroMatch m = matches[i];
-                m.Replace(fxns);                
+                List<AstMacroTerm> pattern = m.mMacro.mDest.mPattern;
+                m.Replace(fxns, pattern);      
             }
         }
     }
