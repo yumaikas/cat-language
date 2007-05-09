@@ -117,7 +117,7 @@ define test_macros
   [nil] [nil [2 mul_int] map] macro_test
   [nil] [nil [3 lt_int] filter] macro_test
   [42] [nil 42 [add_int] fold] macro_test
-  [1 1 2] [1 2 dup] macro_test
+  [1 1 2] [1 2 dupd] macro_test
   [2 1 3] [1 2 3 swapd] macro_test
   [2 3 1] [1 2 3 dig] macro_test
   [3 1 2] [1 2 3 bury] macro_test

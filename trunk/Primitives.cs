@@ -197,8 +197,11 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
+                Compiler.TestCompiler();
+                /*
                 Function f = exec.PopFunction();
                 List<Function> list = new List<Function>((f as QuotedFunction).GetChildren().ToArray());
+                 */
             }
         }
     }
@@ -343,7 +346,7 @@ namespace Cat
                 Object o2 = exec.Pop();
                 exec.Push(o1);
                 exec.Push(o2);
-            }
+            }           
         }
 
         public class Clr : PrimitiveFunction
