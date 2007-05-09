@@ -196,7 +196,7 @@ namespace Cat
         }
         public static Rule MacroQuote()
         {
-            return AstNode("macro_quote", Seq(Token("["), Delay(MacroTerm), NoFail(Token("]"), "missing ']'")));
+            return AstNode("macro_quote", Seq(Token("["), Star(Delay(MacroTerm)), NoFail(Token("]"), "missing ']'")));
         }
         public static Rule MacroPattern()
         {

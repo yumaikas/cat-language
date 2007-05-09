@@ -149,7 +149,7 @@ namespace Cat
             catch (Exception e)
             {
                 MainClass.WriteLine("Failed to load \"" + s + "\"");
-                MainClass.WriteLine("Error: {0}", e.Message);
+                MainClass.WriteLine("Error: " + e.Message);
             }
         }
         #endregion
