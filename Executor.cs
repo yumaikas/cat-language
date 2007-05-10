@@ -49,6 +49,13 @@ namespace Cat
         {
             return stack;
         }
+        public void Swap()
+        {
+            object tmp1 = Pop();
+            object tmp2 = Pop();
+            Push(tmp1);
+            Push(tmp2);
+        }
         public void Push(Object o)
         {
             stack.Push(o);

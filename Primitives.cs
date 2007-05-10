@@ -736,28 +736,87 @@ namespace Cat
                 exec.Push(typeof(Bit));
             }
         }
-        public static bool type_eq(Type t, Type u) { return t.Equals(u) || u.Equals(t); } 
+        public class TypeEq : PrimitiveFunction
+        {
+            public TypeEq()
+                : base("type_eq", "(type type -> bool)", "returns true if either type is assignable to the other")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Type t = exec.Pop() as Type;
+                Type u = exec.Pop() as Type;
+                exec.Push(t.Equals(u) || u.Equals(t));
+            }
+        }
         #endregion 
 
         #region int functions
-        public static int add_int(int x, int y) { return x + y; }
-        public static int sub_int(int x, int y) { return x - y; }
-        public static int div_int(int x, int y) { return x / y; }
-        public static int mul_int(int x, int y) { return x * y; }
-        public static int mod_int(int x, int y) { return x % y; }
-        public static int neg_int(int x) { return -x; }
-        public static int compl_int(int x) { return ~x; } 
-        public static int shl_int(int x, int y) { return x << y; }
-        public static int shr_int(int x, int y) { return x >> y; }
-        public static bool gt_int(int x, int y) { return x > y; }
-        public static bool lt_int(int x, int y) { return x < y; }
-        public static bool gteq_int(int x, int y) { return x >= y; }
-        public static bool lteq_int(int x, int y) { return x <= y; }
-        public static int min_int(int x, int y) { return Math.Min(x, y); }
-        public static int max_int(int x, int y) { return Math.Max(x, y); }
-        public static int abs_int(int x) { return Math.Abs(x); }
-        public static int pow_int(int x, int y) { return (int)Math.Pow(x, y); }
-        public static int sqr_int(int x) { return x * x; }
+        public class AddInt : PrimitiveFunction
+        {
+            public AddInt() : base("add_int", "(int int -> int)", "") { }            
+            public override void Eval(Executor exec) { exec.Push(exec.PopInt() + exec.PopInt()); }
+        }
+        public class MulInt : PrimitiveFunction
+        {
+            public MulInt() : base("mul_int", "(int int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Push(exec.PopInt() * exec.PopInt()); }
+        }
+        public class DivInt : PrimitiveFunction
+        {
+            public DivInt() : base("div_int", "(int int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() / exec.PopInt()); }
+        }
+        public class SubInt : PrimitiveFunction
+        {
+            public SubInt() : base("sub_int", "(int int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Swap();  exec.Push(exec.PopInt() - exec.PopInt()); }
+        }
+        public class ModInt : PrimitiveFunction
+        {
+            public ModInt() : base("mod_int", "(int int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Swap();  exec.Push(exec.PopInt() % exec.PopInt()); }
+        }
+        public class NegInt : PrimitiveFunction
+        {
+            public NegInt() : base("neg_int", "(int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Push(-exec.PopInt()); }
+        }
+        public class ComplInt : PrimitiveFunction
+        {
+            public ComplInt() : base("compl_int", "(int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Push(~exec.PopInt()); }
+        }
+        public class ShlInt : PrimitiveFunction
+        {
+            public ShlInt() : base("shl_int", "(int int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() << exec.PopInt()); }
+        }
+        public class ShrInt : PrimitiveFunction
+        {
+            public ShrInt() : base("shr_int", "(int int -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() >> exec.PopInt()); }
+        }
+        public class GtInt : PrimitiveFunction
+        {
+            public GtInt() : base("gt_int", "(int int -> bool)", "") { }
+            public override void Eval(Executor exec) { exec.Push(exec.PopInt() <= exec.PopInt()); }
+        }
+        public class LtInt : PrimitiveFunction
+        {
+            public LtInt() : base("lt_int", "(int int -> bool)", "") { }
+            public override void Eval(Executor exec) { exec.Push(exec.PopInt() >= exec.PopInt()); }
+        }
+        public class GtEqInt : PrimitiveFunction
+        {
+            public GtEqInt() : base("gteq_int", "(int int -> bool)", "") { }
+            public override void Eval(Executor exec) { exec.Push(exec.PopInt() < exec.PopInt()); }
+        }
+        public class LtEqInt : PrimitiveFunction
+        {
+            public LtEqInt() : base("lteq_int", "(int int -> bool)", "") { }
+            public override void Eval(Executor exec) { exec.Push(exec.PopInt() > exec.PopInt()); }
+        }
         #endregion
 
         #region byte functions
@@ -773,10 +832,6 @@ namespace Cat
         public static bool lt_byte(byte x, byte y) { return x < y; }
         public static bool gteq_byte(byte x, byte y) { return x >= y; }
         public static bool lteq_byte(byte x, byte y) { return x <= y; }
-        public static byte min_byte(byte x, byte y) { return Math.Min(x, y); }
-        public static byte max_byte(byte x, byte y) { return Math.Max(x, y); }
-        public static byte abs_byte(byte x) { return (byte)Math.Abs(x); }
-        public static byte sqr_byte(byte x) { return (byte)(x * x); }
         #endregion
 
         #region bit functions
@@ -877,10 +932,53 @@ namespace Cat
         #endregion
 
         #region console functions
-        public static void write(Object o) { MainClass.Write(o); }
-        public static void writeln(Object o) { MainClass.WriteLine(o); }
-        public static string readln() { return Console.ReadLine(); }
-        public static char readkey() { return Console.ReadKey().KeyChar; }
+        public class Write : PrimitiveFunction
+        {
+            public Write()
+                : base("write", "('a ~> )", "outputs the text representation of a value to the console")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                MainClass.Write(exec.Pop());
+            }
+        }
+
+        public class WriteLn : PrimitiveFunction
+        {
+            public WriteLn()
+                : base("writeln", "('a ~> )", "outputs the text representation of a value to the console followed by a newline character")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                MainClass.WriteLine(exec.Pop());
+            }
+        }
+
+        public class ReadLn : PrimitiveFunction
+        {
+            public ReadLn()
+                : base("readln", "( ~> string)", "inputs a string from the user (or console)")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(Console.ReadLine());
+            }
+        }
+
+        public class ReadKey : PrimitiveFunction
+        {
+            public ReadKey()
+                : base("read", "( ~> char)", "inputs a single character from the user (or console)")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(Console.ReadKey().KeyChar);
+            }
+        }
         #endregion
 
         #region byte block functions

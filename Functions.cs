@@ -464,6 +464,11 @@ namespace Cat
             foreach (Function f in mTerms)
                 fxns.Add(f);
         }
+
+        public List<Function> GetChildren()
+        {
+            return mTerms;
+        }
     }
 
     /// <summary>
