@@ -46,9 +46,6 @@ define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
 define neg : ('a -> 'a)
 { [int [neg_int] pair double [neg_dbl] pair] to_list dispatch }
 
-define abs : ('a -> 'a)
-{ [int [abs_int] pair double [abs_dbl] pair] to_list dispatch }
-
 define add : ('a 'a -> 'a)
 { [int [add_int] pair double [add_dbl] pair byte [add_byte] pair bit [add_bit] pair string [add_str] pair] to_list dispatch }
 
@@ -63,9 +60,6 @@ define mod : ('a 'a -> 'a)
 
 define div : ('a 'a -> 'a)
 { [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch }
-
-define pow : ('a 'a -> 'a)
-{ [int [pow_int] pair double [pow_dbl] pair] to_list dispatch }
 
 define lt : ('a 'a -> bool)
 { [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch }
