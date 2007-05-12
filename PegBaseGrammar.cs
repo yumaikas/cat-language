@@ -27,7 +27,7 @@ namespace Peg
         /// phrases in a programming language. A production rule also
         /// corresponds to a pattern matcher in a recursive-descent parser. 
         /// 
-        /// Each instance of a Fact class has a Match function which 
+        /// Each instance of a Rule class has a Match function which 
         /// has the responsibility to look at the current input 
         /// (which is managed by a Parser object) and return true or false, 
         /// depending on whether the current input corresponds
@@ -570,5 +570,10 @@ namespace Peg
         public static Rule IdentNextChar() { return Choice(IdentFirstChar(), Digit()); }
         public static Rule Ident() { return Seq(IdentFirstChar(), Star(IdentNextChar())); }
         public static Rule EOW() { return Not(IdentNextChar()); }
+        public static Rule DelimitedGroup(String x, Rule r, String y) { return Seq(CharSeq(x), Star(r), NoFail(CharSeq(y), "expected " + y)); }        
+        public static Rule LineComment() { return Seq(CharSeq("//"), NoFail(WhileNot(AnyChar(), NL()), "expected a new line")); }
+        public static Rule FullComment() { return Seq(CharSeq("/*"), WhileNot(AnyChar(), CharSeq("*/"))); }
+        public static Rule Comment() { return Choice(FullComment(), LineComment()); }
+        public static Rule WS() { return Star(Choice(CharSet(" \t\n\r"), Comment())); }
     }
 }

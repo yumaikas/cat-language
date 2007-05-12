@@ -194,6 +194,10 @@ namespace Cat
             {
                 return "\"" + ((string)o) + "\"";
             }
+            else if (o is char)
+            {
+                return "'" + ((char)o) + "'";
+            }
             else if (o is FList)
             {
                 return ForEachToString(o as FList);

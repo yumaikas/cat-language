@@ -406,7 +406,9 @@ namespace Cat
 
         public char GetValue()
         {
-            return char.Parse(ToString());
+            string s = ToString();
+            // strip quotes
+            return char.Parse(s.Substring(1, s.Length - 2));
         }
     }
 
@@ -508,20 +510,35 @@ namespace Cat
     {
         public AstStackNode mProd;
         public AstStackNode mCons;
+        bool mbSideEffects;
 
         public AstFxnTypeNode(PegAstNode node)
             : base(node)
         {
             CheckLabel("type_fxn");
-            CheckChildCount(node, 2);
+            CheckChildCount(node, 3);
             mCons = new AstStackNode(node.GetChild(0));
-            mProd = new AstStackNode(node.GetChild(1));
+            mbSideEffects = node.GetChild(1).ToString().Equals("~>");
+            mProd = new AstStackNode(node.GetChild(2));
         }
 
         public override string ToString()
         {
-            return "( " + mCons.ToString() + "-> " + mProd.ToString() + ")";
+            if (mbSideEffects)
+            {
+                return "( " + mCons.ToString() + "~> " + mProd.ToString() + ")";
+            }
+            else
+            {
+                return "( " + mCons.ToString() + "-> " + mProd.ToString() + ")";
+            }
         }
+
+        public bool HasSideEffects()
+        {
+            return mbSideEffects;
+        }
+
     }
 
     public class AstMacroNode : CatAstNode

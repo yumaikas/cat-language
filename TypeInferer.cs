@@ -234,7 +234,7 @@ namespace Cat
         {
             if (f == null)
                 throw new Exception("Invalid null parameter to rename function");
-            return new CatFxnType(Rename(f.GetCons()), Rename(f.GetProd()));
+            return new CatFxnType(Rename(f.GetCons()), Rename(f.GetProd()), f.HasSideEffects());
         }
 
         public CatStackKind Rename(CatStackKind s)
@@ -551,7 +551,7 @@ namespace Cat
             {
                 // Create a temporary function type showing the type before 
                 // unfification
-                CatFxnType tmp = new CatFxnType(left.GetCons(), right.GetProd());
+                CatFxnType tmp = new CatFxnType(left.GetCons(), right.GetProd(), left.HasSideEffects() || right.HasSideEffects());
                 MainClass.WriteLine("Before unification: ");
                 MainClass.WriteLine(tmp.ToString());
 
@@ -606,7 +606,7 @@ namespace Cat
             CatStackKind stkRightProd = r.Rename(right.GetProd());
             
             // Finally create and return the result type
-            CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd);
+            CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd, left.HasSideEffects() || right.HasSideEffects());
 
             if (Config.gbVerboseInference)
                 MainClass.WriteLine("Type: " + ret.ToString());

@@ -20,7 +20,6 @@ namespace Cat
     {
         #region fields
         static public Executor Main = new Executor();
-        static public Executor Aux = new Executor(Main.mpScope);
         private CatStack stack = new CatStack();
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
@@ -126,6 +125,14 @@ namespace Cat
         {
             return (stack.Count == 0);
         }
+        public int Count()
+        {
+            return (stack.Count);
+        }
+        public void Clear()
+        {
+            stack.Clear();
+        }
         #endregion
 
         #region environment serialization
@@ -166,7 +173,7 @@ namespace Cat
         {
             try
             {
-                Parse(s);
+                CatParser.Parse(s, this);
             }
             catch (CatException e)
             {
@@ -201,94 +208,5 @@ namespace Cat
             MainClass.WriteLine("stack: " + StackToString(stack));
         }
         #endregion
-
-        #region parsing functions
-        private Quotation MakeQuoteFunction(AstQuoteNode node)
-        {
-            List<Function> fxns = new List<Function>();
-            foreach (AstExprNode child in node.Terms)
-                fxns.Add(ExprToFunction(child));
-            return new Quotation(fxns);
-        }
-
-        private Function ExprToFunction(AstExprNode node)
-        {
-            if (node is AstIntNode)
-                return new IntFunction((node as AstIntNode).GetValue());
-            else if (node is AstBinNode)
-                return new IntFunction((node as AstBinNode).GetValue());
-            else if (node is AstHexNode)
-                return new IntFunction((node as AstHexNode).GetValue());
-            else if (node is AstFloatNode)
-                return new FloatFunction((node as AstFloatNode).GetValue());
-            else if (node is AstStringNode)
-                return new StringFunction((node as AstStringNode).GetValue());
-            else if (node is AstCharNode)
-                return new CharFunction((node as AstCharNode).GetValue());
-            else if (node is AstNameNode)
-            {
-                Function f = Executor.Main.GetGlobalScope().Lookup(node.ToString());
-                if (f == null) 
-                    throw new Exception("could not find function " + node.ToString());
-                return f;
-            }
-            else if (node is AstQuoteNode)
-                return MakeQuoteFunction(node as AstQuoteNode);
-            else
-                throw new Exception("node " + node.ToString() + " does not have associated function");
-        }
-
-        private void ProcessDefinition(AstDefNode node)
-        {
-            if (Config.gbAllowNamedParams)
-                CatPointFreeForm.Convert(node);
-            else if (node.mParams.Count > 0)
-                throw new Exception("named parameters are not enabled");
-            List<Function> fxns = new List<Function>();
-            foreach (AstExprNode term in node.mTerms)
-                fxns.Add(ExprToFunction(term));
-            DefinedFunction def = new DefinedFunction(node.mName, fxns);
-            Executor.Main.GetGlobalScope().AddFunction(def);
-        }
-
-        private void ProcessMacro(AstMacroNode node)
-        {
-            Macros.GetGlobalMacros().AddMacro(node);
-        }
-
-        private void ProcessNode(CatAstNode node)
-        {   
-            if (node is AstExprNode)
-            {
-                Function f = ExprToFunction(node as AstExprNode);
-                f.Eval(this);
-            }
-            else if (node is AstDefNode)
-            {
-                ProcessDefinition(node as AstDefNode);
-            }
-            else if (node is AstMacroNode)
-            {
-                ProcessMacro(node as AstMacroNode);
-            }
-            else
-            {
-                throw new Exception("Unhandled AST node type " + node.GetLabel());
-            }
-        }
-
-        public void Parse(string s)
-        {
-            Peg.Parser parser = new Peg.Parser(s);
-            bool bResult = parser.Parse(CatGrammar.Line());
-            if (!bResult)
-                throw new Exception("failed to parse: " + s);
-            Peg.PegAstNode node = parser.GetAst();
-
-            foreach (Peg.PegAstNode child in node.GetChildren())
-                ProcessNode(CatAstNode.Create(child));
-        }
-        #endregion
-
     }
 }

@@ -10,7 +10,9 @@ using System.Collections.Generic;
 namespace Cat
 {
     /// <summary>
-    /// The base class for all Cat functions 
+    /// The base class for all Cat functions. All functions can be invoked like one would 
+    /// invoke a MethodInfo object. This is because each one contains its own private 
+    /// executor;
     /// </summary>
     public abstract class Function : CatBase
     {
@@ -29,6 +31,7 @@ namespace Cat
         #region Fields
         public string msName = "_unnamed_"; 
         public string msDesc = "";
+        private Executor mExec;
         #endregion
 
         public Function()
@@ -53,6 +56,12 @@ namespace Cat
             else
                 return GetFxnType().ToString();
         }
+        public Executor GetExecutor()
+        {
+            if (mExec == null)
+                mExec = new Executor();
+            return mExec;
+        }
 
         #region virtual functions
         public virtual CatFxnType GetFxnType()
@@ -66,35 +75,35 @@ namespace Cat
         public abstract void Eval(Executor exec);
         #endregion
 
-        #region invocation functions
+        #region invocation functions        
         public virtual Object Invoke()
         {
-            Eval(Executor.Aux);
-            if (Executor.Aux.GetStack().Count != 1)
+            Eval(GetExecutor());
+            if (GetExecutor().Count() != 1)
             {
-                Executor.Aux.GetStack().Clear();
+                GetExecutor().Clear();
                 throw new Exception("internal error: after invoking " + GetName() + " auxiliary stack should have exactly one value.");
             }
-            return Executor.Aux.GetStack().Pop();
+            return GetExecutor().Pop();
         }
 
         public virtual Object Invoke(Object o)
         {
-            Executor.Aux.Push(o);
+            GetExecutor().Push(o);
             return Invoke();
         }
 
         public virtual Object Invoke(Object o1, Object o2)
         {
-            Executor.Aux.Push(o1);
-            Executor.Aux.Push(o2);
+            GetExecutor().Push(o1);
+            GetExecutor().Push(o2);
             return Invoke();
         }
 
         public virtual Object Invoke(Object[] args)
         {
             foreach (Object arg in args)
-                Executor.Aux.Push(arg);
+                GetExecutor().Push(arg);
             return Invoke();
         }
         #endregion
@@ -102,22 +111,34 @@ namespace Cat
         #region conversion functions
         public MapFxn ToMapFxn()
         {
-            return delegate(object x) { return Invoke(x); };
+            return delegate(object x) 
+            { 
+                return Invoke(x); 
+            };
         }
 
         public FilterFxn ToFilterFxn()
         {
-            return delegate(object x) { return (bool)Invoke(x); };
+            return delegate(object x) 
+            { 
+                return (bool)Invoke(x); 
+            };
         }
 
         public FoldFxn ToFoldFxn()
         {
-            return delegate(object x, object y) { return Invoke(x, y); };
+            return delegate(object x, object y)
+            {
+                return Invoke(x, y);
+            };
         }
 
         public RangeGenFxn ToRangeGenFxn()
         {
-            return delegate(int n) { return Invoke(n); };
+            return delegate(int n) 
+            { 
+                return Invoke(n); 
+            };
         }
         #endregion
 
@@ -442,9 +463,13 @@ namespace Cat
     {
         List<Function> mTerms;
 
-        public DefinedFunction(string s, List<Function> terms)
+        public DefinedFunction(string s)
         {
             msName = s;
+        }
+
+        public void AddFunctions(List<Function> terms)
+        {
             // TODO: eventually get the type from the annotation.
             // we then have to either verify it or trust it.
             mTerms = terms;

@@ -71,11 +71,9 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Renamer.ResetId();
-                Function f = exec.PopFunction();
-                if (!(f is QuotedFunction))
-                    throw new Exception("You can only request the type of a quotation of named primitives");
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
                 Config.gbVerboseInference = true;
-                CatFxnType ft = TypeInferer.Infer((f as QuotedFunction).GetChildren(), false);
+                CatFxnType ft = TypeInferer.Infer(f.GetChildren(), false);
                 if (ft == null)
                     MainClass.WriteLine("type could not be inferred");
                 else
@@ -177,8 +175,8 @@ namespace Cat
                 // One of the goals is to reduce the byte-code as much as possible first. 
                 // I wonder also if I can identify common sequences and reduce the size this way first.
 
-                Function f = exec.PopFunction();
-                List<Function> list = new List<Function>((f as QuotedFunction).GetChildren().ToArray());
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                List<Function> list = new List<Function>(f.GetChildren().ToArray());
                 Macros.GetGlobalMacros().ApplyMacros(list);
                
                 Macros.GetGlobalMacros().ApplyMacros(list);
@@ -191,17 +189,48 @@ namespace Cat
         public class Compile : PrimitiveFunction
         {
             public Compile()
-                : base("#c", "('A -> 'B) -> assembly", "creates a dynamic assembly from a function")
+                : base("#compile", "(('A -> 'B) -> Compilation)", "compiles a function")
             { 
             }
 
             public override void Eval(Executor exec)
             {
-                Compiler.TestCompiler();
-                /*
-                Function f = exec.PopFunction();
-                List<Function> list = new List<Function>((f as QuotedFunction).GetChildren().ToArray());
-                 */
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                List<Function> list = new List<Function>(f.GetChildren().ToArray());
+                Compilation c = new Compilation();
+                c.Compile(list);
+                exec.Push(c);
+            }
+        }
+
+        public class Execute : PrimitiveFunction
+        {
+            public Execute()
+                : base("#exec", "(Compilation ~> 'B)", "executes a compiled function")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                Compilation c = exec.TypedPop<Compilation>();
+                c.InvokeDefault(exec);
+            }
+        }
+
+        public class PartialEval : PrimitiveFunction
+        {
+            public PartialEval()
+                : base("#pe", "('A -> 'B) -> ('A -> 'B)", "reduces a function through partial evaluation")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                List<Function> list = new List<Function>(f.GetChildren().ToArray());
+                List<Function> result = PartialEvaluator.Eval(list);
+                QuotedFunction q = new QuotedFunction(result);
+                exec.Push(q);
             }
         }
     }
@@ -224,7 +253,7 @@ namespace Cat
         public class MakeByte : PrimitiveFunction
         {
             public MakeByte()
-                : base("byte", "(int -> byte)", "converts an integer into a byte, throwing away sign and ignoring higher bits")
+                : base("to_byte", "(int -> byte)", "converts an integer into a byte, throwing away sign and ignoring higher bits")
             { }
 
             public override void Eval(Executor exec)
@@ -371,7 +400,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
+                Function f = exec.TypedPop<Function>();
                 f.Eval(exec);
             }
         }
@@ -384,7 +413,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
+                Function f = exec.TypedPop<Function>();
                 Object o = exec.Pop();
                 f.Eval(exec);
                 exec.Push(o);
@@ -400,8 +429,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function right = exec.Pop() as Function;
-                Function left = exec.Pop() as Function;
+                Function right = exec.TypedPop<Function>();
+                Function left = exec.TypedPop<Function>();
                 ComposedFunction f = new ComposedFunction(left, right);
                 exec.Push(f);
             }
@@ -430,7 +459,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Pop() as FList;
+                FList list = exec.TypedPop<FList>();
                 Type t = exec.Peek().GetType();
                 FList iter = list.GetIter();
                 while (!iter.IsEmpty())
@@ -466,8 +495,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function cond = exec.Pop() as Function;
-                Function body = exec.Pop() as Function;
+                Function cond = exec.TypedPop<Function>();
+                Function body = exec.TypedPop<Function>();
 
                 cond.Eval(exec);
                 while ((bool)exec.Pop())
@@ -487,8 +516,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function onfalse = exec.Pop() as Function;
-                Function ontrue = exec.Pop() as Function;
+                Function onfalse = exec.TypedPop<Function>();
+                Function ontrue = exec.TypedPop<Function>();
 
                 if ((bool)exec.Pop())
                 {
@@ -555,8 +584,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function c = exec.Pop() as Function;
-                Function t = exec.Pop() as Function;
+                Function c = exec.TypedPop<Function>();
+                Function t = exec.TypedPop<Function>();
                 object[] stkCopy = new object[exec.GetStack().Count];
                 exec.GetStack().CopyTo(stkCopy);
                 try
@@ -744,8 +773,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Type t = exec.Pop() as Type;
-                Type u = exec.Pop() as Type;
+                Type t = exec.TypedPop<Type>();
+                Type u = exec.TypedPop<Type>();
                 exec.Push(t.Equals(u) || u.Equals(t));
             }
         }
@@ -800,22 +829,22 @@ namespace Cat
         public class GtInt : PrimitiveFunction
         {
             public GtInt() : base("gt_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Push(exec.PopInt() <= exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() > exec.PopInt()); }
         }
         public class LtInt : PrimitiveFunction
         {
             public LtInt() : base("lt_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Push(exec.PopInt() >= exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() < exec.PopInt()); }
         }
         public class GtEqInt : PrimitiveFunction
         {
             public GtEqInt() : base("gteq_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Push(exec.PopInt() < exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() >= exec.PopInt()); }
         }
         public class LtEqInt : PrimitiveFunction
         {
             public LtEqInt() : base("lteq_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Push(exec.PopInt() > exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap();  exec.Push(exec.PopInt() <= exec.PopInt()); }
         }
         #endregion
 
@@ -1059,7 +1088,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 int n = exec.PopInt();
-                Stream f = exec.Peek() as Stream;
+                Stream f = exec.TypedPeek<Stream>();
                 byte[] ab = new byte[n];
                 f.Read(ab, 0, n);
                 exec.Push(new MArray<byte>(ab)); 
@@ -1073,9 +1102,9 @@ namespace Cat
             { }
 
             public override void Eval(Executor exec)
-            {                
-                MArray<byte> mb = exec.Pop() as MArray<byte>;
-                Stream f = exec.Peek() as Stream;
+            {
+                MArray<byte> mb = exec.TypedPop<MArray<byte>>();
+                Stream f = exec.TypedPeek<Stream>();
                 f.Write(mb.m, 0, mb.Count());
             }
         }
@@ -1088,7 +1117,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Stream f = exec.Pop() as Stream;
+                Stream f = exec.TypedPop<Stream>();
                 f.Close();
                 f.Dispose();
             }
@@ -1117,7 +1146,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Object key = exec.Pop();
-                HashList hash = exec.Peek() as HashList;
+                HashList hash = exec.TypedPeek<HashList>();
                 Object value = hash.Get(key);
                 exec.Push(value);
             }
@@ -1133,7 +1162,7 @@ namespace Cat
             {
                 Object value = exec.Pop();
                 Object key = exec.Pop();
-                HashList hash = exec.Pop() as HashList;
+                HashList hash = exec.TypedPop<HashList>();
                 exec.Push(hash.Set(key, value));
             }
         }
@@ -1148,7 +1177,7 @@ namespace Cat
             {
                 Object value = exec.Pop();
                 Object key = exec.Pop();
-                HashList hash = exec.Pop() as HashList;
+                HashList hash = exec.TypedPop<HashList>();
                 exec.Push(hash.Add(key, value));
             }
         }
@@ -1162,7 +1191,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Object key = exec.Pop();
-                HashList hash = exec.Peek() as HashList;
+                HashList hash = exec.TypedPeek<HashList>();
                 exec.Push(hash.ContainsKey(key));
             }
         }
@@ -1175,7 +1204,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                HashList hash = exec.Pop() as HashList;
+                HashList hash = exec.TypedPop<HashList>();
                 exec.Push(hash.ToArray());
             }
         }
@@ -1190,10 +1219,10 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                f.Eval(Executor.Aux);
-                exec.Push(Executor.Aux.GetStack().ToList());
-                Executor.Aux.GetStack().Clear();
+                Function f = exec.TypedPop<Function>();
+                f.Eval(GetExecutor());
+                exec.Push(GetExecutor().GetStack().ToList());
+                GetExecutor().GetStack().Clear();
             }
         }
 
@@ -1205,7 +1234,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Peek() as FList;
+                FList list = exec.TypedPeek<FList>();
                 exec.Push(list.IsEmpty());
             }
         }
@@ -1218,7 +1247,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Peek() as FList;
+                FList list = exec.TypedPeek<FList>();
                 exec.Push(list.Count());
             }
         }
@@ -1231,8 +1260,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                int n = (int)exec.Pop();
-                FList list = exec.Peek() as FList;
+                int n = exec.PopInt();
+                FList list = exec.TypedPeek<FList>();
                 exec.Push(list.Nth(n));
             }
         }
@@ -1246,8 +1275,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function term = exec.Pop() as Function;
-                Function next = exec.Pop() as Function;
+                Function term = exec.TypedPop<Function>();
+                Function next = exec.TypedPop<Function>();
                 Object init = exec.Pop();
                 exec.Push(new Generator(init, next.ToMapFxn(), term.ToFilterFxn()));
             }
@@ -1300,7 +1329,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 object x = exec.Pop();
-                FList list = exec.Pop() as FList;
+                FList list = exec.TypedPop<FList>();
  	            exec.Push(FList.Cons(x, list));
             }
         }
@@ -1313,7 +1342,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Pop() as FList;
+                FList list = exec.TypedPop<FList>();
  	            exec.Push(list.GetHead());
             }
         }
@@ -1326,7 +1355,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Peek() as FList;
+                FList list = exec.TypedPeek<FList>();
                 exec.Push(list.GetHead());
             }
         }
@@ -1339,7 +1368,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Peek() as FList;
+                FList list = exec.TypedPeek<FList>();
  	            exec.Push(list.Last());
             }
         }
@@ -1352,7 +1381,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Pop() as FList;
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.Tail());
             }
         }
@@ -1365,7 +1394,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Peek() as FList;
+                FList list = exec.TypedPeek<FList>();
                 exec.Push(list.Tail());
             }
         }
@@ -1378,7 +1407,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Pop() as FList;
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.Tail());
                 exec.Push(list.GetHead());
             }
@@ -1392,8 +1421,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                FList list = exec.Pop() as FList;
+                Function f = exec.TypedPop<Function>();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.Map(f.ToMapFxn()));
             }
         }
@@ -1406,8 +1435,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                FList list = exec.Pop() as FList;
+                Function f = exec.TypedPop<Function>();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.Filter(f.ToFilterFxn()));
             }
         }
@@ -1419,8 +1448,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                FList list = exec.Pop() as FList;
+                Function f = exec.TypedPop<Function>();
+                FList list = exec.TypedPop<FList>();
                 FList iter = list.GetIter();
                 while (!iter.IsEmpty())
                 {
@@ -1439,8 +1468,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList first = exec.Pop() as FList;
-                FList second = exec.Pop() as FList;
+                FList first = exec.TypedPop<FList>();
+                FList second = exec.TypedPop<FList>();
                 exec.Push(FList.Concat(first, second));
             }
         }
@@ -1453,8 +1482,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                int n = (int)exec.Pop();
-                FList list = exec.Pop() as FList;
+                int n = exec.PopInt();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.TakeN(n));
             }
         }
@@ -1467,8 +1496,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                int n = (int)exec.Pop();
-                FList list = exec.Pop() as FList;
+                int n = exec.PopInt();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.DropN(n));
             }
         }
@@ -1481,9 +1510,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                int count = (int)exec.Pop();
-                int n = (int)exec.Pop();
-                FList list = exec.Pop() as FList;
+                int count = exec.PopInt();
+                int n = exec.PopInt();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.TakeRange(n, count));
             }
         }
@@ -1496,8 +1525,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                FList list = exec.Pop() as FList;
+                Function f = exec.TypedPop<Function>();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.TakeWhile(f.ToFilterFxn()));
             }
         }
@@ -1510,8 +1539,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                FList list = exec.Pop() as FList;
+                Function f = exec.TypedPop<Function>();
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.DropWhile(f.ToFilterFxn()));
             }
         }
@@ -1524,8 +1553,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                FList list = exec.Peek() as FList;
+                Function f = exec.TypedPop<Function>();
+                FList list = exec.TypedPeek<FList>();
                 exec.Push(list.CountWhile(f.ToFilterFxn()));
             }
         }
@@ -1539,9 +1568,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.Pop() as Function;
-                int count = (int)exec.Pop();
-                int n = (int)exec.Pop();
+                Function f = exec.TypedPop<Function>();
+                int count = exec.PopInt();
+                int n = exec.PopInt();
                 exec.Push(FList.RangeGen(f.ToRangeGenFxn(), n, count));
             }
         }
@@ -1568,7 +1597,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.Pop() as FList;
+                FList list = exec.TypedPop<FList>();
                 exec.Push(list.Flatten());
             }
         }
@@ -1583,16 +1612,16 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                int n = (int)exec.Pop();
+                int n = exec.PopInt();
                 Object o = exec.Pop();
                 if (exec.Peek() is FMutableList)
                 {
-                    FMutableList list = exec.Peek() as FMutableList;
+                    FMutableList list = exec.TypedPeek<FMutableList>();
                     list.Set(n, o);
                 }
                 else
                 {
-                    FList list = exec.Pop() as FList;
+                    FList list = exec.TypedPop<FList>();
                     FMutableList mut = new MArray<Object>(list);
                 }
             }

@@ -4,7 +4,6 @@ define pattern0
 define pattern1
 { [blue pc [100 sq 15 tr 10 fd] 24 repeat] render }
 
-/*
 define fractal0 : (int -> )
 {
   dup sq 15 tr           // draw a square
@@ -44,4 +43,3 @@ define demo
 {
   demo2
 }
-*/

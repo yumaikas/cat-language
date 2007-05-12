@@ -80,10 +80,10 @@ define gteq : ('a 'a -> bool)
 define neq
 { eq not }
 
-// Increment a value (sometimes called succ or successor)
+// Increment a value
 define inc : (int -> int) { 1 add }
 
-// Decrement a value (sometimes called pred or predecesssor)
+// Decrement a value
 define dec : (int -> int) { 1 sub }
 
 // Multiply a value by itself
@@ -563,3 +563,19 @@ define qsort : (list -> list)
   [[swap cons] dip cat]
   bin_rec
 }
+
+//========================================================================================
+// Fix-Point Combinators
+//
+// Learn about fixed-point combinators here:
+//   http://okmij.org/ftp/Computation/fixed-point-combinators.html
+//
+
+// A fix point combinator (like the Y combinator)
+// Fix applies a function to another function recursively.
+define fix { dup qv [fix] compose swap eval }
+
+// The U fixed-point combinator, also known as Turing's
+// fix point combinator.
+define U { dup eval }
+

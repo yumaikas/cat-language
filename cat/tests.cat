@@ -416,11 +416,9 @@ define test4
 define test5
 {
   [1.0 2.0 <=] test
-  [1 2.0 <=] test
-  [1.0 2 <=] test
+  [1.0 2.0 <=] test
   [2.0 1.0 >=] test
-  [2 1.0 >=] test
-  [2.0 1 >=] test
+  [2.0 1.0 >=] test
   [1.0 1.0 + 1.0 1.0 + eq] test
 }
 
@@ -439,7 +437,7 @@ define test6
   [255 str "255" eq] test
   [255 hex_str "ff" eq] test
   [255 bin_str "11111111" eq] test
-  [0x234 byte 0x34 byte eq] test
+  [0x234 to_byte 0x34 to_byte eq] test
 }
 
 define test7
@@ -459,14 +457,8 @@ define test7
   [0 byte_block count nip 0 eq] test
   [1 byte_block count nip 1 eq] test
   [99 byte_block count nip 99 eq] test
-  [42 byte_block 13 nth nip 0 byte eq] test
-  [42 byte_block 25 byte 13 set_at 13 nth nip 25 byte eq] test
-
-  // Note: I would have expected the following line to work
-  // [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 byte eq] test
-  // but it doesn't. For some reason integer addition is being chosen over
-  // byte addition. This is a bug that I will have to fix later on.
-  [4 byte_block 12 byte 1 set_at 30 byte 2 set_at sum 42 eq] test
+  [42 byte_block 13 nth nip 0 to_byte eq] test
+  [42 byte_block 25 to_byte 13 set_at 13 nth nip 25 to_byte eq] test
 }
 
 define test_io
@@ -474,8 +466,8 @@ define test_io
   temp_file dup
   file_writer
   2 byte_block
-  0xf1 byte 0 set_at
-  0xa9 byte 1 set_at
+  0xf1 to_byte 0 set_at
+  0xa9 to_byte 1 set_at
   write_bytes
   close_stream
   file_reader
@@ -528,4 +520,31 @@ define run_tests
   test6
   test7
   "tests completed successfully" writeln
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Fixpoint combinator tests
+
+define fix_fact_step
+{ over 0 eq [pop2 1] [[dup dec] dip eval *] if }
+
+define fix_fact
+{ [fix_fact_step] fix }
+
+define fix_test
+{
+  "expect 120 " writeln
+  5 fix_fact writeln
+}
+
+define u_fact_step
+{ over 0 eq [pop2 1] [[dup dec] dip U *] if }
+
+define u_fact
+{ [u_fact_step] U }
+
+define u_test
+{
+  "expect 120 " writeln
+  5 u_fact writeln
 }
