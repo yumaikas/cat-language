@@ -30,22 +30,6 @@ namespace Cat
         {
             return Seq(CharSeq(s), EOW(), WS()); 
         }
-        public static Rule LineComment() 
-        {
-            return Seq(CharSeq("//"), NoFail(WhileNot(AnyChar(), NL()), "expected a new line")); 
-        }
-        public static Rule FullComment()
-        {
-            return Seq(CharSeq("/*"), WhileNot(AnyChar(), CharSeq("*/")));
-        }
-        public static Rule Comment()
-        {
-            return Choice(FullComment(), LineComment());
-        }
-        public static Rule WS()
-        {
-            return Star(Choice(CharSet(" \t\n\r"), Comment()));
-        }
         public static Rule Quote() 
         {
             // Note the usage of Delay which breaks circular references in the grammar
@@ -158,7 +142,7 @@ namespace Cat
         }
         public static Rule Arrow()
         {
-            return Choice(Token("->"), Token("~>"));
+            return AstNode("arrow", Choice(Token("->"), Token("~>")));
         }
         public static Rule FxnType()
         {

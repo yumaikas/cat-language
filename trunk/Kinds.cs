@@ -234,6 +234,7 @@ namespace Cat
     {
         CatStackKind mProd;
         CatStackKind mCons;
+        bool mbSideEffects;
 
         // This is for simple memoization of results from calling CreateFxnType
         static Dictionary<string, CatFxnType> gFxnTypePool = new Dictionary<string, CatFxnType>();
@@ -255,23 +256,31 @@ namespace Cat
             return ret;
         }
 
-        public CatFxnType(CatStackKind cons, CatStackKind prod)
+        public CatFxnType(CatStackKind cons, CatStackKind prod, bool bSideEffects)
         {
             AddToConsumption(cons);
             AddToProduction(prod);
+            mbSideEffects = bSideEffects;
         }
 
         public CatFxnType()
         {
             CatStackVar rho = new CatStackVar("R");
+            mbSideEffects = false;
             mCons = rho;
             mProd = rho;
         }
 
         public CatFxnType(AstFxnTypeNode node)
         {
+            mbSideEffects = node.HasSideEffects();
             mCons = CreateStackFromNode(node.mCons);
             mProd = CreateStackFromNode(node.mProd);
+        }
+
+        public bool HasSideEffects()
+        {
+            return mbSideEffects;
         }
 
         public int GetMaxProduction()
@@ -340,7 +349,14 @@ namespace Cat
 
         public override string ToString()
         {
-            return "(" + GetCons().ToString() + " -> " + GetProd().ToString() + ")";
+            if (mbSideEffects)
+            {
+                return "(" + GetCons().ToString() + " ~> " + GetProd().ToString() + ")";
+            }
+            else
+            {
+                return "(" + GetCons().ToString() + " -> " + GetProd().ToString() + ")";
+            }
         }
     }
 

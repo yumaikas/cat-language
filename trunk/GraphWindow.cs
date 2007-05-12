@@ -32,6 +32,15 @@ namespace Cat
             mDrawer = new Drawer(mExec);
             // register the drawing object with the executor
             Scope scope = mExec.GetGlobalScope();
+            
+            // TODO: Problem: a dummy drawer object was already created.
+            // options, remove or replace all functions. 
+            // or have a single global drawer object that delegates to the 
+            // correct place. The "drawer" object could be static.
+            // Another problem, at least it used to be, was the inability
+            // to define new functions and use them. 
+            // Perhaps two executors is not the correct thing to do? 
+            // there is lots of global data. 
             scope.RegisterObject(mDrawer);
             
             // It is important that we override the render function.
