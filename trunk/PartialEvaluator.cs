@@ -10,15 +10,15 @@ namespace Cat
         {
             if (o is Int32)
             {
-                return new IntFunction((int)o);
+                return new PushInt((int)o);
             }
             else if (o is Double)
             {
-                return new FloatFunction((double)o);
+                return new PushFloat((double)o);
             }
             else if (o is String)
             {
-                return new StringFunction((string)o);
+                return new PushString((string)o);
             }
             else if (o is Boolean)
             {

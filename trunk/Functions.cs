@@ -31,6 +31,7 @@ namespace Cat
         #region Fields
         public string msName = "_unnamed_"; 
         public string msDesc = "";
+        public CatFxnType mpFxnType;
         private Executor mExec;
         #endregion
 
@@ -56,6 +57,10 @@ namespace Cat
             else
                 return GetFxnType().ToString();
         }
+        public CatFxnType GetFxnType()
+        {
+            return mpFxnType;
+        }
         public Executor GetExecutor()
         {
             if (mExec == null)
@@ -64,10 +69,6 @@ namespace Cat
         }
 
         #region virtual functions
-        public virtual CatFxnType GetFxnType()
-        {
-            return null;
-        }
         public virtual void Expand(List<Function> fxns)
         {
             fxns.Add(this);
@@ -218,19 +219,39 @@ namespace Cat
 
         #endregion
     }
-  
+
+    public class PushValue<T> : Function
+    {
+        T mValue;
+        public PushValue(T x)
+        {
+            mValue = x;
+        }
+        public T GetValue()
+        {
+            return mValue;
+        }
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.Push(GetValue());
+        }
+        #endregion
+    }
+
     /// <summary>
     /// This is a function that pushes an integer onto the stack.
     /// </summary>
-    public class IntFunction : Function
+    public class PushInt : Function
     {
         int mnValue;
         static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R int)");
             
-        public IntFunction(int x) 
+        public PushInt(int x) 
         {
             msName = x.ToString();
             mnValue = x;
+            mpFxnType = gpFxnType;
         }
         public int GetValue()
         {
@@ -241,24 +262,21 @@ namespace Cat
         { 
             exec.Push(GetValue());
         }
-        public override CatFxnType GetFxnType()
-        {
-            return gpFxnType;
-        }
         #endregion 
     }
 
     /// <summary>
     /// This is a function that pushes an integer onto the stack.
     /// </summary>
-    public class FloatFunction : Function
+    public class PushFloat : Function
     {
         double mdValue;
         static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R double)");
-        public FloatFunction(double x)
+        public PushFloat(double x)
         {
             msName = x.ToString();
             mdValue = x;
+            mpFxnType = gpFxnType;
         }
         public double GetValue()
         {
@@ -269,24 +287,21 @@ namespace Cat
         {
             exec.Push(GetValue());
         }
-        public override CatFxnType GetFxnType()
-        {
-            return gpFxnType;
-        }
         #endregion
     }
 
     /// <summary>
     /// This is a function that pushes a string onto the stack.
     /// </summary>
-    public class StringFunction : Function
+    public class PushString : Function
     {
         string msValue;
-        CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R string)");
-        public StringFunction(string x) 
+        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R string)");
+        public PushString(string x) 
         {
             msName = "\"" + x + "\"";
             msValue = x;
+            mpFxnType = gpFxnType;
         }
         public string GetValue()
         {
@@ -297,24 +312,21 @@ namespace Cat
         {
             exec.Push(GetValue());
         }
-        public override CatFxnType GetFxnType()
-        {
-            return gpFxnType;
-        }
         #endregion
     }
 
     /// <summary>
     /// This is a function that pushes a string onto the stack.
     /// </summary>
-    public class CharFunction : Function
+    public class PushChar : Function
     {
         char mcValue;
-        CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R char)");
-        public CharFunction(char x)
+        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R char)");
+        public PushChar(char x)
         {
             msName = x.ToString();
             mcValue = x;
+            mpFxnType = gpFxnType;
         }
         public char GetValue()
         {
@@ -325,40 +337,7 @@ namespace Cat
         {
             exec.Push(GetValue());
         }
-        public override CatFxnType GetFxnType()
-        {
-            return gpFxnType;
-        }
         #endregion 
-    }
-
-    /// <summary>
-    /// This class represents a dynamically created function, 
-    /// e.g. the result of calling the quote function.
-    /// </summary>
-    public class QuoteValue : Function
-    {
-        Object mpValue;
-        CatFxnType gpFxnType = CatFxnType.Create("('R 'a -> 'R ('S -> 'S 'a))");
-        public QuoteValue(Object x) 
-        {
-            mpValue = x;
-            msName = mpValue.ToString();
-        }
-        public Object GetValue()
-        {
-            return mpValue;
-        }
-        #region overrides
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
-        }
-        public override CatFxnType GetFxnType()
-        {
-            return gpFxnType;
-        }
-        #endregion
     }
 
     /// <summary>
@@ -379,6 +358,12 @@ namespace Cat
                 msName += mChildren[i].GetName();
             }
             msName += "]";
+
+            CatFxnType childType = TypeInferer.Infer(mChildren, true);
+            if (childType != null)
+                mpFxnType = new CatQuotedFxnType(childType);
+            else
+                mpFxnType = CatFxnType.Create("('R -> 'R ('A -> 'B))");
         }
 
         public override void Eval(Executor exec)
@@ -397,7 +382,7 @@ namespace Cat
             foreach (Function f in GetChildren())
                 f.Expand(list);
             fxns.Add(new Quotation(list));
-        }
+        }        
     }
 
     public class QuotedFunction : Function
@@ -406,7 +391,7 @@ namespace Cat
         
         public QuotedFunction(List<Function> children)
         {
-            mChildren = children.GetRange(0, children.Count);
+            mChildren = new List<Function>(children.ToArray());
             msDesc = "anonymous function";
             msName = "";
             for (int i = 0; i < mChildren.Count; ++i)
@@ -414,6 +399,25 @@ namespace Cat
                 if (i > 0) msName += " ";
                 msName += mChildren[i].GetName();
             }
+
+            mpFxnType = TypeInferer.Infer(mChildren, true);
+        }
+
+        public QuotedFunction(Function f)
+        {
+            mChildren = new List<Function>();
+            mChildren.Add(f);
+        }
+
+        public QuotedFunction(QuotedFunction first, QuotedFunction second)
+        {
+            mChildren = new List<Function>(first.GetChildren().ToArray());
+            mChildren.AddRange(second.GetChildren().ToArray());
+
+            msDesc = "anonymous composed function";
+            msName = "";
+
+            mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), true); ;
         }
 
         public override void Eval(Executor exec)
@@ -435,24 +439,14 @@ namespace Cat
     }
 
     /// <summary>
-    /// This class represents a function, created by calling
-    /// compose.
+    /// This class represents a dynamically created function, 
+    /// e.g. the result of calling the quote function.
     /// </summary>
-    public class ComposedFunction : Function
+    public class QuotedValue : QuotedFunction
     {
-        Function mFirst;
-        Function mSecond;
-        public ComposedFunction(Function first, Function second)
+        public QuotedValue(Object x)
+            : base(new PushValue<Object>(x))
         {
-            mFirst = first;
-            mSecond = second;
-            msName = mFirst.GetName() + " " + mSecond.GetName();
-            msDesc = "composed function";
-        }
-        public override void Eval(Executor exec)
-        {
-            mFirst.Eval(exec);
-            mSecond.Eval(exec);
         }
     }
 
@@ -470,12 +464,12 @@ namespace Cat
 
         public void AddFunctions(List<Function> terms)
         {
-            // TODO: eventually get the type from the annotation.
-            // we then have to either verify it or trust it.
             mTerms = terms;
             msDesc = "";
             foreach (Function f in mTerms)
                 msDesc += f.GetName() + " ";
+
+            mpFxnType = TypeInferer.Infer(terms, true);
         }
 
         public override void Eval(Executor exec)
@@ -503,7 +497,6 @@ namespace Cat
     {
         MethodInfo mMethod;
         Object mObject;
-        CatFxnType mFxnType;
 
         public Method(Object o, MethodInfo mi)
             : base(mi.Name, MethodToTypeString(mi))
@@ -511,7 +504,7 @@ namespace Cat
             mMethod = mi;
             mObject = o;
             string sType = MethodToTypeString(mi);
-            mFxnType = CatFxnType.Create(sType);
+            mpFxnType = CatFxnType.Create(sType);
         }
 
         public override void Eval(Executor exec)
@@ -526,11 +519,6 @@ namespace Cat
             Object ret = mMethod.Invoke(mObject, a);
             if (!mMethod.ReturnType.Equals(typeof(void)))
                 exec.Push(ret);
-        }
-
-        public override CatFxnType GetFxnType()
-        {
-            return mFxnType;
         }
 
         public Object GetObject()
@@ -560,17 +548,10 @@ namespace Cat
 
     public abstract class PrimitiveFunction : Function
     {
-        CatFxnType mpType;
-
         public PrimitiveFunction(string sName, string sType, string sDesc)
             : base(sName, sDesc)
         {
-            mpType = CatFxnType.Create(sType);
-        }
-
-        public override CatFxnType  GetFxnType()
-        {
-            return mpType;
+            mpFxnType = CatFxnType.Create(sType);
         }
     }
 }

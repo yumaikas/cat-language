@@ -548,3 +548,22 @@ define u_test
   "expect 120 " writeln
   5 u_fact writeln
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Type tests
+
+define type_test
+{
+  "expected: " write
+  [write] dip
+  " " write
+  type_of
+  writeln
+}
+
+define tests_types
+{
+  "( -> int int)" [42 dup] type_test
+}
+
+

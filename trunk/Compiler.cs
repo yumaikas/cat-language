@@ -105,11 +105,11 @@ namespace Cat
             if (f == null)
                 throw new Exception("null pointer error");
 
-            if (f is IntFunction)
+            if (f is PushInt)
             {
                 // Push the executor
                 ilg.Emit(OpCodes.Ldarg_0);
-                int n = (f as IntFunction).GetValue();
+                int n = (f as PushInt).GetValue();
 
                 // Push a constant
                 ilg.Emit(OpCodes.Ldc_I4, n);

@@ -284,7 +284,7 @@ namespace Cat
             {
                 for (int nMacro = 0; nMacro < mMacros.Count; ++nMacro)
                 {
-                    if (nPos - nLastMatchPos > nPeephole)
+                    if ((nPos - nLastMatchPos) + 1 > nPeephole)
                         nLastMatchPos = nPos - nPeephole;
 
                     MacroMatch m = MacroMatch.Create(mMacros[nMacro], fxns, nLastMatchPos, nPos, nMaxSubExpr);

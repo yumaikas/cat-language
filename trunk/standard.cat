@@ -44,34 +44,34 @@ define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
 // Dynamically dispatched functions
 
 define neg : ('a -> 'a)
-{ [int [neg_int] pair double [neg_dbl] pair] to_list dispatch }
+{ [int [neg_int] pair double [neg_dbl] pair] to_list dispatch1 }
 
 define add : ('a 'a -> 'a)
-{ [int [add_int] pair double [add_dbl] pair byte [add_byte] pair bit [add_bit] pair string [add_str] pair] to_list dispatch }
+{ [int [add_int] pair double [add_dbl] pair byte [add_byte] pair bit [add_bit] pair string [add_str] pair] to_list dispatch2 }
 
 define sub : ('a 'a -> 'a)
-{ [int [sub_int] pair double [sub_dbl] pair byte [sub_byte] pair bit [sub_bit] pair] to_list dispatch }
+{ [int [sub_int] pair double [sub_dbl] pair byte [sub_byte] pair bit [sub_bit] pair] to_list dispatch2 }
 
 define mul : ('a 'a -> 'a)
-{ [int [mul_int] pair double [mul_dbl] pair byte [mul_byte] pair bit [mul_bit] pair] to_list dispatch }
+{ [int [mul_int] pair double [mul_dbl] pair byte [mul_byte] pair bit [mul_bit] pair] to_list dispatch2 }
 
 define mod : ('a 'a -> 'a)
-{ [int [mod_int] pair double [mod_dbl] pair byte [mod_byte] pair bit [mod_bit] pair] to_list dispatch }
+{ [int [mod_int] pair double [mod_dbl] pair byte [mod_byte] pair bit [mod_bit] pair] to_list dispatch2 }
 
 define div : ('a 'a -> 'a)
-{ [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch }
+{ [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch2 }
 
 define lt : ('a 'a -> bool)
-{ [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch }
+{ [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch2 }
 
 define gt : ('a 'a -> bool)
-{ [int [gt_int] pair double [gt_dbl] pair byte [gt_byte] pair bit [gt_bit] pair string [lt_str] pair] to_list dispatch }
+{ [int [gt_int] pair double [gt_dbl] pair byte [gt_byte] pair bit [gt_bit] pair string [lt_str] pair] to_list dispatch2 }
 
 define lteq : ('a 'a -> bool)
-{ [int [lteq_int] pair double [lteq_dbl] pair byte [lteq_byte] pair bit [lteq_bit] pair string [lt_str] pair] to_list dispatch }
+{ [int [lteq_int] pair double [lteq_dbl] pair byte [lteq_byte] pair bit [lteq_bit] pair string [lt_str] pair] to_list dispatch2 }
 
 define gteq : ('a 'a -> bool)
-{ [int [gteq_int] pair double [gteq_dbl] pair byte [gteq_byte] pair bit [gteq_bit] pair string [lt_str] pair] to_list dispatch }
+{ [int [gteq_int] pair double [gteq_dbl] pair byte [gteq_byte] pair bit [gteq_bit] pair string [lt_str] pair] to_list dispatch2 }
 
 //=============================================================================
 // Mathematical definitions
@@ -578,4 +578,3 @@ define fix { dup qv [fix] compose swap eval }
 // The U fixed-point combinator, also known as Turing's
 // fix point combinator.
 define U { dup eval }
-

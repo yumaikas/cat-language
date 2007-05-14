@@ -24,6 +24,43 @@ namespace Cat
         }
     }
 
+    /// <summary>
+    /// This is used to as a base class for the variou dynamic function dispatch functions
+    /// It can not be placed with in the Primitives class, due to some design flaw.
+    /// </summary>
+    public class Dispatch : PrimitiveFunction
+    {
+        public Dispatch(string sName, string sType)
+            : base(sName, sType, "dispatches a function based on the type of the top stack item")
+        { }
+
+        public override void Eval(Executor exec)
+        {
+            FList list = exec.TypedPop<FList>();
+            Type t = exec.Peek().GetType();
+            FList iter = list.GetIter();
+            while (!iter.IsEmpty())
+            {
+                Pair p = iter.GetHead() as Pair;
+                if (p == null)
+                    throw new Exception("dispatch requires a list of pairs; types and functiosn");
+                Type u = p.Second() as Type;
+                if (u == null)
+                    throw new Exception("dispatch requires a list of pairs; types and functiosn");
+                if (u.IsAssignableFrom(t))
+                {
+                    Function f = p.First() as Function;
+                    if (f == null)
+                        throw new Exception("dispatch requires a list of pairs; types and functiosn");
+                    f.Eval(exec);
+                    return;
+                }
+                iter = iter.GotoNext();
+            }
+            throw new Exception("could not find appropriate function to dispatch to");
+        }
+    }
+
     public class MetaCommands
     {
         public class Load : PrimitiveFunction
@@ -163,24 +200,17 @@ namespace Cat
             }
         }
 
-        public class Optimize : PrimitiveFunction
+        public class ApplyMacros : PrimitiveFunction
         {
-            public Optimize()
-                : base("#oz", "('A -> 'B) ~> ('A -> 'B)", "applies macros to a function")
+            public ApplyMacros()
+                : base("#m", "('A -> 'B) ~> ('A -> 'B)", "applies macros to a function")
             { }
 
             public override void Eval(Executor exec)
             {
-                // This only scratches the surface of what is possible. 
-                // One of the goals is to reduce the byte-code as much as possible first. 
-                // I wonder also if I can identify common sequences and reduce the size this way first.
-
                 QuotedFunction f = exec.TypedPop<QuotedFunction>();
                 List<Function> list = new List<Function>(f.GetChildren().ToArray());
-                Macros.GetGlobalMacros().ApplyMacros(list);
-               
-                Macros.GetGlobalMacros().ApplyMacros(list);
-                
+                Macros.GetGlobalMacros().ApplyMacros(list);               
                 QuotedFunction q = new QuotedFunction(list);
                 exec.Push(q);
             }
@@ -189,7 +219,7 @@ namespace Cat
         public class Compile : PrimitiveFunction
         {
             public Compile()
-                : base("#compile", "(('A -> 'B) -> Compilation)", "compiles a function")
+                : base("#c", "(('A -> 'B) -> Compilation)", "compiles a function")
             { 
             }
 
@@ -429,9 +459,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function right = exec.TypedPop<Function>();
-                Function left = exec.TypedPop<Function>();
-                ComposedFunction f = new ComposedFunction(left, right);
+                QuotedFunction right = exec.TypedPop<QuotedFunction>();
+                QuotedFunction left = exec.TypedPop<QuotedFunction>();
+                QuotedFunction f = new QuotedFunction(left, right);
                 exec.Push(f);
             }
         }
@@ -446,43 +476,32 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Object o = exec.Pop();
-                QuoteValue q = new QuoteValue(o);
+                QuotedValue q = new QuotedValue(o);
                 exec.Push(q);
             }
         }
 
-        public class Dispatch : PrimitiveFunction
+        public class Dispatch3 : Dispatch
         {
-            public Dispatch()
-                : base("dispatch", "('A type list -> 'C)", "dispatches a function based on the type of the top stack item")
+            public Dispatch3()
+                : base("dispatch3", "(var var var list -> var)")
             { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPop<FList>();
-                Type t = exec.Peek().GetType();
-                FList iter = list.GetIter();
-                while (!iter.IsEmpty())
-                {
-                    Pair p = iter.GetHead() as Pair;
-                    if (p == null) 
-                        throw new Exception("dispatch requires a list of pairs; types and functiosn");
-                    Type u = p.Second() as Type;
-                    if (u == null) 
-                        throw new Exception("dispatch requires a list of pairs; types and functiosn");
-                    if (u.IsAssignableFrom(t))
-                    {
-                        Function f = p.First() as Function;
-                        if (f == null) 
-                            throw new Exception("dispatch requires a list of pairs; types and functiosn");
-                        f.Eval(exec);
-                        return;
-                    }
-                    iter = iter.GotoNext();
-                }
-                throw new Exception("could not find appropriate function to dispatch to");
-            }
         }
+
+        public class Dispatch2 : Dispatch
+        {
+            public Dispatch2()
+                : base("dispatch2", "(var var list -> var)")
+            { }
+        }
+
+        public class Dispatch1 : Dispatch
+        {
+            public Dispatch1()
+                : base("dispatch1", "(var list -> var)")
+            { }
+        }
+
         #endregion
 
         #region control flow primitives 
@@ -535,7 +554,7 @@ namespace Cat
             // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
             // I may ignore it later on.
             public BinRec()
-                : base("bin_rec", "('a cond=('a -> 'a bool) base=('a -> 'b) arg_rel=('a -> 'C 'a 'a) result_rel('C 'b 'b -> 'b) -> 'b)",
+                : base("bin_rec", "('a ('a -> 'a bool) ('a -> 'b) ('a -> 'C 'a 'a) ('C 'b 'b -> 'b) -> 'b)",
                     "execute a binary recursion process")
             { }
 
@@ -682,10 +701,20 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Object o = exec.Peek();
-                Type t = o.GetType();
                 if (o is FList)
-                    t = typeof(FList);
-                exec.Push(t);
+                {
+                    // HACK: this is not the correct type! 
+                    exec.Push(typeof(FList));
+                }
+                else if (o is Function)
+                {
+                    exec.Push((o as Function).GetFxnType());
+                }
+                else
+                {
+                    // HACK: this is not the correct type! 
+                    exec.Push(o.GetType());
+                }
             }
         }
         public class TypeType : PrimitiveFunction
