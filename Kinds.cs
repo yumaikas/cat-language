@@ -13,39 +13,7 @@ namespace Cat
     /// </summary>
     public class CatKind : IEqualityComparer<CatKind>
     {
-        public static CatStackKind CreateStackKind(CatStackKind rest, CatKind top)
-        {
-            if (top is CatTypeKind)
-            {
-                return new CatSimpleStackKind(rest, top as CatTypeKind);
-            }
-            else if (top == null)
-            {
-                return rest;
-            }
-            else if (top is CatStackKind)
-            {
-                if ((rest == null) || (rest.IsEmpty()))
-                {
-                    return top as CatStackKind;
-                }
-
-                throw new Exception("stacks can not be placed on stacks");
-            }
-            else
-            {
-                throw new Exception("unrecognized kind " + top.ToString());
-            }
-        }
-        public CatStackKind CreateStackFromNode(AstStackNode node)
-        {
-            CatStackKind ret = new CatEmptyStackKind();
-            foreach (AstTypeNode t in node.mTypes)
-                ret = CreateStackKind(ret, CreateKindFromNode(t));
-            return ret;
-        }
-
-        public CatKind CreateKindFromNode(AstTypeNode node)
+        public static CatKind Create(AstTypeNode node)
         {
             if (node is AstSimpleTypeNode)
             {
@@ -75,8 +43,7 @@ namespace Cat
 
         public override string ToString()
         {
-            // This should always be overridden
-            return "error";
+            throw new Exception("ToString must be overridden");
         }
 
         #region IEqualityComparer<CatKind> Members
@@ -93,8 +60,12 @@ namespace Cat
 
         public override bool Equals(object obj)
         {
-            // TODO: refine this so that it is more accurate.
-            return obj.ToString() == this.ToString();
+            // TODO: double check that this is correct
+            string s1 = obj.ToString();
+            string s2 = this.ToString();
+            if (s1.Equals("var") || s2.Equals("var"))
+                return true;
+            return s1.Equals(s2);
         }
 
         public override int GetHashCode()
@@ -129,111 +100,130 @@ namespace Cat
         }
     }
 
-    public abstract class CatStackKind : CatKind
+    public class CatStackKind : CatKind
     {
-        public CatStackKind()
-        { }
+    }
+
+    public class CatKindList : CatStackKind
+    {
+        List<CatKind> mList;
+
+        public CatKindList(AstStackNode node)
+        {
+            mList = new List<CatKind>();
+            foreach (AstTypeNode tn in node.mTypes)
+                mList.Add(Create(tn));
+        }
+
+        public CatKindList()
+        {
+            mList = new List<CatKind>();
+        }
+
+        public CatKindList(CatKindList k)
+        {
+            mList = new List<CatKind>(k.mList);
+        }
+
+        public CatKindList(List<CatKind> list)
+        {
+            mList = new List<CatKind>(list);
+        }
+
+        public List<CatKind> GetKinds()
+        {
+            return mList;
+        }
+
+        public void AddTop(CatKind k)
+        {
+            Trace.Assert(k != null);
+            if (k is CatKindList)
+            {
+                mList.AddRange((k as CatKindList).GetKinds());
+            }
+            else
+            {
+                mList.Add(k);
+            }
+        }
+
+        public void AddBottom(CatKind k)
+        {
+            Trace.Assert(k != null);
+            if (k is CatKindList)
+            {
+                mList.InsertRange(0, (k as CatKindList).GetKinds());
+            }
+            else
+            {
+                mList.Insert(0, k);
+            }
+        }
 
         public bool IsEmpty()
         {
-            return this is CatEmptyStackKind;
+            return mList.Count == 0;
         }
-
-        public abstract CatTypeKind GetTop();
-        public abstract CatStackKind GetRest();
         
-        public CatStackKind GetBottom()
+        public CatKind GetBottom()
         {
-            if (this is CatEmptyStackKind || this is CatStackVar) 
-                return this;
-            return GetRest().GetBottom();
-        }
-    }
-
-    public class CatEmptyStackKind : CatStackKind
-    {
-        public CatEmptyStackKind()
-        {
+            if (mList.Count > 0)
+                return mList[0];
+            else
+                return null;
         }
 
-        public override CatTypeKind GetTop()
+        public CatKind GetTop()
         {
-            throw new Exception("empty stacks have no top");
+            if (mList.Count > 0)
+                return mList[mList.Count - 1];
+            else
+                return null;
         }
 
-        public override CatStackKind GetRest()
+        public CatKindList GetRest()
         {
-            throw new Exception("empty stacks have no bottom");
+            return new CatKindList(mList.GetRange(0, mList.Count - 1));
         }
 
         public override string ToString()
         {
-            return "";
-        }
-    }
-
-    public class CatSimpleStackKind : CatStackKind
-    {
-        // Note: I am not sure I am happy about implementing this the way I did. 
-        // It currently behaves like a cons-list cell but I think it might 
-        // be more elegant to simply use a list of types.
-
-        public CatSimpleStackKind(CatStackKind r, CatTypeKind t)
-        {
-            Trace.Assert(r != null);
-            Trace.Assert(t != null);
-            top = t;
-            rest = r;
-        }
-
-        CatTypeKind top;
-        CatStackKind rest;
-
-        public override CatTypeKind GetTop()
-        {
-            return top;
-        }
-
-        public override CatStackKind GetRest()
-        {
-            return rest;
-        }
-
-        public override string ToString()
-        {
-            return (rest.ToString() + " " + top.ToString());
+            string ret = "";
+            foreach (CatKind k in mList)
+                ret += " " + k.ToString();
+            if (mList.Count > 0)
+                return ret.Substring(1);
+            else
+                return "";
         }
     }
 
     public class CatStackVar : CatStackKind
     {
         string msName;
+        static int gnId = 0;
 
         public CatStackVar(string s)
         {
             msName = s;
         }
 
-        public override CatTypeKind GetTop()
-        {
-            throw new Exception("stack variables have no top");
-        }
-
-        public override CatStackKind GetRest()
-        {
-            throw new Exception("stack variables have no bottom");
-        }
-
         public override string ToString()
         {
             return "'" + msName;
+        }
+
+        public static CatStackVar CreateUnique()
+        {
+            return new CatStackVar("$R" + (gnId++).ToString());
         }
     }
 
     public class CatFxnType : CatTypeKind
     {
-        CatStackKind mProd;
-        CatStackKind mCons;
+        CatKindList mProd;
+        CatKindList mCons;
         bool mbSideEffects;
 
         // This is for simple memoization of results from calling CreateFxnType
@@ -252,30 +242,41 @@ namespace Cat
                 throw new Exception("invalid number of children in abstract syntax tree");
             AstFxnTypeNode node = new AstFxnTypeNode(ast.GetChild(0));
             CatFxnType ret = new CatFxnType(node);
+
+            // Add implicit rho variables to the bottom of the production and consumption
+            if (!(ret.GetCons().GetBottom() is CatStackVar))
+            {
+                CatStackVar rho = CatStackVar.CreateUnique();
+                ret.GetCons().AddBottom(rho);
+                ret.GetProd().AddBottom(rho);
+            }
+            
             gFxnTypePool.Add(sType, ret);
             return ret;
         }
 
-        public CatFxnType(CatStackKind cons, CatStackKind prod, bool bSideEffects)
+        public CatFxnType(CatKindList cons, CatKindList prod, bool bSideEffects)
         {
-            AddToConsumption(cons);
-            AddToProduction(prod);
+            mCons = new CatKindList(cons);
+            mProd = new CatKindList(prod);
             mbSideEffects = bSideEffects;
         }
 
         public CatFxnType()
         {
-            CatStackVar rho = new CatStackVar("R");
+            CatStackVar rho = CatStackVar.CreateUnique();
             mbSideEffects = false;
-            mCons = rho;
-            mProd = rho;
+            mCons = new CatKindList();
+            mProd = new CatKindList();
+            mCons.AddTop(rho);
+            mProd.AddTop(rho);
         }
 
         public CatFxnType(AstFxnTypeNode node)
         {
             mbSideEffects = node.HasSideEffects();
-            mCons = CreateStackFromNode(node.mCons);
-            mProd = CreateStackFromNode(node.mProd);
+            mCons = new CatKindList(node.mCons);
+            mProd = new CatKindList(node.mProd);
         }
 
         public bool HasSideEffects()
@@ -285,64 +286,62 @@ namespace Cat
 
         public int GetMaxProduction()
         {
-            CatStackKind stk = mProd;
             int nCnt = 0;
 
-            // Count the number of individual types. The bottom is a stack variable.
-            while (!(stk is CatStackVar))
+            List<CatKind> list = mProd.GetKinds();
+            for (int i = list.Count - 1; i >= 0; --i)
             {
-                if (stk.IsEmpty())
-                    return nCnt;
-                stk = stk.GetRest();
+                CatKind k = list[i];
+                if (k is CatStackVar)
+                {
+                    if ((i == 0) && k.Equals(mCons.GetBottom()))
+                        return nCnt;
+                    else
+                        return -1;
+                }
                 nCnt++;
             }
 
-            CatStackKind consBottom = mCons.GetBottom();
-
-            if (stk.Equals(consBottom))
-                return nCnt;
-            else
-                return -1; 
+            return nCnt;
         }
 
         public int GetMaxConsumption()
         {
-            CatStackKind stk = mCons;
             int nCnt = 0;
 
-            // Count the number of individual types. The bottom is a stack variable.
-            while (!(stk is CatStackVar))
+            List<CatKind> list = mCons.GetKinds();
+            for (int i = list.Count - 1; i >= 0; --i)
             {
-                if (stk.IsEmpty())
-                    return nCnt;
-                stk = stk.GetRest();
+                CatKind k = list[i];
+                if (k is CatStackVar)
+                {
+                    if ((i == 0) && k.Equals(mProd.GetBottom()))
+                        return nCnt;
+                    else
+                        return -1;
+                }
                 nCnt++;
             }
 
-            CatStackKind prodBottom = mProd.GetBottom();
-
-            if (stk.Equals(prodBottom))
-                return nCnt;
-            else
-                return -1;
+            return nCnt;
         }
 
         public void AddToProduction(CatKind x)
         {
-            mProd = CreateStackKind(mProd, x);
+            mProd.AddTop(x);
         }
 
         public void AddToConsumption(CatKind x)
         {
-            mCons = CreateStackKind(mCons, x);
+            mCons.AddTop(x);
         }
 
-        public CatStackKind GetProd()
+        public CatKindList GetProd()
         {
             return mProd;
         }
 
-        public CatStackKind GetCons()
+        public CatKindList GetCons()
         {
             return mCons;
         }
@@ -364,7 +363,7 @@ namespace Cat
     {
         public CatQuotedFxnType(CatFxnType f)
         {            
-            AddToProduction(f.GetProd());
+            AddToProduction(f);
         }
     }
 

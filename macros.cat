@@ -1,3 +1,4 @@
+
 // No-op reductions
 macro { noop } => { }
 macro { id } => { }
@@ -89,7 +90,7 @@ define macro_test
   dup
   ", source " write
   write
-  #oz
+  #m
   ", result " write
   writeln
 }
@@ -125,6 +126,6 @@ define test_macros
   [1 2 3 1] [1 2 3 peek] macro_test
   [swap] [swap and] macro_test
   [[1 2 3 4] to_list] [[1 2] to_list [3 4] to_list cat] macro_test
+  [[1 +] [2 *] compose map] [[1 +] map [2 *] map] macro_test
+  [[1 + 2 *] compose map] [[1 +] [2 *] compose map] macro_test
 }
-
-

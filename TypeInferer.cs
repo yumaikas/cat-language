@@ -224,8 +224,10 @@ namespace Cat
                 return Rename(k as CatFxnType);
             else if (k is CatTypeKind)
                 return Rename(k as CatTypeKind);
-            else if (k is CatStackKind)
-                return Rename(k as CatStackKind);
+            else if (k is CatStackVar)
+                return Rename(k as CatStackVar);
+            else if (k is CatKindList)
+                return Rename(k as CatKindList);
             else
                 throw new Exception(k.ToString() + " is an unrecognized kind");
         }
@@ -237,36 +239,31 @@ namespace Cat
             return new CatFxnType(Rename(f.GetCons()), Rename(f.GetProd()), f.HasSideEffects());
         }
 
-        public CatStackKind Rename(CatStackKind s)
+        public CatKindList Rename(CatKindList s)
         {
-            if (s == null)
-                throw new Exception("Invalid null parameter to rename function");
-            if (s.IsEmpty())
+            CatKindList ret = new CatKindList();
+            foreach (CatKind k in s.GetKinds())
+                ret.AddTop(Rename(k));
+            return ret;
+        }
+
+        public CatStackKind Rename(CatStackVar s)
+        {
+            string sName = s.ToString();
+            if (mNames.ContainsKey(sName))
             {
+                CatStackKind ret = mNames[sName] as CatStackKind;
+                if (ret == null)
+                    throw new Exception(sName + " is not a stack kind");
+                return ret;
+            }
+
+            if (!mbGenerateNames)
                 return s;
-            }
-            else if (s is CatStackVar)
-            {
-                string sName = s.ToString();
-                if (mNames.ContainsKey(sName))
-                {
-                    CatStackKind ret = mNames[sName] as CatStackKind;
-                    if (ret == null)
-                        throw new Exception(sName + " is not a stack kind");
-                    return ret;
-                }
 
-                if (!mbGenerateNames)
-                    return s;
-
-                CatStackVar var = new CatStackVar(GenerateNewName(sName));
-                mNames.Add(sName, var);
-                return var;
-            }
-            else
-            {
-                return CatKind.CreateStackKind(Rename(s.GetRest()), Rename(s.GetTop()));
-            }
+            CatStackVar var = new CatStackVar(GenerateNewName(sName));
+            mNames.Add(sName, var);
+            return var;
         }
 
         public CatTypeKind Rename(CatTypeKind t)
@@ -315,42 +312,56 @@ namespace Cat
 
         static TypeInferer gInferer = new TypeInferer();
 
-        public static CatFxnType Infer(CatFxnType f, CatFxnType g)
+        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bSilent)
         {
+            Config.gbVerboseInference = !bSilent;
+
             gInferer.Initialize();
             if (f == null) return null;
             if (g == null) return null;
-            return gInferer.InferType(f, g);
+
+            try
+            {
+                return gInferer.InferType(f, g);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public static CatFxnType Infer(List<Function> f, bool bSilent)
         {
-            Config.gbVerboseInference = !bSilent;
-
-            if (f.Count == 0)
+            try
             {
-                return CatFxnType.Create("( -> )");
-            }
-            else if (f.Count == 1)
-            {
-                Function x = f[0];
-                return x.GetFxnType();
-            }
-            else
-            {
-                Function x = f[0];
-                CatFxnType ft = x.GetFxnType();
-
-                for (int i = 1; i < f.Count; ++i)
+                if (f.Count == 0)
                 {
-                    if (ft == null) 
-                        return ft;
-                    Function y = f[i];
-                    ft = TypeInferer.Infer(ft, y.GetFxnType());
+                    return CatFxnType.Create("( -> )");
                 }
-                return ft;
+                else if (f.Count == 1)
+                {
+                    Function x = f[0];
+                    return x.GetFxnType();
+                }
+                else
+                {
+                    Function x = f[0];
+                    CatFxnType ft = x.GetFxnType();
+
+                    for (int i = 1; i < f.Count; ++i)
+                    {
+                        if (ft == null)
+                            return ft;
+                        Function y = f[i];
+                        ft = TypeInferer.Infer(ft, y.GetFxnType(), bSilent);
+                    }
+                    return ft;
+                }
             }
-                                      
+            catch
+            {
+                return null;
+            }
         }
 
         public void Initialize()
@@ -393,27 +404,27 @@ namespace Cat
 
         private void AddStackVar(string s, CatStackKind t)
         {
+            // Try to avoid infinite loops.
+            if (s.Equals(t.ToString()))
+                return;
+
             if (t is CatStackVar)
             {
                 mu.AddEquality(s, t.ToString());
             }
             else
-            {
+            {                
                 if (mStackVars.ContainsKey(s))
                 {
                     CatStackKind u = mStackVars[s];
 
                     // Stack variables should never occur in the stack variable lookup.
-                    // That is what the the TheoremProver is for. 
                     Trace.Assert(!(u is CatStackVar));
 
-                    // I am just restating that "t" can't be a CatStackVar if we are in
-                    // this block of code. 
-                    Trace.Assert(!(t is CatStackVar));
+                    Trace.Assert(t is CatKindList);
+                    Trace.Assert(u is CatKindList);
 
-                    // This won't cause an infinite loop because neither t nor u are 
-                    // stack variables
-                    AddStackConstraint(t, u);
+                    AddKindListConstraint(t as CatKindList, u as CatKindList);
                 }
                 else
                 {
@@ -422,31 +433,49 @@ namespace Cat
             }
         }
 
-        private void AddStackConstraint(CatStackKind left, CatStackKind right)
+        private void AddKindConstraint(CatKind left, CatKind right)
+        {
+            throw new Exception("not implemented");
+        }
+
+        private void AddStackVarConstraint(CatStackVar left, CatStackKind right)
+        {
+            Trace.Assert(left != null);
+            Trace.Assert(right != null);
+            AddStackVar(left.ToString(), right);
+        }
+
+        private void AddKindListConstraint(CatKindList left, CatKindList right)
         {
             if (!left.IsEmpty() && !right.IsEmpty())
             {
-                if (left is CatStackVar)
+                if (left.GetTop() is CatStackVar)
                 {
-                    AddStackVar(left.ToString(), right);
+                    AddStackVarConstraint(left.GetTop() as CatStackVar, right);
                 }
-                else if (right is CatStackVar)
+                else if (right.GetTop() is CatStackVar)
                 {
-                    AddStackVar(right.ToString(), left);
+                    AddStackVarConstraint(right.GetTop() as CatStackVar, left);
                 }
-                else
+                else 
                 {
-                    AddTypeConstraint(left.GetTop(), right.GetTop());
-                    AddStackConstraint(left.GetRest(), right.GetRest());
+                    CatTypeKind leftTop = left.GetTop() as CatTypeKind;
+                    if (leftTop == null) 
+                        throw new Exception("expected either type kind or stack variable " + left.GetTop());
+                    CatTypeKind rightTop = right.GetTop() as CatTypeKind;
+                    if (rightTop == null) 
+                        throw new Exception("expected either type kind or stack variable " + right.GetTop());
+                    AddTypeConstraint(leftTop, rightTop);
+                    AddKindListConstraint(left.GetRest(), right.GetRest());
                 }
             }
             else if (left.IsEmpty())
             {
                 if (!right.IsEmpty())
                 {
-                    if (right is CatStackVar)
+                    if (right.GetTop() is CatStackVar)
                     {
-                        AddStackVar(right.ToString(), left);
+                        AddStackVar(right.GetTop().ToString(), left);
                     }
                     else
                     {
@@ -462,7 +491,7 @@ namespace Cat
                 Trace.Assert(!left.IsEmpty());
                 Trace.Assert(right.IsEmpty());
                 
-                if (left is CatStackVar)
+                if (left.GetTop() is CatStackVar)
                 {
                     AddStackVar(left.ToString(), right);
                 }
@@ -491,21 +520,30 @@ namespace Cat
             else if (x is CatFxnType)
             {
                 if (!(y is CatFxnType))
-                    throw new KindException(x, y);
+                {                    
+                    if (!y.ToString().Equals("var"))
+                        throw new KindException(x, y);
+                    return;
+                }
 
                 AddFxnConstraint(x as CatFxnType, y as CatFxnType);
             }
             else
             {
-                if (!x.ToString().Equals(y.ToString()))
+                /*
+                 * TODO: have better type comparisons.
+                 * For example: byte_block is a subtype of list 
+                 * 
+                if (!x.Equals(y.ToString()))
                     throw new KindException(x, y);
+                 */
             }
         }
 
         private void AddFxnConstraint(CatFxnType x, CatFxnType y)
         {
-            AddStackConstraint(x.GetCons(), y.GetCons());
-            AddStackConstraint(x.GetProd(), y.GetProd());
+            AddKindListConstraint(x.GetCons(), y.GetCons());
+            AddKindListConstraint(x.GetProd(), y.GetProd());
         }
 
         private void CompareTypes(CatKind x, CatKind y)
@@ -528,24 +566,17 @@ namespace Cat
         /// </summary>
         private CatFxnType InferType(CatFxnType left, CatFxnType right)
         {
-            /*
-             * not imlpemented yet, but could be a pretty effective optimization
-            string sKey = left.ToString() + "," + right.ToString();
-            if (gTypePool.ContainsKey(sKey))
-                return gTypePool[sKey];
-             */
-
             Renamer r = new Renamer();
             left = r.Rename(left);
             r.ResetNames();
             right = r.Rename(right);
            
-            CatStackKind stkRightCons = right.GetCons();
-            CatStackKind stkLeftProd = left.GetProd();
+            CatKindList stkRightCons = right.GetCons();
+            CatKindList stkLeftProd = left.GetProd();
 
             // The production of the left function must be equal to 
             // the consumption of the second function
-            AddStackConstraint(stkRightCons, stkLeftProd);
+            AddKindListConstraint(stkRightCons, stkLeftProd);
 
             if (Config.gbVerboseInference)
             {
@@ -602,14 +633,11 @@ namespace Cat
             }
 
             // The left consumption and right production make up the result type.
-            CatStackKind stkLeftCons = r.Rename(left.GetCons());
-            CatStackKind stkRightProd = r.Rename(right.GetProd());
+            CatKindList stkLeftCons = r.Rename(left.GetCons());
+            CatKindList stkRightProd = r.Rename(right.GetProd());
             
             // Finally create and return the result type
             CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd, left.HasSideEffects() || right.HasSideEffects());
-
-            if (Config.gbVerboseInference)
-                MainClass.WriteLine("Type: " + ret.ToString());
             
             return ret;
         }

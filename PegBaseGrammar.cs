@@ -492,8 +492,7 @@ namespace Peg
 
             public override string ToString()
             {
-                return "";
-                //return "[" + mFirst.ToString() + ".." + mLast.ToString() + "]";
+                return "[" + mFirst.ToString() + ".." + mLast.ToString() + "]";
             }
 
             char mFirst;
