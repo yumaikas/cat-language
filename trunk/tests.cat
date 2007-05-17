@@ -537,16 +537,25 @@ define fix_test
   5 fix_fact writeln
 }
 
-define u_fact_step
-{ over 0 eq [pop2 1] [[dup dec] dip U *] if }
+define y_fact_step
+{ over 0 eq [pop2 1] [[dup dec] dip Y *] if }
 
-define u_fact
-{ [u_fact_step] U }
+define y_fact
+{ [y_fact_step] Y }
 
-define u_test
+define y_test
 {
   "expect 120 " writeln
-  5 u_fact writeln
+  5 y_fact writeln
+}
+
+define yw : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
+{
+  [dip swap] curry swap // [[$B] dip swap] $A
+  [dip Y] curry         // [[$B] dip swap] [[$A] dip Y]
+  qv compose            // [[$B] dip swap [[$A] dip Y]]
+  [[pop] if] compose    // [[$B] dip swap [[$A] dip Y] [pop] if]
+  Y
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -565,5 +574,4 @@ define tests_types
 {
   "( -> int int)" [42 dup] type_test
 }
-
 
