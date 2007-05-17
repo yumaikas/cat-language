@@ -263,6 +263,21 @@ namespace Cat
                 exec.Push(q);
             }
         }
+
+        public class GenDocs : PrimitiveFunction
+        {
+            public GenDocs()
+                : base("#gd", "( ~> )", "outputs html documentation")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.PopString();
+                CatDocMaker m = new CatDocMaker(s);
+            }
+        }
+
     }
 
     public class Primitives

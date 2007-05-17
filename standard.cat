@@ -278,25 +278,25 @@ define is_lteq : ('a 'a -> 'a bool) { dupd lteq }
 //=============================================================================
 // Predicate generation functions
 
-define ltf : (x='a -> (y='a -> y bool))
+define ltf : ('a -> ('a -> 'a bool))
 { [dupd lt] curry }
 
-define lteqf : (x='a -> (y='a -> y bool))
+define lteqf : ('a -> ('a -> 'a bool))
 { [dupd lteq] curry }
 
-define gtf : (x='a -> (y='a -> y bool))
+define gtf : ('a -> ('a -> 'a bool))
 { [dupd gt] curry }
 
-define gteqf : (x='a -> (y='a -> y bool))
+define gteqf : ('a -> ('a -> 'a bool))
 { [dupd gteq] curry }
 
-define eqf : (x='a -> (y='a -> y bool))
+define eqf : ('a -> ('a -> 'a bool))
 { [dupd eq] curry }
 
-define neqf : (x='a -> (y='a -> y bool))
+define neqf : ('a -> ('a -> 'a bool))
 { [dupd neq] curry }
 
-define modnf : (int int -> (int -> int bool))
+define modnf : ('a -> ('a -> 'a bool))
 { [dupd modn] curry }
 
 //=============================================================================
@@ -345,6 +345,44 @@ define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
 define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 { swap [dip3] dip }
 
+//==============================================================================
+// Looping constructions
+
+// execute a loop a number of times
+define repeat : ('A ('A -> 'A) int -> 'A)
+{
+  swap            // 'A int [body]
+  [dip dec] curry // 'A int [[body] dip dec]
+  [neqz] while pop
+}
+
+// while condition is not true
+define whilen
+{ [not] compose while }
+
+// while top list is not empty
+define whilene
+{ [empty] whilen }
+
+// while top value is not equal to zero
+define whilenz
+{ [neqz] while }
+
+define for_each : ('A list ('A 'b -> 'A) -> 'A)
+{ [uncons swap] rcompose [dip] curry whilene pop }
+
+// like repeat but an index is passed at each iteration (0..n-1)
+define for : ('A ('A int -> 'A) int -> 'A)
+{ swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop }
+
+// a for loop but the index decreases from n down to 1
+define rfor : ('A ('A int -> 'A) int -> 'A)
+{ swap [dip dec] curry [dup] rcompose whilenz pop }
+
+// Output
+define print_list : (list ~> list)
+{ [writeln] for_each }
+
 //=============================================================================
 // list operators
 
@@ -364,6 +402,9 @@ define ()
 define lc : (list ('a -> bool) ('a -> 'b) -> list)
 { [take_while] dip map }
 
+define consd
+{ [cons] dip }
+
 define swons : (var list -> list)
 { swap cons }
 
@@ -382,6 +423,9 @@ define unpair : (list -> var var)
 define fold : (list 'a ('a 'b -> 'a) -> 'a)
 { swapd gfold }
 
+define unfold : ('a ('a -> 'a 'a) ('a -> 'a bool) -> list)
+{ [nil bury [consd] compose] dip whilen }
+
 // Returns true iff any value satisfies the condition
 define any : (list ('a -> bool) -> bool)
 { dupd [or] compose false swap fold }
@@ -390,6 +434,7 @@ define any : (list ('a -> bool) -> bool)
 define all : (list ('a -> bool) -> bool)
 { dupd [and] compose true swap fold }
 
+// reverses a list
 define rev : (list -> list)
 { nil [cons] fold }
 
@@ -407,16 +452,26 @@ define split : (list ('a -> bool) -> list list)
 }
 
 // Appends item to first list in a pair of lists
-define cons_first
-{
-  [unpair] dip cons pair
-}
+define cons_first : (list var -> list)
+{ [unpair] dip cons pair }
 
 // Appends item to second list in a pair of lists
-define cons_second
-{
-  [unpair] dip swap [cons] dip pair
-}
+define cons_second : (list var -> list)
+{ [unpair] dip swap [cons] dip pair }
+
+// Removes head from first list and gives it to the next one
+define move_head : (list list -> list lsit)
+{ uncons swap cons }
+
+// Returns the index of a value in a list or the size of the list
+// if not found
+define index_of : (list var -> list int)
+{ [neq] curry count_while }
+
+// splits a list in two at an index, the top result contains the second half
+// and the second result contains the frist half of the original list
+define split_at : (list int -> list list)
+{ nil bury [move_head] swap repeat }
 
 //=============================================================================
 // Infinite list generators
@@ -446,32 +501,22 @@ define ones : ( -> list)
 { 1 repeater }
 
 //==============================================================================
-// Looping constructions
-
-define repeat : ('A body=('A -> 'A) int -> 'A)
-{
-  swap            // 'A int [body]
-  [dip dec] curry // 'A int [[body] dip dec]
-  [neqz] while pop
-}
-
-// reverse for loop
-define rfor : ('A ('A int -> 'A) int -> 'A)
-{ swap [sweep dec] curry [neqz] while pop }
-
-// Forcing an operation to be evaluated on every item
-define for_each : (list (var ~> ) ~> list)
-{ [dup] dip [uncons] rcompose [empty not] while pop }
-
-// Output
-define print_list : (list ~> list)
-{ [writeln] for_each }
-
-//==============================================================================
 // Vector functions
 
 define sum : (list -> var)
 { 0 [+] fold }
+
+define scale_int_vector : (list int -> list)
+{ [mul_int] curry map }
+
+define translate_int_vector : (list int -> list)
+{ [add_int] curry map }
+
+define scale_dbl_vector : (list int -> list)
+{ [mul_dbl] curry map }
+
+define translate_dbl_vector : (list int -> list)
+{ [add_dbl] curry map }
 
 //==============================================================================
 // Hash helper functions
@@ -573,8 +618,8 @@ define qsort : (list -> list)
 
 // A fix point combinator (like the Y combinator)
 // Fix applies a function to another function recursively.
+// This may be the Turing combinator, but I am not yet sure.
 define fix { dup qv [fix] compose swap eval }
 
-// The U fixed-point combinator, also known as Turing's
-// fix point combinator.
-define U { dup eval }
+// The Y fixed-point combinator
+define Y { dup eval }

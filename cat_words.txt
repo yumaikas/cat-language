@@ -1,0 +1,84 @@
+0	compose	(('A -> 'B) ('B -> 'C) -> ('A -> 'C))	[$A] [$B] compose == [$A $B]		Level-0 Core Primitives
+0	cons	(list 'a -> list)	($A) $b cons == ($A $b)		Level-0 Core Primitives
+0	dec	(int -> int)	$a inc == {$a-1}		Level-0 Core Primitives
+0	dip	('A 'b ('A -> 'C) -> 'C 'b)	$a [$B] dip == $B $a		Level-0 Core Primitives
+0	dup	('a -> 'a 'a)	$a dup == $a $a 		Level-0 Core Primitives
+0	eq	('a 'a -> bool)			Level-0 Core Primitives
+0	if	('A bool ('A -> 'B) ('A -> 'B) -> 'B)	true [$A] [$B] if == $A; false [$A] [$B] if == $B		Level-0 Core Primitives
+0	inc	(int -> int)	$a inc == {$a+1}		Level-0 Core Primitives
+0	pop	('a -> )	$a $b pop == $a		Level-0 Core Primitives
+0	qv	('a -> ( -> 'a))	$a qv == [$a]		Level-0 Core Primitives
+0	to_list	(( -> 'A)  -> list)	[$A] to_list == ($A)		Level-0 Core Primitives
+0	uncons	(list -> list var)	($A $b) uncons == ($A) $b		Level-0 Core Primitives
+2	dispatch1	(var list -> var)	$a () dispatch1 == error; $a ($B ($c $d)) dispatch1 == $a typeof $d typeof eq [$c invoke1] [$B dispatch1] if		Level-2 Core Primitives
+2	dispatch2	(var var list -> var)	$a $b () dispatch2 == error; $a $b ($C ($d $e)) dispatch2 == $a $b typeof $d typeof eq [$e invoke2] [$C dispatch2] if		Level-2 Core Primitives
+2	invoke1	(var fxn -> var)	$a [$B] invoke1 == $a $B		Level-2 Core Primitives
+2	invoke2	(var var fxn -> var)	$a $b [$C] invoke2 == $a $b $C		Level-2 Core Primitives
+2	throw	(var -> )			Level-2 Core Primitives
+2	try	(( -> 'A) (var -> 'A) ~> 'A)	[$A] [$B] try == $A; [$A] [$B] try == $B		Level-2 Core Primitives
+2	type_of	(var -> var type)			Level-2 Core Primitives
+1	app2	('a 'a ('a -> 'b) -> 'b 'b)	$a $a $B app2 == $a $B $a $B	under eval [eval] dip	Basic Combinators
+1	eval	('A ('A -> 'B) -> 'B)	[$A] eval == $A	[] swap dip	Basic Combinators
+1	y	(f=(f -> 'A) -> 'A)	[$A] Y == [$A] $A	dup eval	Basic Combinator
+1	and	(bool bool -> bool)	$a $b and == $a [$b] [false] if	qv [false] if	Boolean Operation
+1	nand	(bool bool -> bool)	$a $b and == $a [$b not] [true] if	and not	Boolean Operation
+1	nor	(bool bool -> bool)	$a $b nor == $a [false] [$b not] if	or not	Boolean Operation
+1	not	(bool -> bool)	true not == false; false not == true;	[false] [true] if	Boolean Operation
+1	or	(bool bool -> bool)	$a $b or == $a [true] [$b] if	[true] swap qv if	Boolean Operation
+1	eqz	(int -> int bool)	$a eqz == $a $a 0 eq	dup 0 eq	Comparison Functions
+1	eqf	('a -> ('a -> 'a bool))	$a eqf == [dup $a eq] 	[dupd eq] curry	Comparison Functions
+1	neq	('a 'a -> bool)	$a $b neq == $a $a eq not	eq not	Comparison Functions
+1	neqf	('a -> ('a -> 'a bool))	$a neqf == [dup $a neq] 	[dupd neq] curry	Comparison Functions
+1	neqz	(int -> int bool)	$a eqz == $a $a 0 neq	dup 0 neq	Comparison Functions
+1	curry	('a ('B 'a -> 'C) -> ('B -> 'C))	$a [$B] curry == [$a $B]	[qv] dip compose	Comparison Functions
+1	curry2	('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))	$a $b [$C] curry2 == [$a $b $C]	curry curry	Function Construction
+1	rcurry	(('A 'b -> 'C) 'b -> ('A -> 'C))	[$A] $b rcurry == [$B $a]	curry swap	Function Construction
+1	bin_rec	('a ('a -> 'a bool) ('a -> 'b) ('a -> 'c 'a 'a) ('c 'b 'b -> 'b) -> 'b)	[$A] [$B] [$C] [$D] bin_rec = $A [$B] [$C [[[$A] [$B] [$C] [$D] bin_rec] app2] $D] if		Function Construction
+1	for	('A ('A int -> 'A) int -> 'A)	[$A] $b for == 0 [[$A] dip] [dup $b neq] while	swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop	Looping Functions
+1	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[uncons swap] rcompose [dip] curry [empty not] while pop	Looping Functions
+1	repeat	('A ('A -> 'A) int -> 'A)	[$A] 0 repeat == id; $A [$B] $c repeat == $B $A [$B] $c dec repeat;	swap [dip dec] curry [neqz] while pop	Looping Functions
+1	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz pop	Looping Functions
+1	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if	[dip swap] curry swap [dip y] curry qv compose [[pop] if] compose y	Looping Functions
+1	whilen	('A ('A -> 'A) ('A -> 'A bool)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	Looping Functions
+1	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while	[empty not] while	Looping Functions
+1	whilenz	('A int ('A int -> 'A int) -> 'A)	[$A] whilenz == [$A] [neqz] while	[neqz] while	Looping Functions
+1	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev [cons] fold	List Functions
+1	count	(list -> list count)	($A $b) count == ($A) count inc; () count == 0	0 [pop 1 +] fold 	List Functions
+1	drop	(list int -> list)	($A $b) 0 drop = ($A); ($A $b) $c drop == ($A $c dec drop)	[[tail] dip dec] whilenz pop 	List Functions
+1	empty	(list -> list bool)	($A) empty == ($A) count 0 eq	count 0 eq	List Functions
+1	filter	(list ('a -> bool) -> list)	($A $b) [$C] filter == $b $C if ($A [$C] filter $b) ($A [$C] filter)	[rev] dip [[cons] [] if] compose [dup] rcompose nil swap fold	List Functions
+1	first	(list -> list var)	($A $b) first == $b	0 nth	List Functions
+1	flatten	(list -> list)	() flatten == (); ($A ($b)) flatten == ($A flatten $b)	nil [cat] fold 	List Functions
+1	fold	(list 'a ('a 'a -> 'a) -> 'a)	() $a [$B] fold == $a; ($A $b) $c [$D] fold == $c $b $D ($A) [$D] fold	swapd [dip] curry [uncons swap] rcompose whilene pop	List Functions
+1	gen	('a ('a -> 'a) ('a -> bool) -> list)	$a [$B] [$C] gen == $a $C [($a $a $B [$B] [$C] gen)] [()] if	nil bury [[cons] dip rcompose] dip [dup] rcompose 	List Functions
+1	head	(list -> var)	($A $b) head == $b	uncons popd	List Functions
+1	last	(list -> list var)	($A) last == ($A) count dec nth	count dec nth	List Functions
+1	map	(list ('a -> 'b) -> list)	$a [$B] map == $a [$B] rmap rev	rmap rev	List Functions
+1	mid	(list -> list var)	($A) mid == ($A) count 2 div_int nth	count 2 div_int nth	List Functions
+1	move_head	(list list -> list list)	($A) ($B $c) move_head == ($A $c) ($B)	uncons swap cons	List Functions
+1	n	(int -> list)	0 n == (); $a n = ($a dec n $a)	nil swap dup [dec cons] swap repeat	List Functions
+1	nil	( -> list)	nil == ()	[] to_list	List Functions
+1	nth	(list int -> list var)	($A $b) 0 nth == ($A $b) $b; ($A $b) 0 nth 	dupd take head	List Functions
+1	pair	('a 'b -> list)	$a $b pair == ($a $b)	[unit] dip cons	List Functions
+1	rev	(list list)	($A $b) rev == ($b $A rev); () rev == ()	nil [cons] fold 	List Functions
+1	rmap	(list ('a -> 'b) -> list)	[$A] rmap == nil [cons] fold	nil [cons] fold 	List Functions
+1	set_at	(list var int -> list)	($A $b) $c 0 set_at == ($A $c); ($A $b) $c $d set_at == ($A $c $d dec set_at $b)	swapd split_at [rest swons] dip cat	List Functions
+1	small	(list -> list bool)	($A) small == ($A) count 1 lteq	count 1 lteq	List Functions
+1	split	(list ('a -> bool) -> list list)	($A) [$B] split == ($A) [$B] (filter) ($A) [$B not] (filter) 	dup2 [filter] dip2 [not] compose filter	List Functions
+1	split_at	(list int -> list list)	($A) 0 split_at == ($A) (); ($A $b) $c split_at == ($A) $c dec split_at $b cons	nil bury [move_head] swap repeat	List Functions
+1	tail	(list -> list)	($A $b) tail == ($A)	uncons pop	List Functions
+1	take	(list int -> list)	($A $b) 0 take = (); ($A $b) $c take == ($A $c dec take $b)	nil bury [[move_head] dip dec] whilenz pop rev	List Functions
+1	unit	('a -> list)	$a unit == ($a)	qv to_list	List Functions
+1	bury	('a 'b 'c -> 'c 'a 'b)	$a $b $c bury == $c $a $b	swap swapd	Stack Manipulation
+1	dig	('a 'b 'c -> 'b 'c 'a)	$a $b $c dig == $b $c $a 	swapd swap	Stack Manipulation
+1	dup2	('a 'b -> 'a 'b 'a 'b)	$a $b dup2 == $a $b $a $b	over over	Stack Manipulation
+1	dupd	('a 'b -> 'a 'a 'b	$a $b dupd == $a $a $b	[dup] dip	Stack Manipulation
+1	over	('a 'b -> 'a 'b 'a)	$a $b over == $a $b $a	dupd swap	Stack Manipulation
+1	peek	('a 'b 'c -> 'a 'b 'c 'a)	$a $b $c peek == $a $b $c $a	[dupd] dip dig	Stack Manipulation
+1	poke	('a 'b 'c -> 'c 'b)	$a $b $c poke == $c $b	[popd] dip swap	Stack Manipulation
+1	pop2	('a 'b -> )	$a $b pop2 == id	pop pop 	Stack Manipulation
+1	popd	('a 'b -> 'b)	$a $b popd == $b	[pop] dip	Stack Manipulation
+1	swap 	('a 'b -> 'b 'a)	$a $b swap == $b $a	qv dip	Stack Manipulation
+1	swap2 	('a 'b 'c 'd -> 'c 'd 'a 'b)	$a $b $c $d swap == $c $d $a $b	[bury] dip bury	Stack Manipulation
+1	swapd	('a 'b 'c -> 'b 'a 'c)	$a $b $c swapd == $b $a $c	[swap] dip	Stack Manipulation
+1	under	('a 'b -> 'b 'a 'b)	$a $b under == $b $a $b	dup swapd	Stack Manipulation
