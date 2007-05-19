@@ -305,7 +305,7 @@ namespace Cat
             mg.DrawLines(mPen, ListToPointArray(x));
         }
 
-        #region coloor functions
+        #region color functions
         static public Color blue() { return Color.Blue; }
         static public Color red() { return Color.Red; }
         static public Color green() { return Color.Green; }

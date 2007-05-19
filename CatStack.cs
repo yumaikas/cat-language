@@ -30,17 +30,17 @@ namespace Cat
             get
             {
                 if (index < 0)
-                    throw new Exception("stack underflow error");
+                    throw new Exception("stack indexing error");
                 if (index >= Count)
-                    throw new Exception("stack overflow error");
+                    throw new Exception("stack indexing error");
                 return GetBase()[(Count - 1) - index];
             }
             set
             {
                 if (index < 0)
-                    throw new Exception("stack underflow error");
+                    throw new Exception("stack indexing error");
                 if (index >= Count)
-                    throw new Exception("stack overflow error");
+                    throw new Exception("stack indexing error");
                 GetBase()[(Count - 1) - index] = value;
             }
         }

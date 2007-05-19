@@ -226,6 +226,7 @@ namespace Cat
         public PushValue(T x)
         {
             mValue = x;
+            msName = x.ToString();
         }
         public T GetValue()
         {
@@ -235,6 +236,10 @@ namespace Cat
         public override void Eval(Executor exec)
         {
             exec.Push(GetValue());
+        }
+        public override string ToString()
+        {
+            return "[" + msName + "]";
         }
         #endregion
     }
@@ -416,6 +421,11 @@ namespace Cat
 
             msDesc = "anonymous composed function";
             msName = "";
+            for (int i = 0; i < mChildren.Count; ++i)
+            {
+                if (i > 0) msName += " ";
+                msName += mChildren[i].GetName();
+            }
 
             mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), true); ;
         }
@@ -436,6 +446,18 @@ namespace Cat
             foreach (Function f in GetChildren())
                 f.Expand(fxns);
         }
+
+        public override string ToString()
+        {
+            string ret = "[";
+            for (int i = 0; i < mChildren.Count; ++i)
+            {
+                if (i > 0) ret += " ";
+                ret += mChildren[i].GetName();
+            }
+            ret += "]";
+            return ret;
+        }
     }
 
     /// <summary>
@@ -447,6 +469,12 @@ namespace Cat
         public QuotedValue(Object x)
             : base(new PushValue<Object>(x))
         {
+            msName = x.ToString();
+        }
+
+        public override string ToString()
+        {
+            return "[" + msName + "]";
         }
     }
 

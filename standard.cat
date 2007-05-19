@@ -18,12 +18,12 @@ define the_answer
 //=============================================================================
 // Function manipulation operators
 
-// qv operation aliases
+// quote operation aliases
 define constantly : ('a -> ( -> 'a))
-{ qv }
+{ quote }
 
 define curry : ('a ('B 'a -> 'C) -> ('B -> 'C))
-{ [qv] dip compose }
+{ [quote] dip compose }
 
 define curry2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
 { curry curry }
@@ -38,7 +38,7 @@ define curry5 : ('a 'b 'c 'd 'e ('F 'a 'b 'c 'd 'e -> 'G) -> ('F -> 'G))
 { curry curry curry curry curry }
 
 define rcurry : (('B 'a -> 'C) 'a -> ('B -> 'C))
-{ qv swap compose }
+{ quote swap compose }
 
 //=============================================================================
 // Dynamically dispatched functions
@@ -249,7 +249,7 @@ define arg9 : (list -> var list) { 9 nth swap }
 // Used for converting from quotations inside of functions with named
 // arguments to point-free form by prepending the argument list.
 define embed_args
-{ [dup qv] dip compose swap }
+{ [dup quote] dip compose swap }
 
 //=============================================================================
 // Predicates and comparison functions
@@ -525,7 +525,7 @@ define translate_dbl_vector : (list int -> list)
 define hash_safe_get : (hash_list key=var default=var -> hash_list var)
 {
   [[hash_contains] keep] dip // => hash_list bool key default
-  qv                         // => hash_list bool key [default]
+  quote                      // => hash_list bool key [default]
   [[hash_get] curry] dip     // => hash_list bool [key hash_get] [default]
   if                         // => hash_list result
 }
@@ -542,7 +542,7 @@ define hash_add_chain : (hash_list key=var value=var -> hash_list)
 define list_to_hash : (list -> hash_list)
 {  hash_list [unpair swap hash_add_chain] fold }
 
-// performs an inner self-join on a to_list of pairs based the first item.
+// performs an inner self-join on a list of pairs based the first item.
 define self_join : (list -> list)
 { list_to_hash hash_to_list }
 
@@ -553,14 +553,14 @@ define join : (list list -> list)
 //=============================================================================
 // Deprecated operators
 
-define deprecated_error : (string -> )
-{ throw }
+define qv
+{ "'qv' has been replaced with 'quote'" throw }
 
-define quote
-{ "'quote' has been replaced with 'qv' and 'constantly'" deprecated_error }
+define eval
+{ "'eval' has been replaced with 'apply'" throw }
 
 define foldl
-{ "'foldl' has been replaced with 'fold'" deprecated_error }
+{ "'foldl' has been replaced with 'fold'" throw }
 
 //=============================================================================
 // Exception throwing and handling
@@ -610,16 +610,82 @@ define qsort : (list -> list)
 }
 
 //========================================================================================
-// Fix-Point Combinators
-//
-// Learn about fixed-point combinators here:
-//   http://okmij.org/ftp/Computation/fixed-point-combinators.html
-//
+// Classical combinators, optimized definitions
 
-// A fix point combinator (like the Y combinator)
-// Fix applies a function to another function recursively.
-// This may be the Turing combinator, but I am not yet sure.
-define fix { dup qv [fix] compose swap eval }
+define y
+{ dup quote [y] compose swap apply }
 
-// The Y fixed-point combinator
-define Y { dup eval }
+// \a.aa
+define m
+{ dup apply }
+
+//=========================================================================================
+// Combinatory logic combinators, classical definitions
+
+// \abc.ac(bc)
+define s
+{ peek swap [curry] dip2 apply }
+
+// \ab.a
+define k
+{ popd apply }
+
+// \a.a
+define i
+{ [k] [k] s }
+
+// \ab.b(ab)
+define o
+{ [i] s }
+
+// \abc.a(bc)
+define b
+{ [k] [[s] k] s }
+
+// \abcd.ab(cd)
+define d
+{ [b] b }
+
+// \ab.b(ab)
+define o
+{ [i] s }
+
+// \abc.acb
+define c
+{ [[k] k] [[s] [b] b] s }
+
+// \ab.ba
+define t
+{ [i] c }
+
+// \abcde.ab(cde)
+define e
+{ [b] [b] b b }
+
+// \abc.cba
+define f
+{ [t] [e] [t] [t] e }
+
+// \ab.a(bb)
+define l
+{ [m] [b] c }
+
+// \abc.bca
+define r
+{ [t] [b] b }
+
+// \ab.b(aab)
+define u
+{ [o] l }
+
+// \abc.cab
+define v
+{ [t] [c] b }
+
+// \ab.abb
+define w
+{ [r] [m] b c }
+
+// \ab.b
+define ki
+{ [i] k }

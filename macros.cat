@@ -1,5 +1,5 @@
 
-// No-op reductions
+// Simple optimizations
 macro { noop } => { }
 macro { id } => { }
 macro { swap swap } => { }
@@ -8,8 +8,6 @@ macro { not not } => { }
 macro { pair unpair } => { }
 macro { cons uncons } => { }
 macro { qv eval } => { }
-
-// Simple optimizations
 macro { dup swap } => { dup }
 macro { dup eq } => { pop true }
 
@@ -42,8 +40,8 @@ macro { swap add_dbl } => { add_dbl }
 macro { swap mul_dbl } => { add_dbl }
 
 // short-circuit boolean evaluation
-macro { and $a and } => { and [$a] [false] if }
-macro { or $a or } => { or [true] [$a] if }
+macro { $a and } => { [$a] [false] if }
+macro { $a or } => { [true] [$a] if }
 
 // List primitivies
 macro { [$B] to_list [$A] to_list cat } => { [$B $A] to_list }
