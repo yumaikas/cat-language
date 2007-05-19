@@ -273,8 +273,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                string s = exec.PopString();
-                CatDocMaker m = new CatDocMaker(s);
+                string sOut = exec.PopString();
+                string sIn = exec.PopString();
+                CatDocMaker m = new CatDocMaker(sIn, sOut);
             }
         }
 
@@ -440,7 +441,7 @@ namespace Cat
         public class EvalFxn : PrimitiveFunction
         {
             public EvalFxn()
-                : base("eval", "('A ('A -> 'B) -> 'B)", "evaluates a function")
+                : base("apply", "('A ('A -> 'B) -> 'B)", "evaluates a function")
             { }
 
             public override void Eval(Executor exec)
@@ -484,8 +485,8 @@ namespace Cat
         public class Quote : PrimitiveFunction
         {
             public Quote()
-                : base("qv", "('R 'a -> 'R ('S -> 'S 'a))",
-                    "short for 'quote value', creates a constant generating function from the top value on the stack")
+                : base("quote", "('R 'a -> 'R ('S -> 'S 'a))",
+                    "creates a constant generating function from the top value on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -1126,7 +1127,7 @@ namespace Cat
         public class ReadBytes : PrimitiveFunction
         {
             public ReadBytes()
-                : base("read_bytes", "(istream int -> istream bytes)", "reads a number of bytes into an array from an input stream")
+                : base("read_bytes", "(istream int -> istream byte_block)", "reads a number of bytes into an array from an input stream")
             { }
 
             public override void Eval(Executor exec)
@@ -1142,7 +1143,7 @@ namespace Cat
         public class WriteBytes : PrimitiveFunction
         {
             public WriteBytes()
-                : base("write_bytes", "(ostream bytes -> ostream)", "writes a byte array to an output stream")
+                : base("write_bytes", "(ostream byte_block -> ostream)", "writes a byte array to an output stream")
             { }
 
             public override void Eval(Executor exec)
@@ -1156,12 +1157,13 @@ namespace Cat
         public class CloseStream : PrimitiveFunction
         {
             public CloseStream()
-                : base("close_stream", "(stream -> )", "closes a stream")
+                : base("close_stream", "(stream ~> )", "closes a stream")
             { }
 
             public override void Eval(Executor exec)
             {
                 Stream f = exec.TypedPop<Stream>();
+                f.Flush();
                 f.Close();
                 f.Dispose();
             }
