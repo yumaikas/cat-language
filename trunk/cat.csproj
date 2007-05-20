@@ -72,42 +72,42 @@
   </Target>
   -->
   <ItemGroup>
+    <Compile Include="CatAssemblyInfo.cs" />
     <Compile Include="CatAst.cs" />
+    <Compile Include="CatCompiler.cs" />
+    <Compile Include="CatConfig.cs" />
+    <Compile Include="CatExecutor.cs" />
+    <Compile Include="CatFunctionalList.cs" />
+    <Compile Include="CatFunctions.cs" />
     <Compile Include="CatGrammar.cs" />
-    <Compile Include="CatHelp.cs" />
-    <Compile Include="CatParser.cs" />
-    <Compile Include="Compiler.cs" />
-    <Compile Include="Kinds.cs" />
-    <Compile Include="FunctionalList.cs" />
-    <Compile Include="Macros.cs" />
-    <Compile Include="MutableList.cs" />
-    <Compile Include="PartialEvaluator.cs" />
-    <Compile Include="TypeInferer.cs" />
-    <Compile Include="HashList.cs" />
-    <Compile Include="CatPointFreeForm.cs" />
-    <Compile Include="GraphWindow.cs">
+    <Compile Include="CatGraphWindow.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="GraphWindow.Designer.cs">
-      <DependentUpon>GraphWindow.cs</DependentUpon>
+    <Compile Include="CatGraphWindow.Designer.cs">
+      <DependentUpon>CatGraphWindow.cs</DependentUpon>
     </Compile>
+    <Compile Include="CatHashList.cs" />
+    <Compile Include="CatHelp.cs" />
+    <Compile Include="CatKinds.cs" />
+    <Compile Include="CatMain.cs" />
+    <Compile Include="CatMutableList.cs" />
+    <Compile Include="CatOptimizer.cs" />
+    <Compile Include="CatParser.cs" />
+    <Compile Include="CatPrimitives.cs" />
+    <Compile Include="CatScope.cs" />
+    <Compile Include="CatTypeInferer.cs" />
+    <Compile Include="Kitten.cs" />
+    <Compile Include="MetaCat.cs" />
     <Compile Include="PegAst.cs" />
     <Compile Include="PegBaseGrammar.cs" />
     <Compile Include="PegParser.cs" />
     <Compile Include="CatBase.cs" />
     <Compile Include="CatStack.cs" />
-    <Compile Include="Config.cs" />
-    <Compile Include="Executor.cs" />
-    <Compile Include="Main.cs" />
-    <Compile Include="Functions.cs" />
-    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Scope.cs" />
-    <Compile Include="Primitives.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -124,9 +124,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="GraphWindow.resx">
+    <EmbeddedResource Include="CatGraphWindow.resx">
+      <DependentUpon>CatGraphWindow.cs</DependentUpon>
       <SubType>Designer</SubType>
-      <DependentUpon>GraphWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
       <SubType>Designer</SubType>
