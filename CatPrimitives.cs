@@ -261,7 +261,7 @@ namespace Cat
             }
         }
 
-        public class PartialEval : PrimitiveFunction
+        public class Optimize : PrimitiveFunction
         {
             public PartialEval()
                 : base("#o", "('A -> 'B) -> ('A -> 'B)", "optimizes a function using a combination of techniques")
