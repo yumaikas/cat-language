@@ -15,8 +15,6 @@
 1	b		[$A] [$B] [$C] b == [[$A] $B] $C	[k] [[s] k] s	Classical Combinators	"Classical B combinator, a.k.a. Bluebird"
 1	c		[$A] [$B] [$C] c == [$B] [$A] $C	[[k] k] [[s] [b] b] s	Classical Combinators	"Classical C combinator, a.k.a. Cardinal"
 1	d		[$A] [$B] [$C] [$D] d == [[$A] $B] [$C] $D	[b] b	Classical Combinators	"D combinator, a.k.a. Dove"
-1	e		[$A] [$B] [$C] [$D] [$E] e == [[$A] [$B] $C] [$D] $E	[[b] [b] b] b	Classical Combinators	"E combinator, a.k.a. Eagle"
-1	f		[$A] [$B] [$C] f == [$C] [$B] $A	[t] [e] [t] [t] e	Classical Combinators	"F combinator, a.k.a. Finch"
 1	i	('A ('A -> 'B) -> 'B)	[$A] i == $A	[k] [k] s	Classical Combinators	"Classical I combinator, a.k.a. Identity"
 1	k	('A 'b ('A -> 'C) -> 'C)	[$A] [$B] k == $B	[pop] dip	Classical Combinators	"Classical K combinator used to represent True, a.k.a. Kestrel"
 1	ki	('A ('A -> 'B) 'c -> 'B)	[$A] [$B] ki == $A	[i] k	Classical Combinators	"KI combinator, used to represent False, a.k.a. Kite"
@@ -73,7 +71,7 @@
 1	nil	( -> list)	nil == ()	[] to_list	List Functions	Creates an empty list.
 1	nth	(list int -> list var)	($A $b) 0 nth == ($A $b) $b; ($A $b) 0 nth 	dupd take head	List Functions	Returns the nth item in a list.
 1	pair	('a 'b -> list)	$a $b pair == ($a $b)	[unit] dip cons	List Functions	Creates a list containing two items.
-1	rev	(list list)	($A $b) rev == ($b $A rev); () rev == ()	nil [cons] fold 	List Functions	Reverses a list.
+1	rev	(list -> list)	($A $b) rev == ($b $A rev); () rev == ()	nil [cons] fold 	List Functions	Reverses a list.
 1	rmap	(list ('a -> 'b) -> list)	[$A] rmap == nil [cons] fold	nil [cons] fold 	List Functions	Constructs a map of the reverse of a list.
 1	set_at	(list var int -> list)	($A $b) $c 0 set_at == ($A $c); ($A $b) $c $d set_at == ($A $c $d dec set_at $b)	swapd split_at [rest swons] dip cat	List Functions	Creates a new list by replacing an item at a given index with a new value.
 1	small	(list -> list bool)	($A) small == ($A) count 1 lteq	count 1 lteq	List Functions	Returns true if a list contains one or zero items.
@@ -191,7 +189,7 @@
 3	invoke2	(var var fxn -> var)	$a $b [$C] invoke2 == $a $b $C		Level-3 Core Primitives	Executes a dynamic function with two arguments.
 3	throw	(var ~> )	[$A] [$B] try == $A; [$A $b throw $C] [$D] try == $D;		Level-3 Core Primitives	"Restores the stack to the state before the enclosing try function, pushes a value on the stack, and throws an exception."
 3	try	(( -> 'A) (var -> 'A) ~> 'A)	[$A] [$B] try == $A; [$A $b throw $C] [$D] try == $D;		Level-3 Core Primitives	"Store the stack state and executes a function. If an exception is thrown in the try block, it executes a catch function. "
-3	type_of	(var -> var type)	$a:$b type_of == $a $b		Level-4 Core Primitives	Pushes a value representing the type of the value on the top of the stack.
+3	type_of	(var -> var type)	$a:$b type_of == $a $b		Level-3 Core Primitives	Pushes a value representing the type of the value on the top of the stack.
 3	hash_list	( -> hash_list)			Hash List Functions	Constructs an empty hash list.
 3	hash_add	(hash_list key=var value=var -> hash_list)			Hash List Functions	Adds a value (on top of stack) and key to a hash list.
 3	hash_contains	(hash_list key=var -> hash_list bool)			Hash List Functions	Returns true if a key has an associated value in the hash list.

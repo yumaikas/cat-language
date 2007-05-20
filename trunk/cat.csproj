@@ -73,8 +73,8 @@
   -->
   <ItemGroup>
     <Compile Include="CatAst.cs" />
-    <Compile Include="CatDocMaker.cs" />
     <Compile Include="CatGrammar.cs" />
+    <Compile Include="CatHelp.cs" />
     <Compile Include="CatParser.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="Kinds.cs" />

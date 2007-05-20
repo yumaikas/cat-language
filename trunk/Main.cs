@@ -18,9 +18,14 @@ namespace Cat
     {
         static List<string> gsInputFiles = new List<string>();
         static StringWriter gpTranscript = new StringWriter();
+        static CatHelpMaker gpHelp;
 
         static void Main(string[] a)
         {
+            gpHelp = CatHelpMaker.CreateHelp("help.txt");
+            if (gpHelp == null)
+                WriteLine("failed to load help file");                
+
             try
             {
                 foreach (string s in a)
@@ -31,7 +36,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.13.0 May 12th, 2007");
+                    WriteLine("version 0.14.0 May 12th, 2007");
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -88,49 +93,61 @@ namespace Cat
         }
 
         #region meta-commands (commands intended for the interpreter)
-        /*
-        public static void OutputWikiDefs()
-        {
-            OutputDefs("|| ", " || ", " ||");
-        }
-
-        public static void OutputHtmlDefs()
-        {
-            WriteLine("<table>");
-            OutputDefs("<tr><td>", "</td><td>", "</td></tr>");
-            WriteLine("</table>");
-        }
-
-        public static void OutputTextDefs()
-        {
-            OutputDefs("", "\t", "");
-        }
-
-        public static void OutputDefs(Executor exec, string sLineBegin, string sDiv, string sLineEnd)
-        {
-            List<Function> fxns = exec.GetGlobalScope().GetAllFunctions();
-
-            foreach (Function f in fxns)
-            {
-                //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sDiv + f.GetDesc() + sLineEnd);
-                //WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
-                WriteLine(sLineBegin + f.GetName() + sDiv + f.GetTypeString() + sLineEnd);
-            }
-        }
-         */
-
         public static void OutputDefs(Executor exec)
         {
             Function[] fxns = new Function[exec.GetGlobalScope().GetAllFunctions().Count];
             exec.GetGlobalScope().GetAllFunctions().CopyTo(fxns, 0);
             Comparison<Function> comp = delegate(Function x, Function y) { return x.GetName().CompareTo(y.GetName()); };
             
-            Array.Sort(fxns, comp);                
-            
+            Array.Sort(fxns, comp);                            
 
             foreach (Function f in fxns)
             {
                 Write(f.GetName() + "\t");
+            }
+        }
+
+        public static void OutputHelp(string s)
+        {
+            if (gpHelp == null)
+            {
+                MainClass.WriteLine("no help has been loaded");
+                return;
+            }
+
+            FxnDoc f = gpHelp.GetFxnDoc(s);
+            if (f == null)
+            {
+                MainClass.WriteLine("no help available for " + s);
+            }
+            else
+            {
+                MainClass.WriteLine("name      : " + f.msName);
+                MainClass.WriteLine("category  : " + f.msCategory);
+                MainClass.WriteLine("level     : " + f.mnLevel.ToString());
+                MainClass.WriteLine("type      : " + f.msType);
+                MainClass.WriteLine("semantics : " + f.msSemantics);
+                MainClass.WriteLine("remarks   : " + f.msNotes);
+            }
+        }
+
+        public static void MakeHtmlHelp()
+        {
+            if (gpHelp == null)
+            {
+                MainClass.WriteLine("no help has been loaded");
+                return;
+            }
+
+            try
+            {
+                string s = "help.html";
+                gpHelp.SaveHtmlFile(s);
+                MainClass.WriteLine("help file has been saved to " + s);
+            }
+            catch
+            {
+                MainClass.WriteLine("failed to create html help file");
             }
         }
         #endregion
