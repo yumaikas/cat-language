@@ -231,21 +231,14 @@ namespace Cat
 
             // set the entrypoint (thereby declaring it an EXE)
             //ab.SetEntryPoint(fxb, PEFileKinds.ConsoleApplication);            
-            mAssembly.SetEntryPoint(mMainBldr);            
+            mAssembly.SetEntryPoint(mMainBldr);
+
+            // Save the compilation
+            mAssembly.Save(mAsmName);
+            MainClass.WriteLine("Saved compiled target to " + mAsmName.FullName);
 
             return mType;
         }
-        
-        /*
-        MethodBuilder BuildDef(Function f, ModuleBuilder mod)
-        {
-            string s = "f" + (gnId++).ToString();
-
-            MethodBuilder meth = mod.DefineGlobalMethod(s, MethodAttributes.Public | MethodAttributes.Static, null, gParamTypes);
-            ILGenerator ilg = meth.GetILGenerator();
-            return meth;
-        }
-        */
     }
 
     

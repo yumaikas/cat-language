@@ -572,18 +572,18 @@ define test_combinator
 
 define cl_tests
 {
-  [[1] i]         "[1] " test_combinator
-  [[2] [1] k]     "[1] " test_combinator
-  [[2] [1] ki]    "[2] " test_combinator
+  [[1] i]         "1 " test_combinator
+  [[2] [1] k]     "1 " test_combinator
+  [[2] [1] ki]    "2 " test_combinator
   [[1] m]         "[1] 1 " test_combinator
   [[2] [1] o]     "[[2] 1] 2 " test_combinator
   [[2] [1] t]     "[2] 1 " test_combinator
-  [[2] [1] w]     "[[2]2]1 " test_combinator
-  [[3] [2] [1] b] "[[3]2]1 " test_combinator
-  [[3] [2] [1] c] "[[2]3]1 " test_combinator
-  [[3] [2] [1] r] "[[1]3]2 " test_combinator
-  [[3] [2] [1] v] "[[2]1]3 " test_combinator
-  [[3] [2] [1] f] "[[1]2]3 " test_combinator
+  [[2] [1] w]     "[[2] 2] 1 " test_combinator
+  [[3] [2] [1] b] "[[3] 2] 1 " test_combinator
+  [[3] [2] [1] c] "[[2] 3] 1 " test_combinator
+  [[3] [2] [1] r] "[[1] 3] 2 " test_combinator
+  [[3] [2] [1] v] "[[2] 1] 3 " test_combinator
+  [[3] [2] [1] f] "[[1] 2] 3 " test_combinator
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -591,14 +591,77 @@ define cl_tests
 
 define type_test
 {
-  "expected: " write
-  [write] dip
-  " " write
+  swap writeln
+  "expected : " write
+  [writeln] dip
+  "actual   : " write
   type_of
   writeln
 }
 
-define tests_types
+define test_types
 {
   "( -> int int)" [42 dup] type_test
+  "(a -> a a)" [dup dup] type_test
+  "(a b -> b a)" [swap] type_test
+  "(a b -> b a)" [quote dip] type_test
+  "(int -> int)" [[1 add_int] apply] type_test
+  "(a (a B -> C) -> (B -> C)" [curry] type_test
+  "(a (a B -> C) -> (B -> C)" [[quote] dip compose] type_test
+  "((A -> B) (C -> A) -> (C -> B)" [swap compose] type_test
+  "(int -> int)" [true [] [1 +] if] type_test
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Macro Tests
+
+define macro_test
+{
+  "expected " write
+  [write] dip
+  dup
+  ", source " write
+  write
+  #m
+  ", result " write
+  writeln
+}
+
+define test_macros
+{
+  [] [noop]  macro_test
+  [] [id]  macro_test
+  [] [swap swap]  macro_test
+  [] [dup pop]  macro_test
+  [] [not not]  macro_test
+  [] [pair unpair]  macro_test
+  [] [cons uncons]  macro_test
+  [dup] [dup swap]  macro_test
+  [] [dup swap pop]  macro_test
+  [true] [42 dup eq]  macro_test
+  [2 1] [1 2 swap]  macro_test
+  [true] [false true and not]  macro_test
+  [[42]] [42 qv] macro_test
+  [42] [[42] eval] macro_test
+  [42] [42 qv eval] macro_test
+  [[1 2]] [[1] [2] compose] macro_test
+  [1] [1 2 nip] macro_test
+  [1] [1 2 popd] macro_test
+  [nil] [nil [2 mul_int] map] macro_test
+  [nil] [nil [3 lt_int] filter] macro_test
+  [42] [nil 42 [add_int] fold] macro_test
+  [1 1 2] [1 2 dupd] macro_test
+  [2 1 3] [1 2 3 swapd] macro_test
+  [2 3 1] [1 2 3 dig] macro_test
+  [3 1 2] [1 2 3 bury] macro_test
+  [3 2 3] [1 2 3 poke] macro_test
+  [1 2 3 1] [1 2 3 peek] macro_test
+  [swap] [swap and] macro_test
+  [[1 2 3 4] to_list] [[1 2] to_list [3 4] to_list cat] macro_test
+  [[1 +] [2 *] compose map] [[1 +] map [2 *] map] macro_test
+  [[1 + 2 *] compose map] [[1 +] [2 *] compose map] macro_test
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Partial Evaluation Tests
+

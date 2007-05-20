@@ -77,16 +77,6 @@ namespace Cat
                     }
                     else if (f is DefinedFunction)
                     {
-                        /*
-                        DefinedFunction df = f as DefinedFunction;
-
-                        // Notice, we continue using the current stack
-                        List<Function> tmp = Eval(exec, df.GetChildren());
-
-                        // Now we append the result to this one. 
-                        ret.AddRange(tmp);
-                         */
-
                         f.Eval(exec);
                     }
                     else
@@ -113,12 +103,14 @@ namespace Cat
 
                     ret.Add(fxns[i]);
                     exec.GetStack().Clear();
+                    values = null;
                 }
                 i++;
             }
 
-            for (int j = values.Length - 1; j >= 0; --j)
-                ret.Add(ValueToFunction(values[j]));
+            if (values != null)
+                for (int j = values.Length - 1; j >= 0; --j)
+                    ret.Add(ValueToFunction(values[j]));
             
             return ret;
         }

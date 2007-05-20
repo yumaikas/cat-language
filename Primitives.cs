@@ -90,7 +90,7 @@ namespace Cat
         public class Defs : PrimitiveFunction
         {
             public Defs()
-                : base("#defs", "( ~> )", "lists all loaded definitions")
+                : base("#defs", "( ~> )", "lists all documented definitions")
             { }
 
             public override void Eval(Executor exec)
@@ -107,7 +107,6 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Renamer.ResetId();
                 QuotedFunction f = exec.TypedPop<QuotedFunction>();
                 Config.gbVerboseInference = true;
                 CatFxnType ft = TypeInferer.Infer(f.GetChildren(), false);
@@ -154,13 +153,18 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 MainClass.WriteLine("The following are some useful commands:");
+                MainClass.WriteLine("  clr - clears the stack");
+                MainClass.WriteLine("  #defs - lists all defined functions");
+                MainClass.WriteLine("  #exit - exits the interpreter");
+                MainClass.WriteLine("  \"command\" #h  - provides help on a primitive");
                 MainClass.WriteLine("  \"filename\" #load - loads and executes a Cat file");
                 MainClass.WriteLine("  \"filename\" #save - saves a transcript of session");
-                MainClass.WriteLine("  #exit - exits the interpreter.");
-                MainClass.WriteLine("  #defs - lists available functions.");
-                MainClass.WriteLine("  [...] #t - attempts to infer the type of a quotation");
-                MainClass.WriteLine("  \"command\" #h  - provides more information about a command.");
-                MainClass.WriteLine("  clr - clears the stack");
+                MainClass.WriteLine("  [...] #t - infers the type of a quotation");
+                MainClass.WriteLine("  [...] #i - performs inline expansion within a quotation");
+                MainClass.WriteLine("  [...] #p - partially evaluates a quotation");
+                MainClass.WriteLine("  [...] #m - applies macros to a quotation");
+                MainClass.WriteLine("  [...] #o - optimizes a quotation");
+                MainClass.WriteLine("  [...] #c #run - compiles and runs a quotation");
             }
         }
 
@@ -172,22 +176,14 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.GetGlobalScope().Lookup(exec.PopString());
-                if (f != null)
-                {
-                    MainClass.WriteLine(f.GetName() + "\t" + f.GetTypeString() + "\t" + f.GetDesc());
-                }
-                else
-                {
-                    MainClass.WriteLine(exec.PopString() + " is not defined");
-                }
+                MainClass.OutputHelp(exec.PopString());
             }
         }
 
         public class Expand : PrimitiveFunction
         {
             public Expand()
-                : base("#expand", "('A -> 'B) ~> ('A -> 'B)", "makes an inline expansion of a function")
+                : base("#i", "('A -> 'B) ~> ('A -> 'B)", "performs inline expansion")
             { }
 
             public override void Eval(Executor exec)
@@ -229,6 +225,7 @@ namespace Cat
                 List<Function> list = new List<Function>(f.GetChildren().ToArray());
                 Compilation c = new Compilation();
                 c.Compile(list);
+                c.
                 exec.Push(c);
             }
         }
@@ -236,7 +233,7 @@ namespace Cat
         public class Execute : PrimitiveFunction
         {
             public Execute()
-                : base("#exec", "(Compilation ~> 'B)", "executes a compiled function")
+                : base("#run", "(Compilation ~> 'B)", "executes a compiled function")
             {
             }
 
@@ -250,7 +247,7 @@ namespace Cat
         public class PartialEval : PrimitiveFunction
         {
             public PartialEval()
-                : base("#pe", "('A -> 'B) -> ('A -> 'B)", "reduces a function through partial evaluation")
+                : base("#p", "('A -> 'B) -> ('A -> 'B)", "reduces a function through partial evaluation")
             {
             }
 
@@ -264,18 +261,33 @@ namespace Cat
             }
         }
 
-        public class GenDocs : PrimitiveFunction
+        public class PartialEval : PrimitiveFunction
         {
-            public GenDocs()
-                : base("#gd", "( ~> )", "outputs html documentation")
+            public PartialEval()
+                : base("#o", "('A -> 'B) -> ('A -> 'B)", "optimizes a function using a combination of techniques")
             {
             }
 
             public override void Eval(Executor exec)
             {
-                string sOut = exec.PopString();
-                string sIn = exec.PopString();
-                CatDocMaker m = new CatDocMaker(sIn, sOut);
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                List<Function> list = new List<Function>(f.GetChildren().ToArray());
+                List<Function> list = PartialEvaluator.Eval(list);
+                QuotedFunction q = new QuotedFunction(result);
+                exec.Push(q);
+            }
+        }
+
+        public class MakeHtmlHelp : PrimitiveFunction
+        {
+            public MakeHtmlHelp()
+                : base("#html", "( ~> )", "outputs html documentation")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                MainClass.MakeHtmlHelp();
             }
         }
 

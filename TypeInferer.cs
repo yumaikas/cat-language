@@ -104,7 +104,7 @@ namespace Cat
             return ret;
         }
 
-        public void ComputeCoreUnifiers()
+        public void ComputeCoreUnifiers(Renamer r)
         {
             mUnifiers.Clear();
             Trace.Assert(mLeft.Count == mRight.Count);
@@ -114,7 +114,7 @@ namespace Cat
                 string sLeft = mLeft[0];
                 string sRight = mRight[0];
                 Trace.Assert(Renamer.IsStackVarName(sLeft) == Renamer.IsStackVarName(sRight));
-                CatKind kUnifier = Renamer.GenerateNewVar(sLeft);
+                CatKind kUnifier = r.GenerateNewVar(sLeft);
                 mLeft.RemoveAt(0);
                 mRight.RemoveAt(0);
                 Unify(sLeft, kUnifier);
@@ -160,7 +160,7 @@ namespace Cat
 
     public class Renamer
     {
-        static int gnId = 0;
+        int mnId = 0;
         bool mbGenerateNames;
 
         Dictionary<string, CatKind> mNames;
@@ -196,15 +196,15 @@ namespace Cat
                 return true;
         }
 
-        public static string GenerateNewName(string s)
+        public string GenerateNewName(string s)
         {
             if (IsStackVarName(s))
-                return "S" + (gnId++).ToString();
+                return "S" + (mnId++).ToString();
             else
-                return "t" + (gnId++).ToString();
+                return "t" + (mnId++).ToString();
         }
 
-        public static CatKind GenerateNewVar(string s)
+        public CatKind GenerateNewVar(string s)
         {
             if (IsStackVarName(s))
                 return new CatStackVar(GenerateNewName(s));
@@ -296,11 +296,6 @@ namespace Cat
             {
                 return t;
             }
-        }
-
-        public static void ResetId()
-        {
-            gnId = 0;
         }
     }
 
@@ -607,7 +602,7 @@ namespace Cat
             // Each original variables is assigned a generated variable. If two original 
             // variables are equal (either directly or by commutativity) they will
             // be replaced with the same generated variable. 
-            mu.ComputeCoreUnifiers();
+            mu.ComputeCoreUnifiers(r);
             
             // Add type variable definitions
             foreach (KeyValuePair<string, CatTypeKind> kvp in mTypeVars)
@@ -639,7 +634,14 @@ namespace Cat
             // Finally create and return the result type
             CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd, left.HasSideEffects() || right.HasSideEffects());
             
-            return ret;
+            if (Config.gbVerboseInference)
+            {
+                MainClass.WriteLine("Type: " + ret.ToString());
+            }
+
+            // And one last renaming for good measure:
+            r = new Renamer();
+            return r.Rename(ret);
         }
 
         public void OutputUnifiers(Dictionary<string, CatKind> unifiers)
