@@ -234,7 +234,7 @@ namespace Cat
             mAssembly.SetEntryPoint(mMainBldr);
 
             // Save the compilation
-            mAssembly.Save(mAsmName);
+            mAssembly.Save(mAsmName.FullName);
             MainClass.WriteLine("Saved compiled target to " + mAsmName.FullName);
 
             return mType;

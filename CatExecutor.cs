@@ -92,9 +92,9 @@ namespace Cat
         {
             return TypedPop<bool>();
         }
-        public Function PopFunction()
+        public QuotedFunction PopFunction()
         {
-            return TypedPop<Function>();
+            return TypedPop<QuotedFunction>();
         }
         public String PopString()
         {

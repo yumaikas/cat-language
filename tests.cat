@@ -631,22 +631,24 @@ define test_macros
 {
   [] [noop]  macro_test
   [] [id]  macro_test
+  [[]] [[id]] macro_test
   [] [swap swap]  macro_test
   [] [dup pop]  macro_test
   [] [not not]  macro_test
   [] [pair unpair]  macro_test
   [] [cons uncons]  macro_test
   [dup] [dup swap]  macro_test
+  [] [swap quote dip] macro_test
   [] [dup swap pop]  macro_test
-  [true] [42 dup eq]  macro_test
   [2 1] [1 2 swap]  macro_test
+  [2 1] [1 2 swap swap swap] macro_test
   [true] [false true and not]  macro_test
-  [[42]] [42 qv] macro_test
-  [42] [[42] eval] macro_test
-  [42] [42 qv eval] macro_test
+  [[42]] [42 quote] macro_test
+  [42] [[42] apply] macro_test
+  [42] [42 quote apply] macro_test
   [[1 2]] [[1] [2] compose] macro_test
-  [1] [1 2 nip] macro_test
-  [1] [1 2 popd] macro_test
+  [2] [1 2 nip] macro_test
+  [2] [1 2 popd] macro_test
   [nil] [nil [2 mul_int] map] macro_test
   [nil] [nil [3 lt_int] filter] macro_test
   [42] [nil 42 [add_int] fold] macro_test
@@ -660,8 +662,18 @@ define test_macros
   [[1 2 3 4] to_list] [[1 2] to_list [3 4] to_list cat] macro_test
   [[1 +] [2 *] compose map] [[1 +] map [2 *] map] macro_test
   [[1 + 2 *] compose map] [[1 +] [2 *] compose map] macro_test
+  [[1 2] dip] [[1] dip [2] dip] macro_test
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Partial Evaluation Tests
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// More Optimziation Tests
+
+define test_o
+{
+  [i] #i #m #m #m #m #m #m #m #m [42] swap apply
+}
 

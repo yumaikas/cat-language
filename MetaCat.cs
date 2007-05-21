@@ -65,7 +65,7 @@ namespace Cat
         #endregion 
 
         #region fields
-        List<AstMacroNode> mMacros = new List<AstMacroNode>();
+        Dictionary<string, List<AstMacroNode>> mMacros = new Dictionary<string, List<AstMacroNode>>();
         #endregion
 
         class MacroMatch
@@ -136,22 +136,18 @@ namespace Cat
                 return false;
             }
 
-            public void Replace(List<Function> fxns, List<AstMacroTerm> pattern)
+            public List<Function> PatternToFxns(List<AstMacroTerm> pattern)
             {
-                if (mnFxnIndex < fxns.Count)
-                    fxns.RemoveRange(mnFxnIndex, mnFxnCount);
-
-                for (int i = pattern.Count - 1; i >= 0; --i)
+                List<Function> ret = new List<Function>();
+                foreach (AstMacroTerm t in pattern)
                 {
-                    AstMacroTerm t = pattern[i];
                     if (t is AstMacroTypeVar)
                     {
                         string s = t.ToString();
                         if (!mCapturedVars.ContainsKey(s))
                             throw new Exception("macro variable " + s + " was not captured");
                         CatExpr expr = mCapturedVars[s];
-                        for (int j = expr.GetFxns().Count - 1; j >= 0; --j)
-                            fxns.Insert(mnFxnIndex, expr.GetFxns()[j]);
+                        ret.AddRange(expr.GetFxns());
                     }
                     else if (t is AstMacroStackVar)
                     {
@@ -159,36 +155,36 @@ namespace Cat
                         if (!mCapturedVars.ContainsKey(s))
                             throw new Exception("macro variable " + s + " was not captured");
                         CatExpr expr = mCapturedVars[s];
-                        fxns.InsertRange(mnFxnIndex, expr.GetFxns());
+                        ret.AddRange(expr.GetFxns());
                     }
                     else if (t is AstMacroName)
                     {
                         string s = t.ToString();
-
-                        // NOTE: if we had a proper macro name class, this could be done earlier.
-                        // the method for looking up functions is too convoluted. I am really 
-                        // wondering about the idea of having "global scopes" embedded with 
-                        // the executor.                         
                         Function f = Executor.Main.GetGlobalScope().Lookup(s);
-
-                        fxns.Insert(mnFxnIndex, f);
+                        ret.Add(f);
                     }
                     else if (t is AstMacroQuote)
                     {
                         AstMacroQuote macroQuote = t as AstMacroQuote;
                         List<Function> localFxns = new List<Function>();
-
                         List<AstMacroTerm> localPattern = macroQuote.mTerms;
-                        Replace(localFxns, localPattern);
-                        Quotation q = new Quotation(localFxns);
-
-                        fxns.Insert(mnFxnIndex, q);
+                        Quotation q = new Quotation(PatternToFxns(localPattern));
+                        ret.Add(q);
                     }
                     else
                     {
                         throw new Exception("unrecognized macro term " + t.ToString());
                     }
                 }
+                return ret;
+            }
+
+            public void Replace(List<Function> fxns, List<AstMacroTerm> pattern)
+            {
+                if (mnFxnIndex < fxns.Count)
+                    fxns.RemoveRange(mnFxnIndex, mnFxnCount);
+
+                fxns.InsertRange(mnFxnIndex, PatternToFxns(pattern));
             }
 
             static public MacroMatch Create(AstMacroNode m, List<Function> fxns, int nPrevMatchPos, int nFxnIndex, int nSubExprSize)
@@ -261,19 +257,39 @@ namespace Cat
 
         public void AddMacro(AstMacroNode node)
         {
-            if (node.mSrc.mPattern.Count == 0) 
+            int n = node.mSrc.mPattern.Count;
+            if (n == 0) 
                 throw new Exception("a macro has to have at least one token in the source pattern");
-            mMacros.Add(node);
+            string s = node.mSrc.mPattern[n - 1].ToString();
+            if (s.Length < 1)
+                throw new Exception("illegal token in source pattern");
+            if (s[0] == '$')
+                throw new Exception("last token in pattern can not be a variable");
+            if (!mMacros.ContainsKey(s))
+                mMacros.Add(s, new List<AstMacroNode>());
+            mMacros[s].Add(node);
         }
 
         public void ApplyMacros(List<Function> fxns)
         {
+            // Recursively apply macros for all quotations.
+            for (int i=0; i < fxns.Count; ++i)
+            {
+                if (fxns[i] is Quotation)
+                {
+                    Quotation qf = fxns[i] as Quotation;
+                    List<Function> tmp = new List<Function>(qf.GetChildren());
+                    ApplyMacros(tmp);
+                    fxns[i] = new Quotation(tmp);
+                }
+            }
+
             // This could be done multiple time
             List<MacroMatch> matches = new List<MacroMatch>();
             
             // The peephole is the maximum size of the range of functions that we will consider
             // for rewriting. This helps to reduces the overall complexity of the algorithm.
-            int nPeephole = 20;
+            //int nPeephole = 20;
 
             // This is the maximum size of the sub-expression that will be considered for matching.
             int nMaxSubExpr = 5;
@@ -282,16 +298,18 @@ namespace Cat
             int nLastMatchPos = -1;
             for (int nPos = 0; nPos < fxns.Count; ++nPos)
             {
-                for (int nMacro = 0; nMacro < mMacros.Count; ++nMacro)
-                {
-                    if ((nPos - nLastMatchPos) + 1 > nPeephole)
-                        nLastMatchPos = nPos - nPeephole;
+                string s = fxns[nPos].msName;
 
-                    MacroMatch m = MacroMatch.Create(mMacros[nMacro], fxns, nLastMatchPos, nPos, nMaxSubExpr);
-                    if (m != null)
+                if (mMacros.ContainsKey(s))
+                {
+                    foreach (AstMacroNode m in mMacros[s])
                     {
-                        nLastMatchPos = nPos;
-                        matches.Add(m);
+                        MacroMatch match = MacroMatch.Create(m, fxns, nLastMatchPos, nPos, nMaxSubExpr);
+                        if (match != null)
+                        {
+                            nLastMatchPos = nPos;
+                            matches.Add(match);
+                        }
                     }
                 }
             }
