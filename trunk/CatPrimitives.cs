@@ -188,11 +188,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function f = exec.PopFunction();
-                List<Function> list = new List<Function>();
-                f.Expand(list);
-                QuotedFunction q = new QuotedFunction(list);
-                exec.Push(q);
+                QuotedFunction qf = exec.PopFunction();
+                exec.Push(Optimizer.Expand(qf));
             }
         }
 
@@ -204,11 +201,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction f = exec.TypedPop<QuotedFunction>();
-                List<Function> list = new List<Function>(f.GetChildren().ToArray());
-                Macros.GetGlobalMacros().ApplyMacros(list);               
-                QuotedFunction q = new QuotedFunction(list);
-                exec.Push(q);
+                QuotedFunction qf = exec.PopFunction();
+                exec.Push(Optimizer.ApplyMacros(qf));
             }
         }
 
@@ -225,7 +219,6 @@ namespace Cat
                 List<Function> list = new List<Function>(f.GetChildren().ToArray());
                 Compilation c = new Compilation();
                 c.Compile(list);
-                c.
                 exec.Push(c);
             }
         }
@@ -253,28 +246,22 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction f = exec.TypedPop<QuotedFunction>();
-                List<Function> list = new List<Function>(f.GetChildren().ToArray());
-                List<Function> result = PartialEvaluator.Eval(list);
-                QuotedFunction q = new QuotedFunction(result);
-                exec.Push(q);
+                QuotedFunction qf = exec.TypedPop<QuotedFunction>();
+                exec.Push(Optimizer.PartialEval(qf));
             }
         }
 
         public class Optimize : PrimitiveFunction
         {
-            public PartialEval()
+            public Optimize()
                 : base("#o", "('A -> 'B) -> ('A -> 'B)", "optimizes a function using a combination of techniques")
             {
             }
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction f = exec.TypedPop<QuotedFunction>();
-                List<Function> list = new List<Function>(f.GetChildren().ToArray());
-                List<Function> list = PartialEvaluator.Eval(list);
-                QuotedFunction q = new QuotedFunction(result);
-                exec.Push(q);
+                QuotedFunction qf = exec.TypedPop<QuotedFunction>();
+                exec.Push(Optimizer.Optimize(qf));
             }
         }
 

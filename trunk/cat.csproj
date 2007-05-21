@@ -77,7 +77,9 @@
     <Compile Include="CatCompiler.cs" />
     <Compile Include="CatConfig.cs" />
     <Compile Include="CatExecutor.cs" />
-    <Compile Include="CatFunctionalList.cs" />
+    <Compile Include="CatFunctionalList.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CatFunctions.cs" />
     <Compile Include="CatGrammar.cs" />
     <Compile Include="CatGraphWindow.cs">
@@ -90,7 +92,9 @@
     <Compile Include="CatHelp.cs" />
     <Compile Include="CatKinds.cs" />
     <Compile Include="CatMain.cs" />
-    <Compile Include="CatMutableList.cs" />
+    <Compile Include="CatMutableList.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CatOptimizer.cs" />
     <Compile Include="CatParser.cs" />
     <Compile Include="CatPrimitives.cs" />

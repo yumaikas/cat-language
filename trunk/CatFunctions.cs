@@ -69,10 +69,6 @@ namespace Cat
         }
 
         #region virtual functions
-        public virtual void Expand(List<Function> fxns)
-        {
-            fxns.Add(this);
-        }
         public abstract void Eval(Executor exec);
         #endregion
 
@@ -346,7 +342,7 @@ namespace Cat
     }
 
     /// <summary>
-    /// Represents a quotation (pushes an anonymous function onto a stack)
+    /// Represents a a function literal. In other words a function that pushes an anonymous function onto a stack.
     /// </summary>
     public class Quotation : Function
     {
@@ -380,16 +376,11 @@ namespace Cat
         {
             return mChildren;
         }
-
-        public override void Expand(List<Function> fxns)
-        {
-            List<Function> list = new List<Function>();
-            foreach (Function f in GetChildren())
-                f.Expand(list);
-            fxns.Add(new Quotation(list));
-        }        
     }
 
+    /// <summary>
+    /// Represents a function that is on the stack.
+    /// </summary>
     public class QuotedFunction : Function
     {
         List<Function> mChildren;
@@ -439,12 +430,6 @@ namespace Cat
         public List<Function> GetChildren()
         {
             return mChildren;
-        }
-
-        public override void Expand(List<Function> fxns)
-        {
-            foreach (Function f in GetChildren())
-                f.Expand(fxns);
         }
 
         public override string ToString()
@@ -504,12 +489,6 @@ namespace Cat
         {
             foreach (Function f in mTerms)
                 f.Eval(exec);
-        }
-
-        public override void Expand(List<Function> fxns)
-        {
-            foreach (Function f in mTerms)
-                fxns.Add(f);
         }
 
         public List<Function> GetChildren()

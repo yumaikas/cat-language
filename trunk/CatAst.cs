@@ -611,6 +611,15 @@ namespace Cat
                 mTerms.Add(term);
             }
         }
+
+        public override string ToString()
+        {
+            string ret = "";
+            foreach (AstMacroTerm t in mTerms)
+                ret += " " + t.ToString();
+            ret = ret.Substring(1);
+            return "[" + ret + "]";
+        }
     }
 
     public class AstMacroTypeVar : AstMacroTerm

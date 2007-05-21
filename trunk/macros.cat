@@ -1,3 +1,6 @@
+// MetaCat optimization macros
+// Public domain
+// by Christopher Diggins
 
 // Simple optimizations
 macro { noop } => { }
@@ -5,11 +8,31 @@ macro { id } => { }
 macro { swap swap } => { }
 macro { dup pop } => { }
 macro { not not } => { }
-macro { pair unpair } => { }
-macro { cons uncons } => { }
-macro { qv eval } => { }
+macro { quote apply } => { }
 macro { dup swap } => { dup }
 macro { dup eq } => { pop true }
+
+// dup ('a -> 'b) pop patterns
+macro { dup quote pop } => { }
+macro { dup swap pop } => { }
+macro { dup inc pop } => { }
+macro { dup unit pop } => { }
+macro { dup $a compose pop } => { }
+macro { dup $a pair pop } => { }
+macro { dup $a add pop } => { }
+// ... the list goes on and on.
+
+// Combinator fusions
+macro { apply $a apply } => { $a compose apply }
+macro { dip $a dip } => { $a compose dip }
+macro { apply $a $b dip } => { $a compose apply $b }
+
+// This is due to the identity
+// {$a swap} => {[$a] dip}
+macro { swap $a dip } => { quote $a compose dip }
+macro { swap quote dip } => { }
+macro { quote dip swap } => { }
+macro { dup quote dip } => { dup }
 
 // Identities
 macro { $b $a swap } => { $a $b }
@@ -17,9 +40,18 @@ macro { $a pop } => { }
 macro { $b [$A] dip } => { $A $b }
 macro { true [$B] [$A] if } => { $B }
 macro { false [$B] [$A] if } => { $A }
-macro { [$A] eval } => { $A }
-macro { $a qv } => { [$a] }
+macro { [$A] apply } => { $A }
+macro { $a quote } => { [$a] }
 macro { [$B] [$A] compose } => { [$B $A] }
+macro { [$B] [$A] rcompose } => { [$A $B] }
+macro { $b [$A] curry } => { [$b $A] }
+macro { [$B] $a rcurry } => { [$a $B] }
+macro { $b [$A] app2 } => { $A $b $A }
+
+// Loop unrolling
+// Not currently performed because of the potential performance hit
+// This is a tricky optimization to apply properly.
+// macro { [$A] [$B] while } => { $B [$A [$A] [$B] while] [] if }
 
 // Boolean primitives
 macro { true not } => { false }
@@ -39,11 +71,12 @@ macro { swap mul_byte } => { add_byte }
 macro { swap add_dbl } => { add_dbl }
 macro { swap mul_dbl } => { add_dbl }
 
-// short-circuit boolean evaluation
+// short-circuit boolean applyuation
 macro { $a and } => { [$a] [false] if }
 macro { $a or } => { [true] [$a] if }
 
 // List primitivies
+macro { cons uncons } => { }
 macro { [$B] to_list [$A] to_list cat } => { [$B $A] to_list }
 macro { [$B] to_list $a cons } => { [$B $a] to_list }
 macro { $a cons head } => { pop $a }
@@ -54,7 +87,7 @@ macro { $b $a pair } => { [$b $a] to_list }
 
 // Higher order list primitives fusions
 macro { $b map $a map } => { $b $a compose map }
-macro { $b filter $a filter } => { [dup $b eval $a [pop false] if] filter }
+macro { $b filter $a filter } => { [dup $b apply $a [pop false] if] filter }
 
 // Nil list special cases
 macro { nil $a filter } => { nil }
@@ -62,14 +95,22 @@ macro { nil $a map } => { nil }
 macro { nil $b $a fold } => { $b }
 
 // Unit list special cases
-macro { $b unit $a filter } => { $b $a eval [$b unit] [nil] if }
-macro { $b unit $a map } => { $b $a eval unit }
-macro { $c unit $b $a fold } => { $b $c $a eval }
+macro { nil $a cons } => { $a unit }
+macro { $b unit $a filter } => { $b $a apply [$b unit] [nil] if }
+macro { unit $a map } => { $a apply unit }
+macro { $c unit $b $a fold } => { $b $c $a apply }
+macro { unit rev } => { unit }
+macro { unit head } => { }
+macro { unit tail } => { nil }
 
 // Pair list special cases
-macro { $c $b pair $a filter } => { $b $a eval [$b unit] [nil] if }
-macro { $c $b pair $a map } => { $c $a eval $b $a eval pair }
-macro { $d $c pair $b $a fold } => { $b $c $a eval $d $a eval }
+macro { unit $b cons } => { $a $b pair }
+macro { $b pair $a map } => { $a apply $b $a apply pair }
+macro { $d $c pair $b $a fold } => { $b $c $a apply $d $a apply }
+macro { pair rev } => { swap pair }
+macro { pair unpair } => { }
+macro { pair head } => { popd }
+macro { pair rest } => { pop unit }
 
 // Here are some standard library shuffling functions
 macro { $b $a nip } => { $a }
@@ -81,49 +122,4 @@ macro { $c $b $a bury } => { $a $c $b }
 macro { $c $b $a poke } => { $a $b $a }
 macro { $c $b $a peek } => { $c $b $a $c }
 
-define macro_test
-{
-  "expected " write
-  [write] dip
-  dup
-  ", source " write
-  write
-  #m
-  ", result " write
-  writeln
-}
 
-define test_macros
-{
-  [] [noop]  macro_test
-  [] [id]  macro_test
-  [] [swap swap]  macro_test
-  [] [dup pop]  macro_test
-  [] [not not]  macro_test
-  [] [pair unpair]  macro_test
-  [] [cons uncons]  macro_test
-  [dup] [dup swap]  macro_test
-  [] [dup swap pop]  macro_test
-  [true] [42 dup eq]  macro_test
-  [2 1] [1 2 swap]  macro_test
-  [true] [false true and not]  macro_test
-  [[42]] [42 qv] macro_test
-  [42] [[42] eval] macro_test
-  [42] [42 qv eval] macro_test
-  [[1 2]] [[1] [2] compose] macro_test
-  [1] [1 2 nip] macro_test
-  [1] [1 2 popd] macro_test
-  [nil] [nil [2 mul_int] map] macro_test
-  [nil] [nil [3 lt_int] filter] macro_test
-  [42] [nil 42 [add_int] fold] macro_test
-  [1 1 2] [1 2 dupd] macro_test
-  [2 1 3] [1 2 3 swapd] macro_test
-  [2 3 1] [1 2 3 dig] macro_test
-  [3 1 2] [1 2 3 bury] macro_test
-  [3 2 3] [1 2 3 poke] macro_test
-  [1 2 3 1] [1 2 3 peek] macro_test
-  [swap] [swap and] macro_test
-  [[1 2 3 4] to_list] [[1 2] to_list [3 4] to_list cat] macro_test
-  [[1 +] [2 *] compose map] [[1 +] map [2 *] map] macro_test
-  [[1 + 2 *] compose map] [[1 +] [2 *] compose map] macro_test
-}

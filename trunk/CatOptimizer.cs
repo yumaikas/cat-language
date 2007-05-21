@@ -4,8 +4,29 @@ using System.Text;
 
 namespace Cat
 {
-    public class PartialEvaluator
+    public class Optimizer
     {
+        /// <summary>
+        /// This is a simple yet effective combination of optimizations.
+        /// </summary>
+        static public QuotedFunction Optimize(QuotedFunction qf)
+        {
+            qf = ApplyMacros(qf);
+            qf = Expand(qf);
+            //qf = ApplyMacros(qf);
+            //qf = Expand(qf);
+            //qf = ApplyMacros(qf);
+            qf = PartialEval(qf);
+            //qf = Expand(qf);
+            //qf = ApplyMacros(qf);
+
+            // TODO: 
+            // identify common expressions 
+
+            return new QuotedFunction(qf);
+        }
+
+        #region partial evaluation
         public static Function ValueToFunction(Object o)
         {
             if (o is Int32)
@@ -44,10 +65,10 @@ namespace Cat
         /// <summary>
         /// This will reduce an expression by evaluating as much at compile-time as possible.
         /// </summary>
-        public static List<Function> Eval(List<Function> fxns)
+        public static QuotedFunction PartialEval(QuotedFunction qf)
         {
             Executor exec = new Executor();
-            return Eval(exec, fxns);
+            return new QuotedFunction(PartialEval(exec, qf.GetChildren()));
         }
 
         /// <summary>
@@ -55,7 +76,7 @@ namespace Cat
         /// When no exception is raised we know that the subexpression can be replaced with anything 
         /// that generates the values. 
         /// </summary>
-        static List<Function> Eval(Executor exec, List<Function> fxns)
+        static List<Function> PartialEval(Executor exec, List<Function> fxns)
         {
             List<Function> ret = new List<Function>();
             object[] values = null;
@@ -71,7 +92,7 @@ namespace Cat
                     {   
                         // We can partially evaluate quotations as well.
                         Quotation q = f as Quotation;
-                        List<Function> tmp = Eval(q.GetChildren());
+                        List<Function> tmp = PartialEval(new Executor(), q.GetChildren());
                         f = new Quotation(tmp);
                         f.Eval(exec);
                     }
@@ -114,5 +135,64 @@ namespace Cat
             
             return ret;
         }
+        #endregion
+
+        #region inline expansion
+        static public QuotedFunction Expand(QuotedFunction f)
+        {
+            List<Function> ret = new List<Function>();
+            Expand(ret, f);
+            return new QuotedFunction(ret);
+        }
+
+        static void Expand(List<Function> list, Function f)
+        {
+            if (f is Quotation)
+            {
+                Expand(list, f as Quotation);
+            }
+            else if (f is QuotedFunction)
+            {
+                Expand(list, f as QuotedFunction);
+            }
+            else if (f is DefinedFunction)
+            {
+                Expand(list, f as DefinedFunction);
+            }
+            else
+            {
+                list.Add(f);
+            }
+        }
+
+        static void Expand(List<Function> fxns, Quotation q)
+        {
+            List<Function> tmp = new List<Function>();
+            foreach (Function f in q.GetChildren())
+                Expand(tmp, f);
+            fxns.Add(new Quotation(tmp));
+        }
+
+        static void Expand(List<Function> fxns, QuotedFunction q)
+        {
+            foreach (Function f in q.GetChildren())
+                Expand(fxns, f);
+        }
+
+        static void Expand(List<Function> fxns, DefinedFunction d)
+        {
+            foreach (Function f in d.GetChildren())
+                Expand(fxns, f);
+        }
+        #endregion
+
+        #region apply macros
+        static public QuotedFunction ApplyMacros(QuotedFunction f)
+        {
+            List<Function> list = new List<Function>(f.GetChildren().ToArray());
+            Macros.GetGlobalMacros().ApplyMacros(list);
+            return new QuotedFunction(list);
+        }
+        #endregion
     }
 }
