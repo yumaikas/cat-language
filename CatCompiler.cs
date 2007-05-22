@@ -105,11 +105,11 @@ namespace Cat
             if (f == null)
                 throw new Exception("null pointer error");
 
-            if (f is PushInt)
+            if (f is PushValue<int>)
             {
                 // Push the executor
                 ilg.Emit(OpCodes.Ldarg_0);
-                int n = (f as PushInt).GetValue();
+                int n = (f as PushValue<int>).GetValue();
 
                 // Push a constant
                 ilg.Emit(OpCodes.Ldc_I4, n);
@@ -234,8 +234,8 @@ namespace Cat
             mAssembly.SetEntryPoint(mMainBldr);
 
             // Save the compilation
-            mAssembly.Save(mAsmName.FullName);
-            MainClass.WriteLine("Saved compiled target to " + mAsmName.FullName);
+            mAssembly.Save(sFileName);
+            //MainClass.WriteLine("Saved compiled target to " + mAsmName.FullName);
 
             return mType;
         }

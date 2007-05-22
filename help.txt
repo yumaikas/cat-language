@@ -210,6 +210,8 @@
 3	lteq	('a 'a -> bool)			Arithmetic	
 3	gt	('a 'a -> bool)			Arithmetic	
 3	gteq	('a 'a -> bool)			Arithmetic	
+4	rnd_int	(int ~> int)			Miscellaneous	Returns a random positive integer less then some maximum value
+4	rnd_dbl	( ~> dbl)			Miscellaneous	Returns a random floating point value in the range [0.0 .. 1.0)
 4	write	(var ~> )			Console Primitives	Writes a string to the standard output.
 4	writeln	(var ~> )			Console Primitives	Writes a string to the standard output followed by a new_line character
 4	read	( ~> char)			Console Primitives	Reads a character from the standard input

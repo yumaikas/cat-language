@@ -22,6 +22,9 @@ macro { dup $a pair pop } => { }
 macro { dup $a add pop } => { }
 // ... the list goes on and on.
 
+// This potentially makes things bigger
+macro { $a dup } => { $a $a }
+
 // Combinator fusions
 macro { apply $a apply } => { $a compose apply }
 macro { dip $a dip } => { $a compose dip }
@@ -71,46 +74,128 @@ macro { swap mul_byte } => { add_byte }
 macro { swap add_dbl } => { add_dbl }
 macro { swap mul_dbl } => { add_dbl }
 
-// short-circuit boolean applyuation
+// short-circuit boolean evaluation
 macro { $a and } => { [$a] [false] if }
 macro { $a or } => { [true] [$a] if }
 
-// List primitivies
+// List optimizations
 macro { cons uncons } => { }
-macro { [$B] to_list [$A] to_list cat } => { [$B $A] to_list }
-macro { [$B] to_list $a cons } => { [$B $a] to_list }
-macro { $a cons head } => { pop $a }
-macro { $a cons tail } => { }
-macro { $a cons first } => { $a cons first $a }
-macro { $a cons rest } => { dup $a cons swap }
-macro { $b $a pair } => { [$b $a] to_list }
+macro { cons head } => { [pop] dip }
+macro { cons tail } => { pop }
+macro { cons first } => { dup [cons first] dip }
+macro { cons rest } => { [dup] dip cons swap }
+macro { to_list $a to_list cat } => { $a compose to_list }
+macro { to_list $a cons } => { [$a] compose to_list }
+macro { quote to_list } => { unit }
+macro { rev rev } => { }
+
+// Taking and dropping
+macro { 0 take } => { nil }
+macro { 0 drop } => { dup }
+macro { 1 take } => { first unit }
+macro { 1 drop } => { rest }
+macro { count take } => { dup }
+macro { count drop } => { nil }
 
 // Higher order list primitives fusions
-macro { $b map $a map } => { $b $a compose map }
-macro { $b filter $a filter } => { [dup $b apply $a [pop false] if] filter }
+macro { map $a map } => { $a compose map }
+macro { filter $a filter } => { [dup] rcompose [$a apply and] compose filter }
+macro { fold $a map } => { $a compose fold }
+macro { map $b $a fold } => { $a compose $b swap fold }
+macro { filter $b $a fold } => { $b swap [$a [pop] if] compose fold }
+macro { filter $c map $b $a fold } => { $b swap [$a $c compose [pop] if] compose fold }
 
 // Nil list special cases
 macro { nil $a filter } => { nil }
 macro { nil $a map } => { nil }
 macro { nil $b $a fold } => { $b }
+macro { nil rev } => { nil }
+macro { nil tail } => { }
+macro { nil rest } => { nil nil }
+macro { nil flatten } => { nil }
+macro { nil count } => { nil 1 }
+macro { nil empty } => { nil true }
+macro { nil $a cat } => { $a }
+macro { nil cat } => { }
+macro { nil $a split } => { nil nil }
+macro { nil $a take } => { nil }
+macro { nil $a drop } => { nil }
 
 // Unit list special cases
 macro { nil $a cons } => { $a unit }
-macro { $b unit $a filter } => { $b $a apply [$b unit] [nil] if }
+macro { unit $a filter } => { $a apply [unit] [pop nil] if }
 macro { unit $a map } => { $a apply unit }
-macro { $c unit $b $a fold } => { $b $c $a apply }
+macro { unit $b $a fold } => { $b swap $a apply }
 macro { unit rev } => { unit }
 macro { unit head } => { }
 macro { unit tail } => { nil }
+macro { unit rest } => { unit nil }
+macro { unit first } => { dup [unit] dip }
+macro { unit last } => { dup [unit] dip }
+macro { unit mid } => { dup [unit] dip }
+macro { unit uncons } => { [nil] dip }
+macro { unit flatten } => { }
+macro { unit $a unit cat } => { $a pair }
+macro { unit count } => { unit 1 }
+macro { unit empty } => { nil false }
+macro { unit cat } => { cons }
+macro { unit pop } => { pop }
+macro { unit $a split } => { $a [unit nil swap] [unit nil] if }
 
 // Pair list special cases
-macro { unit $b cons } => { $a $b pair }
-macro { $b pair $a map } => { $a apply $b $a apply pair }
-macro { $d $c pair $b $a fold } => { $b $c $a apply $d $a apply }
+macro { unit $a unit cat } => { $a pair }
+macro { unit $a cons } => { $a pair }
+macro { pair $a map } => { [$a apply] dip $a apply pair }
+macro { pair $a filter } => { [unit $a filter] dip $a apply [cons] [pop] if }
+macro { pair $b $a fold } => { $b swap $a apply swap $a apply }
 macro { pair rev } => { swap pair }
 macro { pair unpair } => { }
+macro { pair uncons } => { [unit] dip }
 macro { pair head } => { popd }
-macro { pair rest } => { pop unit }
+macro { pair tail } => { pop unit }
+macro { pair first } => { dup [pair] dip }
+macro { pair rest } => { [dup] dip pair swap unit }
+macro { pair last } => { [dup] dip pair swap }
+macro { pair mid } => { dup [pair] dip }
+macro { pair flatten } => { cat }
+macro { pair count } => { pair 2 }
+macro { pair empty } => { pair false }
+macro { pair pop } => { pop pop }
+
+// Triple list special cases
+macro { pair $a cons } => { triple }
+macro { pair $a unit cat } => { triple }
+macro { unit $b $a pair cat } => { triple }
+macro { triple head } => { popd popd }
+macro { triple tail } => { pop pair }
+macro { triple uncons } => { [pair] dip }
+macro { triple first } => { dup [triple] dip }
+macro { triple last } => { [[dup] dip dip] triple swap }
+macro { triple flatten } => { cat cat }
+macro { triple $b $a fold } => { $b swap $a apply swap $a apply swap $a apply }
+macro { triple $a filter } => { [pair $a filter] dip $a apply [cons] [pop] if }
+macro { triple rev } => { [swap] dip bury triple }
+macro { triple count } => { triple 3 }
+macro { triple empty } => { triple false }
+macro { triple pop } => { pop pop pop }
+
+// More list optimizations
+macro { $d $c $b gen $a map } => { $d $a $c compose $b gen }
+macro { $c $b $a gen empty } => { $c $b $a gen $c $a not }
+macro { n count } => { over [n] dip }
+macro { n empty } => { over [n] dip 0 eq_int }
+macro { 0 nth } => { first }
+macro { 1 nth } => { pair }
+macro { count nth } => { last }
+
+// Vacuous operations
+macro { rest pop } => { }
+macro { first pop } => { }
+macro { mid pop } => { }
+macro { nth pop } => { pop }
+macro { empty pop } => { }
+macro { count pop } => { }
+macro { uncons pop } => { tail }
 
 // Here are some standard library shuffling functions
 macro { $b $a nip } => { $a }
@@ -122,4 +207,8 @@ macro { $c $b $a bury } => { $a $c $b }
 macro { $c $b $a poke } => { $a $b $a }
 macro { $c $b $a peek } => { $c $b $a $c }
 
+// Oscillation patterns
+// Every macro pass will cause these patterns to shift back and forth
+macro { swap } => { quote dip }
+macro { quote dip } => { swap }
 

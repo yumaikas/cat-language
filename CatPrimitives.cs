@@ -189,7 +189,20 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 QuotedFunction qf = exec.PopFunction();
-                exec.Push(Optimizer.Expand(qf));
+                exec.Push(Optimizer.Expand(qf, 5));
+            }
+        }
+
+        public class Expand1 : PrimitiveFunction
+        {
+            public Expand1()
+                : base("#i0", "('A -> 'B) ~> ('A -> 'B)", "performs inline expansion")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction qf = exec.PopFunction();
+                exec.Push(Optimizer.Expand(qf, 1));
             }
         }
 
@@ -1472,6 +1485,21 @@ namespace Cat
             }
         }
 
+        public class MapFilter : PrimitiveFunction
+        {
+            public MapFilter()
+                : base("map_filter", "(list ('a -> 'b) ('b -> bool) -> list)", "creates a new list by applying map then filter")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function fFilter = exec.TypedPop<Function>();
+                Function fMap = exec.TypedPop<Function>();
+                FList list = exec.TypedPop<FList>();
+                exec.Push(list.Map(fMap.ToMapFxn()).Filter(fFilter.ToFilterFxn()));
+            }
+        }
+
         public class Filter : PrimitiveFunction
         {
             public Filter()
@@ -1672,5 +1700,35 @@ namespace Cat
             }
         }
         #endregion 
+
+        #region misc functions
+        public class RandomInt : PrimitiveFunction
+        {
+            static Random mGen = new Random();
+
+            public RandomInt()
+                : base("rnd_int", "(int ~> int)", "creates a random integer between zero and some maximum value")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(mGen.Next(exec.PopInt()));
+            }
+        }
+
+        public class RandomDbl : PrimitiveFunction
+        {
+            static Random mGen = new Random();
+
+            public RandomDbl()
+                : base("rnd_dbl", "( ~> dbl)", "creates a random floating point number between zero and 1.0")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(mGen.NextDouble());
+            }
+        }
+        #endregion
     }
 }

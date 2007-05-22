@@ -160,7 +160,20 @@ namespace Cat
                     else if (t is AstMacroName)
                     {
                         string s = t.ToString();
+                        if (s.Length < 1) 
+                            throw new Exception("itnernal error: macro name is empty string");
                         Function f = Executor.Main.GetGlobalScope().Lookup(s);
+                        if (f == null)
+                        {
+                            if (Char.IsDigit(s[0]))
+                            {
+                                f = new PushValue<int>(int.Parse(s));
+                            }
+                            else
+                            {
+                                throw new Exception("Could not find function " + s);
+                            }
+                        }
                         ret.Add(f);
                     }
                     else if (t is AstMacroQuote)

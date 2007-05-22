@@ -142,17 +142,18 @@ namespace Cat
         #region static functions
         public static string TypeToString(Type t)
         {
+            // TODO: fix this up. I don't like where it is.
             switch (t.Name)
             {
                 case ("HashList"): return "hash_list";
                 case ("Int32"): return "int";
-                case ("Double"): return "float";
-                case ("CatList"): return "list";
+                case ("Double"): return "dbl";
+                case ("FList"): return "list";
                 case ("Object"): return "var";
                 case ("Function"): return "function";
                 case ("Boolean"): return "bool";
                 case ("String"): return "string";
-                case ("Char"): return "char";
+                case ("Char"): return "char";                
                 default: return t.Name;
             }
         }
@@ -219,10 +220,37 @@ namespace Cat
     public class PushValue<T> : Function
     {
         T mValue;
+        public static string TypeNameFromObject(Object o)
+        {
+            if (o is HashList)
+                return "hash_list";
+            if (o is ByteBlock)
+                return "byte_block";
+            if (o is FList)
+                return "list";
+            if (o is Boolean)
+                return "bool";
+            if (o is int)
+                return "int";
+            if (o is Double)
+                return "dbl";
+            if (o is string)
+                return "string";
+            if (o is Byte)
+                return "byte";
+            if (o is Primitives.Bit)
+                return "bit";
+            if (o is Function)
+                return (o as Function).GetTypeString();
+            if (o is Char)
+                return "char";
+            return "var";
+        }
         public PushValue(T x)
         {
             mValue = x;
-            msName = x.ToString();
+            msName = "{" + x.ToString() + "}";
+            mpFxnType = CatFxnType.Create("('R -> 'R " + TypeNameFromObject(x) + ")");
         }
         public T GetValue()
         {
@@ -238,107 +266,6 @@ namespace Cat
             return "[" + msName + "]";
         }
         #endregion
-    }
-
-    /// <summary>
-    /// This is a function that pushes an integer onto the stack.
-    /// </summary>
-    public class PushInt : Function
-    {
-        int mnValue;
-        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R int)");
-            
-        public PushInt(int x) 
-        {
-            msName = x.ToString();
-            mnValue = x;
-            mpFxnType = gpFxnType;
-        }
-        public int GetValue()
-        {
-            return mnValue;
-        }
-        #region overrides
-        public override void Eval(Executor exec) 
-        { 
-            exec.Push(GetValue());
-        }
-        #endregion 
-    }
-
-    /// <summary>
-    /// This is a function that pushes an integer onto the stack.
-    /// </summary>
-    public class PushFloat : Function
-    {
-        double mdValue;
-        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R double)");
-        public PushFloat(double x)
-        {
-            msName = x.ToString();
-            mdValue = x;
-            mpFxnType = gpFxnType;
-        }
-        public double GetValue()
-        {
-            return mdValue;
-        }
-        #region overrides
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
-        }
-        #endregion
-    }
-
-    /// <summary>
-    /// This is a function that pushes a string onto the stack.
-    /// </summary>
-    public class PushString : Function
-    {
-        string msValue;
-        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R string)");
-        public PushString(string x) 
-        {
-            msName = "\"" + x + "\"";
-            msValue = x;
-            mpFxnType = gpFxnType;
-        }
-        public string GetValue()
-        {
-            return msValue;
-        }
-        #region overrides
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
-        }
-        #endregion
-    }
-
-    /// <summary>
-    /// This is a function that pushes a string onto the stack.
-    /// </summary>
-    public class PushChar : Function
-    {
-        char mcValue;
-        static CatFxnType gpFxnType = CatFxnType.Create("('R -> 'R char)");
-        public PushChar(char x)
-        {
-            msName = x.ToString();
-            mcValue = x;
-            mpFxnType = gpFxnType;
-        }
-        public char GetValue()
-        {
-            return mcValue;
-        }
-        #region overrides
-        public override void Eval(Executor exec)
-        {
-            exec.Push(GetValue());
-        }
-        #endregion 
     }
 
     /// <summary>
