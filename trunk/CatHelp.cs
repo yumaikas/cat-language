@@ -1,5 +1,5 @@
-/// Released into the public domain by 
-/// Christopher Diggins
+/// Dedicated to the public domain by Christopher Diggins
+/// http://creativecommons.org/licenses/publicdomain/
 
 using System;
 using System.Collections.Generic;

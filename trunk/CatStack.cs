@@ -1,5 +1,5 @@
-/// Public domain code by Christopher Diggins
-/// http://www.cat-language.com
+/// Dedicated to the public domain by Christopher Diggins
+/// http://creativecommons.org/licenses/publicdomain/
 
 using System;
 using System.Collections;
