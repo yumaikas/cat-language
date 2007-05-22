@@ -1,3 +1,6 @@
+/// Dedicated to the public domain by Christopher Diggins
+/// http://creativecommons.org/licenses/publicdomain/
+
 using System;
 using System.Collections.Generic;
 using System.Text;
