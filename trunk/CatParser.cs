@@ -18,17 +18,17 @@ namespace Cat
         private static Function ExprToFunction(AstExprNode node)
         {
             if (node is AstIntNode)
-                return new PushInt((node as AstIntNode).GetValue());
+                return new PushValue<int>((node as AstIntNode).GetValue());
             else if (node is AstBinNode)
-                return new PushInt((node as AstBinNode).GetValue());
+                return new PushValue<int>((node as AstBinNode).GetValue());
             else if (node is AstHexNode)
-                return new PushInt((node as AstHexNode).GetValue());
+                return new PushValue<int>((node as AstHexNode).GetValue());
             else if (node is AstFloatNode)
-                return new PushFloat((node as AstFloatNode).GetValue());
+                return new PushValue<double>((node as AstFloatNode).GetValue());
             else if (node is AstStringNode)
-                return new PushString((node as AstStringNode).GetValue());
+                return new PushValue<string>((node as AstStringNode).GetValue());
             else if (node is AstCharNode)
-                return new PushChar((node as AstCharNode).GetValue());
+                return new PushValue<char>((node as AstCharNode).GetValue());
             else if (node is AstNameNode)
             {
                 Function f = Executor.Main.GetGlobalScope().Lookup(node.ToString());

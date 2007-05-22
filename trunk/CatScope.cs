@@ -73,6 +73,8 @@ namespace Cat
 
         public Function Lookup(ITypeArray piTypes, string s)
         {
+            if (s.Length < 1)
+                throw new Exception("trying to lookup a function with no name");
             if (mpFunctions.ContainsKey(s))
                 return mpFunctions[s];
             else
@@ -81,6 +83,8 @@ namespace Cat
 
         public Function Lookup(string s)
         {
+            if (s.Length < 1)
+                throw new Exception("trying to lookup a function with no name");
             if (mpFunctions.ContainsKey(s))
                 return mpFunctions[s];
             else
