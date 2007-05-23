@@ -46,6 +46,9 @@ namespace Cat
                     WriteLine("");
                 }
 
+                // TEMP:
+                CatEditor.Run();
+
                 // Load primitive operations 
                 RegisterPrimitives(Executor.Main.GetGlobalScope());
                 

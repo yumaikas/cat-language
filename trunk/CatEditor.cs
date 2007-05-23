@@ -45,6 +45,14 @@ namespace Cat
                         AddText("macro { ", "} => { }");
                         e.Handled = true;
                         return;
+                    case (Keys.Return) :
+                        InsertLine();
+                        e.Handled = true;
+                        return;
+                    case (Keys.Tab) :
+                        Insert("    ");
+                        e.Handled = true;
+                        return;
                 }
             }
         }
@@ -54,10 +62,76 @@ namespace Cat
             int nPos = edit.SelectionStart;
             int nLine = edit.GetLineFromCharIndex(nPos);
             int nLinePos = edit.GetFirstCharIndexFromLine(nLine);
+            Trace.Assert(nPos >= nLinePos);            
+            int nCharOffset = nPos - nLinePos;
+
+            string sLine = "";
+            if (nLine < edit.Lines.Length)
+                sLine = edit.Lines[nLine];
+
+            string sFirstHalf = sLine.Substring(0, nCharOffset);
+            string sSecondHalf = sLine.Substring(nCharOffset + edit.SelectionLength);
+            string sSel = edit.SelectedText;
+            string sResult = sFirstHalf + s1 + sSel + s2 + sSecondHalf;
+            int nLines = Math.Max(nLine + 1, edit.Lines.Length);
+            string[] a = new string[nLines];
+            a[nLine] = sResult;
+            edit.Lines = a;
+            edit.SelectionStart = nPos + s1.Length + sSel.Length;
+            edit.SelectionLength = 0;
+        }
+
+        private void Insert(string s)
+        {
+            int nPos = edit.SelectionStart;
+            int nLine = edit.GetLineFromCharIndex(nPos);
+            int nLinePos = edit.GetFirstCharIndexFromLine(nLine);
             Trace.Assert(nPos >= nLinePos);
             int nCharOffset = nPos - nLinePos;
-            string sLine = edit.Lines[nLinePos];
-            int nFirstHalf = 
+
+            string sLine = "";
+            if (nLine < edit.Lines.Length)
+                sLine = edit.Lines[nLine];
+
+            string sFirstHalf = sLine.Substring(0, nCharOffset);
+            string sSecondHalf = sLine.Substring(nCharOffset + edit.SelectionLength);
+            string sSel = edit.SelectedText;
+            string sResult = sFirstHalf + s + sSecondHalf;
+            int nLines = Math.Max(nLine + 1, edit.Lines.Length);
+            string[] a = new string[nLines];
+            a[nLine] = sResult;
+            edit.Lines = a;
+            edit.SelectionStart = nPos + s.Length + sSel.Length;
+            edit.SelectionLength = 0;
+        }
+
+        private void InsertLine()
+        {
+            int nPos = edit.SelectionStart;
+            int nLine = edit.GetLineFromCharIndex(nPos);
+            int nLinePos = edit.GetFirstCharIndexFromLine(nLine);
+            Trace.Assert(nPos >= nLinePos);
+            int nCharOffset = nPos - nLinePos;
+
+            string sLine = "";
+            if (nLine < edit.Lines.Length)
+                sLine = edit.Lines[nLine];
+
+            string sFirstHalf = sLine.Substring(0, nCharOffset);
+            string sSecondHalf = sLine.Substring(nCharOffset + edit.SelectionLength);
+            string sSel = edit.SelectedText;
+            string sResult = sFirstHalf + s + sSecondHalf;
+            int nLines = Math.Max(nLine + 1, edit.Lines.Length);
+            string[] a = new string[nLines];
+            a[nLine] = sResult;
+            edit.Lines = a;
+            edit.SelectionStart = nPos + s1.Length + sSel.Length;
+            edit.SelectionLength = 0;
+        }
+
+        internal static void Run()
+        {
+            Application.Run(new CatEditor());
         }
     }
 }
