@@ -291,6 +291,18 @@ namespace Cat
             }
         }
 
+        public class Edit : PrimitiveFunction
+        {
+            public Edit()
+                : base("#e", "( ~> )", "experimental")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                CatEditor.Run();
+            }
+        }
     }
 
     public class Primitives
