@@ -76,6 +76,12 @@
     <Compile Include="CatAst.cs" />
     <Compile Include="CatCompiler.cs" />
     <Compile Include="CatConfig.cs" />
+    <Compile Include="CatEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CatEditor.Designer.cs">
+      <DependentUpon>CatEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="CatExecutor.cs" />
     <Compile Include="CatFunctionalList.cs">
       <SubType>Code</SubType>
@@ -128,6 +134,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="CatEditor.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>CatEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="CatGraphWindow.resx">
       <DependentUpon>CatGraphWindow.cs</DependentUpon>
       <SubType>Designer</SubType>
