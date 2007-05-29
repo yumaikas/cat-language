@@ -291,16 +291,28 @@ namespace Cat
             }
         }
 
-        public class Edit : PrimitiveFunction
+        public class MakeLibrary : PrimitiveFunction
         {
-            public Edit()
-                : base("#e", "( ~> )", "experimental")
+            public MakeLibrary()
+                : base("#lib", "( ~> )", "outputs a kernel library with tests")
             {
             }
 
             public override void Eval(Executor exec)
             {
-                CatEditor.Run();
+                MainClass.MakeLibrary();
+            }
+        }
+
+        public class Clr : PrimitiveFunction
+        {
+            public Clr()
+                : base("#clear", "('A ~> )", "removes all items from the stack")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.GetStack().Clear();
             }
         }
     }
@@ -377,6 +389,20 @@ namespace Cat
         #endregion 
 
         #region primitive function classes
+        public class Halt : PrimitiveFunction
+        {
+            public Halt()
+                : base("halt", "(int ~> )", "halts the program with an error code")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                throw new Exception("Program halted with error code " + n.ToString());
+            }
+                
+        }
+
         public class Id : PrimitiveFunction
         {
             public Id()
@@ -446,18 +472,6 @@ namespace Cat
                 exec.Push(o1);
                 exec.Push(o2);
             }           
-        }
-
-        public class Clr : PrimitiveFunction
-        {
-            public Clr()
-                : base("clear", "('A -> )", "removes all items from the stack")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                exec.GetStack().Clear();
-            }
         }
         #endregion
 

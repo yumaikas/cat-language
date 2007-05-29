@@ -9,9 +9,6 @@
 define noop
 { }
 
-define clr
-{ clear }
-
 define the_answer
 { 42 }
 

@@ -205,8 +205,21 @@ namespace Cat
             mAssembly = AppDomain.CurrentDomain.DefineDynamicAssembly(mAsmName, AssemblyBuilderAccess.RunAndSave);
             mModule = mAssembly.DefineDynamicModule(sModuleName, sFileName);
             mTypeBldr = mModule.DefineType(sTypeName);
-            mMainBldr = mTypeBldr.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), null);
+
+            // Construct the "default" function which contains the body of the compiled quotation
+            //
+            //   public static void Default(Executor exec) { 
+            //      ...
+            //   }
+            //
             mDefaultBldr = mTypeBldr.DefineMethod("Default", MethodAttributes.Public | MethodAttributes.Static, typeof(void), gParamTypes);
+            ILGenerator ilg = mDefaultBldr.GetILGenerator();
+            foreach (Function f in fxns) {
+                EmitCatCall(ilg, f);
+            }
+
+            // Add final return opcode
+            ilg.Emit(OpCodes.Ret);
 
             // Construct the entry point function
             //
@@ -214,31 +227,34 @@ namespace Cat
             //      Default(new Executor()); 
             //   }
             //
-            ILGenerator ilg = mMainBldr.GetILGenerator();
+            mMainBldr = mTypeBldr.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), null);
+            ilg = mMainBldr.GetILGenerator();
             LocalBuilder exec = ilg.DeclareLocal(typeof(Executor));
             ilg.Emit(OpCodes.Newobj, typeof(Executor).GetConstructor(new Type[] { }));
             ilg.EmitCall(OpCodes.Call, mDefaultBldr, null);
             ilg.Emit(OpCodes.Ret);
-                        
-            ilg = mDefaultBldr.GetILGenerator();
 
-            foreach (Function f in fxns) {
-                EmitCatCall(ilg, f);
-            }
-
-            // Add final return opcode
-            ilg.Emit(OpCodes.Ret);
-            
             // Finalize the construction of global functions
             mType = mTypeBldr.CreateType();
 
             // set the entrypoint (thereby declaring it an EXE)
-            //ab.SetEntryPoint(fxb, PEFileKinds.ConsoleApplication);            
-            mAssembly.SetEntryPoint(mMainBldr);
+            mAssembly.SetEntryPoint(mMainBldr, PEFileKinds.ConsoleApplication);
 
             // Save the compilation
-            mAssembly.Save(sFileName);
-            //MainClass.WriteLine("Saved compiled target to " + mAsmName.FullName);
+            try
+            {
+                // The following line doesn't work on XP.
+                // sFileName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "/" + sFileName;
+
+                mAssembly.Save(sFileName);
+                MainClass.WriteLine("Saved compiled target to " + sFileName);
+            }
+            catch (Exception e)
+            {
+                MainClass.WriteLine("Unable to save output to " + sFileName);
+                MainClass.WriteLine("This is a known issue on Vista");
+                MainClass.WriteLine("The error message is " + e.Message);
+            }
 
             return mType;
         }

@@ -120,6 +120,7 @@ namespace Cat
             string sFirstHalf = sLine.Substring(0, nCharOffset);
             string sSecondHalf = sLine.Substring(nCharOffset + edit.SelectionLength);
             string sSel = edit.SelectedText;
+            /*
             string sResult = sFirstHalf + s + sSecondHalf;
             int nLines = Math.Max(nLine + 1, edit.Lines.Length);
             string[] a = new string[nLines];
@@ -127,6 +128,7 @@ namespace Cat
             edit.Lines = a;
             edit.SelectionStart = nPos + s1.Length + sSel.Length;
             edit.SelectionLength = 0;
+             */
         }
 
         internal static void Run()

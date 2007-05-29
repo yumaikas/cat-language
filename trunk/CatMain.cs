@@ -36,7 +36,7 @@ namespace Cat
                 {
                     WriteLine("");
                     WriteLine("Cat Interpreter");
-                    WriteLine("version 0.14.0 May 21st, 2007");
+                    WriteLine("version " + Config.gsVersion + " " + Config.gsDate);
                     WriteLine("by Christopher Diggins");
                     WriteLine("this software is released under the MIT license");
                     WriteLine("the source code is public domain and available at");
@@ -45,9 +45,6 @@ namespace Cat
                     WriteLine("Type in #help for help and #exit to exit.");
                     WriteLine("");
                 }
-
-                // TEMP:
-                CatEditor.Run();
 
                 // Load primitive operations 
                 RegisterPrimitives(Executor.Main.GetGlobalScope());
@@ -106,7 +103,7 @@ namespace Cat
 
             foreach (Function f in fxns)
             {
-                Write(f.GetName() + "\t");
+                Write(f.GetName() + " \t");
             }
         }
 
@@ -151,6 +148,26 @@ namespace Cat
             catch
             {
                 MainClass.WriteLine("failed to create html help file");
+            }
+        }
+
+        public static void MakeLibrary()
+        {
+            if (gpHelp == null)
+            {
+                MainClass.WriteLine("no help has been loaded");
+                return;
+            }
+
+            try
+            {
+                string s = "library.cat";
+                gpHelp.SaveLibrary(s);
+                MainClass.WriteLine("library file has been saved to " + s);
+            }
+            catch
+            {
+                MainClass.WriteLine("failed to create library");
             }
         }
         #endregion
