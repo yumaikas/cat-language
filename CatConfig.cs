@@ -86,5 +86,15 @@ namespace Cat
         /// Outputs the result of a type inference
         /// </summary>
         public static bool gbShowInferredType = true;
+
+        /// <summary>
+        /// Version number 
+        /// </summary>
+        public static string gsVersion = "0.14.1";
+
+        /// <summary>
+        /// Date of current build
+        /// </summary>
+        public static string gsDate = DateTime.Now.ToLongDateString();
     }
 }

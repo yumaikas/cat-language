@@ -424,10 +424,7 @@ namespace Cat
         }
     }
 
-    /// <summary>
-    /// Todo: remove all of the dynamic dispatching code. 
-    /// </summary>
-    public class Method : Function, ITypeArray
+   public class Method : Function, ITypeArray
     {
         MethodInfo mMethod;
         Object mObject;
