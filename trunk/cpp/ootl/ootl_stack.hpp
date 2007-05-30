@@ -1,0 +1,234 @@
+// Public Domain by Christopher Diggins 
+// http://www.ootl.org 
+//
+// The file contains the implementation for a persistent stack: a stack class that maintains its memory layout
+// even when more memory needs to be allocated. This means that adding items always has O(1) complexity, instead
+// of O(n) in the worst case as with most common stack implementations. The implementation is based on a vlist which 
+// also provides an average case of O(1) complexity for item indexing. A vlist is a list of buffers, each twice 
+// as big as the previous. The O(1) complexity has to do with the fact that most items occur in the bigger buffers,
+// There is no "begin" and "end" like STL collections, but for iteration over the collection, you can use the "foreach" 
+// member function (or implement your own special iterator)
+
+#ifndef OOTL_STACK_HPP
+#define OOTL_STACK_HPP
+
+#include "ootl_vlist.hpp"
+
+namespace ootl 
+{
+	/////////////////////////////////////////////////////////
+	// utility functions for dealing with stack.
+
+	// used for generating stack functors
+	template<typename Stack>
+	struct stacker_proc {
+		stacker_proc(Stack& s) : m(s) { }
+		template<typename T>
+		void operator()(const T& x) { m.push(x); }
+		Stack& m;
+	};
+
+	// used for constructing stack copies
+	template<typename Stack>
+	stacker_proc<Stack> stacker(Stack& s) { 
+		return stacker_proc<Stack>(s);
+	}
+
+	/////////////////////////////////////////////////////////
+	// ootl::stack implementation
+
+	template < typename T >
+	struct stack : protected vlist<T, 8, 2>
+	{
+	public:
+		
+		//////////////////////////////////////////////////////
+		// public type defs 
+
+		typedef stack self;
+		typedef T value_type;  
+
+		//////////////////////////////////////////////////////
+		// constructor/destructorfs 
+
+		stack() : vlist(), cnt(0), ptop(NULL) { 
+			initialize();
+			ptop = get_first_buffer()->begin;
+		}
+		stack(const self& x) : vlist(), cnt(0), ptop(NULL) { 
+			initialize(x.count());
+			ptop = get_first_buffer()->begin;
+			x.foreach(stacker(*this));
+		}
+		stack(size_t nsize, const T& x = T()) : vlist(), cnt(0), ptop(NULL) { 
+			initialize(nsize);
+			ptop = get_first_buffer()->begin;
+			while (count() < nsize) {
+			  push(x);
+			}
+		}
+		~stack() { 
+			while (count() > 0) {      
+			  pop();
+			}
+		} 
+
+		//////////////////////////////////////////////////////
+		// implementation of OOTL Indexable concept
+		// 
+		// Note: ootl::stack[0] is the top of the stack.
+
+		const T& get_at(size_t n) {
+			return operator[](n);
+		}
+		void set_at(size_t n, const T& x) {
+			*get_pointer(cnt - 1 - n) = x;
+		}
+		T& operator[](size_t n) {
+			return *get_pointer(cnt - n - 1);
+		}
+		const T& operator[](size_t n) const {
+			return *get_pointer(cnt - n - 1);
+		}
+		size_t count() const {
+			return cnt;
+		}
+
+		///////////////////////////////////////////////////
+		// implementation of OOTL Stack concept
+
+		void push(const T& x) {
+			push_nocreate();
+			new(ptop - 1) T(x);
+		}
+		void push() {
+			push_nocreate();
+			new(ptop - 1) T();
+		}
+		// adds space for an object, without constructing
+		void push_nocreate() {
+			assert(ptop != NULL);
+			if (ptop == get_last_buffer()->end) {
+				add_buffer();
+				ptop = get_last_buffer()->begin;
+			}
+			++ptop;
+			++cnt;
+		}
+		void pop() {        
+			pop_nodestroy();
+			ptop->~T();          
+		}
+		// removes an object without calling destructor
+		void pop_nodestroy() {        
+			assert(ptop != NULL);
+			assert(cnt > 0);
+			if (ptop == get_last_buffer()->begin) {
+				remove_buffer();
+				ptop = get_last_buffer()->end;
+			}
+			--ptop;
+			--cnt;
+		}
+		bool is_empty() {
+			return count() == 0;
+		}
+		T& top() {
+			assert(ptop != NULL);
+			if (ptop == get_last_buffer()->begin) {
+				return *(get_last_buffer()->prev->end - 1);
+			}
+			else {
+				return *(ptop - 1);
+			}    
+		}
+		const T& top() const {
+			assert(ptop != NULL);
+			if (ptop == get_last_buffer()->begin) {
+				return *(get_last_buffer()->prev->end - 1);
+			}
+			else {
+				return *(ptop - 1);
+			}    
+		}
+		T pull() {
+			T ret = top();
+			pop();
+			return ret;    
+		}
+		void clear() {
+			while (!is_empty()) {
+				pop();
+			}
+		}
+		void clear_nodestroy() {
+			while (!is_empty()) {
+				pop_nodestroy();
+			}
+		}
+
+		//////////////////////////////////////////////////////
+		// implementation of OOTL Iterable concept 
+
+		template<typename Procedure>
+		void foreach(Procedure& proc) const {
+			const buffer* cur = get_first_buffer();    
+			while (cur != NULL) {
+			  T* p = cur->begin;
+			  while (p != cur->end) {
+				if (p == ptop) return;
+				proc(*p++);
+			  }
+			  cur = cur->next;
+			} 
+		}  
+
+		//////////////////////////////////////////////////////
+		// implementation of OOTL Growable concept
+
+		void grow(size_t n = 1, const value_type& x = value_type()) {      
+			while (n--) push(x);
+		} 
+
+		//////////////////////////////////////////////////////
+		// implementation of OOTL Shrinkable concept
+
+		void shrink(size_t n = 1) {      
+			while (n--) pop();
+		}  
+
+		//////////////////////////////////////////////////////
+		// implementation of OOTL Resizable concept  
+
+		void resize(size_t n, const value_type& x = value_type()) {      
+			while (n > count()) push(x);
+			while (n < count()) pop();
+		}    
+
+		//////////////////////////////////////////////////////
+		// Utility functions
+
+		template<typename T>
+		void copy_to_array(T* arr) const
+		{
+			struct copy_proc
+			{
+				char* mpc;
+				copy_proc(char* pc) : mpc(pc) { }
+				void operator()(char c) { *mpc++ = c; }
+			};
+
+			foreach(copy_proc(arr));
+		}
+
+		//////////////////////////////////////////////////////////////
+		// fields 
+
+	private:
+
+		int cnt;
+		T* ptop;
+	};
+}
+
+#endif
