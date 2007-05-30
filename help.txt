@@ -4,7 +4,7 @@
 0	div_int	(int int -> int)	$a $b div_int == {$a / $b}		Level-0 Core Primitives	Divides the top value from the second value truncating the result.	
 0	dup	('a -> 'a 'a)	$a dup == $a $a 		Level-0 Core Primitives	Duplicates top item on the stack.	2 dup add_int 4 eq
 0	eq	('a 'a -> bool)	$a $b eq == {$a = $b}		Level-0 Core Primitives	Compares two items for equality.	1 1 eq 
-0	false	( -> bool)	false		Level-0 Core Primitives	Pushes a boolean value representing false onto the stack.	false [false] [true] if
+0	FALSE	( -> bool)	FALSE		Level-0 Core Primitives	Pushes a boolean value representing false onto the stack.	false [false] [true] if
 0	halt	(int ~> )			Level-0 Core Primitives	Halts a program with an error code	
 0	if	('A bool ('A -> 'B) ('A -> 'B) -> 'B)	true [$A] [$B] if == $A; false [$A] [$B] if == $B		Level-0 Core Primitives	"Conditionally executes one of two functions, depending on the boolean value below the functions."	true [1] [2] if 1 eq
 0	lt_int	(int int -> bool)	$a $b lt_int == {$a < $b}		Level-0 Core Primitives	Returns true if the top element is less than the second element.	3 5 lt_int
@@ -15,7 +15,7 @@
 0	pop	('a -> )	$a $b pop == $a		Level-0 Core Primitives	Removes top item from the stack.	3 5 pop 3 eq
 0	quote	('a -> ( -> 'a))	$a quote == [$a]		Level-0 Core Primitives	"Quotes a value, creating a constant generating function."	true 1 quote 2 quote 1 eq
 0	swap 	('a 'b -> 'b 'a)	$a $b swap == $b $a		Level-0 Core Primitives	Swap top two items on the stack.	1 2 swap pop 2 eq
-0	true	( -> bool)	true		Level-0 Core Primitives	Pushes a boolean value representing true onto the stack.	true [true] [false] if
+0	TRUE	( -> bool)	TRUE		Level-0 Core Primitives	Pushes a boolean value representing true onto the stack.	true [true] [false] if
 0	uncons	(list -> list var)	($A $b) uncons == ($A) $b; () uncons == error		Level-0 Core Primitives	Removes the first item from a list.	nil 2 cons 1 cons uncons pop uncons swap pop 2 eq
 1	apply	('A ('A -> 'B) -> 'B)	[$A] apply == $A	true swap [] if	Basic Combinators	Applies a unary function to the top item on the stack.	[1] apply 1 eq
 1	apply2	('a 'a ('a -> 'b) -> 'b 'b)	$a $a $B apply2 == $a $B $a $B	under apply [apply] dip	Basic Combinators	Applies a unary function to the top two items on the stack.	1 3 [inc] app2 pop 2 eq
@@ -56,7 +56,7 @@
 1	repeat	('A ('A -> 'A) int -> 'A)	[$A] 0 repeat == id; $A [$B] $c repeat == $B $A [$B] $c dec repeat;	swap [dip dec] curry [neqz] while pop	Looping Functions	Executes a function a number of times.	
 1	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz pop	Looping Functions	Executes a reverse for loop which counts down from some value to one. 	
 1	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if	[dip swap] curry swap [dip m] curry quote compose [[pop] if] compose m	Looping Functions	"Repeatedly executes a function, while the predicate returns true."	
-1	whilen	('A ('A -> 'A) ('A -> 'A bool)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	Looping Functions	"Repeatedly executes a function, while the predicate returns false."	
+1	whilen	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	Looping Functions	"Repeatedly executes a function, while the predicate returns false."	
 1	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while	[empty not] while	Looping Functions	"Repeatedly executes a function, while the list on the top of the stack is not empty."	
 1	whilenz	('A int ('A int -> 'A int) -> 'A)	[$A] whilenz == [$A] [neqz] while	[neqz] while	Looping Functions	"Repeatedly executes a function, while the integer on the top of the stack is not zero."	
 1	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev [cons] fold	List Functions	Concatenates two lists.	
@@ -93,7 +93,7 @@
 1	bury	('a 'b 'c -> 'c 'a 'b)	$a $b $c bury == $c $a $b	swap swapd	Stack Manipulation		
 1	dig	('a 'b 'c -> 'b 'c 'a)	$a $b $c dig == $b $c $a 	swapd swap	Stack Manipulation		
 1	dup2	('a 'b -> 'a 'b 'a 'b)	$a $b dup2 == $a $b $a $b	over over	Stack Manipulation		
-1	dupd	('a 'b -> 'a 'a 'b	$a $b dupd == $a $a $b	[dup] dip	Stack Manipulation		
+1	dupd	('a 'b -> 'a 'a 'b)	$a $b dupd == $a $a $b	[dup] dip	Stack Manipulation		
 1	over	('a 'b -> 'a 'b 'a)	$a $b over == $a $b $a	dupd swap	Stack Manipulation		
 1	peek	('a 'b 'c -> 'a 'b 'c 'a)	$a $b $c peek == $a $b $c $a	[dupd] dip dig	Stack Manipulation		
 1	poke	('a 'b 'c -> 'c 'b)	$a $b $c poke == $c $b	[popd] dip swap	Stack Manipulation		
