@@ -150,16 +150,34 @@ namespace yard
 				return mnId;
 			}
 			template<typename Function_T> 
-			void Visit(Function_T fxn, int id = -1)
+			void VisitChildren(Function_T fxn, int id = -1, bool bRecurse = true)
 			{
 				Node* pChild = GetFirstChild();
 				while (pChild != NULL)
 				{
-					pChild->Visit(fxn, id);
+					pChild->Visit(fxn, id, bRecurse);
 					pChild = pChild->GetSibling();
 				}
-				if (id != -1 && GetLabelId() != id) return;
-				fxn(this);	
+			}
+
+			template<typename Function_T> 
+			void Visit(Function_T fxn, int id = -1, bool bRecurse = true)
+			{
+				if (id != -1 && GetLabelId() != id) 
+				{
+					// always visit children if not a match even if not 
+					// recursive. We'll stop when we find an appropriate generation
+					VisitChildren(fxn, id, bRecurse);
+				}
+				else 
+				{
+					// When recursing, we visit children first
+					if (bRecurse)
+						VisitChildren(fxn, id, bRecurse);
+
+					// apply the function to ourself
+					fxn(this);	
+				}
 			}
 
 		    

@@ -29,8 +29,8 @@ namespace Cat
             msSemantics = cells[3].Trim();
             msImpl = cells[4].Trim();
             msCategory = cells[5].Trim();
-            msNotes = cells[6].Trim();
-            msTest = cells[7].Trim();
+            msTest = cells[6].Trim();
+            msNotes = cells[7].Trim();
 
             if (msNotes.Length > 2)
             {
@@ -177,12 +177,15 @@ namespace Cat
 
         public void OutputTests(StreamWriter sw, int nLevel)
         {
+            sw.WriteLine("define run_tests");
+            sw.WriteLine("{");
             foreach (KeyValuePair<string, FxnDoc> kvp in mFxns)
             {
                 FxnDoc f = kvp.Value;
                 if ((f.mnLevel <= nLevel) && (f.msTest != ""))
-                    sw.WriteLine("[" + f.msTest + "] test");
+                    sw.WriteLine("  [" + f.msTest + "] test");
             }
+            sw.WriteLine("}");
         }
 
         public string HyperLinkWord(string s)
@@ -266,7 +269,7 @@ namespace Cat
                 sw.WriteLine("");
                 sw.WriteLine("// Tests");
                 sw.WriteLine("");
-                sw.WriteLine("define test (int ( -> bool) ~> int) { apply [dup halt] [inc] if }");
+                sw.WriteLine("define test { apply [] [1 halt] if }");
                 sw.WriteLine("");
                 mTable.OutputTests(sw, 1);
                 sw.Flush();
