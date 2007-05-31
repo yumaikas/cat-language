@@ -24,11 +24,11 @@ namespace Cat
         public FxnDoc(string[] cells)
         {
             mnLevel = Int32.Parse(cells[0]);
-            msName = cells[1].Trim();
-            msType = cells[2].Trim();
-            msSemantics = cells[3].Trim();
-            msImpl = cells[4].Trim();
-            msCategory = cells[5].Trim();
+            msCategory = cells[1].Trim();
+            msName = cells[2].Trim();
+            msType = cells[3].Trim();
+            msSemantics = cells[4].Trim();
+            msImpl = cells[5].Trim();
             msTest = cells[6].Trim();
             msNotes = cells[7].Trim();
 

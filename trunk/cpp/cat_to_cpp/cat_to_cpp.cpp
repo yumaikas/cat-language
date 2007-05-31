@@ -107,9 +107,9 @@ void OutputQuotation(node* p)
 void OutputWord(node* p)
 {
 	assert(p->GetLabelId() == CatWordLabel::id);
-	printf("    ");
+	printf("    call(");
 	OutputName(p);
-	printf("();\n");
+	printf(");\n");
 }
 
 void OutputLiteral(node* p)
