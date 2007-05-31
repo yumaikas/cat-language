@@ -221,6 +221,27 @@ namespace ootl
 			foreach(copy_proc(arr));
 		}
 
+		// todo: this should be generalized as a zip function 
+		// or I could just use iterators
+		bool operator==(const self& x) const 
+		{
+			if (count() != x.count()) 
+				return false;
+			const buffer* cur1 = get_first_buffer();    
+			const buffer* cur2 = x.get_first_buffer();    
+			while (cur1 != NULL && cur2 != NULL) {
+				T* p1 = cur1->begin;
+				T* p2 = cur2->begin;
+				while ((p1 != cur1->end) && (p2 != cur2->end)) {
+					if (!(*p1 == *p2)) 
+						return false;
+				}
+				if (p1 == cur1->end) cur1 = cur1->next;
+				if (p2 == cur2->end) cur2 = cur2->next;
+			} 
+			return (cur1 == cur2); // they should both be NULL if successful
+		}
+
 		//////////////////////////////////////////////////////////////
 		// fields 
 

@@ -20,7 +20,9 @@ namespace ootl
 		static const int buffer_size = sizeof(void*); 
 	  
 		// used to identify empty object types 
-		struct empty {};
+		struct empty {
+			bool operator==(const empty& x) const { return true; } 
+		};
 
 		// used to hold an Object or a pointer to an Object
 		union holder {
@@ -39,6 +41,7 @@ namespace ootl
 			const void* (*get_const_ptr)(const holder&);
 			void  (*destructor)(holder&);
 			void  (*deleter)(holder&);
+			bool  (*equals)(const holder&, const holder&);
 			void  (*clone)(holder&, const holder&);
 		};
 
@@ -54,6 +57,7 @@ namespace ootl
 			static const void* get_const_ptr(const holder& x) { return x.buffer; } 
 			static void  destructor(holder& x) { cast(x)->~T();  }
 			static void  deleter(holder& x) { destructor(x); x.pointer = NULL; }
+			static bool  equals(const holder& x, const holder& y) { return *cast(x) == *cast(y); }
 			static void  clone(holder& x, const holder& y) {  new(x.buffer) T(*cast(y)); }
 		};
 
@@ -69,6 +73,7 @@ namespace ootl
 			static const void* get_const_ptr(const holder& x) { return x.pointer; } 
 			static void  destructor(holder& x) { cast(x)->~T(); }
 			static void  deleter(holder& x) { delete(cast(x)); }
+			static bool  equals(const holder& x, const holder& y) { return *cast(x) == *cast(y); }
 			static void  clone(holder& x, const holder& y) { x.pointer = new T(*cast(y)); }
 		};  
 		
@@ -83,6 +88,7 @@ namespace ootl
 			  , &fxns<T, optimize>::get_const_ptr
 			  , &fxns<T, optimize>::destructor
 			  , &fxns<T, optimize>::deleter
+			  , &fxns<T, optimize>::equals
 			  , &fxns<T, optimize>::clone
 			};
 			return &static_table;
@@ -177,8 +183,7 @@ namespace ootl
 		bool is_empty() const {
 			return table == get_table<empty>();
 		}
-		void move_to(object& o)
-		{
+		void move_to(object& o) {
 			memcpy(&o, this, sizeof(*this));
 			table = get_table<empty>();
 		}
@@ -187,12 +192,14 @@ namespace ootl
 			table->deleter(held);
 			table = get_table<empty>();
 		}
-		void release_nodestroy()
-		{
+		void release_nodestroy() {
 			table = get_table<empty>();
 		}		
 		object* operator->() {
 			return this;
+		}
+		bool operator==(const object& x) const {
+			return (table == x.table) && table->equals(held, x.held);
 		}
 		
 		// fields 

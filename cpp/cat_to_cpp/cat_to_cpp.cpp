@@ -53,6 +53,13 @@ void printch(char c)
 	}		
 }
 
+void OutputNodeText(node* p)
+{
+	iter_type i = p->GetFirstToken();	
+	while (i != p->GetLastToken())
+		putchar(*i++);
+}
+
 void OutputName(node* p)
 {
 	assert(p->GetLabelId() == CatWordLabel::id);
@@ -92,7 +99,9 @@ void OutputQuotation(node* p)
 {
 	assert(p->GetLabelId() == QuotationLabel::id);
 	int nId = anon_fxns[p];
-	printf("    push_function(_cat_anon%d);\n", nId);
+	printf("    push_function(_cat_anon%d); //", nId);
+	OutputNodeText(p);
+	printf("\n");
 }
 
 void OutputWord(node* p)
@@ -107,9 +116,7 @@ void OutputLiteral(node* p)
 {
 	assert(p->GetLabelId() == LiteralLabel::id);	
 	printf("    push_literal(");
-	iter_type i = p->GetFirstToken();
-	while (i != p->GetLastToken())
-		putchar(*i++);
+	OutputNodeText(p);
 	printf(");\n");
 }
 
@@ -138,16 +145,16 @@ void OutputExpr(node* p)
 void OutputFunctionDefs(node* p)
 {
 	OutputFxnSig(p);
-	printf(" {\n");
-	p->Visit(OutputExpr, ExprLabel::id);
+	printf("\n{\n");
+	p->Visit(OutputExpr, ExprLabel::id, false);
 	printf("}\n");
 }
 
 void OutputQuotationDefs(node* p)
 {
 	int nId = anon_fxns[p];
-	printf("void _cat_anon%d() {", nId);
-	p->Visit(OutputExpr, ExprLabel::id);
+	printf("void _cat_anon%d()\n{\n", nId);
+	p->Visit(OutputExpr, ExprLabel::id, false);
 	printf("}\n");
 }
 
@@ -164,7 +171,7 @@ void test_hash()
 
 int main(int argc, char* argv[])
 {	
-	test_hash();
+	//test_hash();
 
 	FILE* in = stdin; 
 	FILE* out = stdout;

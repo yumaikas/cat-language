@@ -24,7 +24,16 @@ namespace cat
 	//////////////////////////////////////////////////////////////////////////////
 	// forward declarations
 
-	void (object& o);
+	void _eval(object& o);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// debugging stuff
+
+	void cat_assert(bool b)
+	{
+		if (!b)
+			throw std::exception("failed assertion");
+	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	// function types
@@ -37,6 +46,10 @@ namespace cat
 		prim_function(const prim_function& f)
 			: fxn(f.fxn)
 		{ }
+		bool operator==(const prim_function& x) const 
+		{
+			return fxn == x.fxn;
+		}
 		fxn_ptr fxn;
 	};
 
@@ -50,8 +63,12 @@ namespace cat
 			: value(x.value)
 		{
 		}
+		bool operator==(const quoted_value& x) const 
+		{
+			return value == x.value;
+		}
 		// can only be called once. This is critical 
-		// for fast "quote apply" instructions
+		// for fast "quote apply" instructions. Consider "1000000 n quote" ... "apply"
 		void eval()
 		{
 			stk.push_nocreate();
@@ -85,6 +102,10 @@ namespace cat
 			// crucial, because it may contain quoted_values, which can only 
 			// be called once 
 			fxns.clear_nodestroy();
+		}
+		bool operator==(const composed_function& x) const 
+		{
+			return fxns == x.fxns;
 		}
 		list fxns;
 	};
@@ -129,7 +150,7 @@ namespace cat
 		}
 		else
 		{
-			assert(false);
+			cat_assert(false);
 		}
 	}
 
@@ -161,12 +182,12 @@ namespace cat
 		}
 		else
 		{
-			assert(false);
+			cat_assert(false);
 		}
 		o.release_nodestroy();
 	}
 	
-	void push_quotation(fxn_ptr fp)
+	void push_function(fxn_ptr fp)
 	{
 		stk.push(prim_function(fp));
 	}
@@ -180,11 +201,57 @@ namespace cat
 	//////////////////////////////////////////////////////////////////////////////
 	// primitive functions 
 
-	void _add_int()
+	void _add__int()
 	{
+		cat_assert(stk.count() >= 2);
 		int n = stk.pull().to<int>();
 		int m = stk.pull().to<int>();
-		stk.push(n + m);
+		stk.push(m + n);
+	}
+
+	void _mul__int()
+	{
+		cat_assert(stk.count() >= 2);
+		int n = stk.pull().to<int>();
+		int m = stk.pull().to<int>();
+		stk.push(m * n);
+	}
+
+	void _div__int()
+	{
+		cat_assert(stk.count() >= 2);
+		int n = stk.pull().to<int>();
+		int m = stk.pull().to<int>();
+		stk.push(m / n);
+	}
+
+	void _mod__int()
+	{
+		cat_assert(stk.count() >= 2);
+		int n = stk.pull().to<int>();
+		int m = stk.pull().to<int>();
+		stk.push(m % n);
+	}
+
+	void _lt__int()
+	{
+		cat_assert(stk.count() >= 2);
+		int n = stk.pull().to<int>();
+		int m = stk.pull().to<int>();
+		stk.push(m < n);
+	}
+
+	void _neg__int()
+	{
+		cat_assert(stk.count() >= 1);
+		int n = stk.pull().to<int>();
+		stk.push(-n);
+	}
+
+	void _halt()
+	{
+		cat_assert(false); // assure debugger stops here
+		exit(1);
 	}
 
 	void _nil()
@@ -194,21 +261,64 @@ namespace cat
 
 	void _cons()
 	{
-		object tmp;
-		stk.top().move_to(tmp);
+		cat_assert(stk.count() >= 2);
+		list& lst = stk.top().to<list>();
+		lst.push_nocreate();
+		stk.top().move_to(lst.top());
 		stk.pop_nodestroy();
-		list& target = stk.top().to<list>();
-		target.push_nocreate();
-		tmp.move_to(target.top());
+	}
+
+	void _uncons()
+	{
+		cat_assert(stk.count() >= 1);
+		list& lst = stk.top().to<list>();
+		if (lst.is_empty())
+		{
+			_nil();
+			return;
+		}
+		stk.push_nocreate();
+		lst.top().move_to(stk.top());		
+		lst.pop_nodestroy();
+	}
+
+	void _eq()
+	{
+		cat_assert(stk.count() >= 2);
+		object o;
+		stk.top().move_to(o);
+		stk.pop_nodestroy();
+		if (stk.top() == o)
+			stk.top() = true;
+		else
+			stk.top() = false;
 	}
 
 	void _dup()
 	{
+		cat_assert(stk.count() >= 1);
 		stk.push(stk.top());
+	}
+
+	void _pop()
+	{
+		cat_assert(stk.count() > 1);
+		stk.pop();
+	}
+
+	void _true()
+	{
+		stk.push(true);
+	}
+
+	void _false()
+	{
+		stk.push(true);
 	}
 
 	void _swap()
 	{
+		cat_assert(stk.count() >= 2);
 		object& first = stk.top();
 		object& second = stk[1];
 		object tmp;
@@ -217,24 +327,47 @@ namespace cat
 		tmp.move_to(second);
 	}
 
+	/* Currently implemented in library.
+
 	void _apply()
 	{
+		cat_assert(stk.count() >= 1);
 		object o;
 		stk.top().move_to(o);
 		stk.pop_nodestroy();
-		eval(o);
+		_eval(o);
 	}
+	*/
 
 	void _quote()
 	{
+		cat_assert(stk.count() >= 1);
 		object o;
 		stk.top().move_to(o);
 		stk.pop_nodestroy();
 		stk.push(quoted_value(o));
 	}
 
+	void _if()
+	{
+		cat_assert(stk.count() >= 3);
+		object onfalse;
+		stk.top().move_to(onfalse);
+		stk.pop_nodestroy();
+		object ontrue;
+		stk.top().move_to(ontrue);
+		stk.pop_nodestroy();
+		bool bCond = stk.top().to<bool>();
+		stk.pop_nodestroy();
+		if (bCond)
+			_eval(ontrue);
+		else 
+			_eval(onfalse);
+	}
+
 	void _compose()
 	{
+		cat_assert(stk.count() >= 2);
 		object o;
 		stk.top().move_to(o);
 		stk.pop_nodestroy();

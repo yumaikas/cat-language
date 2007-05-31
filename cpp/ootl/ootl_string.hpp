@@ -16,6 +16,14 @@ namespace ootl
 		cstring(const cstring& x) : m(x.m) { }
 		operator const char*() { return to_ptr(); }
 		const char* to_ptr() { return m; }
+		bool operator==(const cstring& x) const 
+		{
+			const char* left = m;
+			const char* right = x.m;
+			while ((*left != '\0') && (*right != '\0'))
+				if (*left++ != *right++) return false;
+			return (*left == *right); 
+		}
 	private:
 		const char* m;
 	};
