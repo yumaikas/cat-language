@@ -1,252 +1,255 @@
-0	add_int	(int int -> int)	$a $b add_int == {$a + $b}		Level-0 Core Primitives	1 2 add_int 3 eq	Adds two values together
-0	compose	(('A -> 'B) ('B -> 'C) -> ('A -> 'C))	[$A] [$B] compose == [$A $B]		Level-0 Core Primitives	[1] [inc] compose apply 2 eq	Composes two functions.
-0	cons	(list var -> list)	($A) $b cons == ($A $b)		Level-0 Core Primitives	nil 1 cons uncons swap pop 1 eq	Add an item to the beginning of a list.
-0	div_int	(int int -> int)	$a $b div_int == {$a / $b}		Level-0 Core Primitives	42 7 div_int 6 eq	Divides the top value from the second value truncating the result.
-0	dup	('a -> 'a 'a)	$a dup == $a $a		 Level-0 Core Primitives	2 dup add_int 4 eq	Duplicates top item on the stack.
-0	eq	('a 'a -> bool)	$a $b eq == {$a = $b}		Level-0 Core Primitives	1 1 eq	Compares two items for equality.
-0	false	( -> bool)	false		Level-0 Core Primitives	false [false] [true] if	Pushes a boolean value representing false onto the stack.
-0	halt	(int ~> )			Level-0 Core Primitives		Halts a program with an error code
-0	if	('A bool ('A -> 'B) ('A -> 'B) -> 'B)	true [$A] [$B] if == $A; false [$A] [$B] if == $B		Level-0 Core Primitives	true [1] [2] if 1 eq	Conditionally executes one of two functions  depending on the boolean value below the functions.
-0	lt_int	(int int -> bool)	$a $b lt_int == {$a < $b}		Level-0 Core Primitives	3 5 lt_int	Returns true if the top element is less than the second element.
-0	mod_int	(int int -> int)	$a $b mod_int == {$a % $b}		Level-0 Core Primitives	5 3 mod_int 2 eq	Returns the remainder of dividing the top value from the second value.
-0	mul_int	(int int -> int)	$a $b mul_int == {$a * $b}		Level-0 Core Primitives	5 3 mul_int 15 eq	Multiplies the top two values.
-0	neg_int	(int -> int)	$a neg_int == {-$a}		Level-0 Core Primitives	5 neg_int -5 eq	Negates the top value.
-0	nil	( -> list)	nil == ()		Level-0 Core Primitives	nil nil eq	Creates an empty list.
-0	pop	('a -> )	$a $b pop == $a		Level-0 Core Primitives	3 5 pop 3 eq	Removes top item from the stack.
-0	quote	('a -> ( -> 'a))	$a quote == [$a]		Level-0 Core Primitives	true 1 quote 2 quote 1 eq	Quotes a value  creating a nullary constant generating function.
-0	swap	 ('a 'b -> 'b 'a)	$a $b swap == $b $a		Level-0 Core Primitives	1 2 swap pop 2 eq	Swap top two items on the stack.
-0	true	( -> bool)	true		Level-0 Core Primitives	true [true] [false] if	Pushes a boolean value representing true onto the stack.
-0	uncons	(list -> list var)	($A $b) uncons == ($A) $b; () uncons == error		Level-0 Core Primitives	nil 2 cons 1 cons uncons pop uncons swap pop 2 eq	Removes the first item from a list.
-1	apply	('A ('A -> 'B) -> 'B)	[$A] apply == $A	true swap [] if	Basic Combinators	[1] apply 1 eq	Executes a function.
-1	apply2	('a 'a ('a -> 'b) -> 'b 'b)	$a $a $B apply2 == $a $B $a $B	under apply [apply] dip	Basic Combinators	1 3 [inc] apply2 pop 2 eq	Applies a unary function to the top two items on the stack.
-1	dip	('A 'b ('A -> 'C) -> 'C 'b)	$a [$B] dip == $B $a	swap quote compose apply	Basic Combinators	1 3 [inc] dip pop 2 eq	Executes a function after temporarily removing the next item on the stack.
-1	dip2	('A 'b 'c ('A -> 'D) -> 'D 'b 'c)	$a $b [$C] dip2 == $C $a $b	swap [dip] dip	Basic Combinators	1 3 5 [inc] dip2 pop pop 2 eq	Executes a function after temporarily removing the next two items on the stack.
-1	b		[$A] [$B] [$C] b == [[$A] $B] $C	[k] [[s] k] s	Classical Combinators	[1] [apply 2 mul_int] [apply] b 2 eq	Classical B combinator a.k.a. Bluebird
-1	c		[$A] [$B] [$C] c == [$B] [$A] $C	[[k] k] [[s] [b] b] s	Classical Combinators	[dup] [12] [pop] c apply 12 eq	Classical C combinator a.k.a. Cardinal
-1	d		[$A] [$B] [$C] [$D] d == [[$A] $B] [$C] $D	[b] b	Classical Combinators		D combinator a.k.a. Dove
-1	i	('A ('A -> 'B) -> 'B)	[$A] i == $A	[k] [k] s	Classical Combinators	[42] i 42 eq	"Classical I combinator, a.k.a. Identity"
-1	k	('A 'b ('A -> 'C) -> 'C)	[$A] [$B] k == $B	[pop] dip	Classical Combinators		"Classical K combinator used to represent True, a.k.a. Kestrel"
-1	ki	('A ('A -> 'B) 'c -> 'B)	[$A] [$B] ki == $A	[i] k	Classical Combinators		"KI combinator, used to represent False, a.k.a. Kite"
-1	l		[$A] [$B] l == [[$A] $A] $B	[m] [b] c	Classical Combinators		"L combinator, a.ka. Lark"
-1	m	(f=(f -> 'A) -> 'A)	[$A] m == [[$A] $A]	dup apply	Classical Combinators		"Self-applicative or recursive combinator, a.k.a. Mockingbird."
-1	o		[$A] [$B] o == [[$B] $B] $A	[i] s	Classical Combinators		"O combinator, a.k.a. Owl"
-1	r		[$A] [$B] [$C] r == [$C] [$A] $B	[t] [b] b	Classical Combinators		"R combinator, a.k.a. Robin"
-1	s		[$A] [$B] [$C] s == [[$A] $B] [$A] $C	peek swap [curry] dip2 apply	Classical Combinators		"Classical S combinator, a.k.a. Starling"
-1	t		[$A] [$B] t == [$B] $A	[i] c	Classical Combinators		"T or reverse application combinator, a.k.a. Thrush."
-1	u		[$A] [$B] u == [[$B] [$A] [$A] $B] $A	[o] l	Classical Combinators		Turing's fixed point combinator.
-1	v		[$A] [$B] [$C] v == [$B] [$C] $A	[t] [c] b	Classical Combinators		"V combinator, a.k.a. Vireo"
-1	w		[$A] [$B] [$C] b == [[$A] $B] $C	[[r] [m] b] c	Classical Combinators		"Classical W combinator, a.k.a. Warbler"
-1	y	('A f=('A f -> 'B) -> 'B)	[$A] y == [[$A] y] $A	dup quote [y] compose swap apply	Classical Combinators		Classical fix-point Y combinator a.k.a. Sage Bird or Why Bird
-1	and	(bool bool -> bool)	$a $b and == $a [$b] [false] if	quote [false] if	Boolean Operations	true true and	Executes a boolean 'and' operation.
-1	nand	(bool bool -> bool)	$a $b and == $a [$b not] [true] if	and not	Boolean Operations	true false nand	Executes a boolean 'nand' operation.
-1	nor	(bool bool -> bool)	$a $b nor == $a [false] [$b not] if	or not	Boolean Operations	false false nor	Executes a boolean 'nor' operation.
-1	not	(bool -> bool)	true not == false; false not == true;	[false] [true] if	Boolean Operations	false not	Executes a boolean 'not' operation.
-1	or	(bool bool -> bool)	$a $b or == $a [true] [$b] if	[true] swap quote if	Boolean Operations		Executes a boolean 'or' operation.
-1	eqz	(int -> int bool)	$a eqz == $a $a 0 eq	dup 0 eq	Comparison Functions		Compares top value to zero leaving the value on the stack.
-1	eqf	('a -> ('a -> 'a bool))	$a eqf == [dup $a eq]	 [dupd eq] curry	Comparison Functions		Creates a function that tests an argument for equality with a specific value leaving the argument on the stack.
-1	neq	('a 'a -> bool)	$a $b neq == $a $a eq not	eq not	Comparison Functions		Compares top items on the stack for inequality.
-1	neqf	('a -> ('a -> 'a bool))	$a neqf == [dup $a neq]	 [dupd neq] curry	Comparison Functions		Creates a function that tests an argument for inequality with a specific value leaving the argument on the stack.
-1	neqz	(int -> int bool)	$a eqz == $a $a 0 neq	dup 0 neq	Comparison Functions		Checks top value for inequality with zero leaving the value on the stack.
-1	curry	('a ('B 'a -> 'C) -> ('B -> 'C))	$a [$B] curry == [$a $B]	[quote] dip compose	Function Construction		Fixes a function's top argument to a constant value.
-1	curry2	('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))	$a $b [$C] curry2 == [$a $b $C]	curry curry	Function Construction		Fixes a function's top two arguments to constant values.
-1	rcompose	(('A -> 'B) ('C-> 'A) -> ('C -> 'A))	[$A] [$B] rcompose == [$B $A]	swap compose	Function Construction		Swaps then composes two functions.
-1	rcurry	(('A 'b -> 'C) 'b -> ('A -> 'C))	[$A] $b rcurry == [$B $a]	curry swap	Function Construction		Fixes a function's top argument to a constant value.
-1	bin_rec	('a ('a -> 'a bool) ('a -> 'b) ('a -> 'c 'a 'a) ('c 'b 'b -> 'b) -> 'b)	[$A] [$B] [$C] [$D] bin_rec = $A [$B] [$C [[[$A] [$B] [$C] [$D] bin_rec] apply2] $D] if		Function Construction		Executes a binary recursive process.
-1	for	('A ('A int -> 'A) int -> 'A)	[$A] $b for == 0 [[$A] dip] [dup $b neq] while	swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop	Looping Functions		"Executes a loop a number of times passing the loop count."""
-1	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[uncons swap] rcompose [dip] curry [empty not] while pop	Looping Functions		Executes a function a number of times  pushing a value from a list each time. Very similar to fold. 
-1	repeat	('A ('A -> 'A) int -> 'A)	[$A] 0 repeat == id; $A [$B] $c repeat == $B $A [$B] $c dec repeat;	swap [dip dec] curry [neqz] while pop	Looping Functions		Executes a function a number of times.
-1	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz pop	Looping Functions		Executes a reverse for loop which counts down from some value to one.
-1	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if	[dip swap] curry swap [dip m] curry quote compose [[pop] if] compose m	Looping Functions		Repeatedly executes a function  while the predicate returns true.
-1	whilen	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	Looping Functions		Repeatedly executes a function while the predicate returns false.
-1	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while	[empty not] while	Looping Functions		Repeatedly executes a function while the list on the top of the stack is not empty.
-1	whilenz	('A int ('A int -> 'A int) -> 'A)	[$A] whilenz == [$A] [neqz] while	[neqz] while	Looping Functions		Repeatedly executes a function while the integer on the top of the stack is not zero.
-1	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev [cons] fold	List Functions		Concatenates two lists.
-1	consd	(list var int -> list)	($A) $b $c cons == ($A $b) $c	[cons] dip	List Functions		Appends the second item on the stack to the list in the third position.
-1	count	(list -> list count)	($A $b) count == ($A) count inc; () count == 0	0 [pop inc] fold	List Functions		Returns the number of items in a list.
-1	count_while	(list ('a -> bool) -> list int)	() [$A] count_while == 0; ($A $b) [$C] count_while == $b $C $A [$C] count_while [inc] [] if	dupd 0 bury [[inc] dip] swap [uncons] rcompose quote [empty not] rcompose [[false] if] compose	List Functions		Returns how many of the first elements satisfy a predicate
-1	drop	(list int -> list)	($A $b) 0 drop = ($A); ($A $b) $c drop == ($A $c dec drop)	[[tail] dip dec] whilenz pop	List Functions		Removes a number of items from the front of a list.
-1	drop_while	(list ('a -> bool) -> list)	() [$A] drop_while == (); ($A $b) [$C] drop_while == $b $C [($A [$C] drop_while)] [($A)]	if dupd count_while drop	List Functions		Drops items from a list while the predicate is satisfied.
-1	empty	(list -> list bool)	($A) empty == ($A) count 0 eq	count 0 eq	List Functions		Returns true if a list contains no items.
-1	filter	(list ('a -> bool) -> list)	($A $b) [$C] filter == $b $C if ($A [$C] filter $b) ($A [$C] filter)	[rev] dip [[cons] [] if] compose [dup] rcompose nil swap fold	List Functions		"Creates a list containing elements of a source list  for which a predicate returns true."""
-1	first	(list -> list var)	($A $b) first == ($A $b) $b	dup uncons popd	List Functions		Returns first item in a list.
-1	flatten	(list -> list)	() flatten == (); ($A ($b)) flatten == ($A flatten $b)	nil [cat] fold	List Functions		Concatenates all children in a list of lists.
-1	fold	(list 'a ('a 'a -> 'a) -> 'a)	() $a [$B] fold == $a; ($A $b) $c [$D] fold == $c $b $D ($A) [$D] fold	swapd [dip] curry [uncons swap] rcompose whilene pop	List Functions		Applies a binary function to the first item in a list with an accumulated value. It removes the first item and repeats until the list is empty.
-1	gen	('a ('a -> 'a) ('a -> bool) -> list)	$a [$B] [$C] gen == $a $C [($a $a $B [$B] [$C] gen)] [()] if	nil bury [[cons] dip rcompose] dip [dup] rcompose	List Functions		Creates a new list  and appends an item to a list if the predicate is true. It then applyies a transform to the last value and repeats.
-1	head	(list -> var)	($A $b) head == $b	uncons popd	List Functions		Replace a list with the first item in it.
-1	last	(list -> list var)	($A) last == ($A) count dec nth	count dec nth	List Functions		Returns the last item in a list.
-1	map	(list ('a -> 'b) -> list)	$a [$B] map == $a [$B] rmap rev	rmap rev	List Functions		Creates a new list by applying a transform function to each item in a list.
-1	mid	(list -> list var)	($A) mid == ($A) count 2 div_int nth	count 2 div_int nth	List Functions		Returns the middle item in a list.
-1	move_head	(list list -> list list)	($A) ($B $c) move_head == ($A $c) ($B)	uncons swap cons	List Functions		Moves the head of one list to the next.
-1	n	(int -> list)	0 n == (); $a n = ($a dec n $a)	nil swap dup [dec cons] swap repeat	List Functions		Creates a list of consecutive integers from 0 to some number minus one.
-1	nth	(list int -> list var)	($A $b) 0 nth == ($A $b) $b; ($A $b) 0 nth	 dupd take head	List Functions		Returns the nth item in a list.
-1	pair	('a 'b -> list)	$a $b pair == ($a $b)	[unit] dip cons	List Functions		Creates a list containing two items.
-1	rev	(list -> list)	($A $b) rev == ($b $A rev); () rev == ()	nil [cons] fold	List Functions		Reverses a list.
-1	rmap	(list ('a -> 'b) -> list)	[$A] rmap == nil [cons] fold	nil [cons] fold	List Functions		Constructs a map of the reverse of a list.
-1	set_at	(list var int -> list)	($A $b) $c 0 set_at == ($A $c); ($A $b) $c $d set_at == ($A $c $d dec set_at $b)	swapd split_at [tail swons] dip cat	List Functions		Creates a new list by replacing an item at a given index with a new value.
-1	small	(list -> list bool)	($A) small == ($A) count 1 lteq	count 1 lteq_int	List Functions		Returns true if a list contains one or zero items.
-1	split	(list ('a -> bool) -> list list)	($A) [$B] split == ($A) [$B] (filter) ($A) [$B not] (filter)	 dup2 [filter] dip2 [not] compose filter	List Functions		Splits a list in two according to a predicate function.
-1	split_at	(list int -> list list)	($A) 0 split_at == ($A) (); ($A $b) $c split_at == ($A) $c dec split_at $b cons	nil bury [move_head] swap repeat	List Functions		Splits a list in two at a specific index.
-1	swons	(var list -> list)	$b ($A) swons == ($A $b)	swap cons	List Functions		Adds the item below a list to the front of it.
-1	tail	(list -> list)	($A $b) tail == ($A)	uncons pop	List Functions		Remove first item in a list.
-1	take	(list int -> list)	($A $b) 0 take = (); ($A $b) $c take == ($A $c dec take $b)	nil bury [[move_head] dip dec] whilenz pop rev	List Functions		Creates a list from the first n items in another list.
-1	take_while	(list ('a -> bool) -> list)	() [$A] take_while == (); ($A $b) [$C] take_while == $b $C [($A [$C] take_while $b)] [()] if	 dupd count_while take	List Functions		Takes items from a list while the predicate is satisfied.
-1	unfold	('a ('a -> 'a 'a) ('a -> 'a bool) -> list)	$a [$B] [$C] unfold == $a $C [($a $a $B [$B] [$C] unfold)] [()] if	[nil bury [consd] compose] dip whilen	List Functions		Generates a list from a binary function and initial value.
-1	unpair	(list -> var var)	($A $b $c) unpair == $b $c	uncons [head] dip	List Functions		Removes first two items from a list and removes it.
-1	unit	('a -> list)	$a unit == ($a)	nil swap cons	List Functions		Creates a list containing one item.
-1	bury	('a 'b 'c -> 'c 'a 'b)	$a $b $c bury == $c $a $b	swap swapd	Stack Manipulation		
-1	dig	('a 'b 'c -> 'b 'c 'a)	$a $b $c dig == $b $c $a	 swapd swap	Stack Manipulation		
-1	dup2	('a 'b -> 'a 'b 'a 'b)	$a $b dup2 == $a $b $a $b	over over	Stack Manipulation		
-1	dupd	('a 'b -> 'a 'a 'b)	$a $b dupd == $a $a $b	[dup] dip	Stack Manipulation		
-1	over	('a 'b -> 'a 'b 'a)	$a $b over == $a $b $a	dupd swap	Stack Manipulation		
-1	peek	('a 'b 'c -> 'a 'b 'c 'a)	$a $b $c peek == $a $b $c $a	[dupd] dip dig	Stack Manipulation		
-1	poke	('a 'b 'c -> 'c 'b)	$a $b $c poke == $c $b	[popd] dip swap	Stack Manipulation		
-1	pop2	('a 'b -> )	$a $b pop2 == id	pop pop	Stack Manipulation		
-1	popd	('a 'b -> 'b)	$a $b popd == $b	[pop] dip	Stack Manipulation		
-1	swap2	 ('a 'b 'c 'd -> 'c 'd 'a 'b)	$a $b $c $d swap2 == $c $d $a $b	[bury] dip bury	Stack Manipulation		
-1	swapd	('a 'b 'c -> 'b 'a 'c)	$a $b $c swapd == $b $a $c	[swap] dip	Stack Manipulation		
-1	under	('a 'b -> 'b 'a 'b)	$a $b under == $b $a $b	dup swapd	Stack Manipulation		
-1	dec	(int -> int)	$a inc == {$a-1}	1 sub_int	Integer Operations		
-1	inc	(int -> int)	$a inc == {$a+1}	1 add_int	Integer Operations		
-1	sub_int	(int int -> int)	$a $b sub_int == {$a - $b}	neg_int add_int	Integer Operations		
-1	min_int	(int int -> int)	$a $b min_int == $a $b lt_int [$a] [$b] if	dup2 gt_int [pop] [popd] if	Integer Operations		
-1	max_int	(int int -> int)	$a $b max_int == $a $b gt_int [$a] [$b] if	dup2 gt_int [popd] [pop] if	Integer Operations		
-1	gt_int	(int int -> bool)	$a $b gt_int == {$a > $b}	lteq_int not	Integer Operations		
-1	gteq_int	(int int -> bool)	$a $b gteq_int == {$a >= $b}	lt_int not	Integer Operations		
-1	lteq_int	(int int -> bool)	$a $b lteq_int == {$a <= $b}	dup2 eq lt_int or	Integer Operations		
-2	add_bit	(bit bit -> bit)	$a $b add_bit == {$a + $b}		Bit Operations		
-2	sub_bit	(bit bit -> bit)	$a $b sub_bit == {$a - $b}		Bit Operations		
-2	mul_bit	(bit bit -> bit)	$a $b mul_bit == {$a * $b}		Bit Operations		
-2	div_bit	(bit bit -> bit)	$a $b div_bit == {$a / $b}		Bit Operations		
-2	mod_bit	(bit bit -> bit)	$a $b mod_bit == {$a % $b}		Bit Operations		
-2	neg_bit	(bit -> bit)	$a neg_bit == {-$a}		Bit Operations		
-2	compl_bit	(bit -> bit)	$a compl_bit == {~$a}		Bit Operations		
-2	min_bit	(bit bit -> bit)	$a $b min_bit == $a $b lt_bit [$a] [$b] if		Bit Operations		
-2	max_bit	(bit bit -> bit)	$a $b max_bit == $a $b gt_bit [$a] [$b] if		Bit Operations		
-2	shl_bit	(bit bit -> bit)	$a $b shl_bit == {$a << $b}		Bit Operations		
-2	shr_bit	(bit bit -> bit)	$a $b shr_bit == {$a >> $b}		Bit Operations		
-2	gt_bit	(bit bit -> bool)	$a $b gt_bit == {$a > $b}		Bit Operations		
-2	lt_bit	(bit bit -> bool)	$a $b lt_bit == {$a < $b}		Bit Operations		
-2	gteq_bit	(bit bit -> bool)	$a $b gteq_bit == {$a >= $b}		Bit Operations		
-2	lteq_bit	(bit bit -> bool)	$a $b lteq_bit == {$a <= $b}		Bit Operations		
-2	compl_int	(int -> int)	$a compl_int == {~$a}		Integer Operations		
-2	shl_int	(int int -> int)	$a $b shl_int == {$a << $b}		Integer Operations		
-2	shr_int	(int int -> int)	$a $b shr_int == {$a >> $b}		Integer Operations		
-2	add_byte	(byte byte -> byte)	$a $b add_byte == {$a + $b}		Byte Operations		
-2	sub_byte	(byte byte -> byte)	$a $b sub_byte == {$a - $b}		Byte Operations		
-2	mul_byte	(byte byte -> byte)	$a $b mul_byte == {$a * $b}		Byte Operations		
-2	div_byte	(byte byte -> byte)	$a $b div_byte == {$a / $b}		Byte Operations		
-2	mod_byte	(byte byte -> byte)	$a $b mod_byte == {$a % $b}		Byte Operations		
-2	neg_byte	(byte -> byte)	$a neg_byte == {-$a}		Byte Operations		
-2	min_byte	(byte byte -> byte)	$a $b min_byte == $a $b lt_byte [$a] [$b] if		Byte Operations		
-2	max_byte	(byte byte -> byte)	$a $b max_byte == $a $b gt_byte [$a] [$b] if		Byte Operations		
-2	compl_byte	(byte -> byte)	$a compl_byte == {~$a}		Byte Operations		
-2	shl_byte	(byte byte -> byte)	$a $b shl_byte == {$a << $b}		Byte Operations		
-2	shr_byte	(byte byte -> byte)	$a $b shr_byte == {$a >> $b}		Byte Operations		
-2	gt_byte	(byte byte -> bool)	$a $b gt_byte == {$a > $b}		Byte Operations		
-2	lt_byte	(byte byte -> bool)	$a $b lt_byte == {$a < $b}		Byte Operations		
-2	gteq_byte	(byte byte -> bool)	$a $b gteq_byte == {$a >= $b}		Byte Operations		
-2	lteq_byte	(byte byte -> bool)	$a $b lteq_byte == {$a <= $b}		Byte Operations		
-2	add_dbl	(dbl dbl -> dbl)	$a $b add_dbl == {$a + $b}		Double Operations		
-2	sub_dbl	(dbl dbl -> dbl)	$a $b sub_dbl == {$a - $b}		Double Operations		
-2	mul_dbl	(dbl dbl -> dbl)	$a $b mul_dbl == {$a * $b}		Double Operations		
-2	div_dbl	(dbl dbl -> dbl)	$a $b div_dbl == {$a / $b}		Double Operations		
-2	mod_dbl	(dbl dbl -> dbl)	$a $b mod_dbl == {$a % $b}		Double Operations		
-2	neg_dbl	(dbl -> dbl)	$a neg_dbl == {-$a}		Double Operations		
-2	compl_dbl	(dbl -> dbl)	$a compl_dbl == {~$a}		Double Operations		
-2	min_dbl	(dbl dbl -> dbl)	$a $b min_dbl == $a $b lt_dbl [$a] [$b] if		Double Operations		
-2	max_dbl	(dbl dbl -> dbl)	$a $b max_dbl == $a $b gt_dbl [$a] [$b] if		Double Operations		
-2	gt_dbl	(dbl dbl -> bool)	$a $b gt_dbl == {$a > $b}		Double Operations		
-2	lt_dbl	(dbl dbl -> bool)	$a $b lt_dbl == {$a < $b}		Double Operations		
-2	gteq_dbl	(dbl dbl -> bool)	$a $b gteq_dbl == {$a >= $b}		Double Operations		
-2	lteq_dbl	(dbl dbl -> bool)	$a $b lteq_dbl == {$a <= $b}		Double Operations		
-2	pow_dbl	(dbl dbl -> dbl)	$a $b abs_dbl == {$a ^ $b }		Double Operations		
-2	abs_dbl	(dbl -> dbl)			Double Operations		Returns the absolute value of a number.
-2	sqr_dbl	(dbl -> dbl)			Double Operations		Squares a number.
-2	sin	(dbl -> dbl)			Double Operations		Computes the sine of an angle in radians.
-2	cos	(dbl -> dbl)			Double Operations		Computes the cosine of an angle in radians.
-2	tan	(dbl -> dbl)			Double Operations		Computes the tangent of an angle in radians.
-2	asin	(dbl -> dbl)			Double Operations		Returns the angle whose sine is the value given.
-2	acos	(dbl -> dbl)			Double Operations		Returns the angle whose cosine is the value given.
-2	atan	(dbl -> dbl)			Double Operations		Returns the angle whose tangent is the value given.
-2	atan2	(dbl dbl -> dbl)			Double Operations		Returns the angle whose tangent is the quotient of two numbers.
-2	sinh	(dbl -> dbl)			Double Operations		Computes the hyperbolic sine of an angle in radians.
-2	cosh	(dbl -> dbl)			Double Operations		Computes the hyperbolic cosine of an angle in radians.
-2	tanh	(dbl -> dbl)			Double Operations		Computes the hyperbolic tangent of an angle in radians.
-2	sqrt	(dbl -> dbl)			Double Operations		Computes the square root of a number.
-2	trunc	(dbl -> dbl)			Double Operations		Truncates a number.
-2	round	(dbl -> dbl)			Double Operations		Rounds a value to the nearest integer.
-2	ceil	(dbl -> dbl)			Double Operations		Comptues the ceiling of a value.
-2	floor	(dbl -> dbl)			Double Operations		Computes the floor of a value.
-2	log	(dbl dbl -> dbl)	$value $base log == {log $base($value)}		Double Operations		Computes the logarithm of a value to the specied base .
-2	log10	(dbl -> dbl)			Double Operations		Compute the logarithm to base 10.
-2	ln	(dbl -> dbl)			Double Operations		Compute the natural logarithm (base e)
-2	e	( -> dbl)			Double Operations		Returns an approximation of the value e.
-2	pi	( -> dbl)			Double Operations		Returns an approximation of the value pi.
-2	add_str	(str str -> str)	$a $b add_str == {$a + $b}		String Operations		
-2	min_str	(str str -> str)	$a $b min_str == $a $b lt_str [$a] [$b] if		String Operations		
-2	max_str	(str str -> str)	$a $b max_str == $a $b gt_str [$a] [$b] if		String Operations		
-2	gt_str	(str str -> bool)	$a $b gt_str == {$a > $b}		String Operations		
-2	lt_str	(str str -> bool)	$a $b lt_str == {$a < $b}		String Operations		
-2	gteq_str	(str str -> bool)	$a $b gteq_str == {$a >= $b}		String Operations		
-2	lteq_str	(str str -> bool)	$a $b lteq_str == {$a <= $b}		String Operations		
-3	dispatch1	(var list -> var)	$a () dispatch1 == error; $a ($B ($c $d)) dispatch1 == $a typeof $d typeof eq [$c invoke1] [$B dispatch1] if		Level-3 Core Primitives		Chooses and executes a dynamic function with one argument from a list of type and function pairs depending on the type of the top value on the stack.
-3	dispatch2	(var var list -> var)	$a $b () dispatch2 == error; $a $b ($C ($d $e)) dispatch2 == $a $b typeof $d typeof eq [$e invoke2] [$C dispatch2] if		Level-3 Core Primitives		Chooses and executes a dynamic function with two arguments from a list of type and function pairs depending on the type of the top value on the stack.
-3	invoke1	(var fxn -> var)	$a [$B] invoke1 == $a $B		Level-3 Core Primitives		Executes a dynamic function with one argument.
-3	invoke2	(var var fxn -> var)	$a $b [$C] invoke2 == $a $b $C		Level-3 Core Primitives		Executes a dynamic function with two arguments.
-3	throw	(var ~> )	[$A] [$B] try == $A; [$A $b throw $C] [$D] try == $D;		Level-3 Core Primitives		"Restores the stack to the state before the enclosing try function, pushes a value on the stack, and throws an exception."
-3	try	(( -> 'A) (var -> 'A) ~> 'A)	[$A] [$B] try == $A; [$A $b throw $C] [$D] try == $D;		Level-3 Core Primitives		Store the stack state and executes a function. If an exception is thrown in the try block it executes a catch function. 
-3	type_of	(var -> var type)	$a:$b type_of == $a $b		Level-3 Core Primitives		Pushes a value representing the type of the value on the top of the stack.
-3	hash_list	( -> hash_list)			Hash List Functions		Constructs an empty hash list.
-3	hash_add	(hash_list key=var value=var -> hash_list)			Hash List Functions		Adds a value (on top of stack) and key to a hash list.
-3	hash_contains	(hash_list key=var -> hash_list bool)			Hash List Functions		Returns true if a key has an associated value in the hash list.
-3	hash_get	(hash_list key=var -> hash_list value=var)			Hash List Functions		Returns a value associated with a given key.
-3	hash_to_list	(hash_list -> list)			Hash List Functions		Converts a hash list to a list of pairs.
-3	hash_safe_get	(hash_list key=var default=var -> hash_list value=var)		[[hash_contains] keep] dip qv [[hash_get] curry] dip if	 Hash List Functions		Gets a value from a hash list associated with a key or a default value.
-3	hash_add_chain	(hash_list key=var value=var -> hash_list)		[[nil hash_safe_get] keep] dip swapd cons hash_set	Hash List Functions		Add a value to the list in a hash list associated with a key (or creates it).
-3	list_to_hash	(list -> hash_list)		hash_list [unpair swap hash_add_chain] fold	Hash List Functions		Converts a list of pairs to a hash list.
-3	self_join	(list -> list)		list_to_hash hash_to_list	List Functions		"Takes a list of key value pairs and returns a list of key list pairs,  where all keys are unique."
-3	join	(list list -> list)		cat self_join	List Functions		Concatenates two lists and creates an inner-join.
-3	add	('a 'a -> 'a)			Arithmetic		
-3	sub	('a 'a -> 'a)			Arithmetic		
-3	mul	('a 'a -> 'a)			Arithmetic		
-3	div	('a 'a -> 'a)			Arithmetic		
-3	mod	('a 'a -> 'a)			Arithmetic		
-3	neg	('a -> 'a)			Arithmetic		
-3	lt	('a 'a -> bool)			Arithmetic		
-3	lteq	('a 'a -> bool)			Arithmetic		
-3	gt	('a 'a -> bool)			Arithmetic		
-3	gteq	('a 'a -> bool)			Arithmetic		
-4	rnd_int	(int ~> int)			Miscellaneous		Returns a random positive integer less then some maximum value
-4	rnd_dbl	( ~> dbl)			Miscellaneous		Returns a random floating point value in the range [0.0 .. 1.0)
-4	write	(var ~> )			Console Primitives		Writes a string to the standard output.
-4	writeln	(var ~> )			Console Primitives		Writes a string to the standard output followed by a new_line character
-4	read	( ~> char)			Console Primitives		Reads a character from the standard input
-4	readln	( ~> string)			Console Primitives		Reads a string from the standard input.
-4	file_reader	(string ~> istream)			File Primitives		Opens a file for reading.
-4	file_writer	(string ~> ostream)			File Primitives		Opens a file for writing.
-4	file_exists	(string ~> bool)			File Primitives		Returns true if a file exists.
-4	temp_file	( ~> string)			File Primitives		Creates a new uniquely named file in the default temporary directory.
-4	read_bytes	(istream int ~> istream byte_block)			File Primitives		Reads a number of bytes from an input stream.
-4	write_bytes	(ostream byte_block ~> ostream int)			File Primitives		Writes a byte block to an output stream.
-4	close_stream	(stream ~> )			File Primitives		Flushes and closes an input or output stream.
-5	open_window	( ~> )			Graphics Primitives		
-5	close_window	( ~> )			Graphics Primitives		
-5	clear_screen	( ~> )			Graphics Primitives		
-5	save_window	(string ~> )			Graphics Primitives		
-5	render	(('A -> 'B) ~> )			Graphics Primitives		
-5	polygon	( ~> )			Graphics Primitives		
-5	lines	( ~> )			Graphics Primitives		
-5	blue	( -> color)			Graphics Primitives		
-5	red	( -> color)			Graphics Primitives		
-5	green	( -> color)			Graphics Primitives		
-5	rgb	(r=int g=int b=int -> color)			Graphics Primitives		
-5	pen_width	(int ~> )			Graphics Primitives		
-5	pen_color	(color ~> )			Graphics Primitives		
-5	set_solid_fill	(color ~> )			Graphics Primitives		
-5	line	(x0=double y0=double x1=double y1=double ~> )			Graphics Primitives		
-5	rectangle	(x=double y=double w=double h=double ~> )			Graphics Primitives		
-5	ellipse	(width=double height=double ~> )			Graphics Primitives		
-5	set_pen_up	(bool ~> )			 Graphics Primitives		
-5	get_pen_up	( ~> bool)			Graphics Primitives		
-5	rotate	(double ~> )			Graphics Primitives		
-5	line_to	(double ~> )			Graphics Primitives		
+0	Level-0 Core Primitives	add_int	(int int -> int)	$a $b add_int == {$a + $b}		1 2 add_int 3 eq	Adds two values together
+0	Level-0 Core Primitives	compose	(('A -> 'B) ('B -> 'C) -> ('A -> 'C))	[$A] [$B] compose == [$A $B]		[1] [inc] compose apply 2 eq	Composes two functions.
+0	Level-0 Core Primitives	cons	(list var -> list)	($A) $b cons == ($A $b)		nil 1 cons uncons swap pop 1 eq	Add an item to the beginning of a list.
+0	Level-0 Core Primitives	div_int	(int int -> int)	$a $b div_int == {$a / $b}		42 7 div_int 6 eq	Divides the top value from the second value truncating the result.
+0	Level-0 Core Primitives	dup	('a -> 'a 'a)	$a dup == $a $a		2 dup add_int 4 eq	Duplicates top item on the stack.
+0	Level-0 Core Primitives	eq	('a 'a -> bool)	$a $b eq == {$a = $b}		1 1 eq	Compares two items for equality.
+0	Level-0 Core Primitives	false	( -> bool)	false		false [false] [true] if	Pushes a boolean value representing false onto the stack.
+0	Level-0 Core Primitives	if	('A bool ('A -> 'B) ('A -> 'B) -> 'B)	true [$A] [$B] if == $A; false [$A] [$B] if == $B		true [1] [2] if 1 eq	Conditionally executes one of two functions  depending on the boolean value below the functions.
+0	Level-0 Core Primitives	lt_int	(int int -> bool)	$a $b lt_int == {$a < $b}		3 5 lt_int	Returns true if the top element is less than the second element.
+0	Level-0 Core Primitives	mod_int	(int int -> int)	$a $b mod_int == {$a % $b}		5 3 mod_int 2 eq	Returns the remainder of dividing the top value from the second value.
+0	Level-0 Core Primitives	mul_int	(int int -> int)	$a $b mul_int == {$a * $b}		5 3 mul_int 15 eq	Multiplies the top two values.
+0	Level-0 Core Primitives	neg_int	(int -> int)	$a neg_int == {-$a}		5 neg_int -5 eq	Negates the top value.
+0	Level-0 Core Primitives	nil	( -> list)	nil == ()		nil nil eq	Creates an empty list.
+0	Level-0 Core Primitives	pop	('a -> )	$a $b pop == $a		3 5 pop 3 eq	Removes top item from the stack.
+0	Level-0 Core Primitives	quote	('a -> ( -> 'a))	$a quote == [$a]		true 1 quote 2 quote 1 eq	Quotes a value  creating a nullary constant generating function.
+0	Level-0 Core Primitives	swap	 ('a 'b -> 'b 'a)	$a $b swap == $b $a		1 2 swap pop 2 eq	Swap top two items on the stack.
+0	Level-0 Core Primitives	true	( -> bool)	true		true [true] [false] if	Pushes a boolean value representing true onto the stack.
+0	Level-0 Core Primitives	uncons	(list -> list var)	($A $b) uncons == ($A) $b; () uncons == error		nil 2 cons 1 cons uncons pop uncons swap pop 2 eq	Removes the first item from a list.
+1	Basic Combinators	apply	('A ('A -> 'B) -> 'B)	[$A] apply == $A	true swap [] if	[1] apply 1 eq	Executes a function.
+1	Basic Combinators	apply2	('a 'a ('a -> 'b) -> 'b 'b)	$a $a $B apply2 == $a $B $a $B	under apply [apply] dip	1 3 [inc] apply2 pop 2 eq	Applies a unary function to the top two items on the stack.
+1	Basic Combinators	dip	('A 'b ('A -> 'C) -> 'C 'b)	$a [$B] dip == $B $a	swap quote compose apply	1 3 [inc] dip pop 2 eq	Executes a function after temporarily removing the next item on the stack.
+1	Basic Combinators	dip2	('A 'b 'c ('A -> 'D) -> 'D 'b 'c)	$a $b [$C] dip2 == $C $a $b	swap [dip] dip	1 3 5 [inc] dip2 pop pop 2 eq	Executes a function after temporarily removing the next two items on the stack.
+1	Classical Combinators	b		[$A] [$B] [$C] b == [[$A] $B] $C	[k] [[s] k] s		Classical B combinator a.k.a. Bluebird
+1	Classical Combinators	c		[$A] [$B] [$C] c == [$B] [$A] $C	[[k] k] [[s] [b] b] s		Classical C combinator a.k.a. Cardinal
+1	Classical Combinators	d		[$A] [$B] [$C] [$D] d == [[$A] $B] [$C] $D	[b] b		D combinator a.k.a. Dove
+1	Classical Combinators	i	('A ('A -> 'B) -> 'B)	[$A] i == $A	[k] [k] s	[42] i 42 eq	"Classical I combinator, a.k.a. Identity"
+1	Classical Combinators	k	('A 'b ('A -> 'C) -> 'C)	[$A] [$B] k == $B	[pop] dip		"Classical K combinator used to represent True, a.k.a. Kestrel"
+1	Classical Combinators	ki	('A ('A -> 'B) 'c -> 'B)	[$A] [$B] ki == $A	[i] k		"KI combinator, used to represent False, a.k.a. Kite"
+1	Classical Combinators	l		[$A] [$B] l == [[$A] $A] $B	[m] [b] c		"L combinator, a.ka. Lark"
+1	Classical Combinators	m	(f=(f -> 'A) -> 'A)	[$A] m == [[$A] $A]	dup apply		"Self-applicative or recursive combinator, a.k.a. Mockingbird."
+1	Classical Combinators	o		[$A] [$B] o == [[$B] $B] $A	[i] s		"O combinator, a.k.a. Owl"
+1	Classical Combinators	r		[$A] [$B] [$C] r == [$C] [$A] $B	[t] [b] b		"R combinator, a.k.a. Robin"
+1	Classical Combinators	s		[$A] [$B] [$C] s == [[$A] $B] [$A] $C	peek swap [curry] dip2 apply		"Classical S combinator, a.k.a. Starling"
+1	Classical Combinators	t		[$A] [$B] t == [$B] $A	[i] c		"T or reverse application combinator, a.k.a. Thrush."
+1	Classical Combinators	u		[$A] [$B] u == [[$B] [$A] [$A] $B] $A	[o] l		Turing's fixed point combinator.
+1	Classical Combinators	v		[$A] [$B] [$C] v == [$B] [$C] $A	[t] [c] b		"V combinator, a.k.a. Vireo"
+1	Classical Combinators	w		[$A] [$B] [$C] b == [[$A] $B] $C	[[r] [m] b] c		"Classical W combinator, a.k.a. Warbler"
+1	Classical Combinators	y	('A f=('A f -> 'B) -> 'B)	[$A] y == [[$A] y] $A	dup quote [y] compose swap apply		Classical fix-point Y combinator a.k.a. Sage Bird or Why Bird
+1	Boolean Operations	and	(bool bool -> bool)	$a $b and == $a [$b] [false] if	quote [false] if	true true and	Executes a boolean 'and' operation.
+1	Boolean Operations	nand	(bool bool -> bool)	$a $b and == $a [$b not] [true] if	and not	true false nand	Executes a boolean 'nand' operation.
+1	Boolean Operations	nor	(bool bool -> bool)	$a $b nor == $a [false] [$b not] if	or not	false false nor	Executes a boolean 'nor' operation.
+1	Boolean Operations	not	(bool -> bool)	true not == false; false not == true;	[false] [true] if	false not	Executes a boolean 'not' operation.
+1	Boolean Operations	or	(bool bool -> bool)	$a $b or == $a [true] [$b] if	[true] swap quote if	true false or	Executes a boolean 'or' operation.
+1	Comparison Functions	eqz	(int -> int bool)	$a eqz == $a $a 0 eq	dup 0 eq	0 eqz popd	Compares top value to zero leaving the value on the stack.
+1	Comparison Functions	eqf	('a -> ('a -> 'a bool))	$a eqf == [dup $a eq]	 [dupd eq] curry	3 3 eqf apply popd	Creates a function that tests an argument for equality with a specific value leaving the argument on the stack.
+1	Comparison Functions	neq	('a 'a -> bool)	$a $b neq == $a $a eq not	eq not	3 5 neq	Compares top items on the stack for inequality.
+1	Comparison Functions	neqf	('a -> ('a -> 'a bool))	$a neqf == [dup $a neq]	 [dupd neq] curry	3 5 neqf apply popd	Creates a function that tests an argument for inequality with a specific value leaving the argument on the stack.
+1	Comparison Functions	neqz	(int -> int bool)	$a eqz == $a $a 0 neq	dup 0 neq	3 neqz popd	Checks top value for inequality with zero leaving the value on the stack.
+1	Function Construction	curry	('a ('B 'a -> 'C) -> ('B -> 'C))	$a [$B] curry == [$a $B]	[quote] dip compose	1 2 [add_int] curry apply 3 eq	Fixes a function's top argument to a constant value.
+1	Function Construction	curry2	('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))	$a $b [$C] curry2 == [$a $b $C]	curry curry	1 2 [add_int] curry2 apply 3 eq	Fixes a function's top two arguments to constant values.
+1	Function Construction	rcompose	(('A -> 'B) ('C-> 'A) -> ('C -> 'A))	[$A] [$B] rcompose == [$B $A]	swap compose	1 [add_int] [2] rcompose apply 3 eq	Swaps then composes two functions.
+1	Function Construction	rcurry	(('A 'b -> 'C) 'b -> ('A -> 'C))	[$A] $b rcurry == [$B $a]	curry swap	1 [add_int] 2 rcurry apply 3 eq	Fixes a function's top argument to a constant value.
+1	Function Construction	bin_rec	('a ('a -> 'a bool) ('a -> 'b) ('a -> 'c 'a 'a) ('c 'b 'b -> 'b) -> 'b)	[$A] [$B] [$C] [$D] bin_rec = $A [$B] [$C [[[$A] [$B] [$C] [$D] bin_rec] apply2] $D] if			Executes a binary recursive process.
+1	Looping Functions	for	('A ('A int -> 'A) int -> 'A)	[$A] $b for == 0 [[$A] dip] [dup $b neq] while	swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop	nil [cons] 3 for 0 1 2 triple eq	"Executes a loop a number of times passing the loop count."""
+1	Looping Functions	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[uncons swap] rcompose [dip] curry [empty not] while pop	8 1 2 pair [add_int] for_each 11 eq 	Executes a function a number of times  pushing a value from a list each time. Very similar to fold. 
+1	Looping Functions	repeat	('A ('A -> 'A) int -> 'A)	[$A] 0 repeat == id; $A [$B] $c repeat == $B $A [$B] $c dec repeat;	swap [dip dec] curry [neqz] while pop	1 [inc] 5 repeat 6 eq	Executes a function a number of times.
+1	Looping Functions	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz pop	nil [cons] 3 rfor 1 2 3 triple eq	Executes a reverse for loop which counts down from some value to one.
+1	Looping Functions	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if	[dip swap] curry swap [dip m] curry quote compose [[pop] if] compose m	1 [2 mul_int] [100 lt_int] while 128 eq	Repeatedly executes a function  while the predicate returns true.
+1	Looping Functions	whilen	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	1 [inc] [dup 3 gt_int] whilen 4 eq	Repeatedly executes a function while the predicate returns false.
+1	Looping Functions	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while pop	[empty not] while pop	0 1 2 3 triple [uncons swap [add] dip] whilene 6 eq	Repeatedly executes a function while the list on the top of the stack is not empty.
+1	Looping Functions	whilenz	('A int ('A int -> 'A int) -> 'A)	[$A] whilenz == [$A] [neqz] while pop	[neqz] while pop	3 3 [[inc] dip dec] whilenz 6 eq	Repeatedly executes a function while the integer on the top of the stack is not zero.
+1	List Functions	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev [cons] fold	1 unit 2 unit cat nil 1 cons 2 cons eq	Concatenates two lists.
+1	List Functions	consd	(list var 'a -> list 'a)	($A) $b $c cons == ($A $b) $c	[cons] dip	nil 1 2 consd pop head 1 eq	Appends the second item on the stack to the list in the third position.
+1	List Functions	count	(list -> list count)	($A $b) count == ($A) count inc; () count == 0	0 [pop inc] fold	1 2 pair count popd 2 eq	Returns the number of items in a list.
+1	List Functions	count_while	(list ('a -> bool) -> list int)	() [$A] count_while == 0; ($A $b) [$C] count_while == $b $C $A [$C] count_while [inc] [] if	[uncons] rcompose [dup 0 swap] dip [[inc] dip] swap while pop	1 2 3 triple [dup 1 gt_int] count_while popd 2 eq	Returns how many of the first elements satisfy a predicate
+1	List Functions	drop	(list int -> list)	($A $b) 0 drop = ($A); ($A $b) $c drop == ($A $c dec drop)	[[tail] dip dec] whilenz pop	3 4 pair 1 drop head 3 eq 	Removes a number of items from the front of a list.
+1	List Functions	drop_while	(list ('a -> bool) -> list)	() [$A] drop_while == (); ($A $b) [$C] drop_while == $b $C [($A [$C] drop_while)] [($A)]	if dupd count_while drop	1 2 3 triple [dup 2 gteq_int] drop_while 1 unit eq	Drops items from a list while the predicate is satisfied.
+1	List Functions	empty	(list -> list bool)	($A) empty == ($A) count 0 eq	count 0 eq	nil empty 1 unit empty not and 1 2 pair empty not and 	Returns true if a list contains no items.
+1	List Functions	filter	(list ('a -> bool) -> list)	($A $b) [$C] filter == $b $C if ($A [$C] filter $b) ($A [$C] filter)	[rev] dip [[cons] [] if] compose [dup] rcompose nil swap fold	1 2 3 triple [2 mod_int 0 eq] filter	"Creates a list containing elements of a source list  for which a predicate returns true."""
+1	List Functions	first	(list -> list var)	($A $b) first == ($A $b) $b	dup uncons popd	1 2 pair first popd 2 eq	Returns first item in a list.
+1	List Functions	flatten	(list -> list)	() flatten == (); ($A ($b)) flatten == ($A flatten $b)	nil [cat] fold	nil 1 unit cons 2 unit cons flatten 1 2 pair eq	Concatenates all children in a list of lists.
+1	List Functions	fold	(list 'a ('a 'a -> 'a) -> 'a)	() $a [$B] fold == $a; ($A $b) $c [$D] fold == $c $b $D ($A) [$D] fold	swapd [dip] curry [uncons swap] rcompose whilene pop	1 2 3 triple 0 [add_int] fold 6 eq	Applies a binary function to the first item in a list with an accumulated value. It removes the first item and repeats until the list is empty.
+1	List Functions	gen	('a ('a -> 'a) ('a -> bool) -> list)	$a [$B] [$C] gen == $a $C [($a $a $B [$B] [$C] gen)] [()] if	nil swap [bury] dip [[dup consd] rcompose] dip [dup] rcompose while	0 [inc] [2 lt_int] gen	Creates a new list  and appends an item to a list if the predicate is true. It then applies a transform to the last value and repeats.
+1	List Functions	head	(list -> var)	($A $b) head == $b	uncons popd	nil 1 cons 2 cons head 2 eq	Replace a list with the first item in it.
+1	List Functions	last	(list -> list var)	($A) last == ($A) count dec nth	count dec nth	1 2 3 triple last popd 1 eq	Returns the last item in a list.
+1	List Functions	map	(list ('a -> 'b) -> list)	$a [$B] map == $a [$B] rmap rev	rmap rev	1 2 pair [3 mul_int] map head 6 eq	Creates a new list by applying a transform function to each item in a list.
+1	List Functions	mid	(list -> list var)	($A) mid == ($A) count 2 div_int nth	count 2 div_int nth	1 2 3 triple mid popd 2 eq	Returns the middle item in a list.
+1	List Functions	move_head	(list list -> list list)	($A) ($B $c) move_head == ($A $c) ($B)	uncons swap cons	1 2 pair 3 4 pair move_head pop head 4 eq	Moves the head of one list to the next.
+1	List Functions	n	(int -> list)	0 n == (); $a n = ($a dec n $a)	nil swap [cons] swap for	3 n 0 1 2 triple eq	Creates a list of consecutive integers from 0 to some number minus one.
+1	List Functions	nth	(list int -> list var)	($A $b) 0 nth == ($A $b) $b; ($A $b) 0 nth	 dupd take head	1 2 3 triple 2 nth popd 1 eq	Returns the nth item in a list.
+1	List Functions	pair	('a 'b -> list)	$a $b pair == ($a $b)	[unit] dip cons	1 2 pair head 2 eq	Creates a list containing two items.
+1	List Functions	rev	(list -> list)	($A $b) rev == ($b $A rev); () rev == ()	nil [cons] fold	1 2 pair rev head 1 eq	Reverses a list.
+1	List Functions	rmap	(list ('a -> 'b) -> list)	[$A] rmap == nil [cons] fold	nil [cons] fold	1 2 pair [3 mul_int] rmap head 3 eq	Constructs a map of the reverse of a list.
+1	List Functions	set_at	(list var int -> list)	($A $b) $c 0 set_at == ($A $c); ($A $b) $c $d set_at == ($A $c $d dec set_at $b)	swapd split_at [tail swons] dip cat	1 2 pair 42 0 set_at 42 head eq	Creates a new list by replacing an item at a given index with a new value.
+1	List Functions	small	(list -> list bool)	($A) small == ($A) count 1 lteq	count 1 lteq_int	1 unit small popd	Returns true if a list contains one or zero items.
+1	List Functions	split	(list ('a -> bool) -> list list)	($A) [$B] split == ($A) [$B] (filter) ($A) [$B not] (filter)	 dup2 [filter] dip2 [not] compose filter	1 2 3 triple [dup even] split popd 1 3 pair eq	Splits a list in two according to a predicate function.
+1	List Functions	split_at	(list int -> list list)	($A) 0 split_at == ($A) (); ($A $b) $c split_at == ($A) $c dec split_at $b cons	nil bury [move_head] swap repeat	1 2 3 triple 1 split_at pop 1 2 pair eq	Splits a list in two at a specific index.
+1	List Functions	swons	(var list -> list)	$b ($A) swons == ($A $b)	swap cons	1 2 unit swons 2 1 pair eq	Adds the item below a list to the front of it.
+1	List Functions	tail	(list -> list)	($A $b) tail == ($A)	uncons pop	3 4 pair tail 3 unit eq	Remove first item in a list.
+1	List Functions	take	(list int -> list)	($A $b) 0 take = (); ($A $b) $c take == ($A $c dec take $b)	nil bury [[move_head] dip dec] whilenz pop rev	1 2 3 triple 2 take 2 3 pair eq	Creates a list from the first n items in another list.
+1	List Functions	take_while	(list ('a -> bool) -> list)	() [$A] take_while == (); ($A $b) [$C] take_while == $b $C [($A [$C] take_while $b)] [()] if	 dupd count_while take	1 2 3 triple [dup 2 gt_int] 2 3 pair eq	Takes items from a list while the predicate is satisfied.
+1	List Functions	triple	('a 'b 'c -> list)	$a $b $c triple == ($a $b $c)	[pair] dip cons	1 2 3 triple 1 2 pair 3 cons eq	Creates a list from the top three elements
+1	List Functions	unfold	('a ('a -> 'a 'a) ('a -> 'a bool) -> list)	$a [$B] [$C] unfold == $a $C [($a $a $B [$B] [$C] unfold)] [()] if	[nil bury [consd] compose] dip whilen	 1 [dup inc] 3 neqf 	Generates a list from a binary function and initial value.
+1	List Functions	unpair	(list -> var var)	($A $b $c) unpair == $b $c	uncons [head] dip	1 2 pair unpair pop 1 eq	Removes first two items from a list and removes it.
+1	List Functions	unit	('a -> list)	$a unit == ($a)	nil swap cons	1 unit nil cons 1 eq	Creates a list containing one item.
+1	Stack Manipulation	bury	('a 'b 'c -> 'c 'a 'b)	$a $b $c bury == $c $a $b	swap swapd	1 2 3 bury pop pop 3 eq	
+1	Stack Manipulation	dig	('a 'b 'c -> 'b 'c 'a)	$a $b $c dig == $b $c $a	 swapd swap	1 2 3 dig popd popd 1 eq	
+1	Stack Manipulation	dup2	('a 'b -> 'a 'b 'a 'b)	$a $b dup2 == $a $b $a $b	over over	1 2 dup2 pop popd popd 1 eq	
+1	Stack Manipulation	dupd	('a 'b -> 'a 'a 'b)	$a $b dupd == $a $a $b	[dup] dip	1 2 dup2 pop pop2 2 eq	
+1	Stack Manipulation	over	('a 'b -> 'a 'b 'a)	$a $b over == $a $b $a	dupd swap	1 2 popd popd 1 eq	
+1	Stack Manipulation	peek	('a 'b 'c -> 'a 'b 'c 'a)	$a $b $c peek == $a $b $c $a	[dupd] dip dig	1 2 3 popd popd popd 1 eq	
+1	Stack Manipulation	poke	('a 'b 'c -> 'c 'b)	$a $b $c poke == $c $b	[popd] dip swap	1 2 3 poke pop 3 eq	
+1	Stack Manipulation	pop2	('a 'b -> )	$a $b pop2 == id	pop pop	1 2 3 pop2 1 eq	
+1	Stack Manipulation	pop3	('a 'b 'c -> )	$a $b $c pop3 == id	pop pop pop	1 2 3 4 pop3 1 eq	
+1	Stack Manipulation	popd	('a 'b -> 'b)	$a $b popd == $b	[pop] dip	1 2 popd 2 eq	
+1	Stack Manipulation	swap2	 ('a 'b 'c 'd -> 'c 'd 'a 'b)	$a $b $c $d swap2 == $c $d $a $b	[bury] dip bury	1 2 3 4 swap2 pop3 3 eq	
+1	Stack Manipulation	swapd	('a 'b 'c -> 'b 'a 'c)	$a $b $c swapd == $b $a $c	[swap] dip	1 2 3 swapd pop2 2 eq	
+1	Stack Manipulation	under	('a 'b -> 'b 'a 'b)	$a $b under == $b $a $b	dup swapd	1 2 under pop2 2 eq	
+1	Integer Operations	dec	(int -> int)	$a inc == {$a-1}	1 sub_int	3 dec 2 eq	
+1	Integer Operations	even	(int -> int bool)	$a even == $a $a 2 mod 0 eq 	dup 2 mod 0 eq	2 even popd 	
+1	Integer Operations	inc	(int -> int)	$a inc == {$a+1}	1 add_int	3 inc 4 eq	
+1	Integer Operations	sub_int	(int int -> int)	$a $b sub_int == {$a - $b}	neg_int add_int	5 3 sub_int 2 eq	
+1	Integer Operations	min_int	(int int -> int)	$a $b min_int == $a $b lt_int [$a] [$b] if	dup2 gt_int [pop] [popd] if	3 5 min_int 3 eq	
+1	Integer Operations	max_int	(int int -> int)	$a $b max_int == $a $b gt_int [$a] [$b] if	dup2 gt_int [popd] [pop] if	3 5 max_int 5 eq	
+1	Integer Operations	odd	(int -> int bool)	$a even == $a $a 2 mod 1 eq 	dup 2 mod 1 eq	3 odd popd 	
+1	Integer Operations	gt_int	(int int -> bool)	$a $b gt_int == {$a > $b}	lteq_int not	5 gt_int	
+1	Integer Operations	gteq_int	(int int -> bool)	$a $b gteq_int == {$a >= $b}	lt_int not	5 3 gteq_int	
+1	Integer Operations	lteq_int	(int int -> bool)	$a $b lteq_int == {$a <= $b}	dup2 eq lt_int or	3 5 lteq_int	
+2	Bit Operations	add_bit	(bit bit -> bit)	$a $b add_bit == {$a + $b}			
+2	Bit Operations	sub_bit	(bit bit -> bit)	$a $b sub_bit == {$a - $b}			
+2	Bit Operations	mul_bit	(bit bit -> bit)	$a $b mul_bit == {$a * $b}			
+2	Bit Operations	div_bit	(bit bit -> bit)	$a $b div_bit == {$a / $b}			
+2	Bit Operations	mod_bit	(bit bit -> bit)	$a $b mod_bit == {$a % $b}			
+2	Bit Operations	neg_bit	(bit -> bit)	$a neg_bit == {-$a}			
+2	Bit Operations	compl_bit	(bit -> bit)	$a compl_bit == {~$a}			
+2	Bit Operations	min_bit	(bit bit -> bit)	$a $b min_bit == $a $b lt_bit [$a] [$b] if			
+2	Bit Operations	max_bit	(bit bit -> bit)	$a $b max_bit == $a $b gt_bit [$a] [$b] if			
+2	Bit Operations	shl_bit	(bit bit -> bit)	$a $b shl_bit == {$a << $b}			
+2	Bit Operations	shr_bit	(bit bit -> bit)	$a $b shr_bit == {$a >> $b}			
+2	Bit Operations	gt_bit	(bit bit -> bool)	$a $b gt_bit == {$a > $b}			
+2	Bit Operations	lt_bit	(bit bit -> bool)	$a $b lt_bit == {$a < $b}			
+2	Bit Operations	gteq_bit	(bit bit -> bool)	$a $b gteq_bit == {$a >= $b}			
+2	Bit Operations	lteq_bit	(bit bit -> bool)	$a $b lteq_bit == {$a <= $b}			
+2	Integer Operations	compl_int	(int -> int)	$a compl_int == {~$a}			
+2	Integer Operations	shl_int	(int int -> int)	$a $b shl_int == {$a << $b}			
+2	Integer Operations	shr_int	(int int -> int)	$a $b shr_int == {$a >> $b}			
+2	Byte Operations	add_byte	(byte byte -> byte)	$a $b add_byte == {$a + $b}			
+2	Byte Operations	sub_byte	(byte byte -> byte)	$a $b sub_byte == {$a - $b}			
+2	Byte Operations	mul_byte	(byte byte -> byte)	$a $b mul_byte == {$a * $b}			
+2	Byte Operations	div_byte	(byte byte -> byte)	$a $b div_byte == {$a / $b}			
+2	Byte Operations	mod_byte	(byte byte -> byte)	$a $b mod_byte == {$a % $b}			
+2	Byte Operations	neg_byte	(byte -> byte)	$a neg_byte == {-$a}			
+2	Byte Operations	min_byte	(byte byte -> byte)	$a $b min_byte == $a $b lt_byte [$a] [$b] if			
+2	Byte Operations	max_byte	(byte byte -> byte)	$a $b max_byte == $a $b gt_byte [$a] [$b] if			
+2	Byte Operations	compl_byte	(byte -> byte)	$a compl_byte == {~$a}			
+2	Byte Operations	shl_byte	(byte byte -> byte)	$a $b shl_byte == {$a << $b}			
+2	Byte Operations	shr_byte	(byte byte -> byte)	$a $b shr_byte == {$a >> $b}			
+2	Byte Operations	gt_byte	(byte byte -> bool)	$a $b gt_byte == {$a > $b}			
+2	Byte Operations	lt_byte	(byte byte -> bool)	$a $b lt_byte == {$a < $b}			
+2	Byte Operations	gteq_byte	(byte byte -> bool)	$a $b gteq_byte == {$a >= $b}			
+2	Byte Operations	lteq_byte	(byte byte -> bool)	$a $b lteq_byte == {$a <= $b}			
+2	Double Operations	add_dbl	(dbl dbl -> dbl)	$a $b add_dbl == {$a + $b}			
+2	Double Operations	sub_dbl	(dbl dbl -> dbl)	$a $b sub_dbl == {$a - $b}			
+2	Double Operations	mul_dbl	(dbl dbl -> dbl)	$a $b mul_dbl == {$a * $b}			
+2	Double Operations	div_dbl	(dbl dbl -> dbl)	$a $b div_dbl == {$a / $b}			
+2	Double Operations	mod_dbl	(dbl dbl -> dbl)	$a $b mod_dbl == {$a % $b}			
+2	Double Operations	neg_dbl	(dbl -> dbl)	$a neg_dbl == {-$a}			
+2	Double Operations	compl_dbl	(dbl -> dbl)	$a compl_dbl == {~$a}			
+2	Double Operations	min_dbl	(dbl dbl -> dbl)	$a $b min_dbl == $a $b lt_dbl [$a] [$b] if			
+2	Double Operations	max_dbl	(dbl dbl -> dbl)	$a $b max_dbl == $a $b gt_dbl [$a] [$b] if			
+2	Double Operations	gt_dbl	(dbl dbl -> bool)	$a $b gt_dbl == {$a > $b}			
+2	Double Operations	lt_dbl	(dbl dbl -> bool)	$a $b lt_dbl == {$a < $b}			
+2	Double Operations	gteq_dbl	(dbl dbl -> bool)	$a $b gteq_dbl == {$a >= $b}			
+2	Double Operations	lteq_dbl	(dbl dbl -> bool)	$a $b lteq_dbl == {$a <= $b}			
+2	Double Operations	pow_dbl	(dbl dbl -> dbl)	$a $b abs_dbl == {$a ^ $b }			
+2	Double Operations	abs_dbl	(dbl -> dbl)				Returns the absolute value of a number.
+2	Double Operations	sqr_dbl	(dbl -> dbl)				Squares a number.
+2	Double Operations	sin	(dbl -> dbl)				Computes the sine of an angle in radians.
+2	Double Operations	cos	(dbl -> dbl)				Computes the cosine of an angle in radians.
+2	Double Operations	tan	(dbl -> dbl)				Computes the tangent of an angle in radians.
+2	Double Operations	asin	(dbl -> dbl)				Returns the angle whose sine is the value given.
+2	Double Operations	acos	(dbl -> dbl)				Returns the angle whose cosine is the value given.
+2	Double Operations	atan	(dbl -> dbl)				Returns the angle whose tangent is the value given.
+2	Double Operations	atan2	(dbl dbl -> dbl)				Returns the angle whose tangent is the quotient of two numbers.
+2	Double Operations	sinh	(dbl -> dbl)				Computes the hyperbolic sine of an angle in radians.
+2	Double Operations	cosh	(dbl -> dbl)				Computes the hyperbolic cosine of an angle in radians.
+2	Double Operations	tanh	(dbl -> dbl)				Computes the hyperbolic tangent of an angle in radians.
+2	Double Operations	sqrt	(dbl -> dbl)				Computes the square root of a number.
+2	Double Operations	trunc	(dbl -> dbl)				Truncates a number.
+2	Double Operations	round	(dbl -> dbl)				Rounds a value to the nearest integer.
+2	Double Operations	ceil	(dbl -> dbl)				Comptues the ceiling of a value.
+2	Double Operations	floor	(dbl -> dbl)				Computes the floor of a value.
+2	Double Operations	log	(dbl dbl -> dbl)	$value $base log == {log $base($value)}			Computes the logarithm of a value to the specied base .
+2	Double Operations	log10	(dbl -> dbl)				Compute the logarithm to base 10.
+2	Double Operations	ln	(dbl -> dbl)				Compute the natural logarithm (base e)
+2	Double Operations	e	( -> dbl)				Returns an approximation of the value e.
+2	Double Operations	pi	( -> dbl)				Returns an approximation of the value pi.
+2	String Operations	add_str	(str str -> str)	$a $b add_str == {$a + $b}			
+2	String Operations	min_str	(str str -> str)	$a $b min_str == $a $b lt_str [$a] [$b] if			
+2	String Operations	max_str	(str str -> str)	$a $b max_str == $a $b gt_str [$a] [$b] if			
+2	String Operations	gt_str	(str str -> bool)	$a $b gt_str == {$a > $b}			
+2	String Operations	lt_str	(str str -> bool)	$a $b lt_str == {$a < $b}			
+2	String Operations	gteq_str	(str str -> bool)	$a $b gteq_str == {$a >= $b}			
+2	String Operations	lteq_str	(str str -> bool)	$a $b lteq_str == {$a <= $b}			
+3	Level-3 Core Primitives	dispatch1	(var list -> var)	$a () dispatch1 == error; $a ($B ($c $d)) dispatch1 == $a typeof $d typeof eq [$c invoke1] [$B dispatch1] if			Chooses and executes a dynamic function with one argument from a list of type and function pairs depending on the type of the top value on the stack.
+3	Level-3 Core Primitives	dispatch2	(var var list -> var)	$a $b () dispatch2 == error; $a $b ($C ($d $e)) dispatch2 == $a $b typeof $d typeof eq [$e invoke2] [$C dispatch2] if			Chooses and executes a dynamic function with two arguments from a list of type and function pairs depending on the type of the top value on the stack.
+3	Level-3 Core Primitives	invoke1	(var fxn -> var)	$a [$B] invoke1 == $a $B			Executes a dynamic function with one argument.
+3	Level-3 Core Primitives	invoke2	(var var fxn -> var)	$a $b [$C] invoke2 == $a $b $C			Executes a dynamic function with two arguments.
+3	Level-3 Core Primitives	throw	(var ~> )	[$A] [$B] try == $A; [$A $b throw $C] [$D] try == $D;			"Restores the stack to the state before the enclosing try function, pushes a value on the stack, and throws an exception."
+3	Level-3 Core Primitives	try	(( -> 'A) (var -> 'A) ~> 'A)	[$A] [$B] try == $A; [$A $b throw $C] [$D] try == $D;			Store the stack state and executes a function. If an exception is thrown in the try block it executes a catch function. 
+3	Level-3 Core Primitives	type_of	(var -> var type)	$a:$b type_of == $a $b			Pushes a value representing the type of the value on the top of the stack.
+3	Hash List Functions	hash_list	( -> hash_list)				Constructs an empty hash list.
+3	Hash List Functions	hash_add	(hash_list key=var value=var -> hash_list)				Adds a value (on top of stack) and key to a hash list.
+3	Hash List Functions	hash_contains	(hash_list key=var -> hash_list bool)				Returns true if a key has an associated value in the hash list.
+3	Hash List Functions	hash_get	(hash_list key=var -> hash_list value=var)				Returns a value associated with a given key.
+3	Hash List Functions	hash_to_list	(hash_list -> list)				Converts a hash list to a list of pairs.
+3	 Hash List Functions	hash_safe_get	(hash_list key=var default=var -> hash_list value=var)		[[hash_contains] keep] dip qv [[hash_get] curry] dip if		Gets a value from a hash list associated with a key or a default value.
+3	Hash List Functions	hash_add_chain	(hash_list key=var value=var -> hash_list)		[[nil hash_safe_get] keep] dip swapd cons hash_set		Add a value to the list in a hash list associated with a key (or creates it).
+3	Hash List Functions	list_to_hash	(list -> hash_list)		hash_list [unpair swap hash_add_chain] fold		Converts a list of pairs to a hash list.
+3	List Functions	self_join	(list -> list)		list_to_hash hash_to_list		"Takes a list of key value pairs and returns a list of key list pairs,  where all keys are unique."
+3	List Functions	join	(list list -> list)		cat self_join		Concatenates two lists and creates an inner-join.
+3	Arithmetic	add	('a 'a -> 'a)				
+3	Arithmetic	sub	('a 'a -> 'a)				
+3	Arithmetic	mul	('a 'a -> 'a)				
+3	Arithmetic	div	('a 'a -> 'a)				
+3	Arithmetic	mod	('a 'a -> 'a)				
+3	Arithmetic	neg	('a -> 'a)				
+3	Arithmetic	lt	('a 'a -> bool)				
+3	Arithmetic	lteq	('a 'a -> bool)				
+3	Arithmetic	gt	('a 'a -> bool)				
+3	Arithmetic	gteq	('a 'a -> bool)				
+4	Miscellaneous	rnd_int	(int ~> int)				Returns a random positive integer less then some maximum value
+4	Miscellaneous	rnd_dbl	( ~> dbl)				Returns a random floating point value in the range [0.0 .. 1.0)
+4	Console Primitives	write	(var ~> )				Writes a string to the standard output.
+4	Console Primitives	writeln	(var ~> )				Writes a string to the standard output followed by a new_line character
+4	Console Primitives	read	( ~> char)				Reads a character from the standard input
+4	Console Primitives	readln	( ~> string)				Reads a string from the standard input.
+4	File Primitives	file_reader	(string ~> istream)				Opens a file for reading.
+4	File Primitives	file_writer	(string ~> ostream)				Opens a file for writing.
+4	File Primitives	file_exists	(string ~> bool)				Returns true if a file exists.
+4	File Primitives	temp_file	( ~> string)				Creates a new uniquely named file in the default temporary directory.
+4	File Primitives	read_bytes	(istream int ~> istream byte_block)				Reads a number of bytes from an input stream.
+4	File Primitives	write_bytes	(ostream byte_block ~> ostream int)				Writes a byte block to an output stream.
+4	File Primitives	close_stream	(stream ~> )				Flushes and closes an input or output stream.
+5	Graphics Primitives	open_window	( ~> )				
+5	Graphics Primitives	close_window	( ~> )				
+5	Graphics Primitives	clear_screen	( ~> )				
+5	Graphics Primitives	save_window	(string ~> )				
+5	Graphics Primitives	render	(('A -> 'B) ~> )				
+5	Graphics Primitives	polygon	( ~> )				
+5	Graphics Primitives	lines	( ~> )				
+5	Graphics Primitives	blue	( -> color)				
+5	Graphics Primitives	red	( -> color)				
+5	Graphics Primitives	green	( -> color)				
+5	Graphics Primitives	rgb	(r=int g=int b=int -> color)				
+5	Graphics Primitives	pen_width	(int ~> )				
+5	Graphics Primitives	pen_color	(color ~> )				
+5	Graphics Primitives	set_solid_fill	(color ~> )				
+5	Graphics Primitives	line	(x0=double y0=double x1=double y1=double ~> )				
+5	Graphics Primitives	rectangle	(x=double y=double w=double h=double ~> )				
+5	Graphics Primitives	ellipse	(width=double height=double ~> )				
+5	 Graphics Primitives	set_pen_up	(bool ~> )				
+5	Graphics Primitives	get_pen_up	( ~> bool)				
+5	Graphics Primitives	rotate	(double ~> )				
+5	Graphics Primitives	line_to	(double ~> )				

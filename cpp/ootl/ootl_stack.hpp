@@ -38,7 +38,7 @@ namespace ootl
 	// ootl::stack implementation
 
 	template < typename T >
-	struct stack : protected vlist<T, 8, 2>
+	struct stack : protected vlist<T>
 	{
 	public:
 		
@@ -49,14 +49,12 @@ namespace ootl
 		typedef T value_type;  
 
 		//////////////////////////////////////////////////////
-		// constructor/destructorfs 
+		// constructor/destructors 
 
 		stack() : vlist(), cnt(0), ptop(NULL) { 
-			initialize();
 			ptop = get_first_buffer()->begin;
 		}
 		stack(const self& x) : vlist(), cnt(0), ptop(NULL) { 
-			initialize(x.count());
 			ptop = get_first_buffer()->begin;
 			x.foreach(stacker(*this));
 		}
@@ -107,51 +105,50 @@ namespace ootl
 		}
 		// adds space for an object, without constructing
 		void push_nocreate() {
-			assert(ptop != NULL);
+			ootl_assert(ptop >= get_last_buffer()->begin);
+			ootl_assert(ptop <= get_last_buffer()->end);
 			if (ptop == get_last_buffer()->end) {
 				add_buffer();
 				ptop = get_last_buffer()->begin;
 			}
 			++ptop;
 			++cnt;
+			ootl_assert(ptop > get_last_buffer()->begin);
+			ootl_assert(ptop <= get_last_buffer()->end);
 		}
 		void pop() {        
+			top().~T();          
 			pop_nodestroy();
-			ptop->~T();          
 		}
 		// removes an object without calling destructor
 		void pop_nodestroy() {        
-			assert(ptop != NULL);
-			assert(cnt > 0);
-			if (ptop == get_last_buffer()->begin) {
-				remove_buffer();
-				ptop = get_last_buffer()->end;
-			}
+			ootl_assert(cnt > 0);
+			ootl_assert(ptop > get_last_buffer()->begin);
+			ootl_assert(ptop <= get_last_buffer()->end);
 			--ptop;
 			--cnt;
+			if ((ptop == get_last_buffer()->begin) && (cnt != 0)) {
+				ptop = get_last_buffer()->prev->end;
+				remove_buffer();
+			}
 		}
 		bool is_empty() {
 			return count() == 0;
 		}
 		T& top() {
-			assert(ptop != NULL);
-			if (ptop == get_last_buffer()->begin) {
-				return *(get_last_buffer()->prev->end - 1);
-			}
-			else {
-				return *(ptop - 1);
-			}    
+			ootl_assert(cnt > 0);
+			ootl_assert(ptop > get_last_buffer()->begin);
+			ootl_assert(ptop <= get_last_buffer()->end);
+			return *(ptop - 1);
 		}
 		const T& top() const {
-			assert(ptop != NULL);
-			if (ptop == get_last_buffer()->begin) {
-				return *(get_last_buffer()->prev->end - 1);
-			}
-			else {
-				return *(ptop - 1);
-			}    
+			ootl_assert(cnt > 0);
+			ootl_assert(ptop > get_last_buffer()->begin);
+			ootl_assert(ptop <= get_last_buffer()->end);
+			return *(ptop - 1);
 		}
 		T pull() {
+			ootl_assert(cnt > 0);
 			T ret = top();
 			pop();
 			return ret;    
@@ -160,6 +157,7 @@ namespace ootl
 			while (!is_empty()) {
 				pop();
 			}
+			ootl_assert(cnt == 0);
 		}
 		void clear_nodestroy() {
 			while (!is_empty()) {
@@ -173,13 +171,15 @@ namespace ootl
 		template<typename Procedure>
 		void foreach(Procedure& proc) const {
 			const buffer* cur = get_first_buffer();    
-			while (cur != NULL) {
-			  T* p = cur->begin;
-			  while (p != cur->end) {
-				if (p == ptop) return;
-				proc(*p++);
-			  }
-			  cur = cur->next;
+			size_t n = 0;
+			while (n < count()) {
+				T* p = cur->begin;
+				while ((p != cur->end) && (n < count())) {
+					if (p == ptop) return;
+					proc(*p++);
+					++n;
+				}
+				cur = cur->next;
 			} 
 		}  
 
@@ -229,17 +229,19 @@ namespace ootl
 				return false;
 			const buffer* cur1 = get_first_buffer();    
 			const buffer* cur2 = x.get_first_buffer();    
-			while (cur1 != NULL && cur2 != NULL) {
+			size_t n = 0;
+			while (n < count()) {
 				T* p1 = cur1->begin;
 				T* p2 = cur2->begin;
-				while ((p1 != cur1->end) && (p2 != cur2->end)) {
+				while ((p1 != cur1->end) && (p2 != cur2->end) && (n < count())) {
 					if (!(*p1 == *p2)) 
 						return false;
+					n++;
 				}
 				if (p1 == cur1->end) cur1 = cur1->next;
 				if (p2 == cur2->end) cur2 = cur2->next;
 			} 
-			return (cur1 == cur2); // they should both be NULL if successful
+			return true;
 		}
 
 		//////////////////////////////////////////////////////////////
