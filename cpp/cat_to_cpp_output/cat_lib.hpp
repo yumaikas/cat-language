@@ -1,4 +1,6 @@
-// Public domain Cat level-0 interpreter 
+// Public domain Cat interpreter 
+// by Christopher Diggins
+// http://www.cat-language.com
 
 #include <algorithm>
 #include <assert.h>
