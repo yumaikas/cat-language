@@ -66,6 +66,19 @@ void unit_tests()
 	call(_apply);
 	cat_assert(stk[0] == 7);
 	call(_pop);
+
+	// while test
+	push_literal(0);
+	push_function(_inc);
+	push_function(_dup);
+	push_literal(3);
+	call(_quote);
+	call(_compose);
+	push_function(_lteq__int);
+	call(_compose);
+	call(_while);
+	cat_assert(stk[0] == 4);
+	call(_pop);
 }
 
 int main(int argc, char* argv[])

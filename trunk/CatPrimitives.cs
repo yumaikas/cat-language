@@ -153,7 +153,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 MainClass.WriteLine("The following are some useful commands:");
-                MainClass.WriteLine("  clr - clears the stack");
+                MainClass.WriteLine("  #clr - clears the stack");
                 MainClass.WriteLine("  #defs - lists all defined functions");
                 MainClass.WriteLine("  #exit - exits the interpreter");
                 MainClass.WriteLine("  \"command\" #h  - provides help on a primitive");
@@ -307,7 +307,7 @@ namespace Cat
         public class Clr : PrimitiveFunction
         {
             public Clr()
-                : base("#clear", "('A ~> )", "removes all items from the stack")
+                : base("#clr", "('A ~> )", "removes all items from the stack")
             { }
 
             public override void Eval(Executor exec)

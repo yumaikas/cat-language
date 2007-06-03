@@ -27,6 +27,12 @@ void _eval(object& o);
 //////////////////////////////////////////////////////////////////////////////
 // debugging stuff
 
+#ifndef NDEBUG
+#define call(FXN) printf("calling %s\n", #FXN); FXN(); print_stack(); /* */
+#else 
+#define call(FXN) FXN(); /* */
+#endif
+
 void cat_assert(bool b)
 {
 	if (!b)
@@ -55,11 +61,13 @@ struct quoted_value
 { 
 	quoted_value(object& o)
 	{
+		invalid = false;
 		o.move_to(value);
 	}
 	quoted_value(const quoted_value& x)
 		: value(x.value)
 	{
+		invalid = false;
 	}
 	bool operator==(const quoted_value& x) const 
 	{
@@ -69,9 +77,12 @@ struct quoted_value
 	// for fast "quote apply" instructions. Consider "1000000 n quote" ... "apply"
 	void eval()
 	{
+		cat_assert(!invalid);
 		stk.push_nocreate();
 		value.move_to(stk.top());
+		invalid = true;
 	}
+	bool invalid;
 	object value;
 };
 
@@ -79,9 +90,12 @@ struct composed_function
 {
 	composed_function(const composed_function& cf)
 		: fxns(cf.fxns)
-	{ }
+	{ 
+		invalid = false;
+	}
 	composed_function(object& first, object& second)
 	{
+		invalid = false;
 		fxns.push_nocreate();
 		first.move_to(fxns.top());
 		fxns.push_nocreate();
@@ -96,15 +110,15 @@ struct composed_function
 	// can only be called once 
 	void eval()
 	{
+		cat_assert(!invalid);
 		fxns.foreach(_eval);
-		// crucial, because it may contain quoted_values, which can only 
-		// be called once 
-		fxns.clear_nodestroy();
+		invalid = true;
 	}
 	bool operator==(const composed_function& x) const 
 	{
 		return fxns == x.fxns;
 	}
+	bool invalid;
 	list fxns;
 };
 
@@ -153,6 +167,11 @@ void print_object(object& o)
 	{
 		printf("fxn ");
 	}
+	else if (o.is_empty())
+	{
+		printf("invalid object!");
+		cat_assert(false);
+	}
 	else
 	{
 		cat_assert(false);
@@ -188,9 +207,18 @@ void _eval(object& o)
 	}
 	else
 	{
+		// Not a function. Note that you could simply do nothing thus 
+		// echoing the value on the stack. 
+		// This would give you semantics like Joy or Scheme.
 		cat_assert(false);
 	}
 	o.release_nodestroy();
+}
+
+// note: this is not a reference, so the object doesn't get invalidated
+void _eval_copy(object o)
+{
+	_eval(o);
 }
 
 void push_function(fxn_ptr fp)
@@ -206,15 +234,27 @@ void push_literal(const T& x)
 	print_stack();
 }
 
-void call(fxn_ptr fp)
-{
-	fp();
-	print_stack();
-}
-
-
 //////////////////////////////////////////////////////////////////////////////
 // primitive functions 
+
+// Could be bootstrapped, but it would be very slow and complicated.
+void _while()
+{
+	object cond;
+	object body;
+	stk.top().move_to(cond);
+	stk.pop_nodestroy();
+	stk.top().move_to(body);
+	stk.pop_nodestroy();
+	
+	// force a copy of the function: otherwise it would get invalidated
+	_eval_copy(cond);
+	while (stk.pull().to<bool>())
+	{
+		_eval_copy(body);
+		_eval_copy(cond);
+	}
+}
 
 void _add__int()
 {
@@ -331,7 +371,7 @@ void _true()
 
 void _false()
 {
-	stk.push(true);
+	stk.push(false);
 }
 
 void _swap()
