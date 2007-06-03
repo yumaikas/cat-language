@@ -9,58 +9,75 @@
 
 namespace ootl
 {  
+	struct second_timer 
+	{
+		second_timer() : accumulate(0.0), cnt(0), last(click()) {
+		}
 
-struct second_timer {
-  second_timer() : accumulate(0.0), cnt(0), last(click()) {
-  }
+		void start() {
+			last = click();  
+		}
+	  
+		void stop() {
+			accumulate += last_elapsed();
+			++cnt;
+		}
+	  
+		int count() {
+			return cnt;
+		}
+	  
+		void pause() {
+			accumulate += last_elapsed();
+		}
+	  
+		void resume() {
+			last = click();  
+		}	
+	  
+		double total_elapsed() {
+			return last_elapsed() + accumulate;
+		}
+	  
+		double avg_elapsed() {
+			return total_elapsed() / count();
+		}
+	  
+		double last_elapsed() {
+			return click() - last;
+		}
+	  
+		double clear() {
+			accumulate = 0.0;
+			cnt = 0;
+		}
+	  
+		double click() {
+			return (double)clock() / (double)CLOCKS_PER_SEC;
+		}
+	  
+	private:
+		double last;
+		double accumulate;
+		int cnt;    
+	};
 
-  void start() {
-    last = click();  
-  }
-  
-  void stop() {
-    accumulate += last_elapsed();
-    ++cnt;
-  }
-  
-  int count() {
-    return cnt;
-  }
-  
-  void pause() {
-    accumulate += last_elapsed();
-  }
-  
-  void resume() {
-    last = click();  
-  }
-  
-  double total_elapsed() {
-    return last_elapsed() + accumulate;
-  }
-  
-  double avg_elapsed() {
-    return total_elapsed() / count();
-  }
-  
-  double last_elapsed() {
-    return click() - last;
-  }
-  
-  double clear() {
-    accumulate = 0.0;
-    cnt = 0;
-  }
-  
-  double click() {
-    return (double)clock() / (double)CLOCKS_PER_SEC;
-  }
-  
-private:
-  double last;
-  double accumulate;
-  int cnt;    
-};
+	struct scoped_timer
+	{
+		FILE* mf;
+		second_timer mtimer;
+		
+		scoped_timer(FILE* f = stdout)
+			: mf(f), mtimer()
+		{
+		}	
+
+		~scoped_timer()
+		{
+			double d = mtimer.last_elapsed();
+			fprintf(mf, "time elaped = %f sec\n", d);
+		}
+	};
 
 } 
 

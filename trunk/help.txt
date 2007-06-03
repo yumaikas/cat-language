@@ -3,6 +3,7 @@
 0	Level-0 Core Primitives	cons	(list var -> list)	($A) $b cons == ($A $b)		nil 1 cons uncons swap pop 1 eq	Add an item to the beginning of a list.
 0	Level-0 Core Primitives	div_int	(int int -> int)	$a $b div_int == {$a / $b}		42 7 div_int 6 eq	Divides the top value from the second value truncating the result.
 0	Level-0 Core Primitives	dup	('a -> 'a 'a)	$a dup == $a $a		2 dup add_int 4 eq	Duplicates top item on the stack.
+0	Level-0 Core Primitives	empty	(list -> list bool)	($A $b) empty == false; () empty = true;		nil empty popd 1 unit empty popd not 1 2 pair empty popd not and and	Returns true if a list contains no items.
 0	Level-0 Core Primitives	eq	('a 'a -> bool)	$a $b eq == {$a = $b}		1 1 eq	Compares two items for equality.
 0	Level-0 Core Primitives	false	( -> bool)	false		false [false] [true] if	Pushes a boolean value representing false onto the stack.
 0	Level-0 Core Primitives	if	('A bool ('A -> 'B) ('A -> 'B) -> 'B)	true [$A] [$B] if == $A; false [$A] [$B] if == $B		true [1] [2] if 1 eq	Conditionally executes one of two functions  depending on the boolean value below the functions.
@@ -52,53 +53,51 @@
 1	Function Construction	rcompose	(('A -> 'B) ('C-> 'A) -> ('C -> 'A))	[$A] [$B] rcompose == [$B $A]	swap compose	1 [add_int] [2] rcompose apply 3 eq	Swaps then composes two functions.
 1	Function Construction	rcurry	(('A 'b -> 'C) 'b -> ('A -> 'C))	[$A] $b rcurry == [$B $a]	swap curry	1 [add_int] 2 rcurry apply 3 eq	Fixes a function's top argument to a constant value.
 1	Function Construction	bin_rec	('a ('a -> 'a bool) ('a -> 'b) ('a -> 'c 'a 'a) ('c 'b 'b -> 'b) -> 'b)	[$A] [$B] [$C] [$D] bin_rec = $A [$B] [$C [[[$A] [$B] [$C] [$D] bin_rec] apply2] $D] if			Executes a binary recursive process.
-1	Looping Functions	for	('A ('A int -> 'A) int -> 'A)	[$A] $b for == 0 [[$A] dip] [dup $b neq] while	swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop	nil [cons] 3 for 0 1 2 triple eq	"Executes a loop a number of times passing the loop count."""
-1	Looping Functions	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[dip] curry [uncons swap] rcompose whilene pop	8 1 2 pair [add_int] for_each 11 eq 	Executes a function a number of times  pushing a value from a list each time. Very similar to fold. 
+1	Looping Functions	for	('A ('A int -> 'A) int -> 'A)	[$A] $b for == 0 [[$A] dip] [dup $b neq] while	swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop	nil [cons] 3 for 0 1 2 triple eq	Executes a loop a number of times passing the loop count.
+1	Looping Functions	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[dip] curry [uncons swap] rcompose whilene 	8 1 2 pair [add_int] for_each 11 eq 	Executes a function a number of times  pushing a value from a list each time. Very similar to fold. 
 1	Looping Functions	repeat	('A ('A -> 'A) int -> 'A)	[$A] 0 repeat == id; $A [$B] $c repeat == $B $A [$B] $c dec repeat;	swap [dip dec] curry [neqz] while pop	1 [inc] 5 repeat 6 eq	Executes a function a number of times.
-1	Looping Functions	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz pop	nil [cons] 3 rfor 1 2 3 triple eq	Executes a reverse for loop which counts down from some value to one.
+1	Looping Functions	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz	nil [cons] 3 rfor 3 2 1 triple eq	Executes a reverse for loop which counts down from some value to one.
 1	Looping Functions	whilen	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	1 [inc] [dup 3 gt_int] whilen 4 eq	Repeatedly executes a function while the predicate returns false.
 1	Looping Functions	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while pop	[empty not] while pop	0 1 2 3 triple [uncons swap [add_int] dip] whilene 6 eq	Repeatedly executes a function while the list on the top of the stack is not empty.
 1	Looping Functions	whilenz	('A int ('A int -> 'A int) -> 'A)	[$A] whilenz == [$A] [neqz] while pop	[neqz] while pop	3 3 [[inc] dip dec] whilenz 6 eq	Repeatedly executes a function while the integer on the top of the stack is not zero.
-1	List Functions	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev [cons] fold	1 unit 2 unit cat nil 1 cons 2 cons eq	Concatenates two lists.
+1	List Functions	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev swap [cons] fold	1 unit 2 unit cat nil 1 cons 2 cons eq	Concatenates two lists.
 1	List Functions	consd	(list var 'a -> list 'a)	($A) $b $c cons == ($A $b) $c	[cons] dip	nil 1 2 consd pop head 1 eq	Appends the second item on the stack to the list in the third position.
-1	List Functions	count	(list -> list count)	($A $b) count == ($A) count inc; () count == 0	0 [pop inc] fold	1 2 pair count popd 2 eq	Returns the number of items in a list.
-1	List Functions	count_while	(list ('a -> bool) -> list int)	() [$A] count_while == 0; ($A $b) [$C] count_while == $b $C $A [$C] count_while [inc] [] if	[uncons] rcompose [dup 0 swap] dip [[inc] dip] swap while pop	1 2 3 triple [dup 1 gt_int] count_while popd 2 eq	Returns how many of the first elements satisfy a predicate
-1	List Functions	drop	(list int -> list)	($A $b) 0 drop = ($A); ($A $b) $c drop == ($A $c dec drop)	[[tail] dip dec] whilenz pop	3 4 pair 1 drop head 3 eq 	Removes a number of items from the front of a list.
-1	List Functions	drop_while	(list ('a -> bool) -> list)	() [$A] drop_while == (); ($A $b) [$C] drop_while == $b $C [($A [$C] drop_while)] [($A)]	if dupd count_while drop	1 2 3 triple [dup 2 gteq_int] drop_while 1 unit eq	Drops items from a list while the predicate is satisfied.
-1	List Functions	empty	(list -> list bool)	($A) empty == ($A) count 0 eq	count 0 eq	nil empty 1 unit empty not and 1 2 pair empty not and 	Returns true if a list contains no items.
-1	List Functions	filter	(list ('a -> bool) -> list)	($A $b) [$C] filter == $b $C if ($A [$C] filter $b) ($A [$C] filter)	[rev] dip [[cons] [] if] compose [dup] rcompose nil swap fold	1 2 3 triple [2 mod_int 0 eq] filter	"Creates a list containing elements of a source list  for which a predicate returns true."""
+1	List Functions	count	(list -> list count)	($A $b) count == ($A) count inc; () count == 0	dup 0 [pop inc] fold	1 2 pair count popd 2 eq	Returns the number of items in a list.
+1	List Functions	count_while	(list ('a -> bool) -> list int)	() [$A] count_while == 0; ($A $b) [$C] count_while == $b $C $A [$C] count_while [inc] [] if	[dup 0 swap] dip [[inc] dip] swap [uncons] rcompose while pop	1 2 3 triple [1 gt_int] count_while popd 2 eq	Returns how many of the first elements satisfy a predicate
+1	List Functions	drop	(list int -> list)	($A $b) 0 drop = ($A); ($A $b) $c drop == ($A $c dec drop)	[[tail] dip dec] whilenz 	3 4 pair 1 drop head 3 eq 	Removes a number of items from the front of a list.
+1	List Functions	drop_while	(list ('a -> bool) -> list)	() [$A] drop_while == (); ($A $b) [$C] drop_while == $b $C [($A [$C] drop_while)] [($A)]	count_while drop	1 2 3 triple [2 gteq_int] drop_while 1 unit eq	Drops items from the front of a list while the predicate is satisfied.
+1	List Functions	filter	(list ('a -> bool) -> list)	($A $b) [$C] filter == $b $C if ($A [$C] filter $b) ($A [$C] filter)	[rev] dip [[cons] [pop] if] compose [dup] rcompose nil swap fold	1 2 3 triple [2 mod_int 0 eq] filter 2 unit eq	Creates a list containing elements of a source list  for which a predicate returns true.
 1	List Functions	first	(list -> list var)	($A $b) first == ($A $b) $b	dup uncons popd	1 2 pair first popd 2 eq	Returns first item in a list.
-1	List Functions	flatten	(list -> list)	() flatten == (); ($A ($b)) flatten == ($A flatten $b)	nil [cat] fold	nil 1 unit cons 2 unit cons flatten 1 2 pair eq	Concatenates all children in a list of lists.
-1	List Functions	fold	(list 'a ('a 'a -> 'a) -> 'a)	() $a [$B] fold == $a; ($A $b) $c [$D] fold == $c $b $D ($A) [$D] fold	swapd [dip] curry [uncons swap] rcompose whilene pop	1 2 3 triple 0 [add_int] fold 6 eq	Applies a binary function to the first item in a list with an accumulated value. It removes the first item and repeats until the list is empty.
-1	List Functions	gen	('a ('a -> 'a) ('a -> bool) -> list)	$a [$B] [$C] gen == $a $C [($a $a $B [$B] [$C] gen)] [()] if	nil swap [bury] dip [[dup consd] rcompose] dip [dup] rcompose while	0 [inc] [2 lt_int] gen	Creates a new list  and appends an item to a list if the predicate is true. It then applies a transform to the last value and repeats.
+1	List Functions	flatten	(list -> list)	() flatten == (); ($A ($b)) flatten == ($A flatten $b)	rev nil [cat] fold	nil 1 unit cons 2 unit cons flatten 1 2 pair eq	Concatenates all children in a list of lists.
+1	List Functions	fold	(list 'a ('a 'a -> 'a) -> 'a)	() $a [$B] fold == $a; ($A $b) $c [$D] fold == $c $b $D ($A) [$D] fold	swapd [dip] curry [uncons swap] rcompose whilene	1 2 3 triple 0 [add_int] fold 6 eq	Applies a binary function to the first item in a list with an accumulated value. It removes the first item and repeats until the list is empty.
+1	List Functions	gen	('a ('a -> 'a) ('a -> bool) -> list)	$a [$B] [$C] gen == $a $C [($a $a $B [$B] [$C] gen)] [()] if	nil swap [bury] dip [[dup consd] rcompose] dip [dup] rcompose while pop	0 [inc] [2 lt_int] gen 0 1 pair eq	Creates a new list  and appends an item to a list if the predicate is true. It then applies a transform to the last value and repeats.
 1	List Functions	head	(list -> var)	($A $b) head == $b	uncons popd	nil 1 cons 2 cons head 2 eq	Replace a list with the first item in it.
 1	List Functions	last	(list -> list var)	($A) last == ($A) count dec nth	count dec nth	1 2 3 triple last popd 1 eq	Returns the last item in a list.
 1	List Functions	map	(list ('a -> 'b) -> list)	$a [$B] map == $a [$B] rmap rev	rmap rev	1 2 pair [3 mul_int] map head 6 eq	Creates a new list by applying a transform function to each item in a list.
 1	List Functions	mid	(list -> list var)	($A) mid == ($A) count 2 div_int nth	count 2 div_int nth	1 2 3 triple mid popd 2 eq	Returns the middle item in a list.
-1	List Functions	move_head	(list list -> list list)	($A) ($B $c) move_head == ($A $c) ($B)	uncons swap cons	1 2 pair 3 4 pair move_head pop head 4 eq	Moves the head of one list to the next.
+1	List Functions	move_head	(list list -> list list)	($A) ($B $c) move_head == ($A $c) ($B)	uncons swap consd	1 2 pair 3 4 pair move_head pop head 4 eq	Moves the head of one list to the next.
 1	List Functions	n	(int -> list)	0 n == (); $a n = ($a dec n $a)	nil swap [cons] swap for	3 n 0 1 2 triple eq	Creates a list of consecutive integers from 0 to some number minus one.
-1	List Functions	nth	(list int -> list var)	($A $b) 0 nth == ($A $b) $b; ($A $b) 0 nth	 dupd take head	1 2 3 triple 2 nth popd 1 eq	Returns the nth item in a list.
+1	List Functions	nth	(list int -> list var)	($A $b) 0 nth == ($A $b) $b; ($A $b) 0 nth	dupd drop head	1 2 3 triple 2 nth popd 1 eq	Returns the nth item in a list.
 1	List Functions	pair	('a 'b -> list)	$a $b pair == ($a $b)	[unit] dip cons	1 2 pair head 2 eq	Creates a list containing two items.
 1	List Functions	rev	(list -> list)	($A $b) rev == ($b $A rev); () rev == ()	nil [cons] fold	1 2 pair rev head 1 eq	Reverses a list.
-1	List Functions	rmap	(list ('a -> 'b) -> list)	[$A] rmap == nil [cons] fold	nil [cons] fold	1 2 pair [3 mul_int] rmap head 3 eq	Constructs a map of the reverse of a list.
-1	List Functions	set_at	(list var int -> list)	($A $b) $c 0 set_at == ($A $c); ($A $b) $c $d set_at == ($A $c $d dec set_at $b)	swapd split_at [tail swons] dip cat	1 2 pair 42 0 set_at 42 head eq	Creates a new list by replacing an item at a given index with a new value.
+1	List Functions	rmap	(list ('a -> 'b) -> list)	[$A] rmap == nil [cons] fold	nil swap [cons] compose fold	1 2 pair [3 mul_int] rmap head 3 eq	Constructs a map of the reverse of a list.
+1	List Functions	set_at	(list var int -> list)	($A $b) $c 0 set_at == ($A $c); ($A $b) $c $d set_at == ($A $c $d dec set_at $b)	swapd split_at [tail swons] dip cat	1 2 pair 42 0 set_at head 42 eq	Creates a new list by replacing an item at a given index with a new value.
 1	List Functions	small	(list -> list bool)	($A) small == ($A) count 1 lteq	count 1 lteq_int	1 unit small popd	Returns true if a list contains one or zero items.
-1	List Functions	split	(list ('a -> bool) -> list list)	($A) [$B] split == ($A) [$B] (filter) ($A) [$B not] (filter)	 dup2 [filter] dip2 [not] compose filter	1 2 3 triple [dup even] split popd 1 3 pair eq	Splits a list in two according to a predicate function.
-1	List Functions	split_at	(list int -> list list)	($A) 0 split_at == ($A) (); ($A $b) $c split_at == ($A) $c dec split_at $b cons	nil bury [move_head] swap repeat	1 2 3 triple 1 split_at pop 1 2 pair eq	Splits a list in two at a specific index.
+1	List Functions	split	(list ('a -> bool) -> list list)	($A) [$B] split == ($A) [$B] (filter) ($A) [$B not] (filter)	 dup2 [filter] dip2 [not] compose filter	1 2 3 triple [2 mod_int 0 eq] split popd 1 3 pair eq	Splits a list in two according to a predicate function.
+1	List Functions	split_at	(list int -> list list)	($A) 0 split_at == ($A) (); ($A $b) $c split_at == ($A) $c dec split_at $b cons	nil bury [move_head] swap repeat swap	1 2 3 triple 1 split_at pop 1 2 pair eq	Splits a list in two at a specific index.
 1	List Functions	swons	(var list -> list)	$b ($A) swons == ($A $b)	swap cons	1 2 unit swons 2 1 pair eq	Adds the item below a list to the front of it.
 1	List Functions	tail	(list -> list)	($A $b) tail == ($A)	uncons pop	3 4 pair tail 3 unit eq	Remove first item in a list.
 1	List Functions	take	(list int -> list)	($A $b) 0 take = (); ($A $b) $c take == ($A $c dec take $b)	nil bury [[move_head] dip dec] whilenz pop rev	1 2 3 triple 2 take 2 3 pair eq	Creates a list from the first n items in another list.
-1	List Functions	take_while	(list ('a -> bool) -> list)	() [$A] take_while == (); ($A $b) [$C] take_while == $b $C [($A [$C] take_while $b)] [()] if	 dupd count_while take	1 2 3 triple [dup 2 gt_int] 2 3 pair eq	Takes items from a list while the predicate is satisfied.
+1	List Functions	take_while	(list ('a -> bool) -> list)	() [$A] take_while == (); ($A $b) [$C] take_while == $b $C [($A [$C] take_while $b)] [()] if	count_while take	1 2 3 triple [2 gt_int] take_while 3 unit eq	Takes items from a list while the predicate is satisfied.
 1	List Functions	triple	('a 'b 'c -> list)	$a $b $c triple == ($a $b $c)	[pair] dip cons	1 2 3 triple 1 2 pair 3 cons eq	Creates a list from the top three elements
-1	List Functions	unfold	('a ('a -> 'a 'a) ('a -> 'a bool) -> list)	$a [$B] [$C] unfold == $a $C [($a $a $B [$B] [$C] unfold)] [()] if	[nil bury [consd] compose] dip whilen	 1 [dup inc] 3 neqf 	Generates a list from a binary function and initial value.
 1	List Functions	unpair	(list -> var var)	($A $b $c) unpair == $b $c	uncons [head] dip	1 2 pair unpair pop 1 eq	Removes first two items from a list and removes it.
-1	List Functions	unit	('a -> list)	$a unit == ($a)	nil swap cons	1 unit nil cons 1 eq	Creates a list containing one item.
+1	List Functions	unit	('a -> list)	$a unit == ($a)	nil swap cons	1 unit nil 1 cons eq	Creates a list containing one item.
 1	Stack Manipulation	bury	('a 'b 'c -> 'c 'a 'b)	$a $b $c bury == $c $a $b	swap swapd	1 2 3 bury pop pop 3 eq	
 1	Stack Manipulation	dig	('a 'b 'c -> 'b 'c 'a)	$a $b $c dig == $b $c $a	 swapd swap	1 2 3 dig popd popd 1 eq	
 1	Stack Manipulation	dup2	('a 'b -> 'a 'b 'a 'b)	$a $b dup2 == $a $b $a $b	over over	1 2 dup2 pop popd popd 1 eq	
-1	Stack Manipulation	dupd	('a 'b -> 'a 'a 'b)	$a $b dupd == $a $a $b	[dup] dip	1 2 dup2 pop pop2 2 eq	
-1	Stack Manipulation	over	('a 'b -> 'a 'b 'a)	$a $b over == $a $b $a	dupd swap	1 2 popd popd 1 eq	
-1	Stack Manipulation	peek	('a 'b 'c -> 'a 'b 'c 'a)	$a $b $c peek == $a $b $c $a	[dupd] dip dig	1 2 3 popd popd popd 1 eq	
+1	Stack Manipulation	dupd	('a 'b -> 'a 'a 'b)	$a $b dupd == $a $a $b	[dup] dip	1 2 dupd pop popd 1 eq	
+1	Stack Manipulation	over	('a 'b -> 'a 'b 'a)	$a $b over == $a $b $a	dupd swap	1 2 over popd popd 1 eq	
+1	Stack Manipulation	peek	('a 'b 'c -> 'a 'b 'c 'a)	$a $b $c peek == $a $b $c $a	[dupd] dip dig	1 2 3 peek popd popd popd 1 eq	
 1	Stack Manipulation	poke	('a 'b 'c -> 'c 'b)	$a $b $c poke == $c $b	[popd] dip swap	1 2 3 poke pop 3 eq	
 1	Stack Manipulation	pop2	('a 'b -> )	$a $b pop2 == id	pop pop	1 2 3 pop2 1 eq	
 1	Stack Manipulation	pop3	('a 'b 'c -> )	$a $b $c pop3 == id	pop pop pop	1 2 3 4 pop3 1 eq	
@@ -110,11 +109,11 @@
 1	Integer Operations	even	(int -> int bool)	$a even == $a $a 2 mod_int 0 eq 	dup 2 mod_int 0 eq	2 even popd 	
 1	Integer Operations	inc	(int -> int)	$a inc == {$a+1}	1 add_int	3 inc 4 eq	
 1	Integer Operations	sub_int	(int int -> int)	$a $b sub_int == {$a - $b}	neg_int add_int	5 3 sub_int 2 eq	
-1	Integer Operations	min_int	(int int -> int)	$a $b min_int == $a $b lt_int [$a] [$b] if	dup2 gt_int [pop] [popd] if	3 5 min_int 3 eq	
-1	Integer Operations	max_int	(int int -> int)	$a $b max_int == $a $b gt_int [$a] [$b] if	dup2 gt_int [popd] [pop] if	3 5 max_int 5 eq	
+1	Integer Operations	min_int	(int int -> int)	$a $b min_int == $a $b lt_int [$a] [$b] if	dup2 gt_int [popd] [pop] if	3 5 min_int 3 eq	
+1	Integer Operations	max_int	(int int -> int)	$a $b max_int == $a $b gt_int [$a] [$b] if	dup2 gt_int [pop] [popd] if	3 5 max_int 5 eq	
 1	Integer Operations	odd	(int -> int bool)	$a even == $a $a 2 mod 1 eq 	dup 2 mod_int 1 eq	3 odd popd 	
-1	Integer Operations	gt_int	(int int -> bool)	$a $b gt_int == {$a > $b}	lteq_int not	5 gt_int	
-1	Integer Operations	gteq_int	(int int -> bool)	$a $b gteq_int == {$a >= $b}	lt_int not	5 3 gteq_int	
+1	Integer Operations	gt_int	(int int -> bool)	$a $b gt_int == {$a > $b}	lteq_int not	5 3 gt_int	
+1	Integer Operations	gteq_int	(int int -> bool)	$a $b gteq_int == {$a >= $b}	lt_int not	5 5 gteq_int	
 1	Integer Operations	lteq_int	(int int -> bool)	$a $b lteq_int == {$a <= $b}	dup2 eq [lt_int] dip or	3 5 lteq_int	
 2	Bit Operations	add_bit	(bit bit -> bit)	$a $b add_bit == {$a + $b}			
 2	Bit Operations	sub_bit	(bit bit -> bit)	$a $b sub_bit == {$a - $b}			
