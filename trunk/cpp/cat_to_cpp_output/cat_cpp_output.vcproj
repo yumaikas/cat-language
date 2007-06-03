@@ -181,15 +181,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ootl_object.hpp"
+				RelativePath="..\ootl\ootl_object.hpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ootl_stack.hpp"
+				RelativePath="..\ootl\ootl_stack.hpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ootl_timer.hpp"
+				RelativePath="..\ootl\ootl_string.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\ootl\ootl_timer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\ootl\ootl_vlist.hpp"
 				>
 			</File>
 			<File

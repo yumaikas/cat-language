@@ -1,5 +1,6 @@
-// cat_cpp_output.cpp : Defines the entry point for the console application.
-//
+// Public domain Cat interpreter
+// by Christopher Diggins
+// http://www.cat-language.com
 
 #include "cat_lib.hpp"
 

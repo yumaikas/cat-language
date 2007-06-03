@@ -1,3 +1,9 @@
+// C++ file generated from Cat input
+// created using the Cat to C++ tool
+// by Christopher Diggins
+
+// http://www.cat-language.com
+
 void _apply();
 void _apply2();
 void _dip();

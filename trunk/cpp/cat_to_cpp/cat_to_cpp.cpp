@@ -1,5 +1,6 @@
-// Entry point for the Cat translator program
 // public domain by Christopher Diggins
+// Cat to C++ translator 
+// http://www.cat-language.com 
 
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -221,6 +222,11 @@ int main(int argc, char* argv[])
 	{
 		try
 		{
+			printf("// C++ file generated from Cat input\n");
+			printf("// created using the Cat to C++ tool\n");
+			printf("// by Christopher Diggins\n\n");
+			printf("// http://www.cat-language.com\n");
+			printf("\n");
 			p.GetTree()->Visit(OutputForwardDecls, DefLabel::id);
 			p.GetTree()->Visit(OutputQuotationForwardDecls, QuotationLabel::id);
 			p.GetTree()->Visit(OutputFunctionDefs, DefLabel::id);

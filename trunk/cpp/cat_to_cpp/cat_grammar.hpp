@@ -1,5 +1,7 @@
-// Dedicated to the public domain 
+// Public domain 
+// YARD grammar for the Cat languages
 // by Christopher Diggins 
+// http://www.cat-language.com
 
 #ifndef CAT_GRAMMAR_HPP
 #define CAT_GRAMMAR_HPP
