@@ -110,11 +110,11 @@ namespace Cat
         }
         public static Rule TypeVar()
         {
-            return AstNode("type_var", Seq(LowerCaseLetter(), Star(IdentNextChar())));
+            return AstNode("type_var", Seq(Opt(CharSeq("$")), LowerCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule StackVar()
         {
-            return AstNode("stack_var", Seq(UpperCaseLetter(), Star(IdentNextChar())));
+            return AstNode("stack_var", Seq(Opt(CharSeq("$")), UpperCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule TypeOrStackVar()
         {

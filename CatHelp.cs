@@ -269,8 +269,6 @@ namespace Cat
                 sw.WriteLine("");
                 sw.WriteLine("// Tests");
                 sw.WriteLine("");
-                sw.WriteLine("define test { apply [] [1 halt] if }");
-                sw.WriteLine("");
                 mTable.OutputTests(sw, 1);
                 sw.Flush();
             }

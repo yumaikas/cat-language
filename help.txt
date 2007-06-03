@@ -12,10 +12,11 @@
 0	Level-0 Core Primitives	neg_int	(int -> int)	$a neg_int == {-$a}		5 neg_int -5 eq	Negates the top value.
 0	Level-0 Core Primitives	nil	( -> list)	nil == ()		nil nil eq	Creates an empty list.
 0	Level-0 Core Primitives	pop	('a -> )	$a $b pop == $a		3 5 pop 3 eq	Removes top item from the stack.
-0	Level-0 Core Primitives	quote	('a -> ( -> 'a))	$a quote == [$a]		true 1 quote 2 quote 1 eq	Quotes a value  creating a nullary constant generating function.
+0	Level-0 Core Primitives	quote	('a -> ( -> 'a))	$a quote == [$a]		true 1 quote 2 quote if 1 eq	Quotes a value  creating a nullary constant generating function.
 0	Level-0 Core Primitives	swap	 ('a 'b -> 'b 'a)	$a $b swap == $b $a		1 2 swap pop 2 eq	Swap top two items on the stack.
 0	Level-0 Core Primitives	true	( -> bool)	true		true [true] [false] if	Pushes a boolean value representing true onto the stack.
 0	Level-0 Core Primitives	uncons	(list -> list var)	($A $b) uncons == ($A) $b; () uncons == error		nil 2 cons 1 cons uncons pop uncons swap pop 2 eq	Removes the first item from a list.
+0	Level-0 Core Primitives	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if		1 [2 mul_int] [dup 100 lt_int] while 128 eq	Repeatedly executes a function  while the predicate returns true.
 1	Basic Combinators	apply	('A ('A -> 'B) -> 'B)	[$A] apply == $A	true swap [] if	[1] apply 1 eq	Executes a function.
 1	Basic Combinators	apply2	('a 'a ('a -> 'b) -> 'b 'b)	$a $a $B apply2 == $a $B $a $B	under apply [apply] dip	1 3 [inc] apply2 pop 2 eq	Applies a unary function to the top two items on the stack.
 1	Basic Combinators	dip	('A 'b ('A -> 'C) -> 'C 'b)	$a [$B] dip == $B $a	swap quote compose apply	1 3 [inc] dip pop 2 eq	Executes a function after temporarily removing the next item on the stack.
@@ -23,7 +24,7 @@
 1	Classical Combinators	b		[$A] [$B] [$C] b == [[$A] $B] $C	[k] [[s] k] s		Classical B combinator a.k.a. Bluebird
 1	Classical Combinators	c		[$A] [$B] [$C] c == [$B] [$A] $C	[[k] k] [[s] [b] b] s		Classical C combinator a.k.a. Cardinal
 1	Classical Combinators	d		[$A] [$B] [$C] [$D] d == [[$A] $B] [$C] $D	[b] b		D combinator a.k.a. Dove
-1	Classical Combinators	i	('A ('A -> 'B) -> 'B)	[$A] i == $A	[k] [k] s	[42] i 42 eq	"Classical I combinator, a.k.a. Identity"
+1	Classical Combinators	i	('A ('A -> 'B) -> 'B)	[$A] i == $A	[k] [k] s		"Classical I combinator, a.k.a. Identity"
 1	Classical Combinators	k	('A 'b ('A -> 'C) -> 'C)	[$A] [$B] k == $B	[pop] dip		"Classical K combinator used to represent True, a.k.a. Kestrel"
 1	Classical Combinators	ki	('A ('A -> 'B) 'c -> 'B)	[$A] [$B] ki == $A	[i] k		"KI combinator, used to represent False, a.k.a. Kite"
 1	Classical Combinators	l		[$A] [$B] l == [[$A] $A] $B	[m] [b] c		"L combinator, a.ka. Lark"
@@ -49,15 +50,14 @@
 1	Function Construction	curry	('a ('B 'a -> 'C) -> ('B -> 'C))	$a [$B] curry == [$a $B]	[quote] dip compose	1 2 [add_int] curry apply 3 eq	Fixes a function's top argument to a constant value.
 1	Function Construction	curry2	('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))	$a $b [$C] curry2 == [$a $b $C]	curry curry	1 2 [add_int] curry2 apply 3 eq	Fixes a function's top two arguments to constant values.
 1	Function Construction	rcompose	(('A -> 'B) ('C-> 'A) -> ('C -> 'A))	[$A] [$B] rcompose == [$B $A]	swap compose	1 [add_int] [2] rcompose apply 3 eq	Swaps then composes two functions.
-1	Function Construction	rcurry	(('A 'b -> 'C) 'b -> ('A -> 'C))	[$A] $b rcurry == [$B $a]	curry swap	1 [add_int] 2 rcurry apply 3 eq	Fixes a function's top argument to a constant value.
+1	Function Construction	rcurry	(('A 'b -> 'C) 'b -> ('A -> 'C))	[$A] $b rcurry == [$B $a]	swap curry	1 [add_int] 2 rcurry apply 3 eq	Fixes a function's top argument to a constant value.
 1	Function Construction	bin_rec	('a ('a -> 'a bool) ('a -> 'b) ('a -> 'c 'a 'a) ('c 'b 'b -> 'b) -> 'b)	[$A] [$B] [$C] [$D] bin_rec = $A [$B] [$C [[[$A] [$B] [$C] [$D] bin_rec] apply2] $D] if			Executes a binary recursive process.
 1	Looping Functions	for	('A ('A int -> 'A) int -> 'A)	[$A] $b for == 0 [[$A] dip] [dup $b neq] while	swap [dip inc] curry [dup] rcompose swap neqf 0 bury while pop	nil [cons] 3 for 0 1 2 triple eq	"Executes a loop a number of times passing the loop count."""
-1	Looping Functions	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[uncons swap] rcompose [dip] curry [empty not] while pop	8 1 2 pair [add_int] for_each 11 eq 	Executes a function a number of times  pushing a value from a list each time. Very similar to fold. 
+1	Looping Functions	for_each	('A list ('A 'b -> 'A) -> 'A)	() [$A] foreach == id; ($A $b) [$C] foreach == $b $C ($A) [$C] foreach	[dip] curry [uncons swap] rcompose whilene pop	8 1 2 pair [add_int] for_each 11 eq 	Executes a function a number of times  pushing a value from a list each time. Very similar to fold. 
 1	Looping Functions	repeat	('A ('A -> 'A) int -> 'A)	[$A] 0 repeat == id; $A [$B] $c repeat == $B $A [$B] $c dec repeat;	swap [dip dec] curry [neqz] while pop	1 [inc] 5 repeat 6 eq	Executes a function a number of times.
 1	Looping Functions	rfor	('A ('A int -> 'A) int -> 'A)	[$A] 0 for == id; [$A] $b for == $b $A [$A] $b dec for	swap [dip dec] curry [dup] rcompose whilenz pop	nil [cons] 3 rfor 1 2 3 triple eq	Executes a reverse for loop which counts down from some value to one.
-1	Looping Functions	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if	[dip swap] curry swap [dip m] curry quote compose [[pop] if] compose m	1 [2 mul_int] [100 lt_int] while 128 eq	Repeatedly executes a function  while the predicate returns true.
 1	Looping Functions	whilen	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A] [$B] whilen == [$A] [$B not] while	[not] compose while	1 [inc] [dup 3 gt_int] whilen 4 eq	Repeatedly executes a function while the predicate returns false.
-1	Looping Functions	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while pop	[empty not] while pop	0 1 2 3 triple [uncons swap [add] dip] whilene 6 eq	Repeatedly executes a function while the list on the top of the stack is not empty.
+1	Looping Functions	whilene	('A list ('A list -> 'A list) -> 'A)	[$A] whilene == [$A] [empty not] while pop	[empty not] while pop	0 1 2 3 triple [uncons swap [add_int] dip] whilene 6 eq	Repeatedly executes a function while the list on the top of the stack is not empty.
 1	Looping Functions	whilenz	('A int ('A int -> 'A int) -> 'A)	[$A] whilenz == [$A] [neqz] while pop	[neqz] while pop	3 3 [[inc] dip dec] whilenz 6 eq	Repeatedly executes a function while the integer on the top of the stack is not zero.
 1	List Functions	cat	(list list -> list)	($A) ($B) cat == ($A $B)	rev [cons] fold	1 unit 2 unit cat nil 1 cons 2 cons eq	Concatenates two lists.
 1	List Functions	consd	(list var 'a -> list 'a)	($A) $b $c cons == ($A $b) $c	[cons] dip	nil 1 2 consd pop head 1 eq	Appends the second item on the stack to the list in the third position.
@@ -107,15 +107,15 @@
 1	Stack Manipulation	swapd	('a 'b 'c -> 'b 'a 'c)	$a $b $c swapd == $b $a $c	[swap] dip	1 2 3 swapd pop2 2 eq	
 1	Stack Manipulation	under	('a 'b -> 'b 'a 'b)	$a $b under == $b $a $b	dup swapd	1 2 under pop2 2 eq	
 1	Integer Operations	dec	(int -> int)	$a inc == {$a-1}	1 sub_int	3 dec 2 eq	
-1	Integer Operations	even	(int -> int bool)	$a even == $a $a 2 mod 0 eq 	dup 2 mod 0 eq	2 even popd 	
+1	Integer Operations	even	(int -> int bool)	$a even == $a $a 2 mod_int 0 eq 	dup 2 mod_int 0 eq	2 even popd 	
 1	Integer Operations	inc	(int -> int)	$a inc == {$a+1}	1 add_int	3 inc 4 eq	
 1	Integer Operations	sub_int	(int int -> int)	$a $b sub_int == {$a - $b}	neg_int add_int	5 3 sub_int 2 eq	
 1	Integer Operations	min_int	(int int -> int)	$a $b min_int == $a $b lt_int [$a] [$b] if	dup2 gt_int [pop] [popd] if	3 5 min_int 3 eq	
 1	Integer Operations	max_int	(int int -> int)	$a $b max_int == $a $b gt_int [$a] [$b] if	dup2 gt_int [popd] [pop] if	3 5 max_int 5 eq	
-1	Integer Operations	odd	(int -> int bool)	$a even == $a $a 2 mod 1 eq 	dup 2 mod 1 eq	3 odd popd 	
+1	Integer Operations	odd	(int -> int bool)	$a even == $a $a 2 mod 1 eq 	dup 2 mod_int 1 eq	3 odd popd 	
 1	Integer Operations	gt_int	(int int -> bool)	$a $b gt_int == {$a > $b}	lteq_int not	5 gt_int	
 1	Integer Operations	gteq_int	(int int -> bool)	$a $b gteq_int == {$a >= $b}	lt_int not	5 3 gteq_int	
-1	Integer Operations	lteq_int	(int int -> bool)	$a $b lteq_int == {$a <= $b}	dup2 eq lt_int or	3 5 lteq_int	
+1	Integer Operations	lteq_int	(int int -> bool)	$a $b lteq_int == {$a <= $b}	dup2 eq [lt_int] dip or	3 5 lteq_int	
 2	Bit Operations	add_bit	(bit bit -> bit)	$a $b add_bit == {$a + $b}			
 2	Bit Operations	sub_bit	(bit bit -> bit)	$a $b sub_bit == {$a - $b}			
 2	Bit Operations	mul_bit	(bit bit -> bit)	$a $b mul_bit == {$a * $b}			

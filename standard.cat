@@ -366,7 +366,7 @@ define whilenz
 { [neqz] while }
 
 define for_each : ('A list ('A 'b -> 'A) -> 'A)
-{ [uncons swap] rcompose [dip] curry whilene pop }
+{ [dip] curry [uncons swap] rcompose whilene pop }
 
 // like repeat but an index is passed at each iteration (0..n-1)
 define for : ('A ('A int -> 'A) int -> 'A)
