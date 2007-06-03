@@ -5,6 +5,7 @@
 
 #include "..\ootl\ootl_object.hpp"
 #include "..\ootl\ootl_stack.hpp"
+#include "..\ootl\ootl_timer.hpp"
 
 using namespace ootl;
 
@@ -27,7 +28,9 @@ void _eval(object& o);
 //////////////////////////////////////////////////////////////////////////////
 // debugging stuff
 
-#ifndef NDEBUG
+//#define VERBOSE
+
+#ifdef VERBOSE
 #define call(FXN) printf("calling %s\n", #FXN); FXN(); print_stack(); /* */
 #else 
 #define call(FXN) FXN(); /* */
@@ -224,20 +227,25 @@ void _eval_copy(object o)
 void push_function(fxn_ptr fp)
 {
 	stk.push(prim_function(fp));
+#ifdef VERBOSE
 	print_stack();
+#endif
 }
 
 template<typename T>
 void push_literal(const T& x)
 {
 	stk.push(x);
+#ifdef VERBOSE
 	print_stack();
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // primitive functions 
 
-// Could be bootstrapped, but it would be very slow and complicated.
+// Could be bootstrapped, but it would be very slow and complicated. It would require
+// using the Y or M combinator, and would be of only mild theoretical interested
 void _while()
 {
 	object cond;
@@ -254,6 +262,12 @@ void _while()
 		_eval_copy(body);
 		_eval_copy(cond);
 	}
+}
+
+// Could also be bootstrapped, but would be ridiculously slow
+void _empty()
+{
+	stk.push(stk.top().to<list>().is_empty());
 }
 
 void _add__int()
@@ -433,6 +447,10 @@ void _compose()
 
 void _test()
 {
+	static int nTest = 0;
+	printf("test %d\n", nTest++);
+	scoped_timer timer;
+	
 	cat_assert(stk.count() == 1);
 	_eval(stk.pull());
 	if (stk.count() != 1)

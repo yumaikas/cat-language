@@ -70,6 +70,9 @@ namespace Cat
             if (msImpl.Length > 1)
                 ret += "<tr valign='top'><td><span class='prim_label'>Implementation</span></td><td><tt><span class='prim_imp'>" + HyperLinkCode(msImpl, fxns) + "</span></tt></td></tr>\n";
 
+            if (msTest.Length > 1)
+                ret += "<tr valign='top'><td><span class='prim_label'>Unit Test</span></td><td><tt><span class='prim_imp'>" + HyperLinkCode(msTest, fxns) + "</span></tt></td></tr>\n";
+
             if (msNotes.Length > 1)
                 ret += "<tr valign='top'><td><span class='prim_label'>Remarks</span></td><td><span class='value'>" + msNotes + "</span></td></tr>\n";
 

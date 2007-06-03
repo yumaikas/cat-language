@@ -79,11 +79,21 @@ void unit_tests()
 	call(_while);
 	cat_assert(stk[0] == 4);
 	call(_pop);
+
+	// whilene test
+	push_literal(0);
+	call(_nil);
+	push_function(_inc);
+	push_function(_dip);
+	call(_curry);
+	call(_whilene);
+	cat_assert(stk[0] == 0);
+	call(_pop);
 }
 
 int main(int argc, char* argv[])
 {
-	//unit_tests();
+    unit_tests();
 	try
 	{
 		_run__tests();
@@ -92,6 +102,9 @@ int main(int argc, char* argv[])
 	{
 		printf("type error casting from %s to %s\n", e.from.name(), e.to.name());
 	}
+	printf("finished testing, no error messages is an excellent sign!\n");
+	printf("press any key to continue ...\n");
+	getchar();
 	return 0;
 }
 
