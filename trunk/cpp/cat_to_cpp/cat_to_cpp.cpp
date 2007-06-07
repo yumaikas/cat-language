@@ -108,7 +108,14 @@ void OutputQuotation(node* p)
 void OutputWord(node* p)
 {
 	assert(p->GetLabelId() == CatWordLabel::id);
-	printf("    call(");
+	if (p->GetSibling() == NULL)
+	{
+		printf("    tailcall(");
+	}
+	else
+	{
+		printf("    call(");
+	}
 	OutputName(p);
 	printf(");\n");
 }
@@ -147,7 +154,14 @@ void OutputFunctionDefs(node* p)
 {
 	OutputFxnSig(p);
 	printf("\n{\n");
-	p->Visit(OutputExpr, ExprLabel::id, false);
+
+	node* pTmp = p->GetFirstChild();
+	while (pTmp != NULL) {
+		assert(pTmp->GetLabelId() == ExprLabel::id);
+		OutputExpr(pTmp);
+		pTmp = pTmp->GetSibling();
+	}
+
 	printf("}\n");
 }
 
@@ -155,7 +169,12 @@ void OutputQuotationDefs(node* p)
 {
 	int nId = anon_fxns[p];
 	printf("void _cat_anon%d()\n{\n", nId);
-	p->Visit(OutputExpr, ExprLabel::id, false);
+	node* pTmp = p->GetFirstChild();
+	while (pTmp != NULL) {
+		assert(pTmp->GetLabelId() == ExprLabel::id);
+		OutputExpr(pTmp);
+		pTmp = pTmp->GetSibling();
+	}
 	printf("}\n");
 }
 

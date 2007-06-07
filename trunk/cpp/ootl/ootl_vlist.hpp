@@ -14,14 +14,25 @@ void ootl_assert(bool b) {
 
 namespace ootl 
 {
-	template<typename T, int Factor_N = 2, int Initial_N = 2>
+	struct default_vlist_policy
+	{
+		static size_t initial_size() { return 8; }
+		static size_t new_size(size_t old_size) { return old_size * 2; }
+	};
+
+	template<typename T, typename Policy_T = default_vlist_policy>
 	struct vlist
 	{
 		vlist() 
 		{ 
-			mFirst = new buffer(Initial_N);
+			mCap = Policy_T::initial_size();
+			mFirst = new buffer(mCap);
 			mLast = mFirst;
-			mCap = Initial_N;
+		}
+		~vlist()
+		{
+			while (mLast != NULL)
+				remove_buffer();
 		}
 
 		//////////////////////////////////////////////////////
@@ -43,8 +54,12 @@ namespace ootl
 				begin((T*)malloc(n * sizeof(T))),
 				end(begin + n)
 			{ 
-				ootl_assert(n >= Initial_N);
-				memset(begin, 0, size * sizeof(T));
+				ootl_assert(n >= Policy_T::initial_size());				
+			}
+
+			~buffer()
+			{
+				free(begin);
 			}
 
 			size_t index; 
@@ -107,10 +122,8 @@ namespace ootl
 			}
 			else 
 			{
-				add_buffer(new buffer(mLast->size * Factor_N, mCap));
+				add_buffer(new buffer(Policy_T::new_size(mLast->size), mCap));
 			}
-			ootl_assert(mFirst->size >= Initial_N);
-			ootl_assert(mLast->size >= Initial_N);
 		}
 		void add_buffer(buffer* x) 
 		{
@@ -140,6 +153,12 @@ namespace ootl
 		}    
 
 	private:
+
+		// hide the copy constructor 
+		vlist(const self& x) { };
+
+		// hide the assignment operator
+		void operator=(const self& x) { };
 
 		//////////////////////////////////////////////////////
 		// fields

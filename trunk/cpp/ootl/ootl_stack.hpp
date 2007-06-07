@@ -213,9 +213,9 @@ namespace ootl
 		{
 			struct copy_proc
 			{
-				char* mpc;
-				copy_proc(char* pc) : mpc(pc) { }
-				void operator()(char c) { *mpc++ = c; }
+				T* mp;
+				copy_proc(T* p) : mp(p) { }
+				void operator()(const T& x) { *mp++ = x; }
 			};
 
 			foreach(copy_proc(arr));
@@ -249,7 +249,10 @@ namespace ootl
 
 	private:
 
-		int cnt;
+		// hide the assignment operator
+		void operator=(const self& x) { };
+
+		size_t cnt;
 		T* ptop;
 	};
 }

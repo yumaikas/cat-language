@@ -21,150 +21,386 @@ namespace Cat
         }
     }
 
-    public class Unifier
+    public class Constraints
     {
-        List<string> mLeft = new List<string>();
-        List<string> mRight = new List<string>();
-        Dictionary<string, CatKind> mUnifiers = new Dictionary<string, CatKind>();            
+        Dictionary<string, CatKind> mConstraints = new Dictionary<string, CatKind>();            
         
-        public void Clear()
-        {
-            mLeft.Clear();
-            mRight.Clear();
-            mUnifiers.Clear();
-        }
-
         public override string ToString()
         {
-            Trace.Assert(mRight.Count == mLeft.Count);
             string ret = "";
-            for (int i = 0; i < mLeft.Count; ++i)
-                ret += mLeft[i] + " = " + mRight[i] + "\n";
+            foreach (KeyValuePair<string, CatKind> kvp in mConstraints)
+                ret += kvp.Key + " = " + kvp.Value.ToString() + "\n";
             return ret;
         }
 
-        public void AddEquality(string sLeft, string sRight)
+        public static void TypeCheck(CatKind k1, CatKind k2)
         {
-            if (sLeft.Length < 1) throw new Exception("kind names can not be empty");
-            if (sRight.Length < 1) throw new Exception("kind names can not be empty");
-            
-            if (Renamer.IsStackVarName(sLeft) != Renamer.IsStackVarName(sRight)) 
-                throw new Exception(sLeft + " and " + sRight + " are not both types or both stacks");
-
-            // Check for vacuous knowledge
-            if (sLeft == sRight)
-                return;
-
-            mLeft.Add(sLeft);
-            mRight.Add(sRight);
+            // TODO: check that k1 and k2 are compatible
         }
 
-        public void AddVarDefinition(string sVar, CatKind k)
+        public void AddVectorConstraint(CatTypeVector v1, CatTypeVector v2)
         {
-            Trace.Assert(!(k is CatStackVar));
-            Trace.Assert(!(k is CatTypeVar));
-
-            if (mUnifiers.ContainsKey(sVar))
+            while (!v1.IsEmpty() && !v2.IsEmpty())
             {
-                // Look at the current unifier
-                CatKind u = mUnifiers[sVar];
+                CatKind k1 = v1.GetTop();
+                CatKind k2 = v2.GetTop();
 
-                if (!(u is CatStackVar) && !(u is CatTypeVar))
+                // TODO: this might not cover all typing possibilities.
+                if (k1 is CatStackVar)
                 {
-                    // Well we have two hard-coded types, 
-                    // so we have to check for equivalency.
-                    if (!k.Equals(u))
-                        throw new KindException(k, u);
-                
-                    // Note: a more sophisticated algorithm would choose the more refined type 
-                    // and use that one.
+                    AddConstraint(k1.ToString(), v2);
+                    if (k2 is CatStackVar)
+                        AddConstraint(k2.ToString(), v1);
                     return;
                 }
+                else if (k2 is CatStackVar)
+                {
+                    AddConstraint(k2.ToString(), v1);
+                    return;
+                }
+                
+                if (k1 is CatTypeVar)
+                {
+                    AddConstraint(k1.ToString(), k2);
+                }
+                if (k2 is CatTypeVar)
+                {
+                    AddConstraint(k2.ToString(), k1);
+                }
+                if ((k1 is CatFxnType) && (k2 is CatFxnType))
+                {
+                    AddFxnConstraint(k1 as CatFxnType, k2 as CatFxnType);
+                }
 
-                // Replace all unification variables with the actual type.
-                List<string> keysToReplace = new List<string>();
-                foreach (string tmpKey in mUnifiers.Keys)
-                    if (u.Equals(mUnifiers[tmpKey]))
-                        keysToReplace.Add(tmpKey);
-                foreach (string tmpKey in keysToReplace)
-                    mUnifiers[tmpKey] = k;                                                        
+                TypeCheck(k1, k2);
+
+                v1 = v1.GetRest();
+                v2 = v2.GetRest();
+            }
+        }
+
+        public void AddFxnConstraint(CatFxnType f1, CatFxnType f2)
+        {
+            AddVectorConstraint(f1.GetCons(), f2.GetCons());
+            AddVectorConstraint(f1.GetProd(), f2.GetProd());
+        }
+
+        public void AddConstraint(string sVarName, CatKind k)               
+        {
+            // Don't add self-referential variables 
+            if (k.ToString().CompareTo(sVarName) == 0)
+                return;
+
+            // Check for single unit vectors 
+            if (k is CatTypeVector)
+            {
+                CatTypeVector vec = k as CatTypeVector;
+                if (vec.GetKinds().Count == 1)
+                {
+                    // vectors with only one thing, are really that thing. 
+                    AddConstraint(sVarName, vec.GetKinds()[0]);
+                    return;
+                }
+            }
+
+            if (mConstraints.ContainsKey(sVarName))
+            {
+                CatKind k2 = mConstraints[sVarName];
+                TypeCheck(k, k2);
+                mConstraints[sVarName] = ChooseBetterUnifier(k, k2);
             }
             else
-                Unify(sVar, k);
+            {
+                mConstraints.Add(sVarName, k);
+            }
+        }
+
+        private CatKind ChooseBetterUnifier(CatKind k1, CatKind k2)
+        {
+            if ((k1 is CatFxnType) || (k2 is CatFxnType))
+            {
+                if (!(k1 is CatFxnType)) return k2;
+                if (!(k2 is CatFxnType)) return k1;
+                CatFxnType ft1 = k1 as CatFxnType;
+                CatFxnType ft2 = k2 as CatFxnType;
+                if (ft1.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count)  return ft1;
+                return ft2;
+            }
+            else if ((k1 is CatTypeVector) || (k2 is CatTypeVector))
+            {
+                if (!(k1 is CatTypeVector)) return k2;
+                if (!(k2 is CatTypeVector)) return k1;
+                CatTypeVector vec1 = k1 as CatTypeVector;
+                CatTypeVector vec2 = k2 as CatTypeVector;
+                // TODO: check if they are all types in each vector. If so and 
+                // the number of types differs we have a big problem.
+                if (vec1.GetKinds().Count >= vec2.GetKinds().Count) return vec1;
+                return vec2;
+            }
+            else if (k1 is CatTypeVar) 
+            {
+                if (!(k2 is CatTypeVar))
+                    throw new Exception("Type variable " + k1.ToString() + " is not compatible with " + k2.ToString());
+                if (k1.ToString().CompareTo(k2.ToString()) < 0)
+                    return k1;
+                return k2;
+            }
+            else if (k1 is CatStackVar)
+            {
+                if (!(k2 is CatStackVar))
+                    throw new Exception("Stack variable " + k1.ToString() + " is not compatible with " + k2.ToString());
+                if (k1.ToString().CompareTo(k2.ToString()) < 0)
+                    return k1;
+                return k2;
+            }
+            else
+            {
+                throw new Exception("Unsupported kinds " + k1.ToString() + ":" + k1.GetType().ToString() 
+                    + " and " + k2.ToString() + ":" + k2.GetType().ToString());
+            }
         }
 
         public Dictionary<string, CatKind> GetUnifiers()        
         {
-            Renamer r = new Renamer(mUnifiers);
             Dictionary<string, CatKind> ret = new Dictionary<string, CatKind>();
-            
-            foreach (string s in mUnifiers.Keys)
-                ret.Add(s, r.Rename(mUnifiers[s]));
+
+            Stack<CatKind> stk = new Stack<CatKind>();
+            foreach (string s in mConstraints.Keys)
+            {
+                ret.Add(s, GetUnifier(s, mConstraints[s], stk));
+                Trace.Assert(stk.Count == 0);
+            }
 
             return ret;
         }
 
-        public void ComputeCoreUnifiers(Renamer r)
+        /// <summary>
+        /// This takes a type (specifically a kind) and resolves all of its internal 
+        /// references to variables, so that they name the unified type.
+        /// 
+        /// TODO: deal with equivalency between type vectors containing a variable 
+        /// and the type variable itself.
+        /// </summary>
+        /// <param name="s">The original name of the type variable, it might be needed for labels</param>
+        /// <param name="k">The kind that is being resolved</param>
+        /// <param name="visited">This is a list of kinds which have been visited so far, to detect recursive types,
+        /// i.e. types that refer to themselves</param>
+        /// <returns></returns>
+        private CatKind GetUnifier(string s, CatKind k, Stack<CatKind> visited)
         {
-            mUnifiers.Clear();
-            Trace.Assert(mLeft.Count == mRight.Count);
+            Trace.Assert(k != null);
+            Trace.Assert(visited != null);
 
-            while (mLeft.Count > 0)
+            if (visited.Contains(k)) 
             {
-                string sLeft = mLeft[0];
-                string sRight = mRight[0];
-                Trace.Assert(Renamer.IsStackVarName(sLeft) == Renamer.IsStackVarName(sRight));
-                CatKind kUnifier = r.GenerateNewVar(sLeft);
-                mLeft.RemoveAt(0);
-                mRight.RemoveAt(0);
-                Unify(sLeft, kUnifier);
-                Unify(sRight, kUnifier);
+                return ChooseBestUnifier(s, k, visited);
+            }
+            else if ((k is CatTypeVar) || (k is CatStackVar))
+            {
+                visited.Push(k);
+                CatKind ret;
+                if (!mConstraints.ContainsKey(k.ToString()))
+                    ret = ChooseBestUnifier(s, k, visited);
+                else
+                    ret = GetUnifier(s, mConstraints[k.ToString()], visited);
+                visited.Pop();
+                return ret;
+            }
+            else if (k is CatFxnType)
+            {
+                visited.Push(k);
+                CatTypeVector cons = new CatTypeVector();
+                CatTypeVector prod = new CatTypeVector();
+                
+                CatFxnType ft = k as CatFxnType;
+                foreach (CatKind tmp in ft.GetCons().GetKinds())
+                    cons.AddBottom(GetUnifier(s, tmp, visited));
+                foreach (CatKind tmp in ft.GetProd().GetKinds())
+                    prod.AddBottom(GetUnifier(s, tmp, visited));
+
+                CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
+                visited.Pop();
+                return ret;
+            }
+            else if (k is CatTypeVector)
+            {
+                visited.Push(k);
+                CatTypeVector vec = k as CatTypeVector;
+                CatTypeVector ret = new CatTypeVector();
+
+                // BUG: this is wrong. My assumption was being visited meant you are "equal". 
+                // That is wrong. This is what it is supposed to mean. I think. Maybe? 
+                foreach (CatKind tmp in vec.GetKinds())
+                    ret.AddBottom(GetUnifier(s, tmp, visited));
+
+                visited.Pop();
+                return ret;
+            }
+            else if (k is CatLabeledType)
+            {
+                throw new Exception("labeled types not handled yet");
+            }
+            else
+            {
+                throw new Exception("unrecognized kind " + k.ToString());
             }
         }
 
-        // Probably not an efficient unification algorithm
-        public void Unify(string sVar, CatKind kUnifier)
+        CatKind ChooseBestUnifier(string s, CatKind k, Stack<CatKind> visited)
         {
-            // Check if we need to unify a new variable.
-            if (mUnifiers.ContainsKey(sVar))
-                return;
-            
-            mUnifiers.Add(sVar, kUnifier);
+            // TODO: deal with labeled types properly
+            CatKind ret = k;
+            foreach (CatKind tmp in visited)
+                ret = ChooseBetterUnifier(ret, tmp);
+            return ret;
+        }
 
-            int i = 0;
-            while (i < mLeft.Count)
-            {
-                Trace.Assert(mLeft.Count == mRight.Count);
-
-                if (mLeft[i] == sVar) 
-                {
-                    string sRight = mRight[i];
-                    mLeft.RemoveAt(i);
-                    mRight.RemoveAt(i);
-                    Unify(sRight, kUnifier);
-                }
-                else if (mRight[i] == sVar)
-                {
-                    string sLeft = mLeft[i];
-                    mLeft.RemoveAt(i);
-                    mRight.RemoveAt(i);
-                    Unify(sLeft, kUnifier);
-                }
-                else
-                {
-                    i++;
-                }
-            }
+        public void Clear()
+        {
+            mConstraints.Clear();
         }
     }
 
+    public class TypeInferer
+    {
+        Constraints mConstraints = new Constraints();
+
+        static TypeInferer gInferer = new TypeInferer();
+
+        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bSilent)
+        {
+            Config.gbVerboseInference = !bSilent;
+
+            if (f == null) return null;
+            if (g == null) return null;
+
+            try
+            {
+                return gInferer.InferType(f, g);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static CatFxnType Infer(List<Function> f, bool bSilent)
+        {
+            // TEMP:
+            if (bSilent)
+                return CatFxnType.Create("('A -> 'B)");
+
+            try
+            {
+                if (f.Count == 0)
+                {
+                    return CatFxnType.Create("( -> )");
+                }
+                else if (f.Count == 1)
+                {
+                    Function x = f[0];
+                    return x.GetFxnType();
+                }
+                else
+                {
+                    Function x = f[0];
+                    CatFxnType ft = x.GetFxnType();
+
+                    for (int i = 1; i < f.Count; ++i)
+                    {
+                        if (ft == null)
+                            return ft;
+                        Function y = f[i];
+                        ft = TypeInferer.Infer(ft, y.GetFxnType(), bSilent);
+                    }
+                    return ft;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// A composed function satisfy the type equation 
+        /// 
+        ///   ('A -> 'B) ('C -> 'D) compose : ('A -> 'D) with constraints ('B == 'C)
+        /// 
+        /// This makes the raw type trivial to determine, but the result isn't helpful 
+        /// because 'D is not expressed in terms of the variables of 'A. The goal of 
+        /// type inference is to find new variables that unify 'A and 'C based on the 
+        /// observation that the production of the left function must be equal to the 
+        /// consumption of the second function
+        /// </summary>
+        private CatFxnType InferType(CatFxnType left, CatFxnType right)
+        {
+            mConstraints.Clear();
+            Renamer renamer = new Renamer();
+            left = renamer.Rename(left);
+            renamer.ResetNames(); 
+            right = renamer.Rename(right);           
+            
+            mConstraints.AddVectorConstraint(left.GetProd(), right.GetCons());
+
+            if (Config.gbVerboseInference)
+            {
+                // Create a temporary function type showing the type before unfification
+                CatFxnType tmp = new CatFxnType(left.GetCons(), right.GetProd(), left.HasSideEffects() || right.HasSideEffects());
+                MainClass.WriteLine("Before unification: ");
+                MainClass.WriteLine(tmp.ToString());
+
+                MainClass.WriteLine("Constraints:");
+                MainClass.WriteLine(left.GetProd() + " = " + right.GetCons());
+                MainClass.Write(mConstraints.ToString());
+            }
+
+            Dictionary<string, CatKind> unifiers = mConstraints.GetUnifiers();
+            renamer = new Renamer(unifiers);
+
+            if (Config.gbVerboseInference)
+            {                
+                MainClass.WriteLine("Unifiers:");
+                foreach (KeyValuePair<string, CatKind> kvp in unifiers)
+                    MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
+            }                
+
+            // The left consumption and right production make up the result type.
+            CatTypeVector stkLeftCons = renamer.Rename(left.GetCons());
+            CatTypeVector stkRightProd = renamer.Rename(right.GetProd());
+            
+            // Finally create and return the result type
+            CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd, left.HasSideEffects() || right.HasSideEffects());
+            
+            if (Config.gbVerboseInference)
+            {
+                MainClass.WriteLine("Type: " + ret.ToString());
+            }
+
+            // And one last renaming for good measure:
+            renamer = new Renamer();
+            return renamer.Rename(ret);
+        }
+
+        public void OutputUnifiers(Dictionary<string, CatKind> unifiers)
+        {
+            MainClass.WriteLine("Unifiers:");
+            foreach (KeyValuePair<string, CatKind> kvp in unifiers)
+                MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
+        }
+    }
+
+    /// <summary>
+    /// The renamer assigns new names to a set of variables either from a supplied 
+    /// dictionary or by generating unique names.
+    /// </summary>
     public class Renamer
     {
         int mnId = 0;
         bool mbGenerateNames;
 
         Dictionary<string, CatKind> mNames;
-        
+
         #region constructors
 
         /// <summary>
@@ -213,6 +449,9 @@ namespace Cat
         }
         #endregion
 
+        /// <summary>
+        /// This allows unique names to continue to be generated, from previously used variable names.
+        /// </summary>
         public void ResetNames()
         {
             mNames.Clear();
@@ -226,8 +465,8 @@ namespace Cat
                 return Rename(k as CatTypeKind);
             else if (k is CatStackVar)
                 return Rename(k as CatStackVar);
-            else if (k is CatKindList)
-                return Rename(k as CatKindList);
+            else if (k is CatTypeVector)
+                return Rename(k as CatTypeVector);
             else
                 throw new Exception(k.ToString() + " is an unrecognized kind");
         }
@@ -239,9 +478,9 @@ namespace Cat
             return new CatFxnType(Rename(f.GetCons()), Rename(f.GetProd()), f.HasSideEffects());
         }
 
-        public CatKindList Rename(CatKindList s)
+        public CatTypeVector Rename(CatTypeVector s)
         {
-            CatKindList ret = new CatKindList();
+            CatTypeVector ret = new CatTypeVector();
             foreach (CatKind k in s.GetKinds())
                 ret.AddTop(Rename(k));
             return ret;
@@ -252,10 +491,10 @@ namespace Cat
             string sName = s.ToString();
             if (mNames.ContainsKey(sName))
             {
-                CatStackKind ret = mNames[sName] as CatStackKind;
-                if (ret == null)
+                CatKind tmp = mNames[sName];
+                if (!(tmp is CatStackKind))
                     throw new Exception(sName + " is not a stack kind");
-                return ret;
+                return tmp as CatStackKind;
             }
 
             if (!mbGenerateNames)
@@ -296,359 +535,6 @@ namespace Cat
             {
                 return t;
             }
-        }
-    }
-
-    public class TypeInferer
-    {
-        Dictionary<string, CatStackKind> mStackVars = new Dictionary<string, CatStackKind>();
-        Dictionary<string, CatTypeKind> mTypeVars = new Dictionary<string, CatTypeKind>();
-        Unifier mu = new Unifier();
-
-        static TypeInferer gInferer = new TypeInferer();
-
-        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bSilent)
-        {
-            Config.gbVerboseInference = !bSilent;
-
-            gInferer.Initialize();
-            if (f == null) return null;
-            if (g == null) return null;
-
-            try
-            {
-                return gInferer.InferType(f, g);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        public static CatFxnType Infer(List<Function> f, bool bSilent)
-        {
-            try
-            {
-                if (f.Count == 0)
-                {
-                    return CatFxnType.Create("( -> )");
-                }
-                else if (f.Count == 1)
-                {
-                    Function x = f[0];
-                    return x.GetFxnType();
-                }
-                else
-                {
-                    Function x = f[0];
-                    CatFxnType ft = x.GetFxnType();
-
-                    for (int i = 1; i < f.Count; ++i)
-                    {
-                        if (ft == null)
-                            return ft;
-                        Function y = f[i];
-                        ft = TypeInferer.Infer(ft, y.GetFxnType(), bSilent);
-                    }
-                    return ft;
-                }
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        public void Initialize()
-        {
-            mStackVars.Clear();
-            mTypeVars.Clear();
-
-        }
-
-        private void AddTypeVar(string s, CatTypeKind t)
-        {
-            if (t is CatTypeVar)
-            {
-                mu.AddEquality(s, t.ToString());
-            }
-            else
-            {
-                if (mTypeVars.ContainsKey(s))
-                {
-                    CatTypeKind u = mTypeVars[s];
-                    
-                    // Type variables should never occur as in the type variable lookup
-                    // that is what the the TheoremProver is for. 
-                    Trace.Assert(!(u is CatTypeVar));
-                    
-                    // I am just restating that t can't be a CatTypeVar if we are in
-                    // this block of code. 
-                    Trace.Assert(!(t is CatTypeVar));
-
-                    // It is impossible for AddtypeConstraint to re-enter to this position
-                    // creating an infinite loop.
-                    AddTypeConstraint(t, u);
-                }
-                else
-                {
-                    mTypeVars.Add(s, t);
-                }
-            }           
-        }
-
-        private void AddStackVar(string s, CatStackKind t)
-        {
-            // Try to avoid infinite loops.
-            if (s.Equals(t.ToString()))
-                return;
-
-            if (t is CatStackVar)
-            {
-                mu.AddEquality(s, t.ToString());
-            }
-            else
-            {                
-                if (mStackVars.ContainsKey(s))
-                {
-                    CatStackKind u = mStackVars[s];
-
-                    // Stack variables should never occur in the stack variable lookup.
-                    Trace.Assert(!(u is CatStackVar));
-
-                    Trace.Assert(t is CatKindList);
-                    Trace.Assert(u is CatKindList);
-
-                    AddKindListConstraint(t as CatKindList, u as CatKindList);
-                }
-                else
-                {
-                    mStackVars.Add(s, t);
-                }
-            }
-        }
-
-        private void AddKindConstraint(CatKind left, CatKind right)
-        {
-            throw new Exception("not implemented");
-        }
-
-        private void AddStackVarConstraint(CatStackVar left, CatStackKind right)
-        {
-            Trace.Assert(left != null);
-            Trace.Assert(right != null);
-            AddStackVar(left.ToString(), right);
-        }
-
-        private void AddKindListConstraint(CatKindList left, CatKindList right)
-        {
-            if (!left.IsEmpty() && !right.IsEmpty())
-            {
-                if (left.GetTop() is CatStackVar)
-                {
-                    AddStackVarConstraint(left.GetTop() as CatStackVar, right);
-                }
-                else if (right.GetTop() is CatStackVar)
-                {
-                    AddStackVarConstraint(right.GetTop() as CatStackVar, left);
-                }
-                else 
-                {
-                    CatTypeKind leftTop = left.GetTop() as CatTypeKind;
-                    if (leftTop == null) 
-                        throw new Exception("expected either type kind or stack variable " + left.GetTop());
-                    CatTypeKind rightTop = right.GetTop() as CatTypeKind;
-                    if (rightTop == null) 
-                        throw new Exception("expected either type kind or stack variable " + right.GetTop());
-                    AddTypeConstraint(leftTop, rightTop);
-                    AddKindListConstraint(left.GetRest(), right.GetRest());
-                }
-            }
-            else if (left.IsEmpty())
-            {
-                if (!right.IsEmpty())
-                {
-                    if (right.GetTop() is CatStackVar)
-                    {
-                        AddStackVar(right.GetTop().ToString(), left);
-                    }
-                    else
-                    {
-                        // An empty stack is being equated with 
-                        // a non-empty stack which is not a stack variable
-                        throw new KindException(left, right);
-                    }
-                }
-            }
-            else 
-            {
-                // Just stating known facts for clarification
-                Trace.Assert(!left.IsEmpty());
-                Trace.Assert(right.IsEmpty());
-                
-                if (left.GetTop() is CatStackVar)
-                {
-                    AddStackVar(left.ToString(), right);
-                }
-                else
-                {
-                    // An empty stack is being equated with 
-                    // a non-empty stack which is not a stack variable
-                    throw new KindException(left, right);
-                }
-            }
-        }
-
-        private void AddTypeConstraint(CatTypeKind x, CatTypeKind y)
-        {
-            Trace.Assert(x != null);
-            Trace.Assert(y != null);
-
-            if (x is CatTypeVar)
-            {
-                AddTypeVar(x.ToString(), y);
-            }
-            else if (y is CatTypeVar)
-            {
-                AddTypeVar(y.ToString(), x);
-            }
-            else if (x is CatFxnType)
-            {
-                if (!(y is CatFxnType))
-                {                    
-                    if (!y.ToString().Equals("var"))
-                        throw new KindException(x, y);
-                    return;
-                }
-
-                AddFxnConstraint(x as CatFxnType, y as CatFxnType);
-            }
-            else
-            {
-                /*
-                 * TODO: have better type comparisons.
-                 * For example: byte_block is a subtype of list 
-                 * 
-                if (!x.Equals(y.ToString()))
-                    throw new KindException(x, y);
-                 */
-            }
-        }
-
-        private void AddFxnConstraint(CatFxnType x, CatFxnType y)
-        {
-            AddKindListConstraint(x.GetCons(), y.GetCons());
-            AddKindListConstraint(x.GetProd(), y.GetProd());
-        }
-
-        private void CompareTypes(CatKind x, CatKind y)
-        {
-            // make sure that the types are the same.
-            if (!x.ToString().Equals(y.ToString()))
-                throw new KindException(x, y);
-        }
-
-        /// <summary>
-        /// A composed function satisfy the type equation 
-        /// 
-        ///   ('A -> 'B) ('C -> 'D) compose == ('A -> 'D) and ('B == 'C)
-        /// 
-        /// This makes the raw type trivial to determine, but the result isn't helpful 
-        /// because 'D is not expressed in terms of the variables of 'A. The goal of 
-        /// type inference is to find new variables that unify 'A and 'C based on the 
-        /// observation that the production of the left function must be equal to the 
-        /// consumption of the second function
-        /// </summary>
-        private CatFxnType InferType(CatFxnType left, CatFxnType right)
-        {
-            Renamer r = new Renamer();
-            left = r.Rename(left);
-            r.ResetNames();
-            right = r.Rename(right);
-           
-            CatKindList stkRightCons = right.GetCons();
-            CatKindList stkLeftProd = left.GetProd();
-
-            // The production of the left function must be equal to 
-            // the consumption of the second function
-            AddKindListConstraint(stkRightCons, stkLeftProd);
-
-            if (Config.gbVerboseInference)
-            {
-                // Create a temporary function type showing the type before 
-                // unfification
-                CatFxnType tmp = new CatFxnType(left.GetCons(), right.GetProd(), left.HasSideEffects() || right.HasSideEffects());
-                MainClass.WriteLine("Before unification: ");
-                MainClass.WriteLine(tmp.ToString());
-
-                // Show the top level contraint
-                MainClass.WriteLine(left.GetProd() + " = " + right.GetCons());
-
-                MainClass.WriteLine("Constraints:");
-                
-                // Show stack variable names
-                foreach (KeyValuePair<string, CatStackKind> kvp in mStackVars)
-                    MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
-                
-                // Show type variable names 
-                foreach (KeyValuePair<string, CatTypeKind> kvp in mTypeVars)
-                    MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
-
-                // Show all equalties generated
-                MainClass.Write(mu.ToString());
-            }
-
-            // This creates new variables which "unify" the original types.
-            // Each original variables is assigned a generated variable. If two original 
-            // variables are equal (either directly or by commutativity) they will
-            // be replaced with the same generated variable. 
-            mu.ComputeCoreUnifiers(r);
-            
-            // Add type variable definitions
-            foreach (KeyValuePair<string, CatTypeKind> kvp in mTypeVars)
-                mu.AddVarDefinition(kvp.Key, kvp.Value);
-
-            // Add stack variable definitions
-            foreach (KeyValuePair<string, CatStackKind> kvp in mStackVars)
-                mu.AddVarDefinition(kvp.Key, kvp.Value);
-
-            // Note: at this point I am still not completely satisfied 
-            // because definitions of stack variables can contain other stack variables 
-            // and function variables, but those aren't getting properly added.
-            // so I am missing an important recursive step here.
-
-            Dictionary<string, CatKind> unifiers = mu.GetUnifiers();
-            r = new Renamer(unifiers);
-
-            if (Config.gbVerboseInference)
-            {
-                MainClass.WriteLine("Unifiers:");
-                foreach (KeyValuePair<string, CatKind> kvp in unifiers)
-                    MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
-            }
-
-            // The left consumption and right production make up the result type.
-            CatKindList stkLeftCons = r.Rename(left.GetCons());
-            CatKindList stkRightProd = r.Rename(right.GetProd());
-            
-            // Finally create and return the result type
-            CatFxnType ret = new CatFxnType(stkLeftCons, stkRightProd, left.HasSideEffects() || right.HasSideEffects());
-            
-            if (Config.gbVerboseInference)
-            {
-                MainClass.WriteLine("Type: " + ret.ToString());
-            }
-
-            // And one last renaming for good measure:
-            r = new Renamer();
-            return r.Rename(ret);
-        }
-
-        public void OutputUnifiers(Dictionary<string, CatKind> unifiers)
-        {
-            MainClass.WriteLine("Unifiers:");
-            foreach (KeyValuePair<string, CatKind> kvp in unifiers)
-                MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
         }
     }
 }
