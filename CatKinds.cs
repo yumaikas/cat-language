@@ -104,28 +104,28 @@ namespace Cat
     {
     }
 
-    public class CatKindList : CatStackKind
+    public class CatTypeVector : CatStackKind
     {
         List<CatKind> mList;
 
-        public CatKindList(AstStackNode node)
+        public CatTypeVector(AstStackNode node)
         {
             mList = new List<CatKind>();
             foreach (AstTypeNode tn in node.mTypes)
                 mList.Add(Create(tn));
         }
 
-        public CatKindList()
+        public CatTypeVector()
         {
             mList = new List<CatKind>();
         }
 
-        public CatKindList(CatKindList k)
+        public CatTypeVector(CatTypeVector k)
         {
             mList = new List<CatKind>(k.mList);
         }
 
-        public CatKindList(List<CatKind> list)
+        public CatTypeVector(List<CatKind> list)
         {
             mList = new List<CatKind>(list);
         }
@@ -138,9 +138,9 @@ namespace Cat
         public void AddTop(CatKind k)
         {
             Trace.Assert(k != null);
-            if (k is CatKindList)
+            if (k is CatTypeVector)
             {
-                mList.AddRange((k as CatKindList).GetKinds());
+                mList.AddRange((k as CatTypeVector).GetKinds());
             }
             else
             {
@@ -151,9 +151,9 @@ namespace Cat
         public void AddBottom(CatKind k)
         {
             Trace.Assert(k != null);
-            if (k is CatKindList)
+            if (k is CatTypeVector)
             {
-                mList.InsertRange(0, (k as CatKindList).GetKinds());
+                mList.InsertRange(0, (k as CatTypeVector).GetKinds());
             }
             else
             {
@@ -182,9 +182,9 @@ namespace Cat
                 return null;
         }
 
-        public CatKindList GetRest()
+        public CatTypeVector GetRest()
         {
-            return new CatKindList(mList.GetRange(0, mList.Count - 1));
+            return new CatTypeVector(mList.GetRange(0, mList.Count - 1));
         }
 
         public override string ToString()
@@ -222,8 +222,8 @@ namespace Cat
 
     public class CatFxnType : CatTypeKind
     {
-        CatKindList mProd;
-        CatKindList mCons;
+        CatTypeVector mProd;
+        CatTypeVector mCons;
         bool mbSideEffects;
 
         // This is for simple memoization of results from calling CreateFxnType
@@ -255,10 +255,10 @@ namespace Cat
             return ret;
         }
 
-        public CatFxnType(CatKindList cons, CatKindList prod, bool bSideEffects)
+        public CatFxnType(CatTypeVector cons, CatTypeVector prod, bool bSideEffects)
         {
-            mCons = new CatKindList(cons);
-            mProd = new CatKindList(prod);
+            mCons = new CatTypeVector(cons);
+            mProd = new CatTypeVector(prod);
             mbSideEffects = bSideEffects;
         }
 
@@ -266,8 +266,8 @@ namespace Cat
         {
             CatStackVar rho = CatStackVar.CreateUnique();
             mbSideEffects = false;
-            mCons = new CatKindList();
-            mProd = new CatKindList();
+            mCons = new CatTypeVector();
+            mProd = new CatTypeVector();
             mCons.AddTop(rho);
             mProd.AddTop(rho);
         }
@@ -275,8 +275,8 @@ namespace Cat
         public CatFxnType(AstFxnTypeNode node)
         {
             mbSideEffects = node.HasSideEffects();
-            mCons = new CatKindList(node.mCons);
-            mProd = new CatKindList(node.mProd);
+            mCons = new CatTypeVector(node.mCons);
+            mProd = new CatTypeVector(node.mProd);
         }
 
         public bool HasSideEffects()
@@ -336,12 +336,12 @@ namespace Cat
             mCons.AddTop(x);
         }
 
-        public CatKindList GetProd()
+        public CatTypeVector GetProd()
         {
             return mProd;
         }
 
-        public CatKindList GetCons()
+        public CatTypeVector GetCons()
         {
             return mCons;
         }
@@ -411,6 +411,23 @@ namespace Cat
         public override string ToString()
         {
             return msName + "(" + mType.ToString() + ")";
+        }
+    }
+
+    public class CatLabeledType : CatTypeKind
+    {
+        CatTypeKind mType;
+        string msName;
+
+        public CatLabeledType(string s, CatTypeKind t)
+        {
+            msName = s;
+            mType = t;
+        }
+
+        public override string ToString()
+        {
+            return msName + "=" + mType.ToString();
         }
     }
 
