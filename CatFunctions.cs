@@ -291,7 +291,7 @@ namespace Cat
             if (childType != null)
                 mpFxnType = new CatQuotedFxnType(childType);
             else
-                mpFxnType = CatFxnType.Create("('R -> 'R ('A -> 'B))");
+                mpFxnType = CatFxnType.Create("(unknown -> unknown)");
         }
 
         public override void Eval(Executor exec)

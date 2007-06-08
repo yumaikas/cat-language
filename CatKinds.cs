@@ -74,6 +74,11 @@ namespace Cat
         }
  
         #endregion
+
+        public bool IsKindVar()
+        {
+            return (this is CatTypeVar) || (this is CatStackVar);
+        }
     }
 
     /// <summary>
