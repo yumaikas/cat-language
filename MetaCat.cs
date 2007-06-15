@@ -25,8 +25,8 @@ namespace Cat
 
         public CatFxnType GetFxnType()
         {
-            if (mpFxnType == null) 
-                mpFxnType = TypeInferer.Infer(mpFxns, true);
+            if (mpFxnType == null)
+                mpFxnType = TypeInferer.Infer(mpFxns, Config.gbVerboseInference);
             return mpFxnType;
         }
 

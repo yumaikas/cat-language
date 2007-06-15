@@ -90,11 +90,16 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.14.1";
+        public static string gsVersion = "0.15";
 
         /// <summary>
         /// Date of current build
         /// </summary>
         public static string gsDate = DateTime.Now.ToLongDateString();
+
+        /// <summary>
+        /// Reports when type checking is successful.
+        /// </summary>
+        public static bool gbVerboseTypeChecking = true;
     }
 }

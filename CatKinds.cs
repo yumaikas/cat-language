@@ -11,7 +11,7 @@ namespace Cat
     /// <summary>
     /// All CatKinds should be immutable. This avoids a lot of problems and confusion.
     /// </summary>
-    public class CatKind : IEqualityComparer<CatKind>
+    abstract public class CatKind 
     {
         public static CatKind Create(AstTypeNode node)
         {
@@ -46,34 +46,14 @@ namespace Cat
             throw new Exception("ToString must be overridden");
         }
 
-        #region IEqualityComparer<CatKind> Members
+        public abstract bool Equals(CatKind k);
 
-        public bool Equals(CatKind x, CatKind y)
+        public bool IsSubtypeOf(CatKind k)
         {
-            return x.ToString().Equals(y.ToString());
-        }
-
-        public int GetHashCode(CatKind obj)
-        {
-            return obj.ToString().GetHashCode();
-        }
-
-        public override bool Equals(object obj)
-        {
-            // TODO: double check that this is correct
-            string s1 = obj.ToString();
-            string s2 = this.ToString();
-            if (s1.Equals("var") || s2.Equals("var"))
+            if (this.ToString().Equals("var")) 
                 return true;
-            return s1.Equals(s2);
+            return this.Equals(k);
         }
-
-        public override int GetHashCode()
-        {
-            return ToString().GetHashCode();
-        }
- 
-        #endregion
 
         public bool IsKindVar()
         {
@@ -84,7 +64,7 @@ namespace Cat
     /// <summary>
     /// Base class for the different Cat types
     /// </summary>
-    public class CatTypeKind : CatKind
+    public abstract class CatTypeKind : CatKind
     {
         public CatTypeKind() 
         { }
@@ -103,9 +83,14 @@ namespace Cat
         {
             return msName;
         }
+
+        public override bool Equals(CatKind k)
+        {
+            return (k is CatSimpleTypeKind) && (msName == k.ToString());
+        }
     }
 
-    public class CatStackKind : CatKind
+    public abstract class CatStackKind : CatKind
     {
     }
 
@@ -140,7 +125,7 @@ namespace Cat
             return mList;
         }
 
-        public void AddTop(CatKind k)
+        public void PushKind(CatKind k)
         {
             Trace.Assert(k != null);
             if (k is CatTypeVector)
@@ -153,7 +138,7 @@ namespace Cat
             }
         }
 
-        public void AddBottom(CatKind k)
+        public void PushKindBottom(CatKind k)
         {
             Trace.Assert(k != null);
             if (k is CatTypeVector)
@@ -202,6 +187,28 @@ namespace Cat
             else
                 return "";
         }
+
+        public override bool Equals(CatKind k)
+        {
+            if (!(k is CatTypeVector))
+                return false;
+            CatTypeVector v1 = this;
+            CatTypeVector v2 = k as CatTypeVector;
+            while (!v1.IsEmpty() && !v2.IsEmpty())
+            {
+                CatKind t1 = v1.GetTop();
+                CatKind t2 = v2.GetTop();
+                if (!t1.Equals(t2)) 
+                    return false;
+                v1 = v1.GetRest();
+                v2 = v2.GetRest();                
+            }
+            if (!v1.IsEmpty())
+                return false;
+            if (!v2.IsEmpty())
+                return false;
+            return true;
+        }
     }
 
     public class CatStackVar : CatStackKind
@@ -222,6 +229,12 @@ namespace Cat
         public static CatStackVar CreateUnique()
         {
             return new CatStackVar("$R" + (gnId++).ToString());
+        }
+
+        public override bool Equals(CatKind k)
+        {
+            if (!(k is CatStackVar)) return false;
+            return k.ToString() == this.ToString();
         }
     }
 
@@ -247,14 +260,6 @@ namespace Cat
                 throw new Exception("invalid number of children in abstract syntax tree");
             AstFxnTypeNode node = new AstFxnTypeNode(ast.GetChild(0));
             CatFxnType ret = new CatFxnType(node);
-
-            // Add implicit rho variables to the bottom of the production and consumption
-            if (!(ret.GetCons().GetBottom() is CatStackVar))
-            {
-                CatStackVar rho = CatStackVar.CreateUnique();
-                ret.GetCons().AddBottom(rho);
-                ret.GetProd().AddBottom(rho);
-            }
             
             gFxnTypePool.Add(sType, ret);
             return ret;
@@ -273,8 +278,8 @@ namespace Cat
             mbSideEffects = false;
             mCons = new CatTypeVector();
             mProd = new CatTypeVector();
-            mCons.AddTop(rho);
-            mProd.AddTop(rho);
+            mCons.PushKind(rho);
+            mProd.PushKind(rho);
         }
 
         public CatFxnType(AstFxnTypeNode node)
@@ -282,6 +287,22 @@ namespace Cat
             mbSideEffects = node.HasSideEffects();
             mCons = new CatTypeVector(node.mCons);
             mProd = new CatTypeVector(node.mProd);
+            AddImplicitRhoVariables();
+        }
+
+        public void AddImplicitRhoVariables()
+        {
+            if (!(GetCons().GetBottom() is CatStackVar))
+            {
+                CatStackVar rho = CatStackVar.CreateUnique();
+                GetCons().PushKindBottom(rho);
+                GetProd().PushKindBottom(rho);
+            }
+        }
+
+        public CatFxnType Clone()
+        {
+            return new CatFxnType(mCons, mProd, mbSideEffects);
         }
 
         public bool HasSideEffects()
@@ -331,16 +352,6 @@ namespace Cat
             return nCnt;
         }
 
-        public void AddToProduction(CatKind x)
-        {
-            mProd.AddTop(x);
-        }
-
-        public void AddToConsumption(CatKind x)
-        {
-            mCons.AddTop(x);
-        }
-
         public CatTypeVector GetProd()
         {
             return mProd;
@@ -362,13 +373,27 @@ namespace Cat
                 return "(" + GetCons().ToString() + " -> " + GetProd().ToString() + ")";
             }
         }
+
+        public override bool Equals(CatKind k)
+        {
+            if (!(k is CatFxnType)) return false;
+            CatFxnType f = k as CatFxnType;
+            return (f.GetCons().Equals(mCons) && f.GetProd().Equals(mProd) && f.HasSideEffects() == HasSideEffects());
+        }
+
+        public static bool CompareFxnTypes(CatFxnType f, CatFxnType g)
+        {
+            CatFxnType f2 = VarRenamer.RenameVars(f);
+            CatFxnType g2 = VarRenamer.RenameVars(g);
+            return f2.Equals(g2);
+        }
     }
 
     public class CatQuotedFxnType : CatFxnType
     {
         public CatQuotedFxnType(CatFxnType f)
         {            
-            AddToProduction(f);
+            GetProd().PushKind(f);
         }
     }
 
@@ -385,109 +410,12 @@ namespace Cat
         {
             return "'" + msName;
         }
-    }
 
-    public class CatPrimitiveType : CatTypeKind
-    {
-        string msName;
-
-        public CatPrimitiveType(string s)
+        public override bool Equals(CatKind k)
         {
-            msName = s;
-        }
-
-        public override string ToString()
-        {
-            return msName;
+            if (!(k is CatTypeVar)) 
+                return false;
+            return ToString().CompareTo(k.ToString()) == 0; 
         }
     }
-
-    public class CatParameterizedType : CatTypeKind
-    {
-        CatTypeKind mType;
-        string msName;
-
-        public CatParameterizedType(string s, CatTypeKind t)
-        {
-            msName = s;
-            mType = t;
-        }
-
-        public override string ToString()
-        {
-            return msName + "(" + mType.ToString() + ")";
-        }
-    }
-
-    public class CatLabeledType : CatTypeKind
-    {
-        CatTypeKind mType;
-        string msName;
-
-        public CatLabeledType(string s, CatTypeKind t)
-        {
-            msName = s;
-            mType = t;
-        }
-
-        public override string ToString()
-        {
-            return msName + "=" + mType.ToString();
-        }
-    }
-
-    #region algebraic types, not used yet      
-    public class CatAlgebraicType : CatTypeKind
-    {
-        public CatAlgebraicType()
-        { 
-            throw new Exception("algebraic types are not yet supported");
-        }
-
-        public CatTypeKind first;
-        public CatTypeKind second;
-    }
-
-    public class CatUnionType : CatAlgebraicType
-    {
-        public CatUnionType(CatTypeKind x, CatTypeKind y)
-        {
-            first = x;
-            second = y;
-        }
-
-        public override string ToString()
-        {
-            return "union(" + first.ToString() + "," + second.ToString() + ")";
-        }
-    }
-
-    public class CatSumType : CatAlgebraicType
-    {
-        public CatSumType(CatTypeKind x, CatTypeKind y)
-        {
-            first = x;
-            second = y;
-        }
-
-        public override string ToString()
-        {
-            return "sum(" + first.ToString() + "," + second.ToString() + ")";
-        }
-    }
-
-    public class CatProductType : CatAlgebraicType
-    {
-        public CatProductType(CatTypeKind x, CatTypeKind y)
-        {
-            first = x;
-            second = y;
-        }
-
-        public override string ToString()
-        {
-            return "product(" + first.ToString() + "," + second.ToString() + ")";
-        }
-    }
-    #endregion
 }

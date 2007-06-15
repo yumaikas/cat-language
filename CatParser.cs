@@ -7,6 +7,9 @@ using System.Text;
 
 namespace Cat
 {
+    /// <summary>
+    /// The CatParser transforms a Peg AST into meaningful data structures.
+    /// </summary>
     class CatParser
     {
         #region parsing functions
@@ -47,6 +50,7 @@ namespace Cat
 
         private static void ProcessDefinition(AstDefNode node)
         {
+            // NOTE: should this really be here? 
             if (Config.gbAllowNamedParams)
                 CatPointFreeForm.Convert(node);
             else if (node.mParams.Count > 0)
@@ -58,6 +62,24 @@ namespace Cat
             foreach (AstExprNode term in node.mTerms)
                 fxns.Add(ExprToFunction(term));
             def.AddFunctions(fxns);
+
+            // Compare the inferred type with the declared type
+            if (node.mType != null)
+            {
+                CatFxnType tmp = new CatFxnType(node.mType);
+                if (!CatFxnType.CompareFxnTypes(tmp, def.mpFxnType))
+                {
+                    MainClass.WriteLine("type error in function " + def.GetName());
+                    MainClass.WriteLine("inferred type " + def.GetFxnType());
+                    MainClass.WriteLine("declared type " + tmp.ToString());
+                }
+                else if (Config.gbVerboseTypeChecking)
+                {
+                    MainClass.WriteLine("type check successful for " + def.GetName());
+                    //MainClass.WriteLine("inferred type " + def.GetFxnType());
+                    //MainClass.WriteLine("declared type " + tmp.ToString());                    
+                }
+            }
         }
 
         private static void ProcessMacro(AstMacroNode node)
