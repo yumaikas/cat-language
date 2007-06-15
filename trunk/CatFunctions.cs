@@ -287,11 +287,16 @@ namespace Cat
             }
             msName += "]";
 
-            CatFxnType childType = TypeInferer.Infer(mChildren, true);
+            CatFxnType childType = TypeInferer.Infer(mChildren, Config.gbVerboseInference);
             if (childType != null)
+            {
                 mpFxnType = new CatQuotedFxnType(childType);
+                mpFxnType = VarRenamer.RenameVars(mpFxnType);
+            }
             else
+            {
                 mpFxnType = CatFxnType.Create("(unknown -> unknown)");
+            }
         }
 
         public override void Eval(Executor exec)
@@ -323,7 +328,7 @@ namespace Cat
                 msName += mChildren[i].GetName();
             }
 
-            mpFxnType = TypeInferer.Infer(mChildren, true);
+            mpFxnType = TypeInferer.Infer(mChildren, Config.gbVerboseInference);
         }
 
         public QuotedFunction(Function f)
@@ -409,7 +414,16 @@ namespace Cat
             foreach (Function f in mTerms)
                 msDesc += f.GetName() + " ";
 
-            mpFxnType = TypeInferer.Infer(terms, true);
+            if (Config.gbVerboseInference)
+            {
+                MainClass.WriteLine("");
+                MainClass.WriteLine("inferring type");
+                MainClass.Write(msName + " = { ");
+                foreach (Function f in terms)
+                   MainClass.Write(f.GetName() + " ");
+                MainClass.WriteLine("}");
+            }
+            mpFxnType = TypeInferer.Infer(terms, Config.gbVerboseInference);
         }
 
         public override void Eval(Executor exec)
@@ -436,6 +450,7 @@ namespace Cat
             mObject = o;
             string sType = MethodToTypeString(mi);
             mpFxnType = CatFxnType.Create(sType);
+            mpFxnType = VarRenamer.RenameVars(mpFxnType);
         }
 
         public override void Eval(Executor exec)
@@ -483,6 +498,7 @@ namespace Cat
             : base(sName, sDesc)
         {
             mpFxnType = CatFxnType.Create(sType);
+            mpFxnType = VarRenamer.RenameVars(mpFxnType);
         }
     }
 }

@@ -5,7 +5,7 @@
 0	Level-0 Core Primitives	dup	('a -> 'a 'a)	$a dup == $a $a		2 dup add_int 4 eq	Duplicates top item on the stack.
 0	Level-0 Core Primitives	empty	(list -> list bool)	($A $b) empty == false; () empty = true;		nil empty popd 1 unit empty popd not 1 2 pair empty popd not and and	Returns true if a list contains no items.
 0	Level-0 Core Primitives	eq	('a 'a -> bool)	$a $b eq == {$a = $b}		1 1 eq	Compares two items for equality.
-0	Level-0 Core Primitives	false	( -> bool)	false		false [false] [true] if	Pushes a boolean value representing false onto the stack.
+0	Level-0 Core Primitives	FALSE	( -> bool)	FALSE		false [false] [true] if	Pushes a boolean value representing false onto the stack.
 0	Level-0 Core Primitives	if	('A bool ('A -> 'B) ('A -> 'B) -> 'B)	true [$A] [$B] if == $A; false [$A] [$B] if == $B		true [1] [2] if 1 eq	Conditionally executes one of two functions  depending on the boolean value below the functions.
 0	Level-0 Core Primitives	lt_int	(int int -> bool)	$a $b lt_int == {$a < $b}		3 5 lt_int	Returns true if the top element is less than the second element.
 0	Level-0 Core Primitives	mod_int	(int int -> int)	$a $b mod_int == {$a % $b}		5 3 mod_int 2 eq	Returns the remainder of dividing the top value from the second value.
@@ -15,7 +15,7 @@
 0	Level-0 Core Primitives	pop	('a -> )	$a $b pop == $a		3 5 pop 3 eq	Removes top item from the stack.
 0	Level-0 Core Primitives	quote	('a -> ( -> 'a))	$a quote == [$a]		true 1 quote 2 quote if 1 eq	Quotes a value  creating a nullary constant generating function.
 0	Level-0 Core Primitives	swap	 ('a 'b -> 'b 'a)	$a $b swap == $b $a		1 2 swap pop 2 eq	Swap top two items on the stack.
-0	Level-0 Core Primitives	true	( -> bool)	true		true [true] [false] if	Pushes a boolean value representing true onto the stack.
+0	Level-0 Core Primitives	TRUE	( -> bool)	TRUE		true [true] [false] if	Pushes a boolean value representing true onto the stack.
 0	Level-0 Core Primitives	uncons	(list -> list var)	($A $b) uncons == ($A) $b; () uncons == error		nil 2 cons 1 cons uncons pop uncons swap pop 2 eq	Removes the first item from a list.
 0	Level-0 Core Primitives	while	('A ('A -> 'A) ('A -> 'A bool) -> 'A)	[$A][$B] while == $B [$A [$A] [$B] while][ ] if		1 [2 mul_int] [dup 100 lt_int] while 128 eq	Repeatedly executes a function  while the predicate returns true.
 1	Basic Combinators	apply	('A ('A -> 'B) -> 'B)	[$A] apply == $A	true swap [] if	[1] apply 1 eq	Executes a function.

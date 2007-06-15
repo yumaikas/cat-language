@@ -138,6 +138,7 @@ namespace Peg
 
             public override bool Match(Parser p)
             {
+                // TODO: make a more descriptive error message.
                 if (!mRule.Match(p))
                     throw new Exception(msMsg);
                 return true;

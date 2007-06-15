@@ -76,6 +76,7 @@
     <Compile Include="CatAst.cs" />
     <Compile Include="CatCompiler.cs" />
     <Compile Include="CatConfig.cs" />
+    <Compile Include="CatExceptions.cs" />
     <Compile Include="CatExecutor.cs" />
     <Compile Include="CatFunctionalList.cs">
       <SubType>Code</SubType>
@@ -100,6 +101,8 @@
     <Compile Include="CatPrimitives.cs" />
     <Compile Include="CatScope.cs" />
     <Compile Include="CatTypeInferer.cs" />
+    <Compile Include="CatUnifiers.cs" />
+    <Compile Include="CatVarRenamer.cs" />
     <Compile Include="Kitten.cs" />
     <Compile Include="MetaCat.cs" />
     <Compile Include="PegAst.cs" />
