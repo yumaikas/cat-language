@@ -209,19 +209,11 @@ namespace Cat
         {
             string[] keys = new string[mUnifiers.Count];
             mUnifiers.Keys.CopyTo(keys, 0);
-
-            Stack<CatKind> visited = new Stack<CatKind>();
             
             foreach (string key in keys)
             {
-                CatKind k = mUnifiers[key];
-                
-                if (IsSelfType(key, k, visited))
-                {
+                if (IsSelfType(key))
                     mUnifiers[key] = new CatSelfType();
-                }
-
-                Trace.Assert(visited.Count == 0);
             }
         }
 
@@ -243,24 +235,73 @@ namespace Cat
             return ret;
         }
 
-        private CatFxnType ResolveToFxn(CatTypeVar t)
+        /// <summary>
+        /// This takes a type variable or fxn type and returns a fxn type, 
+        /// by resolving type variables
+        /// </summary>
+        private CatFxnType ResolveVarToFxn(CatKind k)
         {
-            // todo: 
+            if (k is CatFxnType)
+                return k as CatFxnType;
+            if (k is CatTypeVar)
+                if (mUnifiers.ContainsKey(k.ToString()))
+                    return ResolveVarToFxn(mUnifiers[k.ToString()]);
+            return null;
         }
 
-        private bool IsSelfType(CatKind k)
+        private bool FindSelfReference(string s, CatKind k)
         {
-            if (!(k is CatTypeVar)) 
+            if (k.ToString().Equals(s))
+                return true;
+            // Function types inside of function types don't count.
+            if (k is CatFxnType)
                 return false;
-
-            CatFxnType ft = ResolveVarToFxn(k as CatTypeVar);
-            if (ft == null) 
-                return false;
-
-            foreach (CatKind k in ft.GetCons().GetKinds())
+            if (mUnifiers.ContainsKey(k.ToString()))
+                return FindSelfReference(s, mUnifiers[k.ToString()]);
+            if (k is CatTypeVector)
             {
-
+                CatTypeVector v = k as CatTypeVector;
+                foreach (CatKind tmp in v.GetKinds())
+                    if (FindSelfReference(s, tmp))
+                        return true;
             }
+            return false;
+        }
+
+        /// <summary>
+        /// A self type is a type variable that resolves to a function that contains
+        /// a reference to the original type variable.
+        /// </summary>
+        private bool IsSelfType(string s)
+        {
+            if (!mUnifiers.ContainsKey(s))
+                return false;
+
+            CatKind k = mUnifiers[s];
+
+            // Follow the chain of unifiers
+            // HACK: a chain of unifiers might never have a length greater than one.
+            // whether or not this is true, doesn't really matter to this algorithm.
+            while (mUnifiers.ContainsKey(k.ToString()))
+                k = mUnifiers[k.ToString()];
+
+            // Remember, the definition of a self-type is a type-var that resolves to 
+            // a function. (e.g. it is either a type-variable that is defined as a function,
+            // or a type-variable that refers to a self-type)
+            if (!(k is CatFxnType)) 
+                return false;
+            CatFxnType ft = k as CatFxnType;
+            
+            // Look for self-references in the consumption
+            if (FindSelfReference(s, ft.GetCons()))
+                return true;
+
+            // Look for self-references in the production
+            if (FindSelfReference(s, ft.GetProd()))
+                return true;
+
+            // Not a self-type
+            return false;
         }
 
         private CatKind ResolveKind(CatKind k, Stack<CatKind> visited)
