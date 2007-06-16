@@ -167,6 +167,16 @@ u4 hseih_hash(const char* key, u4 len)
 		{
 			return find_slot(hash(key), key, get_last_buffer())->mSecond;
 		}
+
+	private:
+
+		// Hide the copy constructor
+		hash_map(const hash_map& x) { };
+
+		// Hide the assignment operator
+		void operator=(const hash_map& x) { };
+
+
 	};
 }
 

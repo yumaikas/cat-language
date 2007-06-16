@@ -8,6 +8,7 @@
 
 namespace cat_grammar
 {	
+	using namespace yard;
 	using namespace text_grammar;
 
 	// Forward declarations, used for recursive definitions

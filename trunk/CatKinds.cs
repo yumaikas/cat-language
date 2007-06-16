@@ -238,6 +238,19 @@ namespace Cat
         }
     }
 
+    public class CatSelfType : CatTypeKind
+    {
+        public override string ToString()
+        {
+            return "self";
+        }
+
+        public override bool Equals(CatKind k)
+        {
+            return k is CatSelfType;
+        }
+    }
+
     public class CatFxnType : CatTypeKind
     {
         CatTypeVector mProd;

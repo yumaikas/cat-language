@@ -1,27 +1,26 @@
 // Public domain, by Christopher Diggins
 // http://www.cdiggins.com
-//
-// This is where the YARD parser does its magic. 
 
 #ifndef YARD_PARSER_HPP
 #define YARD_PARSER_HPP
 
 namespace yard
 {
-	template<typename Iter_T, typename Value_T>
+	template<typename Token_T, typename Iter_T = const Token_T*>
     struct Parser
     {   
-        Parser(const char* first, const char* last) 
-            : begin(first), end(last), iter(first), tree(first)
-        { 
-		}
+		// Constructor
+        Parser(Iter_T first, Iter_T last) 
+            : mBegin(first), mEnd(last), mIter(first), mTree(first)
+        { }
 
-		template<typename Rule_T>
-		bool Match()
+		// Parse function
+		template<typename StartRule_T>
+		bool Parse()
 		{
 			try
 			{
-				return Rule_T::Match(*this);
+				return StartRule_T::Match(*this);
 			}
 			catch(...)
 			{
@@ -30,36 +29,34 @@ namespace yard
 			}
 		}
 
-        // these typedefs are neccessary for a compatible YARD parser 
-        typedef Iter_T iterator;
-        typedef Value_T value_type; 
-		typedef Ast<iterator> tree_type;
-		typedef typename tree_type::Node node_type;
+        // Public typedefs 
+        typedef Iter_T Iterator;
+        typedef Token_T Token; 
+		typedef Ast<Iterator> Tree;
+		typedef typename Tree::Node Node;
                 
-        // The following functions are for manipulating the pointer.
-        value_type GetElem() { return *iter; }  
-        void GotoNext() { assert(iter < end); ++iter; }  
-        iterator GetPos() { return iter; }  
-        void SetPos(iterator pos) { iter = pos; }  
+        // Input pointer functions 
+        Token GetElem() { return *mIter; }  
+        void GotoNext() { assert(mIter < End()); ++mIter; }  
+        Iterator GetPos() { return mIter; }  
+        void SetPos(Iterator pos) { mIter = pos; }  
         bool AtEnd() { return GetPos() >= End(); }  
-        iterator Begin() { return begin; }    
-        iterator End() { return end; }  
+        Iterator Begin() { return mBegin; }    
+        Iterator End() { return mEnd; }  
 
-		// AST accessor function
-		node_type* GetTree() { return tree.GetRoot(); }
-
-		// AST construction functions
-		void StartNode(int type) { tree.StartNode(type, *this); }  		
-		void CompleteNode(int type) { tree.CompleteNode(type, *this); }
-		void AbandonNode(int type) { tree.AbandonNode(type, *this); }
+		// AST functions
+		Node* GetAstRoot() { return mTree.GetRoot(); }
+		void StartNode(int type) { mTree.StartNode(type, *this); }  		
+		void CompleteNode(int type) { mTree.CompleteNode(type, *this); }
+		void AbandonNode(int type) { mTree.AbandonNode(type, *this); }
 
 	private:
 
-		iterator begin;
-		iterator end;
-        iterator iter;
-        tree_type tree;
-		bool mbSuccess;
+		// Member fields
+		Iterator	mBegin;
+		Iterator	mEnd;
+        Iterator	mIter;
+        Tree		mTree;
     };  
  }
 

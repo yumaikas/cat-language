@@ -62,14 +62,14 @@ namespace Cat
                 // The problem here is that I need to replace a CatSimpleTypeKind 
                 // with a variable, and unify it. Complicated isn't it! 
 
-                if (k1 is CatSimpleTypeKind)
+                if (k1 is CatSimpleTypeKind && !(k2 is CatTypeVar))
                 {
                     if (!k2.IsSubtypeOf(k1) || !k1.IsSubtypeOf(k2))
                         throw new KindException(k1, k2);     
                    
                     // TODO: create unifiers for simple types 
                 }
-                if (k2 is CatSimpleTypeKind)
+                if (k2 is CatSimpleTypeKind && !(k1 is CatTypeVar))
                 {
                     if (!k2.IsSubtypeOf(k1) || !k1.IsSubtypeOf(k2))
                         throw new KindException(k1, k2);
@@ -205,29 +205,74 @@ namespace Cat
             }
         }
 
+        private void ResolveSelfTypes()
+        {
+            string[] keys = new string[mUnifiers.Count];
+            mUnifiers.Keys.CopyTo(keys, 0);
+
+            Stack<CatKind> visited = new Stack<CatKind>();
+            
+            foreach (string key in keys)
+            {
+                CatKind k = mUnifiers[key];
+                
+                if (IsSelfType(key, k, visited))
+                {
+                    mUnifiers[key] = new CatSelfType();
+                }
+
+                Trace.Assert(visited.Count == 0);
+            }
+        }
+
         public Dictionary<string, CatKind> GetResolvedUnifiers()
         {
+            ResolveSelfTypes();
+
+            Stack<CatKind> visited = new Stack<CatKind>();
             Dictionary<string, CatKind> ret = new Dictionary<string, CatKind>();
 
-            Stack<CatKind> stk = new Stack<CatKind>();
             foreach (string s in mUnifiers.Keys)
             {
-                ret.Add(s, ResolveKind(s, mUnifiers[s], stk));
-                Trace.Assert(stk.Count == 0);
+                CatKind k = mUnifiers[s];
+
+                ret.Add(s, ResolveKind(mUnifiers[s], visited));
+                Trace.Assert(visited.Count == 0);
             }
 
             return ret;
         }
 
-        private CatKind ResolveKind(string s, CatKind k, Stack<CatKind> visited)
+        private CatFxnType ResolveToFxn(CatTypeVar t)
+        {
+            // todo: 
+        }
+
+        private bool IsSelfType(CatKind k)
+        {
+            if (!(k is CatTypeVar)) 
+                return false;
+
+            CatFxnType ft = ResolveVarToFxn(k as CatTypeVar);
+            if (ft == null) 
+                return false;
+
+            foreach (CatKind k in ft.GetCons().GetKinds())
+            {
+
+            }
+        }
+
+        private CatKind ResolveKind(CatKind k, Stack<CatKind> visited)
         {
             Trace.Assert(k != null);
             Trace.Assert(visited != null);
 
             if (visited.Contains(k))
             {
-                // TODO: if it is simply self-referential use "self"
-                throw new Exception("Circular type reference");
+                // Note: type variables referencing themselves should never happen 
+                // due to the unification algorithm.
+                throw new Exception("non-self circular type reference");
             }
 
             if (k.IsKindVar())
@@ -235,7 +280,7 @@ namespace Cat
                 if (mUnifiers.ContainsKey(k.ToString()))
                 {
                     visited.Push(k);
-                    CatKind ret = ResolveKind(s, mUnifiers[k.ToString()], visited);
+                    CatKind ret = ResolveKind(mUnifiers[k.ToString()], visited);
                     visited.Pop();
                     return ret;
                 }
@@ -250,9 +295,9 @@ namespace Cat
 
                 CatFxnType ft = k as CatFxnType;
                 foreach (CatKind tmp in ft.GetCons().GetKinds())
-                    cons.PushKind(ResolveKind(s, tmp, visited));
+                    cons.PushKind(ResolveKind(tmp, visited));
                 foreach (CatKind tmp in ft.GetProd().GetKinds())
-                    prod.PushKind(ResolveKind(s, tmp, visited));
+                    prod.PushKind(ResolveKind(tmp, visited));
 
                 CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
                 visited.Pop();
@@ -264,7 +309,7 @@ namespace Cat
                 CatTypeVector vec = k as CatTypeVector;
                 CatTypeVector ret = new CatTypeVector();
                 foreach (CatKind tmp in vec.GetKinds())
-                    ret.PushKind(ResolveKind(s, tmp, visited));
+                    ret.PushKind(ResolveKind(tmp, visited));
                 visited.Pop();
                 return ret;
             }

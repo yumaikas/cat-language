@@ -55,6 +55,7 @@ namespace ootl
 				end(begin + n)
 			{ 
 				ootl_assert(n >= Policy_T::initial_size());				
+				memset(begin, 0, n * sizeof(T));
 			}
 
 			~buffer()

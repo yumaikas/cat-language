@@ -17,13 +17,16 @@
 #ifndef YARD_BASE_GRAMMAR_HPP
 #define YARD_BASE_GRAMMAR_HPP
 
-namespace yard 
+namespace yard
 {
-	// Store creates a new node if parsing is successful. 
+	// Store creates a new node with the given Label if parsing is successful. 
+	// A Label type is expected to provide an "id" static integer value for 
+	// use in case statements.
 	template<typename Label_T, typename Rule_T>
-	struct Store {
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) 
+	struct Store 
+	{
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) 
 		{    
 			p.StartNode(Label_T::id);  
 			bool b = false;
@@ -52,10 +55,11 @@ namespace yard
 
 	// Finao (Failure Is Not An Option) Throws an Exception if the rule fails to match 
 	template<typename Rule_T>
-	struct Finao {
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {    
-			if (!Rule_T::template Match<Parser_T>(p)) {
+	struct Finao 
+	{
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {    
+			if (!Rule_T::template Match<ParserState_T>(p)) {
 				throw 0;   
 			}
 			return true;
@@ -64,9 +68,10 @@ namespace yard
 
 	// True_T is used as a default rule in Seq operations
 	// always returns true, and doesn't update the input parser
-	struct True_T {    
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+	struct True_T 
+	{    
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			return true;
 		}
 	};
@@ -74,8 +79,8 @@ namespace yard
 	// False_T is used as a default rule in choice operations, 
 	// this rule always returns false, and doesn't update the input parser
 	struct False_T {
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			return false;
 		}
 	};
@@ -84,9 +89,10 @@ namespace yard
 	// probably for checking that there isn't any data there that would
 	// otherwise be ignored by the parser
 	// matching this rule doesn't actually consume the end of file
-	struct EndOfInput_T {
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+	struct EndOfInput_T 
+	{
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 		  return p.AtEnd();
 		}
 	};
@@ -96,9 +102,9 @@ namespace yard
 	template<typename Rule_T>
 	struct At 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
-			typename Parser_T::iterator pos = p.GetPos();                    
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
+			typename ParserState_T::Iterator pos = p.GetPos();                    
 			if (Rule_T::template Match(p)) {
 				p.SetPos(pos); 
 				return true;
@@ -112,9 +118,9 @@ namespace yard
 	template<typename Rule_T>
 	struct NotAt
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
-			typename Parser_T::iterator pos = p.GetPos();                    
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
+			typename ParserState_T::Iterator pos = p.GetPos();                    
 			if (Rule_T::template Match(p)) {
 				p.SetPos(pos); 
 				return false;
@@ -139,8 +145,8 @@ namespace yard
 	>
 	struct Or 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 		  return 
 			T0::template Match(p)
 			|| T1::template Match(p)
@@ -172,9 +178,9 @@ namespace yard
 	>
 	struct Seq
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
-			typename Parser_T::iterator pos = p.GetPos();
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
+			typename ParserState_T::Iterator pos = p.GetPos();
 			if (
 			T0::template Match(p) 
 			&& T1::template Match(p)
@@ -205,8 +211,8 @@ namespace yard
 	template<typename Rule_T>
 	struct Star 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			if (!p.AtEnd())
 			{
 				while (Rule_T::template Match(p)) 
@@ -223,8 +229,8 @@ namespace yard
 	template<typename Rule_T>
 	struct Plus 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			if (!Rule_T::template Match(p)) {
 				return false;
 			}
@@ -238,8 +244,8 @@ namespace yard
 	template<typename Rule_T>
 	struct Opt 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			if (!p.AtEnd())
 			{
 				Rule_T::template Match(p);
@@ -252,9 +258,9 @@ namespace yard
 	template<typename Rule_T, unsigned int N>
 	struct Repeat 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {        
-			typename Parser_T::iterator pos = p.GetPos();
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {        
+			typename ParserState_T::Iterator pos = p.GetPos();
 			for (int i=0; i < N; ++i) {
 				if (!Rule_T::template Match(p)) {
 				  p.SetPos(pos);
@@ -271,9 +277,9 @@ namespace yard
 	template<typename Rule_T>
 	struct UntilPast 
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
-			typename Parser_T::iterator pos = p.GetPos();        
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
+			typename ParserState_T::Iterator pos = p.GetPos();        
 			while (true) {
 				if (Rule_T::template Match(p)) {
 					return true;          

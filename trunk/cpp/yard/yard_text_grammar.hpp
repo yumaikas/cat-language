@@ -8,15 +8,16 @@
 #ifndef YARD_TEXT_GRAMMAR_HPP
 #define YARD_TEXT_GRAMMAR_HPP
 
-namespace text_grammar
-{       
-	using namespace yard;
+namespace yard 
+{
+namespace text_grammar 
+{
 
 	// accepts a single char, returns false only if at the end of the file
 	struct AnyChar
 	{
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			if (p.AtEnd()) { 
 				return false; 
 			};
@@ -29,8 +30,8 @@ namespace text_grammar
 	template<char C>
 	struct Char
 	{
-	    template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+	    template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			if (p.AtEnd()) { return false; }
 			if (p.GetElem() == C) { p.GotoNext(); return true; }
 			return false;
@@ -39,8 +40,8 @@ namespace text_grammar
   
 	template<char C>
 	struct ExpectChar {
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {    
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {    
 			if (p.AtEnd() || p.GetElem() != C) 
 			{ 
 				std::cerr << "expected character: " << C << std::endl;
@@ -56,8 +57,8 @@ namespace text_grammar
   template<char C>
   struct NotChar
   {
-    template<typename Parser_T>
-    static bool Match(Parser_T& p) {
+    template<typename ParserState_T>
+    static bool Match(ParserState_T& p) {
       if (p.AtEnd()) { return false; }
       if (p.GetElem() != C) { p.GotoNext(); return true; }
       return false;
@@ -68,8 +69,8 @@ namespace text_grammar
 	template<typename CharSet_T>
 	struct CharSetParser
 	{ 
-		template<typename Parser_T>
-		static bool Match(Parser_T& p) {
+		template<typename ParserState_T>
+		static bool Match(ParserState_T& p) {
 			const CharSet_T cs; 
 			if (p.AtEnd()) return false;
 			if (cs[p.GetElem()]) {
@@ -118,8 +119,8 @@ namespace text_grammar
   // by a sequence of letters, underscores and numbers of arbitrary length
   struct Ident 
   {      
-    template<typename Parser_T>
-    static bool Match(Parser_T& p) {        
+    template<typename ParserState_T>
+    static bool Match(ParserState_T& p) {        
       if (p.AtEnd()) { return false; }
       if (IdentFirstChar::template Match(p)) 
       {            
@@ -170,9 +171,9 @@ namespace text_grammar
 	  return '\0';
     }
 
-	template<typename Parser_T>
-    static bool Match(Parser_T& p) {
-      typename Parser_T::iterator pos = p.GetPos();              
+	template<typename ParserState_T>
+    static bool Match(ParserState_T& p) {
+      typename ParserState_T::Iterator pos = p.GetPos();              
       for (int n = 0; GetChar(n) != '\0'; ++n) {
         if (p.AtEnd()) 
 		{
@@ -198,5 +199,8 @@ namespace text_grammar
       NotAt<IdentNextChar>
     >
   { };  
-} 
+
+} // text_grammar
+} // yard
+
 #endif // #ifndef YARD_TEXT_GRAMMAR_HPP
