@@ -30,8 +30,10 @@ void _eval(object& o);
 //////////////////////////////////////////////////////////////////////////////
 // debugging stuff
 
+// Uncomment this line to have a verbose execution for debugging purposes 
 //#define VERBOSE
 
+// This is a standard call
 #ifdef VERBOSE
 #define call(FXN) printf("calling %s\n", #FXN); FXN(); print_stack(); /* */
 #else 

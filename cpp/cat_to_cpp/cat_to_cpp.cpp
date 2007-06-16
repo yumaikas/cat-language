@@ -12,11 +12,11 @@
 
 using namespace cat_grammar;
 
-typedef yard::Parser<const char*, char> parser_type;
-typedef parser_type::node_type node;
-typedef parser_type::iterator iter_type;
+typedef yard::Parser<char> CatParser;
+typedef CatParser::Node Node;
+typedef CatParser::Iterator Iterator;
 
-ootl::hash_map<node*, int> anon_fxns;
+ootl::hash_map<Node*, int> anon_fxns;
 
 void printch(char c)
 {
@@ -54,40 +54,40 @@ void printch(char c)
 	}		
 }
 
-void OutputNodeText(node* p)
+void OutputNodeText(Node* p)
 {
-	iter_type i = p->GetFirstToken();	
+	Iterator i = p->GetFirstToken();	
 	while (i != p->GetLastToken())
 		putchar(*i++);
 }
 
-void OutputName(node* p)
+void OutputName(Node* p)
 {
 	assert(p->GetLabelId() == CatWordLabel::id);
 	printf("_"); 
-	iter_type i = p->GetFirstToken();	
+	Iterator i = p->GetFirstToken();	
 	while (i != p->GetLastToken())
 		printch(*i++);
 }
 
-void OutputFxnSig(node* p)
+void OutputFxnSig(Node* p)
 {
 	assert(p->GetLabelId() == DefLabel::id);
-	node* pName = p->GetFirstChild();
+	Node* pName = p->GetFirstChild();
 	assert(pName != NULL);
 	printf("void ");
 	OutputName(pName);
 	printf("()");
 }
 
-void OutputForwardDecls(node* p)
+void OutputForwardDecls(Node* p)
 {
 	assert(p->GetLabelId() == DefLabel::id);
 	OutputFxnSig(p);
 	printf(";\n");
 }
 
-void OutputQuotationForwardDecls(node* p)
+void OutputQuotationForwardDecls(Node* p)
 {
 	assert(p->GetLabelId() == QuotationLabel::id);
 	static int nId = 0;
@@ -96,7 +96,7 @@ void OutputQuotationForwardDecls(node* p)
 	++nId;
 }
 
-void OutputQuotation(node* p)
+void OutputQuotation(Node* p)
 {
 	assert(p->GetLabelId() == QuotationLabel::id);
 	int nId = anon_fxns[p];
@@ -105,22 +105,15 @@ void OutputQuotation(node* p)
 	printf("\n");
 }
 
-void OutputWord(node* p)
+void OutputWord(Node* p)
 {
 	assert(p->GetLabelId() == CatWordLabel::id);
-	if (p->GetSibling() == NULL)
-	{
-		printf("    tailcall(");
-	}
-	else
-	{
-		printf("    call(");
-	}
+	printf("    call(");
 	OutputName(p);
 	printf(");\n");
 }
 
-void OutputLiteral(node* p)
+void OutputLiteral(Node* p)
 {
 	assert(p->GetLabelId() == LiteralLabel::id);	
 	printf("    push_literal(");
@@ -128,11 +121,11 @@ void OutputLiteral(node* p)
 	printf(");\n");
 }
 
-void OutputExpr(node* p)
+void OutputExpr(Node* p)
 {
 	assert(p->GetLabelId() == ExprLabel::id);	
 	assert(p->HasChildren());
-	node* pChild = p->GetFirstChild();
+	Node* pChild = p->GetFirstChild();
 	assert(!pChild->HasSibling());	
 	switch (pChild->GetLabelId())
 	{
@@ -150,26 +143,27 @@ void OutputExpr(node* p)
 	}
 }
 
-void OutputFunctionDefs(node* p)
+void OutputFunctionDefs(Node* p)
 {
 	OutputFxnSig(p);
 	printf("\n{\n");
-
-	node* pTmp = p->GetFirstChild();
+	Node* pTmp = p->GetFirstChild();
 	while (pTmp != NULL) {
-		assert(pTmp->GetLabelId() == ExprLabel::id);
-		OutputExpr(pTmp);
+		if (pTmp->GetLabelId() == ExprLabel::id)
+		{
+			OutputExpr(pTmp);
+		}
 		pTmp = pTmp->GetSibling();
 	}
 
 	printf("}\n");
 }
 
-void OutputQuotationDefs(node* p)
+void OutputQuotationDefs(Node* p)
 {
 	int nId = anon_fxns[p];
 	printf("void _cat_anon%d()\n{\n", nId);
-	node* pTmp = p->GetFirstChild();
+	Node* pTmp = p->GetFirstChild();
 	while (pTmp != NULL) {
 		assert(pTmp->GetLabelId() == ExprLabel::id);
 		OutputExpr(pTmp);
@@ -231,9 +225,10 @@ int main(int argc, char* argv[])
 	size_t n = char_stk.count();
 	char* char_buf = new char[n];
 	char_stk.copy_to_array(char_buf);
-	parser_type p(char_buf, char_buf + n);
 	
-	if (!p.Match<SourceFile>())
+	CatParser p(char_buf, char_buf + n);
+		
+	if (!p.Parse<SourceFile>())
 	{
 		perror("parsing failed: invalid input");
 	}
@@ -246,10 +241,10 @@ int main(int argc, char* argv[])
 			printf("// by Christopher Diggins\n\n");
 			printf("// http://www.cat-language.com\n");
 			printf("\n");
-			p.GetTree()->Visit(OutputForwardDecls, DefLabel::id);
-			p.GetTree()->Visit(OutputQuotationForwardDecls, QuotationLabel::id);
-			p.GetTree()->Visit(OutputFunctionDefs, DefLabel::id);
-			p.GetTree()->Visit(OutputQuotationDefs, QuotationLabel::id);
+			p.GetAstRoot()->Visit(OutputForwardDecls, DefLabel::id);
+			p.GetAstRoot()->Visit(OutputQuotationForwardDecls, QuotationLabel::id);
+			p.GetAstRoot()->Visit(OutputFunctionDefs, DefLabel::id);
+			p.GetAstRoot()->Visit(OutputQuotationDefs, QuotationLabel::id);
 		}
 		catch(...)
 		{

@@ -201,21 +201,21 @@ namespace yard
 	    
 		// StartNode is called when an attempt is made to match a 
 		// Store production rule
-		template<typename Parser_T>
-		void StartNode(int type, Parser_T& p) { 
+		template<typename ParserState_T>
+		void StartNode(int type, ParserState_T& p) { 
 			assert(current != NULL);
-			typename Parser_T::iterator pos = p.GetPos();
+			typename ParserState_T::Iterator pos = p.GetPos();
 			current = current->NewChild(type, pos);
 			assert(current != NULL);
 		}
 
 		// StartNode is called when a Store production rule
 		// is successfully matched 
-		template<typename Parser_T>
-		void CompleteNode(int type, Parser_T& p) {
+		template<typename ParserState_T>
+		void CompleteNode(int type, ParserState_T& p) {
 			assert(current != NULL);
 			assert(current->GetLabelId() == type);
-			typename Parser_T::iterator pos = p.GetPos();
+			typename ParserState_T::Iterator pos = p.GetPos();
 			current->Complete(pos);
 			assert(current->IsCompleted());       
 			current = current->GetParent();
@@ -224,8 +224,8 @@ namespace yard
 
 		// AbandonNode is called when a Store<Rule_T> production rule
 		// fails to match
-		template<typename Parser_T>
-		void AbandonNode(int type, Parser_T& p) {    
+		template<typename ParserState_T>
+		void AbandonNode(int type, ParserState_T& p) {    
 			assert(current != NULL);
 			assert(current->GetLabelId() == type);
 			Node* tmp = current;

@@ -23,8 +23,9 @@ namespace Cat
             {
                 return gInferer.InferType(f, g, bVerbose);
             }
-            catch
+            catch (Exception e)
             {
+                MainClass.WriteLine("Type inference error: " + e.Message);
                 return null;
             }
         }
@@ -70,12 +71,16 @@ namespace Cat
                         }
 
                         ft = TypeInferer.Infer(ft, y.GetFxnType(), bVerbose);
+                        
+                        if (ft == null)
+                            return null;
                     }
                     return ft;
                 }
             }
-            catch
+            catch (Exception e)
             {
+                MainClass.WriteLine("Type inference error: " + e.Message);
                 return null;
             }
         }
@@ -97,16 +102,19 @@ namespace Cat
             VarRenamer renamer = new VarRenamer();
             left = renamer.Rename(left);
             renamer.ResetNames(); 
-            right = renamer.Rename(right);           
-            
-            mUnifiers.AddVectorConstraint(left.GetProd(), right.GetCons());
+            right = renamer.Rename(right);
 
             if (bVerbose)
             {
                 MainClass.WriteLine("Types renamed before composing");
                 MainClass.WriteLine("left term : " + left.ToString());
                 MainClass.WriteLine("right term : " + right.ToString());
+            }
 
+            mUnifiers.AddVectorConstraint(left.GetProd(), right.GetCons());
+
+            if (bVerbose)
+            {
                 // Create a temporary function type showing the type before unfification
                 CatFxnType tmp = new CatFxnType(left.GetCons(), right.GetProd(), left.HasSideEffects() || right.HasSideEffects());
                 MainClass.WriteLine("Result of composition before unification: ");
@@ -115,6 +123,8 @@ namespace Cat
                 MainClass.WriteLine("Unresolved unifiers:");
                 MainClass.WriteLine(left.GetProd() + " = " + right.GetCons());
                 MainClass.Write(mUnifiers.ToString());
+
+                MainClass.WriteLine("Resolved unifiers:");
             }
 
             Dictionary<string, CatKind> unifiers = mUnifiers.GetResolvedUnifiers();
@@ -122,7 +132,6 @@ namespace Cat
 
             if (bVerbose)
             {                
-                MainClass.WriteLine("Resolved unifiers:");
                 foreach (KeyValuePair<string, CatKind> kvp in unifiers)
                     MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
             }                
