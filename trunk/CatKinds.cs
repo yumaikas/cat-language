@@ -17,7 +17,10 @@ namespace Cat
         {
             if (node is AstSimpleTypeNode)
             {
-                return new CatSimpleTypeKind(node.ToString());
+                if (node.ToString().Equals("self"))
+                    return new CatSelfType();
+                else
+                    return new CatSimpleTypeKind(node.ToString());
             }
             else if (node is AstTypeVarNode)
             {
