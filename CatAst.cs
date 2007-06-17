@@ -274,6 +274,11 @@ namespace Cat
         {
             SetComment(sComment);
         }
+
+        public AstNameNode(string sOp)
+            : base("name", sOp)
+        {
+        }
     }
 
     public class AstParamNode : CatAstNode
@@ -307,6 +312,12 @@ namespace Cat
         }
 
         public AstQuoteNode(AstExprNode expr)
+            : base("quote", "")
+        {
+            Terms.Add(expr);
+        }
+
+        public AstQuoteNode(List<AstExprNode> expr)
             : base("quote", "")
         {
             Terms.Add(expr);
