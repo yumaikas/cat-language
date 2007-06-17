@@ -145,12 +145,21 @@ namespace Cat
 
             if (bVerbose)
             {
-                MainClass.WriteLine("Composed type: " + ret.ToString());
+                MainClass.WriteLine("Inferred type (before renaming): " + ret.ToString());
             }
 
             // And one last renaming for good measure:
             renamer = new VarRenamer();
-            return renamer.Rename(ret);
+            ret = renamer.Rename(ret);
+
+            if (bVerbose)
+            {
+                MainClass.WriteLine("Inferred type: " + ret.ToString());
+            }
+
+            // Check for free variables that appear only on the right
+            ret.CheckIfWellTyped();
+            return ret;
         }
 
         public void OutputUnifiers(Dictionary<string, CatKind> unifiers)

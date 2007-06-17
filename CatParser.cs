@@ -69,15 +69,15 @@ namespace Cat
                 CatFxnType tmp = new CatFxnType(node.mType);
                 if (!CatFxnType.CompareFxnTypes(tmp, def.mpFxnType))
                 {
-                    MainClass.WriteLine("type error in function " + def.GetName());
-                    MainClass.WriteLine("inferred type " + def.GetFxnType());
+                    if (!Config.gbVerboseInference)
+                        MainClass.WriteLine("inferred type " + def.GetFxnType());
                     MainClass.WriteLine("declared type " + tmp.ToString());
+                    MainClass.WriteLine("type error in function " + def.GetName());
                 }
                 else if (Config.gbVerboseTypeChecking)
                 {
+                    MainClass.WriteLine("declared type " + tmp.ToString());
                     MainClass.WriteLine("type check successful for " + def.GetName());
-                    //MainClass.WriteLine("inferred type " + def.GetFxnType());
-                    //MainClass.WriteLine("declared type " + tmp.ToString());                    
                 }
             }
         }

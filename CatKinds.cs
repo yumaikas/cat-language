@@ -403,6 +403,59 @@ namespace Cat
             CatFxnType g2 = VarRenamer.RenameVars(g);
             return f2.Equals(g2);
         }
+
+        private void GetAllVars(CatTypeVector vec, List<string> vars)
+        {
+            foreach (CatKind k in vec.GetKinds())
+            {
+                if (k is CatFxnType)
+                {
+                    CatFxnType ft = k as CatFxnType;
+                    GetAllVars(ft.GetCons(), vars);
+                    GetAllVars(ft.GetProd(), vars);
+                }
+                else if (k.IsKindVar())
+                {
+                    vars.Add(k.ToString());
+                }
+            }
+        }
+
+        /// <summary>
+        /// A well-typed term has no variables in the top-level of the production (i.e. nested 
+        /// in functions doesn't matter) that aren't first declared somewhere (nested or not) 
+        /// in the consumption. The simplest example of an ill-typed term is: ('A -> 'B) 
+        /// Note that top-level self types implicitly carry all of the consumption variables so
+        /// something like ('A self -> 'B) is well-typed because it expands to:
+        /// ('A ('A self -> 'B) -> 'B) 
+        /// </summary>
+        public void CheckIfWellTyped()
+        {
+            List<string> consVars = new List<string>();
+
+            foreach (CatKind k in GetCons().GetKinds())
+            {
+                // A self type in the consumption, implies that all production variables 
+                // are embedded in the self-type (by definition of self-type)
+                if (k is CatSelfType)
+                    return;
+            }
+
+            GetAllVars(GetCons(), consVars);
+            foreach (CatKind k in GetProd().GetKinds())
+            {
+                if (k.IsKindVar())
+                {
+                    string s = k.ToString();
+                    if (!consVars.Contains(s))
+                        throw new Exception("ill-typed function: " + s + " appears in production and not in consumption");
+                }
+            }
+            
+            // TODO: Deal with functions that returning ill-typed functions. 
+            // There seems to be no easy way to deal with it. I don't even know if it implies
+            // that the result is ill-tyyped 
+        }
     }
 
     public class CatQuotedFxnType : CatFxnType
