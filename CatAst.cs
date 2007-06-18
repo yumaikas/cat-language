@@ -320,7 +320,7 @@ namespace Cat
         public AstQuoteNode(List<AstExprNode> expr)
             : base("quote", "")
         {
-            Terms.Add(expr);
+            Terms.AddRange(expr);
         }
 
         public override string ToString()
