@@ -53,7 +53,7 @@ namespace Cat
                 AstQuoteNode q = term as AstQuoteNode;
                 foreach (AstExprNode child in q.Terms)
                 {
-                    if (TermEqualsOrContains(child, var))
+                    if (TermContainsOrEquals(child, var))
                         return true;
                 }
                 return false;
@@ -62,6 +62,25 @@ namespace Cat
             {
                 return false;
             }
+        }
+
+        public static int CountInstancesOf(string var, List<AstExprNode> terms)
+        {
+            int ret = 0;
+            foreach (AstExprNode term in terms)
+            {
+                if (term is AstQuoteNode)
+                {
+                    AstQuoteNode q = term as AstQuoteNode;
+                    ret += CountInstancesOf(var, q.Terms);
+                }
+                else
+                {
+                    if (TermEquals(term, var))
+                        ret += 1;
+                }
+            }
+            return ret;
         }
 
         public static bool TermContainsOrEquals(AstExprNode term, string var)
@@ -78,28 +97,36 @@ namespace Cat
             {
                 if (TermContainsOrEquals(terms[i], var))
                     break;
-
                 ++i;
             }
 
             if (i == terms.Count)
-                throw new Exception("error abstraction elimination algorithm");
+                throw new Exception("error in abstraction elimination algorithm");
 
-            AstQuoteNode q = new AstQuoteNode(terms.GetRange(0, i));
-            terms.RemoveRange(0, i);
-            terms.Insert(q);
-            terms.Insert(1, new AstNewNode("dip"));
-
-            if (TermEquals(terms[2], var))
+            if (i > 0)
             {
+                AstQuoteNode q = new AstQuoteNode(terms.GetRange(0, i));
+                terms.RemoveRange(0, i);
+                terms.Insert(0, q);
+                terms.Insert(1, new AstNameNode("dip"));
+                i = 2;
+            }
+            else
+            {
+                i = 0;
+            }
+
+            if (TermEquals(terms[i], var))
+            {
+                terms.RemoveAt(i);
                 return;
             }
-            else if (TermContains(terms[2], var))
+            else if (TermContains(terms[i], var))
             {
-                Trace.Assert(terms[2] is AstQuoteNode);
-                AstQuoteNode q = terms[2] as AstQuoteNode;
-                RemoveTerm(var, q.Terms);
-                terms.Insert(3, new AstNameNode("papply"));
+                Trace.Assert(terms[i] is AstQuoteNode);
+                AstQuoteNode subExpr = terms[i] as AstQuoteNode;
+                RemoveTerm(var, subExpr.Terms);
+                terms.Insert(i + 1, new AstNameNode("papply"));
                 return;
             }
             else
@@ -113,34 +140,45 @@ namespace Cat
         /// </summary>
         public static void ConvertTerms(List<string> vars, List<AstExprNode> terms)
         {
-            if (args.Count == 0) 
+            if (vars.Count == 0) 
                 return;
-            string var = vars[0];
 
-            int nCnt = CountInstancesOf(var, terms);
-            if (nCnt == 0)
-            {
-                // Remove unused arguments
-                terms.Insert(0, new AstNameNode("pop"));
-                args.RemoveAt(0);
-            }
-            else if (nCnt > 1)
-            {
-                // Create a new name for the used argument
-                string sNewVar = GenerateUniqueName(var);
-                RenameFirstInstance(var, sNewVar, terms);
-                terms.Insert(0, new AstNameNode("dup"));
-                args.Add(var);
-            }
-            else
-            {
-                RemoveTerm(var, terms);
-                vars.RemoveAt(0);
-            }
+            List<AstExprNode> prolog = new List<AstExprNode>();
 
-            // Recursive call
-            ConvertTerms(args, terms);
-            return;
+            for (int i = 0; i < vars.Count; ++i)
+            {
+                if (Config.gbShowPointFreeConversion)
+                {
+                    foreach (AstExprNode expr in prolog)
+                        Console.Write(expr.ToString() + " ");
+                    Console.Write(" ");
+                    foreach (AstExprNode expr in terms)
+                        Console.Write(expr.ToString() + " ");
+                    Console.WriteLine();
+                }
+
+                string var = vars[i];
+
+                if (CountInstancesOf(var, terms) == 0)
+                {
+                    // Remove unused arguments
+                    prolog.Add(new AstNameNode("pop"));
+                }
+                else
+                {
+                    while (CountInstancesOf(var, terms) > 1)
+                    {
+                        // Create a new name for the used argument
+                        string sNewVar = GenerateUniqueName(var);
+                        RenameFirstInstance(var, sNewVar, terms);
+                        prolog.Add(new AstNameNode("dup"));
+                        vars.Add(sNewVar);
+                    }
+
+                    RemoveTerm(var, terms);
+                }
+            }
+            terms.InsertRange(0, prolog);
         }    
 
         /// <summary>
@@ -150,6 +188,16 @@ namespace Cat
         /// <param name="sRightConsequent"></param>
         public static void Convert(AstDefNode d)
         {
+            if (Config.gbShowPointFreeConversion)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Removing free variables");
+                Console.Write(d.mName + " = ");
+                foreach (AstExprNode expr in d.mTerms)
+                    Console.Write(expr.ToString() + " ");
+                Console.WriteLine();
+            }
+
             if (IsPointFree(d)) 
                 return;
 
@@ -161,7 +209,7 @@ namespace Cat
             
             if (Config.gbShowPointFreeConversion)
             {
-                Console.Write(d.mName + " == ");
+                Console.Write(d.mName + " = ");
                 foreach (AstExprNode expr in d.mTerms)
                     Console.Write(expr.ToString() + " ");
                 Console.WriteLine();

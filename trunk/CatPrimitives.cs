@@ -489,6 +489,18 @@ namespace Cat
             }
         }
 
+        public class PartialEvalFxn : PrimitiveFunction
+        {
+            public PartialEvalFxn()
+                : base("papply", "('a ('A 'a -> 'B) -> ('A -> 'B))", "partially applies a function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Execute("swap quote swap compose");
+            }
+        }
+
         public class Dip : PrimitiveFunction
         {
             public Dip()

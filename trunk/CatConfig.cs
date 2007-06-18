@@ -75,12 +75,12 @@ namespace Cat
         /// Outputs the result of performing a conversion from a function
         /// with named arguments to a point-free form.
         /// </summary>
-        public static bool gbShowPointFreeConversion = false;
+        public static bool gbShowPointFreeConversion = true;
 
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
-        public static bool gbVerboseInference = true;
+        public static bool gbVerboseInference = false;
 
         /// <summary>
         /// Outputs the result of a type inference
