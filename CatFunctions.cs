@@ -287,6 +287,9 @@ namespace Cat
             }
             msName += "]";
 
+            if (Config.gbVerboseInference)
+                MainClass.WriteLine("inferring type of quoted function " + msName);
+
             CatFxnType childType = TypeInferer.Infer(mChildren, Config.gbVerboseInference);
             if (childType != null)
             {
@@ -295,7 +298,7 @@ namespace Cat
             }
             else
             {
-                mpFxnType = CatFxnType.Create("(unknown -> unknown)");
+                throw new Exception("could not type quotation " + msName);
             }
         }
 
@@ -512,6 +515,23 @@ namespace Cat
         {
             mpFxnType = CatFxnType.Create(sType);
             mpFxnType = VarRenamer.RenameVars(mpFxnType);
+        }
+    }
+
+    public class SelfFunction : Function
+    {
+        Function mpFxn;
+
+        public SelfFunction(Function f)
+            : base(f.msName)
+        {
+            mpFxn = f;
+            mpFxnType = new CatSelfType();
+        }
+
+        public override void Eval(Executor exec)
+        {
+            mpFxn.Eval(exec);
         }
     }
 }

@@ -99,6 +99,8 @@ namespace Cat
         {
             if (f == null)
                 throw new Exception("Invalid null parameter to rename function");
+            if (f is CatSelfType)
+                return f;
             return new CatFxnType(Rename(f.GetCons()), Rename(f.GetProd()), f.HasSideEffects());
         }
 

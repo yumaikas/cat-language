@@ -154,6 +154,7 @@ namespace Cat
             if (bVerbose)
             {
                 MainClass.WriteLine("Inferred type: " + ret.ToString());
+                MainClass.WriteLine("");
             }
 
             // Check for free variables that appear only on the right

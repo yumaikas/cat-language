@@ -13,15 +13,15 @@ namespace Cat
     class CatParser
     {
         #region parsing functions
-        private static Quotation MakeQuoteFunction(AstQuoteNode node)
+        private static Quotation MakeQuoteFunction(AstQuoteNode node, DefinedFunction def, int level)
         {
             List<Function> fxns = new List<Function>();
             foreach (AstExprNode child in node.Terms)
-                fxns.Add(ExprToFunction(child));
+                fxns.Add(ExprToFunction(child, def, level + 1));
             return new Quotation(fxns);
         }
 
-        private static Function ExprToFunction(AstExprNode node)
+        private static Function ExprToFunction(AstExprNode node, DefinedFunction def, int level)
         {
             if (node is AstIntNode)
                 return new PushValue<int>((node as AstIntNode).GetValue());
@@ -37,13 +37,17 @@ namespace Cat
                 return new PushValue<char>((node as AstCharNode).GetValue());
             else if (node is AstNameNode)
             {
-                Function f = Executor.Main.GetGlobalScope().Lookup(node.ToString());
+                string s = node.ToString();
+                Function f = Executor.Main.GetGlobalScope().Lookup(s);
                 if (f == null)
                     throw new Exception("could not find function " + node.ToString());
+                if (def != null)
+                    if (s.Equals(def.GetName()))
+                        return new SelfFunction(f);
                 return f;
             }
             else if (node is AstQuoteNode)
-                return MakeQuoteFunction(node as AstQuoteNode);
+                return MakeQuoteFunction(node as AstQuoteNode, def, level);
             else
                 throw new Exception("node " + node.ToString() + " does not have associated function");
         }
@@ -60,7 +64,7 @@ namespace Cat
             Executor.Main.GetGlobalScope().AddFunction(def);
             List<Function> fxns = new List<Function>();
             foreach (AstExprNode term in node.mTerms)
-                fxns.Add(ExprToFunction(term));
+                fxns.Add(ExprToFunction(term, def, 0));
             def.AddFunctions(fxns);
 
             // Compare the inferred type with the declared type
@@ -91,7 +95,7 @@ namespace Cat
         {
             if (node is AstExprNode)
             {
-                Function f = ExprToFunction(node as AstExprNode);
+                Function f = ExprToFunction(node as AstExprNode, null, 0);
                 f.Eval(exec);
             }
             else if (node is AstDefNode)
