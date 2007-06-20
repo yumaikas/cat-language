@@ -224,30 +224,6 @@ define dup4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a 'b 'c 'd)
 define dup5 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a 'b 'c 'd 'e)
 { peek4 peek4 peek4 peek4 peek4 }
 
-//==============================================================================
-// Argument to_list manipulation
-
-// Declares an empty argument to_list
-define arg_list : ( -> list)
-{ nil }
-
-// Argument accessors
-define arg0 : (list -> var list)  { 0 nth swap }
-define arg1 : (list -> var list) { 1 nth swap }
-define arg2 : (list -> var list) { 2 nth swap }
-define arg3 : (list -> var list) { 3 nth swap }
-define arg4 : (list -> var list) { 4 nth swap }
-define arg5 : (list -> var list) { 5 nth swap }
-define arg6 : (list -> var list) { 6 nth swap }
-define arg7 : (list -> var list) { 7 nth swap }
-define arg8 : (list -> var list) { 8 nth swap }
-define arg9 : (list -> var list) { 9 nth swap }
-
-// Used for converting from quotations inside of functions with named
-// arguments to point-free form by prepending the argument list.
-define embed_args
-{ [dup quote] dip compose swap }
-
 //=============================================================================
 // Predicates and comparison functions
 

@@ -66,17 +66,17 @@ namespace Cat
             // Compare the inferred type with the declared type
             if (node.mType != null)
             {
-                CatFxnType tmp = new CatFxnType(node.mType);
-                if (!CatFxnType.CompareFxnTypes(tmp, def.mpFxnType))
+                CatFxnType declaredType = new CatFxnType(node.mType);
+                if (!CatFxnType.CompareFxnTypes(declaredType, def.mpFxnType))
                 {
                     if (!Config.gbVerboseInference)
                         MainClass.WriteLine("inferred type " + def.GetFxnType());
-                    MainClass.WriteLine("declared type " + tmp.ToString());
+                    MainClass.WriteLine("declared type " + declaredType.ToString());
                     MainClass.WriteLine("type error in function " + def.GetName());
                 }
                 else if (Config.gbVerboseTypeChecking)
                 {
-                    MainClass.WriteLine("declared type " + tmp.ToString());
+                    MainClass.WriteLine("declared type " + declaredType.ToString());
                     MainClass.WriteLine("type check successful for " + def.GetName());
                 }
             }
