@@ -241,19 +241,6 @@ namespace Cat
         }
     }
 
-    public class CatSelfType : CatTypeKind
-    {
-        public override string ToString()
-        {
-            return "self";
-        }
-
-        public override bool Equals(CatKind k)
-        {
-            return k is CatSelfType;
-        }
-    }
-
     public class CatFxnType : CatTypeKind
     {
         CatTypeVector mProd;
@@ -455,6 +442,25 @@ namespace Cat
             // TODO: Deal with functions that returning ill-typed functions. 
             // There seems to be no easy way to deal with it. I don't even know if it implies
             // that the result is ill-tyyped 
+        }
+    }
+
+    public class CatSelfType : CatFxnType
+    {
+        public CatSelfType()
+        {
+            //GetProd().PushKind(new CatSimpleTypeKind("function"));
+            GetProd().PushKind(this);
+        }
+
+        public override string ToString()
+        {
+            return "self";
+        }
+
+        public override bool Equals(CatKind k)
+        {
+            return k is CatSelfType;
         }
     }
 

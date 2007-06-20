@@ -76,6 +76,10 @@ namespace Cat
 
         public void AddFxnConstraint(CatFxnType f1, CatFxnType f2)
         {
+
+            if (f1 is CatSelfType || f2 is CatSelfType)
+                return;
+
             AddVectorConstraint(f1.GetCons(), f2.GetCons());
             AddVectorConstraint(f1.GetProd(), f2.GetProd());
         }
@@ -351,6 +355,10 @@ namespace Cat
                 foreach (CatKind tmp in v.GetKinds())
                     ret.PushKind(ResolveKind(tmp));
                 return ret;
+            }
+            else if (k is CatSelfType)
+            {
+                return k;
             }
             else if (k is CatFxnType)
             {
