@@ -8,31 +8,23 @@ using System.Diagnostics;
 
 namespace Cat
 {
-    /// <summary>
-    /// Unifiers are types associated with variables. These types may be other variables. So 
-    /// it can be considered a directed graph. It is important to assure that no cycles ever exist.
-    /// </summary>
     public class Unifiers
     {
         int mnId = 0;
+        List<List<CatKind>> mConstraintListList = new List<List<CatKind>>();
+        Dictionary<string, List<CatKind>> mConstraints = new Dictionary<string, List<CatKind>>();
         Dictionary<string, CatKind> mUnifiers = new Dictionary<string, CatKind>();
-
-        public override string ToString()
-        {
-            string ret = "";
-            foreach (KeyValuePair<string, CatKind> kvp in mUnifiers)
-                ret += kvp.Key + " = " + kvp.Value.ToString() + "\n";
-            return ret;
-        }
 
         public void AddVectorConstraint(CatTypeVector v1, CatTypeVector v2)
         {
             while (!v1.IsEmpty() && !v2.IsEmpty())
             {
+                // DEBUG: uncomment the next line
+                // CheckConstraints();
+
                 CatKind k1 = v1.GetTop();
                 CatKind k2 = v2.GetTop();
 
-                // TODO: this might not cover all typing possibilities.
                 if (k1 is CatStackVar)
                 {
                     AddConstraint(k1.ToString(), v2);
@@ -64,14 +56,14 @@ namespace Cat
 
                 if (k1 is CatSimpleTypeKind && !(k2 is CatTypeVar))
                 {
-                    if (!k2.IsSubtypeOf(k1) || !k1.IsSubtypeOf(k2))
+                    if (!k2.IsSubtypeOf(k1) && !k1.IsSubtypeOf(k2))
                         throw new KindException(k1, k2);     
                    
                     // TODO: create unifiers for simple types 
                 }
                 if (k2 is CatSimpleTypeKind && !(k1 is CatTypeVar))
                 {
-                    if (!k2.IsSubtypeOf(k1) || !k1.IsSubtypeOf(k2))
+                    if (!k2.IsSubtypeOf(k1) && !k1.IsSubtypeOf(k2))
                         throw new KindException(k1, k2);
 
                     // TODO: create unifiers for simple types 
@@ -88,28 +80,75 @@ namespace Cat
             AddVectorConstraint(f1.GetProd(), f2.GetProd());
         }
 
-        private void ReplaceUnifiers(CatKind kOld, CatKind kNew)
+        private void AddConstraintToList(List<CatKind> list, CatKind k)
         {
-            // HACK: this could be improved 
-            Dictionary<string, CatKind> dict = new Dictionary<string, CatKind>();
-            foreach (KeyValuePair<string, CatKind> kvp in mUnifiers)
+            if (k is CatTypeVector)
             {
-                if (kvp.Value == kOld)
+                CatTypeVector v = (k as CatTypeVector);
+                Trace.Assert(v.GetKinds().Count > 1);
+            }
+
+            if (list.Contains(k))
+                return;
+
+            if (k is CatFxnType)
+            {
+                for (int i=0; i < list.Count; ++i)
                 {
-                    dict.Add(kvp.Key, kNew);
-                }
-                else
-                {
-                    dict.Add(kvp.Key, kvp.Value);
+                    if (list[i] is CatFxnType)
+                    {
+                        AddFxnConstraint(k as CatFxnType, list[i] as CatFxnType);
+                    }
                 }
             }
-            mUnifiers = dict;
+            else if (k is CatTypeVector)
+            {
+                for (int i = 0; i < list.Count; ++i)
+                {
+                    if (list[i] is CatTypeVector)
+                    {
+                        AddVectorConstraint(k as CatTypeVector, list[i] as CatTypeVector);
+                    }
+                }
+            }
+
+            list.Add(k);
+        }
+
+        /// <summary>
+        /// Debugging paranoia.
+        /// </summary>
+        private void CheckConstraints()
+        {
+            foreach (List<CatKind> list in mConstraintListList)
+            {
+                if (!mConstraints.ContainsValue(list))
+                    throw new Exception("internal constraint error");
+
+                foreach (CatKind k in list)
+                {
+                    if (k.IsKindVar())
+                    {
+                        if (!mConstraints.ContainsKey(k.ToString()))
+                            throw new Exception("internal constraint error");
+
+                        if (mConstraints[k.ToString()] != list)
+                            throw new Exception("internal constraint error");
+                    }
+                }
+            }
+            
+            foreach (List<CatKind> list in mConstraints.Values)
+            {
+                if (!mConstraintListList.Contains(list))
+                    throw new Exception("internal constraints error");
+            }
         }
 
         public void AddConstraint(string s, CatKind k)
         {
             // Don't add self-referential variables 
-            if (k.ToString().CompareTo(s) == 0)
+            if (k.ToString().Equals(s))
                 return;
 
             // Check for single unit vectors 
@@ -124,59 +163,100 @@ namespace Cat
                 }
             }
 
-            if (mUnifiers.ContainsKey(s))
+            // If a constraint list doesn't exist then create one
+            if (!mConstraints.ContainsKey(s))
             {
-                CatKind u = CreateUnifier(k, mUnifiers[s]);
-                ReplaceUnifiers(mUnifiers[s], u);
+                List<CatKind> list = new List<CatKind>();
+                mConstraints.Add(s, list);
+                mConstraintListList.Add(list);
             }
-            else
+
+            // Check if we are constraining a variable to a variable.
+            // If so, we need to share a constraint list 
+            if (k.IsKindVar())
             {
-                if (k.IsKindVar() && mUnifiers.ContainsKey(k.ToString()))
+                if (mConstraints.ContainsKey(k.ToString()))
                 {
-                    CatKind u = CreateUnifier(k, mUnifiers[k.ToString()]);
-                    ReplaceUnifiers(mUnifiers[k.ToString()], u);
-                    mUnifiers.Add(s, u);
+                    List<CatKind> c1 = mConstraints[s];
+                    List<CatKind> c2 = mConstraints[k.ToString()];
+
+                    // It is important to remember that c1 can be the same as c2
+                    if (c1 != c2)
+                    {
+                        // Copy the contents first 
+                        foreach (CatKind tmp in c2.ToArray())
+                            AddConstraintToList(c1, tmp);
+
+                        // Remove the other constraint
+                        mConstraintListList.Remove(c2);
+
+                        // Have the second constraint refer to the first
+                        mConstraints[k.ToString()] = c1;
+                    }
                 }
                 else
                 {
-                    mUnifiers.Add(s, CreateUnifier(k, k));
+                    mConstraints.Add(k.ToString(), mConstraints[s]);
                 }
+
+                // Link the other variable to the merged constraint list
+                mConstraints[k.ToString()] = mConstraints[s];
             }
+
+            AddConstraintToList(mConstraints[s], k);
+            
+            // DEBUG: uncomment the next line
+            // CheckConstraints();
         }
 
         private CatKind CreateUnifier(CatKind k1, CatKind k2)
         {
+            if (k1 == null)
+                return k2;
+            if (k2 == null)
+                return k1;
+
             if ((k1 is CatFxnType) || (k2 is CatFxnType))
             {
                 if (!(k1 is CatFxnType)) return k2;
                 if (!(k2 is CatFxnType)) return k1;
                 CatFxnType ft1 = k1 as CatFxnType;
                 CatFxnType ft2 = k2 as CatFxnType;
-                if (ft1.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count) return ft1;
-                return ft2;
+                if (ft1.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count) 
+                    return ft1;
+                else
+                    return ft2;
             }
             else if ((k1 is CatTypeVector) || (k2 is CatTypeVector))
             {
                 if (!(k1 is CatTypeVector)) return k2;
                 if (!(k2 is CatTypeVector)) return k1;
                 CatTypeVector vec1 = k1 as CatTypeVector;
-                CatTypeVector vec2 = k2 as CatTypeVector;
-                // TODO: check if they are all types in each vector. If so and 
-                // the number of types differs we have a type error
-                if (vec1.GetKinds().Count >= vec2.GetKinds().Count) return vec1;
-                return vec2;
+                CatTypeVector vec2 = k2 as CatTypeVector;                
+                if (vec1.GetKinds().Count >= vec2.GetKinds().Count)
+                    return vec1;
+                else
+                    return vec2;
             }
-            else if (k1 is CatTypeVar)
+            else if (k1.IsKindVar())
             {
-                if (k2 is CatStackKind)
-                    throw new Exception(k1.ToString() + " is a type and is not compatible with the type vector " + k2.ToString());
-                return new CatTypeVar("u" + mnId++.ToString());
+                // TODO: check that they are both the same kind.
+                if (k2.IsKindVar())
+                {
+                    if (k1.ToString().CompareTo(k2.ToString()) <= 0)
+                        return k1;
+                    else
+                        return k2;
+                }
+                else
+                {
+                    return k2;
+                }
             }
-            else if (k1 is CatStackVar)
+            else if (k2.IsKindVar())
             {
-                if (!(k2 is CatStackVar))
-                    throw new Exception("Stack variable " + k1.ToString() + " is not compatible with " + k2.ToString());
-                return new CatStackVar("U" + mnId++.ToString());
+                // TODO: check that they are both the same kind
+                return k2;
             }
             else if (k1 is CatSimpleTypeKind)
             {
@@ -205,153 +285,79 @@ namespace Cat
             }
         }
 
-        private void ResolveSelfTypes()
+        public void OutputConstraints()
         {
-            string[] keys = new string[mUnifiers.Count];
-            mUnifiers.Keys.CopyTo(keys, 0);
-            
-            foreach (string key in keys)
+            /* Alternative method of outputting constraints
+            foreach (KeyValuePair<string, List<CatKind>> kvp in mConstraints)
             {
-                if (IsSelfType(key))
-                    mUnifiers[key] = new CatSelfType();
+                string s = kvp.Key + " = ";
+                foreach (CatKind k in kvp.Value)
+                    s += k.ToString() + " | ";
+                MainClass.WriteLine(s);
+            }
+             */
+            foreach (List<CatKind> list in mConstraintListList)
+            {
+                string s = "";
+                for (int i = 0; i < list.Count; ++i)
+                {
+                    if (i > 0) s += " = ";
+                    s += list[i].ToString();
+                }
+                MainClass.WriteLine(s);
             }
         }
 
-        public Dictionary<string, CatKind> GetResolvedUnifiers()
+        private void CreateUnifiers()
         {
-            ResolveSelfTypes();
-
-            Stack<CatKind> visited = new Stack<CatKind>();
-            Dictionary<string, CatKind> ret = new Dictionary<string, CatKind>();
-
-            foreach (string s in mUnifiers.Keys)
+            foreach (KeyValuePair<string, List<CatKind>> kvp in mConstraints)
             {
-                CatKind k = mUnifiers[s];
+                List<CatKind> list = kvp.Value;
 
-                ret.Add(s, ResolveKind(mUnifiers[s], visited));
-                Trace.Assert(visited.Count == 0);
-            }
+                // Empty lists are not supposed to be possible.
+                Trace.Assert(list.Count > 0);
 
-            return ret;
+                CatKind u = null;
+                mUnifiers.Add(kvp.Key, u);
+                foreach (CatKind k in list)
+                {                   
+                    // Unify both types.
+                    u = CreateUnifier(u, k);
+                    
+                    // Add the type to the unfiers
+                    mUnifiers[kvp.Key] = u;
+                }
+
+                mUnifiers[kvp.Key] = ResolveKind(mUnifiers[kvp.Key]);
+
+                Trace.Assert(u != null);
+                Trace.Assert(mUnifiers[kvp.Key] != null);
+            }            
         }
 
-        /// <summary>
-        /// This takes a type variable or fxn type and returns a fxn type, 
-        /// by resolving type variables
-        /// </summary>
-        private CatFxnType ResolveVarToFxn(CatKind k)
+        private CatKind ResolveKind(CatKind k)
         {
-            if (k is CatFxnType)
-                return k as CatFxnType;
-            if (k is CatTypeVar)
-                if (mUnifiers.ContainsKey(k.ToString()))
-                    return ResolveVarToFxn(mUnifiers[k.ToString()]);
-            return null;
-        }
-
-        private bool FindSelfReference(string s, CatKind k)
-        {
-            if (k.ToString().Equals(s))
-                return true;
-            // Function types inside of function types don't count.
-            if (k is CatFxnType)
-                return false;
-            if (mUnifiers.ContainsKey(k.ToString()))
-                return FindSelfReference(s, mUnifiers[k.ToString()]);
-            if (k is CatTypeVector)
-            {
-                CatTypeVector v = k as CatTypeVector;
-                foreach (CatKind tmp in v.GetKinds())
-                    if (FindSelfReference(s, tmp))
-                        return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// A self type is a type variable that resolves to a function that contains
-        /// a reference to the original type variable.
-        /// </summary>
-        private bool IsSelfType(string s)
-        {
-            if (!mUnifiers.ContainsKey(s))
-                return false;
-
-            CatKind k = mUnifiers[s];
-
-            // Follow the chain of unifiers
-            // HACK: a chain of unifiers might never have a length greater than one.
-            // whether or not this is true, doesn't really matter to this algorithm.
-            while (mUnifiers.ContainsKey(k.ToString()))
-                k = mUnifiers[k.ToString()];
-
-            // Remember, the definition of a self-type is a type-var that resolves to 
-            // a function. (e.g. it is either a type-variable that is defined as a function,
-            // or a type-variable that refers to a self-type)
-            if (!(k is CatFxnType)) 
-                return false;
-            CatFxnType ft = k as CatFxnType;
-            
-            // Look for self-references in the consumption
-            if (FindSelfReference(s, ft.GetCons()))
-                return true;
-
-            // Look for self-references in the production
-            if (FindSelfReference(s, ft.GetProd()))
-                return true;
-
-            // Not a self-type
-            return false;
-        }
-
-        private CatKind ResolveKind(CatKind k, Stack<CatKind> visited)
-        {
-            Trace.Assert(k != null);
-            Trace.Assert(visited != null);
-
-            if (visited.Contains(k))
-            {
-                // Note: type variables referencing themselves should never happen 
-                // due to the unification algorithm.
-                throw new Exception("non-self circular type reference");
-            }
-
             if (k.IsKindVar())
             {
                 if (mUnifiers.ContainsKey(k.ToString()))
-                {
-                    visited.Push(k);
-                    CatKind ret = ResolveKind(mUnifiers[k.ToString()], visited);
-                    visited.Pop();
-                    return ret;
-                }
-                return k;
-            }
-
-            if (k is CatFxnType)
-            {
-                visited.Push(k);
-                CatTypeVector cons = new CatTypeVector();
-                CatTypeVector prod = new CatTypeVector();
-
-                CatFxnType ft = k as CatFxnType;
-                foreach (CatKind tmp in ft.GetCons().GetKinds())
-                    cons.PushKind(ResolveKind(tmp, visited));
-                foreach (CatKind tmp in ft.GetProd().GetKinds())
-                    prod.PushKind(ResolveKind(tmp, visited));
-
-                CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
-                visited.Pop();
-                return ret;
+                    return mUnifiers[k.ToString()];
+                else
+                    return k;
             }
             else if (k is CatTypeVector)
             {
-                visited.Push(k);
-                CatTypeVector vec = k as CatTypeVector;
+                CatTypeVector v = k as CatTypeVector;
                 CatTypeVector ret = new CatTypeVector();
-                foreach (CatKind tmp in vec.GetKinds())
-                    ret.PushKind(ResolveKind(tmp, visited));
-                visited.Pop();
+                foreach (CatKind tmp in v.GetKinds())
+                    ret.PushKind(ResolveKind(tmp));
+                return ret;
+            }
+            else if (k is CatFxnType)
+            {
+                CatFxnType ft = k as CatFxnType;
+                CatTypeVector cons = ResolveKind(ft.GetCons()) as CatTypeVector;
+                CatTypeVector prod = ResolveKind(ft.GetProd()) as CatTypeVector;
+                CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
                 return ret;
             }
             else
@@ -360,9 +366,28 @@ namespace Cat
             }
         }
 
+        private void ResolveUnifiers()
+        {
+            string[] a = new string[mUnifiers.Count];
+            mUnifiers.Keys.CopyTo(a, 0);
+            foreach (string s in a)
+            {
+                mUnifiers[s] = ResolveKind(mUnifiers[s]);
+            }
+        }
+
+        public Dictionary<string, CatKind> GetResolvedUnifiers()
+        {
+            CreateUnifiers();
+            ResolveUnifiers();
+            return mUnifiers;
+        }
+
         public void Clear()
         {
             mnId = 0;
+            mConstraintListList.Clear();
+            mConstraints.Clear();
             mUnifiers.Clear();
         }
     }

@@ -12,7 +12,7 @@ namespace Cat
     {
         public static Rule CatIdentChar()
         {
-            return Choice(IdentNextChar(), CharSet("~`!@#$%^&*-+=|\\:;<>.?/"));
+            return Choice(IdentNextChar(), CharSet("~`!@#$%^&*-+=|:;<>.?/"));
         }
         public static Rule CatIdent()
         {
@@ -92,9 +92,13 @@ namespace Cat
         {
             return Token(AstNode("name", Choice(Symbol(), CatIdent()))); 
         }
+        public static Rule Lambda()
+        {
+            return Seq(CharSeq("\\"), NoFail(Seq(Name(), CharSeq("."), Choice(Delay(Lambda), Quote())), "expected a lambda expression"));
+        }
         public static Rule Expr()
         {
-            return Token(Choice(Literal(), Quote(), Name()));
+            return Token(Choice(Lambda(), Literal(), Quote(), Name()));
         }
         public static Rule CodeBlock()
         {

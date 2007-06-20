@@ -409,6 +409,19 @@ namespace Cat
 
         public void AddFunctions(List<Function> terms)
         {
+            // Make sure the functions are okay
+            foreach (Function f in terms)
+            {
+                // Detect self-references at the top level, 
+                // this indicates an infinite loop
+                if (f == this)
+                    throw new Exception("a function can't call itself directly, this will result in an infinite loop");
+
+                if (f.GetType() == null)
+                    throw new Exception("passing an untyped term to function " + msName);
+            }
+
+
             mTerms = terms;
             msDesc = "";
             foreach (Function f in mTerms)

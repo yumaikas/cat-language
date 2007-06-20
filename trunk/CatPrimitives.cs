@@ -492,7 +492,7 @@ namespace Cat
         public class PartialEvalFxn : PrimitiveFunction
         {
             public PartialEvalFxn()
-                : base("papply", "('a ('A 'a -> 'B) -> ('A -> 'B))", "partially applies a function")
+                : base("bind", "('a ('A 'a -> 'B) -> ('A -> 'B))", "binds the top argument to the top value in the stack, also called partial-application")
             { }
 
             public override void Eval(Executor exec)

@@ -126,7 +126,7 @@ namespace Cat
                 Trace.Assert(terms[i] is AstQuoteNode);
                 AstQuoteNode subExpr = terms[i] as AstQuoteNode;
                 RemoveTerm(var, subExpr.Terms);
-                terms.Insert(i + 1, new AstNameNode("papply"));
+                terms.Insert(i + 1, new AstNameNode("bind"));
                 return;
             }
             else
@@ -188,6 +188,9 @@ namespace Cat
         /// <param name="sRightConsequent"></param>
         public static void Convert(AstDefNode d)
         {
+            if (IsPointFree(d)) 
+                return;
+
             if (Config.gbShowPointFreeConversion)
             {
                 Console.WriteLine();
@@ -197,9 +200,6 @@ namespace Cat
                     Console.Write(expr.ToString() + " ");
                 Console.WriteLine();
             }
-
-            if (IsPointFree(d)) 
-                return;
 
             List<string> args = new List<string>();
             foreach (AstParamNode p in d.mParams)

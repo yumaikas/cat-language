@@ -37,7 +37,7 @@ namespace Cat
                 if (f.Count == 0)
                 {
                     if (bVerbose)
-                        Console.WriteLine("inferred type is ( -> )");
+                        MainClass.WriteLine("inferred type is ( -> )");
                     return CatFxnType.Create("( -> )");
                 }
                 else if (f.Count == 1)
@@ -45,7 +45,7 @@ namespace Cat
                     Function x = f[0];
 
                     if (bVerbose)
-                        Console.WriteLine("inferred type is " + x.GetFxnType().ToString());
+                        MainClass.WriteLine("inferred type is " + x.GetTypeString());
                     return x.GetFxnType();
                 }
                 else
@@ -120,18 +120,17 @@ namespace Cat
                 MainClass.WriteLine("Result of composition before unification: ");
                 MainClass.WriteLine(tmp.ToString());
 
-                MainClass.WriteLine("Unresolved unifiers:");
+                MainClass.WriteLine("Constraints:");
                 MainClass.WriteLine(left.GetProd() + " = " + right.GetCons());
-                MainClass.Write(mUnifiers.ToString());
-
-                MainClass.WriteLine("Resolved unifiers:");
+                mUnifiers.OutputConstraints();
             }
 
             Dictionary<string, CatKind> unifiers = mUnifiers.GetResolvedUnifiers();
             renamer = new VarRenamer(unifiers);
 
             if (bVerbose)
-            {                
+            {
+                MainClass.WriteLine("Unifiers:");
                 foreach (KeyValuePair<string, CatKind> kvp in unifiers)
                     MainClass.WriteLine(kvp.Key + " = " + kvp.Value.ToString());
             }                
