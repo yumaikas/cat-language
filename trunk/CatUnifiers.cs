@@ -20,7 +20,7 @@ namespace Cat
             while (!v1.IsEmpty() && !v2.IsEmpty())
             {
                 // DEBUG: uncomment the next line
-                // CheckConstraints();
+                CheckConstraints();
 
                 CatKind k1 = v1.GetTop();
                 CatKind k2 = v2.GetTop();
@@ -76,12 +76,49 @@ namespace Cat
 
         public void AddFxnConstraint(CatFxnType f1, CatFxnType f2)
         {
+            CheckConstraints();
 
             if (f1 is CatSelfType || f2 is CatSelfType)
                 return;
 
             AddVectorConstraint(f1.GetCons(), f2.GetCons());
+            CheckConstraints();
+
             AddVectorConstraint(f1.GetProd(), f2.GetProd());
+            CheckConstraints();
+        }
+
+        /// <summary>
+        /// Merges constraints associated with "s" into the destination list 
+        /// </summary>
+        private void MergeConstraintListsIfNeccessary(string s, List<CatKind> dest)
+        {
+            if (!mConstraints.ContainsKey(s))
+                return;
+
+            List<CatKind> src = mConstraints[s];
+
+            // This is a possibility. We want to make sure it doesn't happen
+            if (dest == src)
+                return;
+
+            // Remove the source constraint list before we continue
+            mConstraintListList.Remove(src);
+
+            // Update all hash lists to point to the new destination 
+            List<string> keys = new List<string>(mConstraints.Keys);
+            foreach (string key in keys)
+            {
+                if (mConstraints[key] == src)
+                    mConstraints[key] = dest;
+            }
+
+            // One by one add the elements from the source list to the destination
+            while (src.Count > 0) 
+            {
+                AddConstraintToList(dest, src[0]);
+                src.RemoveAt(0);
+            }                    
         }
 
         private void AddConstraintToList(List<CatKind> list, CatKind k)
@@ -117,6 +154,14 @@ namespace Cat
             }
 
             list.Add(k);
+
+            if (k is CatKind)
+            {
+                // We may have to merge two constraint lists
+                MergeConstraintListsIfNeccessary(k.ToString(), list);
+            }
+
+            CheckConstraints();
         }
 
         /// <summary>
@@ -190,12 +235,6 @@ namespace Cat
                         // Copy the contents first 
                         foreach (CatKind tmp in c2.ToArray())
                             AddConstraintToList(c1, tmp);
-
-                        // Remove the other constraint
-                        mConstraintListList.Remove(c2);
-
-                        // Have the second constraint refer to the first
-                        mConstraints[k.ToString()] = c1;
                     }
                 }
                 else
@@ -210,7 +249,7 @@ namespace Cat
             AddConstraintToList(mConstraints[s], k);
             
             // DEBUG: uncomment the next line
-            // CheckConstraints();
+            CheckConstraints();
         }
 
         private CatKind CreateUnifier(CatKind k1, CatKind k2)
@@ -321,20 +360,37 @@ namespace Cat
                 // Empty lists are not supposed to be possible.
                 Trace.Assert(list.Count > 0);
 
-                CatKind u = null;
-                mUnifiers.Add(kvp.Key, u);
-                foreach (CatKind k in list)
-                {                   
-                    // Unify both types.
-                    u = CreateUnifier(u, k);
+                while (list.Count > 1)
+                {
+                    if (Config.gbVerboseInference)
+                    {
+                        MainClass.Write("Merging constraints: ");
+                        for (int i = 0; i < list.Count; ++i)
+                        {
+                            if (i > 0) MainClass.Write(" = ");
+                            MainClass.Write(list[i].ToString());
+                        }
+                        MainClass.WriteLine("");
+                    }
+
+                    CatKind k1 = list[0];
+                    CatKind k2 = list[1];
                     
-                    // Add the type to the unfiers
-                    mUnifiers[kvp.Key] = u;
+                    // Unify both types.
+                    CatKind u = CreateUnifier(k1, k2);
+
+                    list.RemoveAt(0);
+                    list[0] = u;
                 }
 
-                mUnifiers[kvp.Key] = ResolveKind(mUnifiers[kvp.Key]);
+                CatKind k = list[0];
+                Trace.Assert(k != null);
+                
+                if (Config.gbVerboseInference)
+                    MainClass.WriteLine("Unified constraint = " + k.ToString());
 
-                Trace.Assert(u != null);
+                mUnifiers[kvp.Key] = ResolveKind(k);
+
                 Trace.Assert(mUnifiers[kvp.Key] != null);
             }            
         }

@@ -1,0 +1,56 @@
+define test
+{ true [true] [false] if }
+
+define recursive
+{ [recursive] }
+
+define binary_recursive
+{ [binary_recursive] [binary_recursive] }
+
+define m
+{ dup apply }
+
+define y
+{ dup quote [y] compose swap apply }
+
+define aa : ('a -> 'a 'a)
+{ dup }
+
+define aaa : ('a -> 'a 'a 'a)
+{ dup dup }
+
+define aaaa : ('a -> 'a 'a 'a 'a)
+{ dup dup dup }
+
+define aaaa_2 : ('a -> 'a 'a 'a 'a)
+{ aaa dup }
+
+define pop2 : ('a 'b -> )
+{ pop pop }
+
+define pop3 : ('a 'b 'c -> )
+{ pop pop pop }
+
+define pop3_2 : ('adam 'bob 'carl -> )
+{ pop pop2 }
+
+define swapswap : ('a 'b -> 'a 'b)
+{ swap swap }
+
+define app_1 : ('A ('A -> 'B) -> 'B)
+{ apply }
+
+define app_2 : ('A ('A -> 'B) -> 'B)
+{ true swap dup if }
+
+define app_3 : ('A ('A -> 'B) -> 'B)
+{ 42 swap dip pop }
+
+define appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C)
+{ apply apply }
+
+define inc_int : (int -> int)
+{ 1 add_int }
+
+define m : ('A self -> 'B)
+{ dup apply }
