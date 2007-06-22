@@ -399,11 +399,11 @@ define uncons4 : (list -> list any any any any)
 define unpair : (list -> any any)
 { uncons [head] dip }
 
-define fold : (list 'a ('a 'b -> 'a) -> 'a)
+define fold : ('A list 'b ('A 'b 'c -> 'A 'b) -> 'A 'b)
 { swapd gfold }
 
-define unfold : ('a ('a -> 'a 'a) ('a -> 'a bool) -> list)
-{ [nil bury [consd] compose] dip whilen }
+define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) (list 'd -> list 'd bool) -> 'A list)
+{ [nil bury [consd] compose] dip whilen pop }
 
 // reverses a list
 define rev : (list -> list)
@@ -414,7 +414,7 @@ define small : (list -> list bool)
 { empty [true] [rest empty nip] if }
 
 // Splits a list into two new lists
-define split : (list ('a -> bool) -> list list)
+define split : ('A list ('A list list 'b 'b -> 'A list list 'c bool) -> 'A list list)
 {
   nil bury nil bury
   [dup] rcompose
@@ -423,11 +423,11 @@ define split : (list ('a -> bool) -> list list)
 }
 
 // Appends item to first list in a pair of lists
-define cons_first : (list any -> list)
+define cons_first : (list 'a -> list)
 { [unpair] dip cons pair }
 
 // Appends item to second list in a pair of lists
-define cons_second : (list any -> list)
+define cons_second : (list 'a -> list)
 { [unpair] dip swap [cons] dip pair }
 
 // Removes head from first list and gives it to the next one
@@ -436,11 +436,11 @@ define move_head : (list list -> list list)
 
 // Returns the index of a value in a list or the size of the list
 // if not found
-define index_of : (list any -> list int)
+define index_of : (list 'a -> list int)
 { [neq] bind count_while }
 
 // splits a list in two at an index, the top result contains the second half
-// and the second result contains the frist half of the original list
+// and the second result contains the first half of the original list
 define split_at : (list int -> list list)
 { nil bury [move_head] swap repeat }
 
@@ -503,7 +503,7 @@ define hash_safe_get : (hash_list any any -> hash_list any)
 
 // Adds an element as unit list to a hash_list if it doesn't exist,
 // otherwise chain it to the current list item.
-define hash_add_chain : (hash_list any any -> hash_list)
+define hash_add_chain : (hash_list any 'a -> hash_list)
 {
   [[nil hash_safe_get] keep] dip // => hash_list curr key value
   swapd cons                     // => hash_list key list(curr, value)

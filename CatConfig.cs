@@ -15,6 +15,11 @@ namespace Cat
     static class Config
     {
         /// <summary>
+        /// Tells us whether this is a release build or not.
+        /// </summary>
+        public static bool gbReleaseVersion = false;
+
+        /// <summary>
         /// Controls whether inferred types will be output to the console.
         /// </summary>
         public static bool gbLogTypeInference = true;
