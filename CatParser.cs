@@ -73,15 +73,15 @@ namespace Cat
                 CatFxnType declaredType = new CatFxnType(node.mType);
                 if (!CatFxnType.CompareFxnTypes(declaredType, def.mpFxnType))
                 {
+                    MainClass.WriteLine("type error in function " + def.GetName());
                     if (!Config.gbVerboseInference)
                         MainClass.WriteLine("inferred type " + def.GetFxnType());
                     MainClass.WriteLine("declared type " + declaredType.ToString());
-                    MainClass.WriteLine("type error in function " + def.GetName());
                 }
                 else if (Config.gbVerboseTypeChecking)
                 {
-                    MainClass.WriteLine("declared type " + declaredType.ToString());
                     MainClass.WriteLine("type check successful for " + def.GetName());
+                    MainClass.WriteLine("declared type " + declaredType.ToString());
                 }
             }
         }
@@ -116,8 +116,9 @@ namespace Cat
         {
             Peg.Parser parser = new Peg.Parser(s);
             bool bResult = parser.Parse(CatGrammar.Line());
+            
             if (!bResult)
-                throw new Exception("failed to parse: " + s);
+                throw new Exception("failed to parse input");
             Peg.PegAstNode node = parser.GetAst();
 
             foreach (Peg.PegAstNode child in node.GetChildren())

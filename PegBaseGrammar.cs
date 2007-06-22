@@ -550,6 +550,7 @@ namespace Peg
         public static Rule Seq(Rule x0, Rule x1, Rule x2) { return new SeqRule(new Rule[] { x0, x1, x2 }); }
         public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3) { return new SeqRule(new Rule[] { x0, x1, x2, x3 }); }
         public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3, Rule x4) { return new SeqRule(new Rule[] { x0, x1, x2, x3, x4 }); }
+        public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3, Rule x4, Rule x5) { return new SeqRule(new Rule[] { x0, x1, x2, x3, x4, x5 }); }
         public static Rule Choice(Rule x0, Rule x1) { return new ChoiceRule(new Rule[] { x0, x1 }); }
         public static Rule Choice(Rule x0, Rule x1, Rule x2) { return new ChoiceRule(new Rule[] { x0, x1, x2 }); }
         public static Rule Choice(Rule x0, Rule x1, Rule x2, Rule x3) { return new ChoiceRule(new Rule[] { x0, x1, x2, x3 }); }
@@ -571,9 +572,5 @@ namespace Peg
         public static Rule Ident() { return Seq(IdentFirstChar(), Star(IdentNextChar())); }
         public static Rule EOW() { return Not(IdentNextChar()); }
         public static Rule DelimitedGroup(String x, Rule r, String y) { return Seq(CharSeq(x), Star(r), NoFail(CharSeq(y), "expected " + y)); }        
-        public static Rule LineComment() { return Seq(CharSeq("//"), NoFail(WhileNot(AnyChar(), NL()), "expected a new line")); }
-        public static Rule FullComment() { return Seq(CharSeq("/*"), WhileNot(AnyChar(), CharSeq("*/"))); }
-        public static Rule Comment() { return Choice(FullComment(), LineComment()); }
-        public static Rule WS() { return Star(Choice(CharSet(" \t\n\r"), Comment())); }
     }
 }

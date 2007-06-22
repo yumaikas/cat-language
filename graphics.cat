@@ -45,20 +45,19 @@ define nf
 { [no_fill] render }
 
 define el
-{ [ellipse] curry4 render }
+{ [ellipse] bind4 render }
 
 define ci
 { 0 0 dig dup el }
 
 define rect
-{ [rectangle] curry4 render }
+{ [rectangle] bind4 render }
 
 define poly
-{ [polygon] curry render }
+{ [polygon] bind render }
 
 define fill
-{ [set_solid_fill] curry render }
+{ [set_solid_fill] bind render }
 
 define sq
-{ [fd 90 tr] curry 4 repeat }
-
+{ [fd 90 tr] bind 4 repeat }

@@ -90,6 +90,12 @@ namespace Cat
                     return new AstMacroStackVar(node);
                 case "macro_name":
                     return new AstMacroName(node);
+                case "meta_data_content":
+                    return new AstMetaDataContent(node);
+                case "meta_data_label":
+                    return new AstMetaDataLabel(node);
+                case "meta_data_block":
+                    return new AstMetaDataBlock(node);
                 default:
                     throw new Exception("unrecognized node type in AST tree: " + node.GetLabel());
             }
@@ -662,4 +668,52 @@ namespace Cat
             CheckLabel("macro_name");
         }
     }
+    
+    #region AST nodes for representing meta data
+    public class AstMetaDataNode : CatAstNode
+    {
+        public List<AstMetaDataNode> children = new List<AstMetaDataNode>();
+
+        public AstMetaDataNode(PegAstNode node)
+            : base(node)
+        {
+            foreach (PegAstNode child in node.GetChildren())
+            {
+                AstMetaDataNode x = Create(child) as AstMetaDataNode;
+                if (x == null)
+                    throw new Exception("Meta data-nodes can only have meta-data nodes as children");
+                children.Add(x);
+            }
+        }
+    }
+
+    public class AstMetaDataContent : AstMetaDataNode
+    {
+        public AstMetaDataContent(PegAstNode node)
+            : base(node)
+        {
+            CheckLabel("meta_data_content");
+        }
+    }
+
+    public class AstMetaDataLabel : AstMetaDataNode
+    {
+        public AstMetaDataLabel(PegAstNode node)
+            : base(node)
+        {
+            CheckLabel("meta_data_label");
+            CheckIsLeaf(node);
+            Trace.Assert(children.Count == 0);
+        }
+    }
+
+    public class AstMetaDataBlock : AstMetaDataNode
+    {
+        public AstMetaDataBlock(PegAstNode node)
+            : base(node)
+        {
+            CheckLabel("meta_data_block");
+        }
+    }
+    #endregion
 }

@@ -4,7 +4,7 @@ define pattern0
 define pattern1
 { [blue pc [100 sq 15 tr 10 fd] 24 repeat] render }
 
-define fractal0 : (int -> )
+define fractal0
 {
   dup sq 15 tr           // draw a square
   pu dup fd pd           // move forward
@@ -14,7 +14,7 @@ define fractal0 : (int -> )
   if
 }
 
-define fractal1 : (int -> )
+define fractal1
 {
   dup sq
   dup 3 <
