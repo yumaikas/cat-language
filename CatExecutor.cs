@@ -175,13 +175,9 @@ namespace Cat
             {
                 CatParser.Parse(s, this);
             }
-            catch (CatException e)
-            {
-                MainClass.WriteLine("uncaught user exception: " + MainClass.ObjectToString(e.GetObject()));
-            }
             catch (Exception e)
             {
-                MainClass.WriteLine("uncaught system exception: " + e.Message);
+                MainClass.WriteLine("exception: " + e.Message);
             }
         }
         #endregion

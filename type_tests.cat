@@ -1,18 +1,35 @@
+
+define bind_self : (('A self -> 'B) -> ('A -> 'B))
+{ dup bind }
+
 define test
 { true [true] [false] if }
 
-define recursive
-{ [recursive] }
+define rec_noop
+{ [rec_noop] }
 
-define binary_recursive
-{ [binary_recursive] [binary_recursive] }
+define bin_rec_noop
+{ [bin_rec_noop] [bin_rec_noop] }
 
-define m : ('A ('A ('B -> 'C) -> 'C) -> 'C)
+define m
 { dup apply }
 
 define y
-{ dup quote [y] compose swap apply }
+{ [dup bind] swap compose dup apply }
 
+define eqz
+{ dup 0 eq }
+
+define dec
+{ 1 sub_int }
+
+define fix_step
+{ [eqz] dip swap [pop] [[dec dup writeln] dip apply] if }
+
+define fix_test
+{ 10 [fix_step] y }
+
+/*
 define aa : ('a -> 'a 'a)
 { dup }
 
@@ -51,3 +68,4 @@ define appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C)
 
 define inc_int : (int -> int)
 { 1 add_int }
+*/

@@ -20,11 +20,6 @@ namespace Cat
         public static bool gbReleaseVersion = false;
 
         /// <summary>
-        /// Controls whether inferred types will be output to the console.
-        /// </summary>
-        public static bool gbLogTypeInference = true;
-               
-        /// <summary>
         /// Controls how names are assigned to type variable declarations and type variables
         /// </summary>
         public static bool gbSimpleTypeNames = true;
@@ -85,7 +80,7 @@ namespace Cat
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
-        public static bool gbVerboseInference = false;
+        public static bool gbVerboseInference = true;
 
         /// <summary>
         /// Outputs the result of a type inference

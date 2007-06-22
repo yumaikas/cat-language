@@ -440,7 +440,11 @@ namespace Cat
         {
             foreach (CatKind k in vec.GetKinds())
             {
-                if (k is CatFxnType)
+                if (k is CatSelfType)
+                {
+                    // do nothing
+                }
+                else if (k is CatFxnType)
                 {
                     CatFxnType ft = k as CatFxnType;
                     GetAllVars(ft.GetCons(), vars);
