@@ -31,6 +31,11 @@ namespace Cat
                 foreach (string s in a)
                     gsInputFiles.Add(s);
 
+                if (!Config.gbReleaseVersion)
+                {
+                    WriteLine("WARNING: this is an unstable development build of Cat");
+                }
+
                 // Splash screen 
                 if (Config.gbShowLogo)
                 {

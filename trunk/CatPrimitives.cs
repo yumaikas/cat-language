@@ -1597,7 +1597,7 @@ namespace Cat
         public class Fold : PrimitiveFunction
         {
             public Fold()
-                : base("gfold", "('A list ('A any -> 'A) -> 'A)", "recursively applies a function to each element in a list")
+                : base("gfold", "('A list ('A 'b -> 'A) -> 'A)", "recursively applies a function to each element in a list")
             { }
 
             public override void Eval(Executor exec)
@@ -1702,7 +1702,7 @@ namespace Cat
         public class CountWhile : PrimitiveFunction
         {
             public CountWhile()
-                : base("count_while", "(list ('a -> bool) -> list count)", "creates a new list by dropping items while the predicate is true")
+                : base("count_while", "(list ('a -> bool) -> list int)", "creates a new list by dropping items while the predicate is true")
             { }
 
             public override void Eval(Executor exec)
@@ -1732,7 +1732,7 @@ namespace Cat
         public class Repeater : PrimitiveFunction
         {
             public Repeater()
-                : base("repeater", "(any -> list)", 
+                : base("repeater", "('a -> list)", 
                     "creates a lazy list by repeating a value over and over again")
             { }
 
@@ -1761,7 +1761,7 @@ namespace Cat
         public class SetAt : PrimitiveFunction
         {
             public SetAt()
-                : base("set_at", "(list any int -> list)", "sets an item in a mutable list")
+                : base("set_at", "(list 'a int -> list)", "sets an item in a mutable list")
             { }
 
             public override void Eval(Executor exec)
@@ -1802,12 +1802,26 @@ namespace Cat
             static Random mGen = new Random();
 
             public RandomDbl()
-                : base("rnd_dbl", "( ~> dbl)", "creates a random floating point number between zero and 1.0")
+                : base("rnd_dbl", "( ~> double)", "creates a random floating point number between zero and 1.0")
             { }
 
             public override void Eval(Executor exec)
             {
                 exec.Push(mGen.NextDouble());
+            }
+        }
+        #endregion 
+
+        #region casting functions
+        public class AsVar : PrimitiveFunction
+        {
+            public AsVar()
+                : base("as_var", "('a -> var)", "converts anything into a variant")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                // does nothing.
             }
         }
 
@@ -1881,8 +1895,7 @@ namespace Cat
             {
                 exec.Push(exec.TypedPop<double>());
             }
-        }
-        
+        }        
         #endregion
     }
 }

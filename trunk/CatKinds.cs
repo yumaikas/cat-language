@@ -76,7 +76,7 @@ namespace Cat
             if (o is int)
                 return "int";
             if (o is Double)
-                return "dbl";
+                return "double";
             if (o is string)
                 return "string";
             if (o is Byte)
@@ -97,7 +97,7 @@ namespace Cat
             {
                 case ("HashList"): return "hash_list";
                 case ("Int32"): return "int";
-                case ("Double"): return "dbl";
+                case ("Double"): return "double";
                 case ("FList"): return "list";
                 case ("Object"): return "any";
                 case ("Function"): return "function";
