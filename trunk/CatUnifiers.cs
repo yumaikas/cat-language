@@ -260,13 +260,31 @@ namespace Cat
             if (k2 == null)
                 return k1;
 
-            if ((k1 is CatFxnType) || (k2 is CatFxnType))
+            if (k1 is CatSelfType) 
+            {
+                Trace.Assert(false); // TODO: throw an exception
+
+                if (!(k2 is CatFxnType) && !k2.IsKindVar())
+                    throw new KindException(k1, k2);
+
+                return k1;
+            }
+            else if (k2 is CatSelfType)
+            {
+                Trace.Assert(false); // TODO: throw an exception
+
+                if (!(k1 is CatFxnType) && !k1.IsKindVar())
+                    throw new KindException(k1, k2);
+
+                return k2;
+            }
+            else if ((k1 is CatFxnType) || (k2 is CatFxnType))
             {
                 if (!(k1 is CatFxnType)) return k2;
                 if (!(k2 is CatFxnType)) return k1;
                 CatFxnType ft1 = k1 as CatFxnType;
                 CatFxnType ft2 = k2 as CatFxnType;
-                if (ft1.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count) 
+                if (ft1.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count)
                     return ft1;
                 else
                     return ft2;
@@ -276,7 +294,7 @@ namespace Cat
                 if (!(k1 is CatTypeVector)) return k2;
                 if (!(k2 is CatTypeVector)) return k1;
                 CatTypeVector vec1 = k1 as CatTypeVector;
-                CatTypeVector vec2 = k2 as CatTypeVector;                
+                CatTypeVector vec2 = k2 as CatTypeVector;
                 if (vec1.GetKinds().Count >= vec2.GetKinds().Count)
                     return vec1;
                 else
@@ -331,33 +349,105 @@ namespace Cat
             }
         }
 
-        public void OutputConstraints()
+        public override string ToString()
         {
-            /* Alternative method of outputting constraints
+            string ret = "";
             foreach (KeyValuePair<string, List<CatKind>> kvp in mConstraints)
             {
-                string s = kvp.Key + " = ";
+                ret += kvp.Key + " = ";
                 foreach (CatKind k in kvp.Value)
-                    s += k.ToString() + " | ";
-                MainClass.WriteLine(s);
+                    ret += k.ToString() + " | ";
+                ret += '\n';
             }
-             */
-            foreach (List<CatKind> list in mConstraintListList)
+            return ret;
+        }
+
+        private bool VectorContainsVar(CatTypeVector vec, string s)
+        {
+            foreach (CatKind child in vec.GetKinds())
             {
-                string s = "";
-                for (int i = 0; i < list.Count; ++i)
+                if (child.ToString().Equals(s)) 
+                    return true;
+                if (child.IsKindVar() && mConstraints.ContainsKey(child.ToString()))
                 {
-                    if (i > 0) s += " = ";
-                    s += list[i].ToString();
+                    List<CatKind> list = mConstraints[child.ToString()];
+                    foreach (CatKind k in list)
+                    {
+                        if (k.IsKindVar())
+                        {
+                            if (k.ToString().Equals(s))
+                                return true;
+                        }
+                        else if (k is CatTypeVector)
+                        {
+                            // TODO: verify that this indeed is correct. I suspect so, 
+                            // but I am not 100% convinced. 
+                            if (VectorContainsVar(k as CatTypeVector, s))
+                                return true;
+                        }
+                            /* This is broken.
+                             * 
+                        else if (k is CatFxnType)
+                        {
+                            if (FxnContainsVar(k as CatFxnType, s))
+                                throw new Exception("Circular reference to '" + s + "' detected greater than one level deep ");
+                        }
+                             */
+                    }
                 }
-                MainClass.WriteLine(s);
+            }
+
+            // TODO: detect deeper cycles, perhaps if any of the children contains the var, then 
+            // we throw an exception? Could be an algorithm with an infinite loop.
+
+            return false;
+        }
+
+        private bool FxnContainsVar(CatFxnType ft, string s)
+        {
+            return VectorContainsVar(ft.GetCons(), s) || VectorContainsVar(ft.GetProd(), s);
+        }
+
+        private bool IsSelfType(string s)
+        {
+            if (!mConstraints.ContainsKey(s))
+                return false;
+
+            foreach (CatKind child in mConstraints[s])
+            {
+                if (child is CatFxnType)
+                {
+                    if (FxnContainsVar(child as CatFxnType, s))
+                        return true;
+                }
+                else if (child is CatTypeVector)
+                {
+                    if (VectorContainsVar(child as CatTypeVector, s))
+                        throw new Exception("illegal circular type vector reference found: " + s);
+                }
+            }
+
+            return false;
+        }
+
+        private void DetectSelfTypes()
+        {
+            foreach (KeyValuePair<string, List<CatKind>> kvp in mConstraints)
+            {
+                if (IsSelfType(kvp.Key))
+                    kvp.Value.Add(new CatSelfType());
             }
         }
 
         private void CreateUnifiers()
         {
+            // Resolve circular reference:
+            // If there is a function-type, does it contain any type-variable that resolves to it? 
+            // This means traversing the graph. 
+            // If that is indeed possible, add "self" to the constraint list. 
+
             foreach (KeyValuePair<string, List<CatKind>> kvp in mConstraints)
-            {
+            {                
                 List<CatKind> list = kvp.Value;
 
                 // Empty lists are not supposed to be possible.
@@ -402,8 +492,15 @@ namespace Cat
         {
             if (k.IsKindVar())
             {
-                if (mUnifiers.ContainsKey(k.ToString()))
-                    return mUnifiers[k.ToString()];
+                string s = k.ToString();
+                if (mUnifiers.ContainsKey(s))
+                {
+                    // TEMP:
+                    if (IsSelfType(s))
+                        return new CatSelfType();
+
+                    return mUnifiers[s];
+                }
                 else
                     return k;
             }
@@ -445,6 +542,7 @@ namespace Cat
 
         public Dictionary<string, CatKind> GetResolvedUnifiers()
         {
+            //DetectSelfTypes();
             CreateUnifiers();
             ResolveUnifiers();
             return mUnifiers;

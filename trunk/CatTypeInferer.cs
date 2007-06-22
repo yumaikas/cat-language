@@ -37,7 +37,7 @@ namespace Cat
                 if (f.Count == 0)
                 {
                     if (bVerbose)
-                        MainClass.WriteLine("inferred type is ( -> )");
+                        MainClass.WriteLine("type is ( -> )");
                     return CatFxnType.Create("( -> )");
                 }
                 else if (f.Count == 1)
@@ -45,7 +45,7 @@ namespace Cat
                     Function x = f[0];
 
                     if (bVerbose)
-                        MainClass.WriteLine("inferred type is " + x.GetTypeString());
+                        MainClass.WriteLine("type of " + x.msName + " is " + x.GetTypeString());
                     return x.GetFxnType();
                 }
                 else
@@ -122,7 +122,7 @@ namespace Cat
 
                 MainClass.WriteLine("Constraints:");
                 MainClass.WriteLine(left.GetProd() + " = " + right.GetCons());
-                mUnifiers.OutputConstraints();
+                MainClass.WriteLine(mUnifiers.ToString());
             }
 
             Dictionary<string, CatKind> unifiers = mUnifiers.GetResolvedUnifiers();
