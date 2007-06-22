@@ -53,7 +53,7 @@ namespace Cat
 
         public bool IsSubtypeOf(CatKind k)
         {
-            if (this.ToString().Equals("var")) 
+            if (this.ToString().Equals("any")) 
                 return true;
             return this.Equals(k);
         }
@@ -61,6 +61,51 @@ namespace Cat
         public bool IsKindVar()
         {
             return (this is CatTypeVar) || (this is CatStackVar);
+        }
+
+        public static string TypeNameFromObject(Object o)
+        {
+            if (o is HashList)
+                return "hash_list";
+            if (o is ByteBlock)
+                return "byte_block";
+            if (o is FList)
+                return "list";
+            if (o is Boolean)
+                return "bool";
+            if (o is int)
+                return "int";
+            if (o is Double)
+                return "dbl";
+            if (o is string)
+                return "string";
+            if (o is Byte)
+                return "byte";
+            if (o is Primitives.Bit)
+                return "bit";
+            if (o is Function)
+                return (o as Function).GetTypeString();
+            if (o is Char)
+                return "char";
+            return "any";
+        }
+
+        public static string TypeToString(Type t)
+        {
+            // TODO: fix this up. I don't like where it is.
+            switch (t.Name)
+            {
+                case ("HashList"): return "hash_list";
+                case ("Int32"): return "int";
+                case ("Double"): return "dbl";
+                case ("FList"): return "list";
+                case ("Object"): return "any";
+                case ("Function"): return "function";
+                case ("Boolean"): return "bool";
+                case ("String"): return "string";
+                case ("Char"): return "char";
+                default: return t.Name;
+            }
         }
     }
 

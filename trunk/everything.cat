@@ -1,6 +1,6 @@
 "type_tests.cat" #load
 "standard.cat" #load
 "macros.cat" #load
-"tests.cat" #load
+//"tests.cat" #load
 //"graphics.cat" #load
 //"demo.cat" #load

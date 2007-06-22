@@ -2,6 +2,7 @@
 /// http://creativecommons.org/licenses/publicdomain/
 
 using System;
+using System.Diagnostics;
 
 namespace Cat
 {
@@ -16,7 +17,8 @@ namespace Cat
 
     /// <summary>
     /// This is a quasi-functional list. It implements common functional list operations in a non-mutable 
-    /// manner and behaves as a mutable iterator.  
+    /// manner and at the same time also can behave as an iterator. When iterating over a functional-list
+    /// call GetIter() to get an appropriate iterator class. 
     /// There are several different specializations of each class which reduce the complexity of many 
     /// common algorithms, and offer optimized versions of the classes for different scenarios. 
     /// </summary>
@@ -277,6 +279,44 @@ namespace Cat
             return new FlattenedFList(this);
         }
         #endregion
+
+        public Type[] GetTypeArray()
+        {
+            Type[] ret = new Type[Count()];
+            FList iter = GetIter();
+            
+            int n = 0;
+            while (!iter.IsEmpty())
+            {
+                object head = iter.GetHead();
+                if (head is FList)
+                    ret[n] = typeof(object[]);
+                else
+                    ret[n] = head.GetType();
+                iter = iter.GotoNext();
+            }
+            Trace.Assert(n == Count());
+            return ret;
+        }
+
+        public object[] GetObjectArray()
+        {
+            object[] ret = new object[Count()];
+            FList iter = GetIter();
+
+            int n = 0;
+            while (!iter.IsEmpty())
+            {
+                Object head = iter.GetHead();
+                if (head is FList)
+                {
+                    ret[n] = (head as FList).GetObjectArray();
+                }
+                iter = iter.GotoNext();
+            }
+            Trace.Assert(n == Count());
+            return ret;
+        }
     }
 
     public class EmptyList : FList

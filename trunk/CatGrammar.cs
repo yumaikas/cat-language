@@ -10,6 +10,38 @@ namespace Cat
 {
     public class CatGrammar : Grammar
     {
+        public static Rule LineComment() 
+        { 
+            return Seq(CharSeq("//"), NoFail(WhileNot(AnyChar(), NL()), "expected a new line")); 
+        }
+        public static Rule BlockComment()
+        {
+            return Seq(CharSeq("/*"), NoFail(WhileNot(AnyChar(), CharSeq("*/")), "expected a new line"));
+        }
+        public static Rule UnlabeledMetaData()
+        {
+            return AstNode("meta_data_content", Seq(SingleChar('{'), WhileNot(Choice(Delay(MetaData), AnyChar()), SingleChar('}'))));
+        }
+        public static Rule LabeledMetaData()
+        {
+            return Seq(AstNode("meta_data_label", Ident()), UnlabeledMetaData());
+        }
+        public static Rule MetaData()
+        {
+            return Choice(UnlabeledMetaData(), LabeledMetaData());
+        }
+        public static Rule MetaDataBlock() 
+        { 
+            return AstNode("meta_data_block", Seq(CharSeq("{{"), WhileNot(Choice(MetaData(), AnyChar()), CharSeq("}}")))); 
+        }
+        public static Rule Comment() 
+        { 
+            return Choice(BlockComment(), LineComment()); 
+        }
+        public static Rule WS() 
+        { 
+            return Star(Choice(CharSet(" \t\n\r"), Comment())); 
+        }
         public static Rule CatIdentChar()
         {
             return Choice(IdentNextChar(), CharSet("~`!@#$%^&*-+=|:;<>.?/"));
@@ -128,13 +160,9 @@ namespace Cat
         {
             return Token(AstNode("type_name", Ident()));
         }
-        public static Rule TypeAlias()
-        {
-            return Token(Seq(Ident(), Token("="), Delay(TypeComponent)));
-        }
         public static Rule TypeComponent()
         {
-            return Choice(TypeAlias(), TypeName(), TypeOrStackVar(), Delay(FxnType));
+            return Choice(TypeName(), TypeOrStackVar(), Delay(FxnType));
         }
         public static Rule Production()
         {
@@ -159,7 +187,7 @@ namespace Cat
         public static Rule FxnDef()
         {
             return AstNode("def", Seq(Word("define"), NoFail(Name(), "expected name"),
-                Opt(Params()), Opt(TypeDecl()), NoFail(CodeBlock(), "expected a code block")));
+                Opt(Params()), Opt(TypeDecl()), Opt(MetaDataBlock()), NoFail(CodeBlock(), "expected a code block")));
         }
         #region macros
         public static Rule MacroTypeVar()

@@ -41,6 +41,35 @@ namespace Peg
             }
         }
 
+        public string ParserPosition
+        {
+            get
+            {
+                string ret = "";
+                int nLine = 0;
+                int nLastLineChar = 0;
+                for (int i=0; i < mIndex; ++i)
+                {
+                    if (mData[i].Equals('\n'))
+                    {
+                        nLine++;
+                        nLastLineChar = i;
+                    }
+                }
+                int nCol = mIndex - nLastLineChar;
+                ret += "Line " + nLine.ToString() + ", Column " + nCol + "\n";
+                
+                int nNextLine = mIndex;
+                while (nNextLine < mData.Length && !mData[nNextLine].Equals('\n'))
+                    nNextLine++;
+
+                ret += mData.Substring(nLastLineChar, nNextLine - nLastLineChar) + "\n";
+                ret += new String(' ', nCol);
+                ret += "^";
+                return ret;
+            }
+        }
+
         public void SetPos(int pos)
         {
             mIndex = pos;
@@ -96,7 +125,16 @@ namespace Peg
 
         public bool Parse(Peg.Grammar.Rule g)
         {
-            bool b = g.Match(this);
+            bool b = false;
+            try
+            {
+                b = g.Match(this);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Parsing error occured with message: " + e.Message);
+                Console.WriteLine(ParserPosition);                
+            }
 
             if (b)
             {

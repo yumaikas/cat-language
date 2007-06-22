@@ -10,7 +10,6 @@ namespace Cat
 {
     public class Unifiers
     {
-        int mnId = 0;
         List<List<CatKind>> mConstraintListList = new List<List<CatKind>>();
         Dictionary<string, List<CatKind>> mConstraints = new Dictionary<string, List<CatKind>>();
         Dictionary<string, CatKind> mUnifiers = new Dictionary<string, CatKind>();
@@ -169,6 +168,7 @@ namespace Cat
         /// </summary>
         private void CheckConstraints()
         {
+            /*
             foreach (List<CatKind> list in mConstraintListList)
             {
                 if (!mConstraints.ContainsValue(list))
@@ -192,6 +192,7 @@ namespace Cat
                 if (!mConstraintListList.Contains(list))
                     throw new Exception("internal constraints error");
             }
+             */
         }
 
         public void AddConstraint(string s, CatKind k)
@@ -299,7 +300,7 @@ namespace Cat
             else if (k2.IsKindVar())
             {
                 // TODO: check that they are both the same kind
-                return k2;
+                return k1;
             }
             else if (k1 is CatSimpleTypeKind)
             {
@@ -318,7 +319,9 @@ namespace Cat
                 }
                 else
                 {
-                    throw new Exception(s1 + " is not compatible with " + s2);
+                    if (Config.gbVerboseInference)
+                        MainClass.WriteLine("warning unfiying over 'any': " + s1 + " is not compatible with " + s2);
+                    return new CatSimpleTypeKind("any");
                 }
             }
             else
@@ -449,7 +452,6 @@ namespace Cat
 
         public void Clear()
         {
-            mnId = 0;
             mConstraintListList.Clear();
             mConstraints.Clear();
             mUnifiers.Clear();

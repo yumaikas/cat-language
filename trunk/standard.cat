@@ -40,54 +40,54 @@ define rbind : (('B 'a -> 'C) 'a -> ('B -> 'C))
 //=============================================================================
 // Dynamically dispatched functions
 
-define neg : (var -> var)
+define neg : (any -> any)
 { [int [neg_int] pair double [neg_dbl] pair] to_list dispatch1 }
 
-define add : (var var -> var)
+define add : (any any -> any)
 { [int [add_int] pair double [add_dbl] pair byte [add_byte] pair bit [add_bit] pair string [add_str] pair] to_list dispatch2 }
 
-define sub : (var var -> var)
+define sub : (any any -> any)
 { [int [sub_int] pair double [sub_dbl] pair byte [sub_byte] pair bit [sub_bit] pair] to_list dispatch2 }
 
-define mul : (var var -> var)
+define mul : (any any -> any)
 { [int [mul_int] pair double [mul_dbl] pair byte [mul_byte] pair bit [mul_bit] pair] to_list dispatch2 }
 
-define mod : (var var -> var)
+define mod : (any any -> any)
 { [int [mod_int] pair double [mod_dbl] pair byte [mod_byte] pair bit [mod_bit] pair] to_list dispatch2 }
 
-define div : (var var -> var)
+define div : (any any -> any)
 { [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch2 }
 
-define lt : (var var -> bool)
-{ [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch2 }
+define lt : (any any -> bool)
+{ [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
 
-define gt : (var var -> bool)
-{ [int [gt_int] pair double [gt_dbl] pair byte [gt_byte] pair bit [gt_bit] pair string [lt_str] pair] to_list dispatch2 }
+define gt : (any any -> bool)
+{ [int [gt_int] pair double [gt_dbl] pair byte [gt_byte] pair bit [gt_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
 
-define lteq : (var var -> bool)
-{ [int [lteq_int] pair double [lteq_dbl] pair byte [lteq_byte] pair bit [lteq_bit] pair string [lt_str] pair] to_list dispatch2 }
+define lteq : (any any -> bool)
+{ [int [lteq_int] pair double [lteq_dbl] pair byte [lteq_byte] pair bit [lteq_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
 
-define gteq : (var var -> bool)
-{ [int [gteq_int] pair double [gteq_dbl] pair byte [gteq_byte] pair bit [gteq_bit] pair string [lt_str] pair] to_list dispatch2 }
+define gteq : (any any -> bool)
+{ [int [gteq_int] pair double [gteq_dbl] pair byte [gteq_byte] pair bit [gteq_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
 
 //=============================================================================
 // Mathematical definitions
 
 // Not equals
-define neq
+define neq : ('a 'a -> bool)
 { eq not }
 
 // Increment a value
-define inc : (var -> var) { 1 add }
+define inc : (int -> int) { 1 add_int }
 
 // Decrement a value
-define dec : (var -> var) { 1 sub }
+define dec : (int -> int) { 1 sub_int }
 
 // Multiply a value by itself
-define sqr : (var var -> var) { dup mul }
+define sqr : (any -> any) { dup mul }
 
 // Treats top two values as a fraction 6 2 3 frac = 6 * (2 / 3)
-define frac : (int int int -> int) { [mul] dip div }
+define frac : (int int int -> int) { [mul_int] dip div_int }
 
 //=============================================================================
 // Mathematical symbols
@@ -129,7 +129,7 @@ define pop2 : ('a 'b -> )
 { pop pop }
 
 define pop3 : ('a 'b 'c -> )
-{ pop pop pop pop }
+{ pop pop pop }
 
 define pop4 : ('a 'b 'c 'd -> )
 { pop pop pop pop }
@@ -227,40 +227,46 @@ define dup5 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a 'b 'c 'd 'e)
 //=============================================================================
 // Predicates and comparison functions
 
-define neq : (var var -> bool) { eq not }
-define eqz : ('a -> 'a bool)  { dup 0 eq }
-define neqz : ('a -> 'a bool) { eqz not }
-define gtz : ('a -> 'a bool) { dup 0 gt }
-define gteqz : ('a -> 'a bool) { dup 0 gteq }
-define ltz : ('a -> 'a bool) { dup 0 lt }
-define lteqz : ('a -> 'a bool) { dup 0 lteq }
+define eqz : (int -> int bool)  { dup 0 eq }
+define neqz : (int -> int bool) { eqz not }
+define gtz : (int -> int bool) { dup 0 gt_int }
+define gteqz : (int -> int bool) { dup 0 gteq_int }
+define ltz : (int -> int bool) { dup 0 lt_int }
+define lteqz : (int -> int bool) { dup 0 lteq_int }
 
 // Not really a predicate, but used to generate predicate
-define modn : (int -> int bool) { dupd mod 0 eq }
+define modn : (any any -> any bool) { dupd mod 0 eq }
 
-define even : (var -> var bool) { 2 modn }
-define odd : (var -> var bool) { dup inc mod 0 eq }
+define even : (any -> any bool) { 2 modn }
+define odd : (any -> any bool) { even not }
 
-define is_eq : ('a 'a -> 'a bool)  { dupd eq }
-define is_neq : ('a 'a -> 'a bool) { dupd neg }
-define is_gt : ('a 'a -> 'a bool) { dupd gt }
-define is_gteq : ('a 'a -> 'a bool) { dupd gteq }
-define is_lt : ('a 'a -> 'a bool) { dupd lt }
-define is_lteq : ('a 'a -> 'a bool) { dupd lteq }
+define is_eq : ('t 't -> 't bool)  { dupd eq }
+define is_neq : ('t 't -> 't bool) { dupd neq }
+define is_gt : (any any -> any bool) { dupd gt }
+define is_gteq : (any any -> any bool) { dupd gteq }
+define is_lt : (any any -> any bool) { dupd lt }
+define is_lteq : (any any -> any bool) { dupd lteq }
+
+define are_eq : ('t 't -> 't 't bool)  { dup2 eq }
+define are_neq : ('t 't -> 't 't bool) { dup2 neq }
+define are_gt : (any any -> any any bool) { dup2 gt }
+define are_gteq : (any any -> any any bool) { dup2 gteq }
+define are_lt : (any any -> any any bool) { dup2 lt }
+define are_lteq : (any any -> any any bool) { dup2 lteq }
 
 //=============================================================================
 // Predicate generation functions
 
-define ltf : ('a -> ('a -> 'a bool))
+define ltf : (any -> (any -> any bool))
 { [dupd lt] bind }
 
-define lteqf : ('a -> ('a -> 'a bool))
+define lteqf : (any -> (any -> any bool))
 { [dupd lteq] bind }
 
-define gtf : ('a -> ('a -> 'a bool))
+define gtf : (any -> (any -> any bool))
 { [dupd gt] bind }
 
-define gteqf : ('a -> ('a -> 'a bool))
+define gteqf : (any -> (any -> any bool))
 { [dupd gteq] bind }
 
 define eqf : ('a -> ('a -> 'a bool))
@@ -269,26 +275,26 @@ define eqf : ('a -> ('a -> 'a bool))
 define neqf : ('a -> ('a -> 'a bool))
 { [dupd neq] bind }
 
-define modnf : ('a -> ('a -> 'a bool))
-{ [dupd modn] bind }
+define modnf : (any -> (any -> any bool))
+{ [modn] bind }
 
 //=============================================================================
 // Comparison predicates
 
-define compare_lt : ('a 'a -> 'a 'a bool)
+define compare_lt : (any any -> any any bool)
 { dup2 lt }
 
-define compare_lteq : ('a 'a -> 'a 'a bool)
+define compare_lteq : (any any -> any any bool)
 { dup2 lteq  }
 
-define compare_gt : ('a 'a -> 'a 'a bool)
+define compare_gt : (any any -> any any bool)
 { dup2 gt }
 
-define compare_gteq : ('a 'a -> 'a 'a bool)
+define compare_gteq : (any any -> any any bool)
 { dup2 lt }
 
 // The default comparison predicate uses lteq ( <= )
-define compare : ('a 'a -> 'a 'a bool)
+define compare : (any any -> any any bool)
 { compare_lteq }
 
 //=============================================================================
@@ -325,7 +331,7 @@ define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 define repeat : ('A ('A -> 'A) int -> 'A)
 {
   swap            // 'A int [body]
-  [dip dec] bind // 'A int [[body] dip dec]
+  [dip dec] bind  // 'A int [[body] dip dec]
   [neqz] while pop
 }
 
@@ -341,7 +347,7 @@ define whilene
 define whilenz
 { [neqz] while }
 
-define for_each : ('A list ('A 'b -> 'A) -> 'A)
+define for_each : ('A list ('A any -> 'A) -> 'A)
 { [dip] bind [uncons swap] rcompose whilene pop }
 
 // like repeat but an index is passed at each iteration (0..n-1)
@@ -354,7 +360,7 @@ define rfor : ('A ('A int -> 'A) int -> 'A)
 
 // Output
 define print_list : (list ~> list)
-{ [writeln] for_each }
+{ dup [writeln] for_each }
 
 //=============================================================================
 // list operators
@@ -372,25 +378,25 @@ define ()
 { nil }
 
 // list comprehension
-define lc : (list ('a -> bool) ('a -> 'b) -> list)
+define lc : (list ('a -> bool) ('b -> 'c) -> list)
 { [take_while] dip map }
 
 define consd
 { [cons] dip }
 
-define swons : (var list -> list)
+define swons : ('a list -> list)
 { swap cons }
 
-define uncons2 : (list -> list var var)
+define uncons2 : (list -> list any any)
 { uncons [uncons] dip }
 
-define uncons3 : (list -> list var var var)
+define uncons3 : (list -> list any any any)
 { uncons [uncons2] dip }
 
-define uncons4 : (list -> list var var var var)
+define uncons4 : (list -> list any any any any)
 { uncons [uncons3] dip }
 
-define unpair : (list -> var var)
+define unpair : (list -> any any)
 { uncons [head] dip }
 
 define fold : (list 'a ('a 'b -> 'a) -> 'a)
@@ -398,14 +404,6 @@ define fold : (list 'a ('a 'b -> 'a) -> 'a)
 
 define unfold : ('a ('a -> 'a 'a) ('a -> 'a bool) -> list)
 { [nil bury [consd] compose] dip whilen }
-
-// Returns true iff any value satisfies the condition
-define any : (list ('a -> bool) -> bool)
-{ dupd [or] compose false swap fold }
-
-// Returns true iff all values satisfy the condition
-define all : (list ('a -> bool) -> bool)
-{ dupd [and] compose true swap fold }
 
 // reverses a list
 define rev : (list -> list)
@@ -425,20 +423,20 @@ define split : (list ('a -> bool) -> list list)
 }
 
 // Appends item to first list in a pair of lists
-define cons_first : (list var -> list)
+define cons_first : (list any -> list)
 { [unpair] dip cons pair }
 
 // Appends item to second list in a pair of lists
-define cons_second : (list var -> list)
+define cons_second : (list any -> list)
 { [unpair] dip swap [cons] dip pair }
 
 // Removes head from first list and gives it to the next one
-define move_head : (list list -> list lsit)
-{ uncons swap cons }
+define move_head : (list list -> list list)
+{ uncons swap [cons] dip }
 
 // Returns the index of a value in a list or the size of the list
 // if not found
-define index_of : (list var -> list int)
+define index_of : (list any -> list int)
 { [neq] bind count_while }
 
 // splits a list in two at an index, the top result contains the second half
@@ -476,7 +474,7 @@ define ones : ( -> list)
 //==============================================================================
 // Vector functions
 
-define sum : (list -> var)
+define sum : (list -> any)
 { 0 [+] fold }
 
 define scale_int_vector : (list int -> list)
@@ -485,27 +483,27 @@ define scale_int_vector : (list int -> list)
 define translate_int_vector : (list int -> list)
 { [add_int] bind map }
 
-define scale_dbl_vector : (list int -> list)
+define scale_dbl_vector : (list double -> list)
 { [mul_dbl] bind map }
 
-define translate_dbl_vector : (list int -> list)
+define translate_dbl_vector : (list double -> list)
 { [add_dbl] bind map }
 
 //==============================================================================
 // Hash helper functions
 
 // Gets a value from a hash_list. If it doesn't exist then uses the default
-define hash_safe_get : (hash_list key=var default=var -> hash_list var)
+define hash_safe_get : (hash_list any any -> hash_list any)
 {
   [[hash_contains] keep] dip // => hash_list bool key default
   quote                      // => hash_list bool key [default]
-  [[hash_get] bind] dip     // => hash_list bool [key hash_get] [default]
+  [[hash_get] bind] dip      // => hash_list bool [key hash_get] [default]
   if                         // => hash_list result
 }
 
 // Adds an element as unit list to a hash_list if it doesn't exist,
 // otherwise chain it to the current list item.
-define hash_add_chain : (hash_list key=var value=var -> hash_list)
+define hash_add_chain : (hash_list any any -> hash_list)
 {
   [[nil hash_safe_get] keep] dip // => hash_list curr key value
   swapd cons                     // => hash_list key list(curr, value)
@@ -532,13 +530,16 @@ define qv
 define eval
 { "'eval' has been replaced with 'apply'" throw }
 
+define curry
+{ "'curry' has been replaced with 'bind'" throw }
+
 define foldl
 { "'foldl' has been replaced with 'fold'" throw }
 
 //=============================================================================
 // Exception throwing and handling
 
-define throw_if : (bool var -> )
+define throw_if : (bool any -> )
 { [throw] bind [] if }
 
 define assert : (bool -> )
@@ -562,7 +563,8 @@ define try : ('A ('A -> 'A) -> 'A)
 //     freduce = pair(list('output_value), 'output_key) -> pair('output_value, 'output_key)
 //
 
-define map_reduce { [map flatten self_join] dip map }
+define map_reduce
+{ [map flatten self_join] dip map }
 
 //========================================================================================
 // Quick sort algorithm
