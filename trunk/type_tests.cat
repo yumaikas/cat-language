@@ -29,7 +29,6 @@ define fix_step
 define fix_test
 { 10 [fix_step] y }
 
-/*
 define aa : ('a -> 'a 'a)
 { dup }
 
@@ -68,4 +67,3 @@ define appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C)
 
 define inc_int : (int -> int)
 { 1 add_int }
-*/

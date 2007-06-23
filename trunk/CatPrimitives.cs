@@ -1897,5 +1897,81 @@ namespace Cat
             }
         }        
         #endregion
+
+        #region graphics primitives 
+        public class OpenWindow : PrimitiveFunction
+        {
+            public OpenWindow()
+                : base("open_window", "( ~> )", "opens a drawing window")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                WindowGDI.OpenWindow();
+            }
+        }
+
+        public class CloseWindow : PrimitiveFunction
+        {
+            public CloseWindow()
+                : base("close_window", "( ~> )", "close a drawing window")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                WindowGDI.OpenWindow();
+            }
+        }
+
+        public class ClearWindow : PrimitiveFunction
+        {
+            public ClearWindow()
+                : base("clear_window", "(list string ~> )", "clears the drawing window")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.TypedPop<string>();
+                FList f = exec.TypedPop<FList>();
+                Object[] args = f.GetObjectArray();
+                GraphicCommand c = new GraphicCommand(s, args);
+                WindowGDI.Draw(c);
+            }
+        }
+        
+        /**
+         *  Not currently used. 
+         * 
+        public class GetGdi : PrimitiveFunction
+        {
+            public GetGdi()
+                : base("get_window", "( ~> gdi)", "gets the active graphics device interface")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                // Note: this is a placemark for later, when an actual gdi is supported
+                exec.Push("gdi");
+            }            
+        }
+         */
+
+        public class Render : PrimitiveFunction
+        {
+            public Render()
+                : base("render", "(list string ~> )", "sends a drawing instruction to the graphics device")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.TypedPop<string>();
+                FList f = exec.TypedPop<FList>();
+                Object[] args = f.GetObjectArray();
+                GraphicCommand c = new GraphicCommand(s, args);
+                WindowGDI.Render(c);
+            }
+        }
+
+        #endregion
     }
 }
