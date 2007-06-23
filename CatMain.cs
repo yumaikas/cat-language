@@ -254,6 +254,10 @@ namespace Cat
                 double d = (double)o;
                 return d.ToString("F");
             }
+            else if (o == null)
+            {
+                return "null";
+            }
             else
             {
                 return o.ToString();
@@ -285,7 +289,6 @@ namespace Cat
         {
             scope.RegisterType(typeof(MetaCommands));
             scope.RegisterType(typeof(Primitives));
-            scope.RegisterType(typeof(Drawer));
         }
         #endregion
     }

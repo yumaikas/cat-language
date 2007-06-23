@@ -4,13 +4,12 @@
 // this file is public domain
 
 //=============================================================================
-// Odd ducks
 
-define noop
+define noop : ( -> )
 { }
 
-define the_answer
-{ 42 }
+define dolittle : ( -> self)
+{ [dolittle] }
 
 //=============================================================================
 // Function manipulation operators

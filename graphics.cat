@@ -11,20 +11,43 @@ define ow
 define cw
 { close_window }
 
-define cs
-{ clear_screen }
+define line_to(x y)
+{ (y, x, 0, 0) "Line" render }
+
+define move_to(x y)
+{ (y, x) "Slide" render }
 
 define fd
-{ [0 line_to] curry render }
+{ dup 0 line_to 0 move_to}
+
+define turn_right(x)
+{ (x) "Rotate" render }
+
+define tr
+{ turn_right }
+
+define turn_left
+{ neg }
+
+define tl
+{ turn_left }
+
+
+/*
+define cs
+{ [clear_screen] render }
+
+define fd
+{ [0 line_to] bind render }
 
 define bk
 { neg fd }
 
 define tr
-{ [rotate] curry render }
+{ [rotate] bind render }
 
 define tl
-{ neg [rotate] curry render }
+{ neg tr }
 
 define pu
 { [true set_pen_up] render }
@@ -33,13 +56,13 @@ define pd
 { [false set_pen_up] render }
 
 define pc
-{ [pen_color] curry render }
+{ [pen_color] bind render }
 
 define pw
-{ [pen_width] curry render }
+{ [pen_width] bind render }
 
 define fc
-{ [set_solid_fill] curry render }
+{ [set_solid_fill] bind render }
 
 define nf
 { [no_fill] render }
@@ -61,3 +84,4 @@ define fill
 
 define sq
 { [fd 90 tr] bind 4 repeat }
+*/

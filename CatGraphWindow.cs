@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Threading;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Cat
 {
@@ -18,7 +19,7 @@ namespace Cat
     {
         List<Object> mValues = new List<Object>();
         List<String> mNames = new List<String>();
-        List<Function> mFxns = new List<Function>();
+        List<GraphicCommand> mCmds = new List<GraphicCommand>();
         Mutex mMutex = new Mutex();
         
         public GraphWindow()
@@ -26,10 +27,10 @@ namespace Cat
             InitializeComponent();
         }
 
-        public void ClearFxns()
+        public void ClearCmds()
         {
             mMutex.WaitOne();
-            mFxns.Clear();
+            mCmds.Clear();
             mMutex.ReleaseMutex();
 
             // Tell the parent thread to invalidate
@@ -37,10 +38,10 @@ namespace Cat
             Invoke(p);
         }
 
-        public void AddFxn(Function f)
+        public void AddCmd(GraphicCommand c)
         {
             mMutex.WaitOne();
-            mFxns.Add(f);
+            mCmds.Add(c);
             mMutex.ReleaseMutex();
 
             // Tell the parent thread to invalidate
@@ -48,24 +49,23 @@ namespace Cat
             Invoke(p);
         }
 
-        private Point CatListToPoint(FList list)
-        {
-            return new Point((int)list.Nth(1), (int)list.Nth(0));
-        }
-
         public void SaveToFile(string s)
         {
             mMutex.WaitOne();
 
-            Bitmap b = new Bitmap(Width, Height, CreateGraphics());
-            Drawer.Initialize(Graphics.FromImage(b));
-            foreach (Function f in mFxns) {
-                Drawer.draw(f);
+            try
+            {
+                Bitmap b = new Bitmap(Width, Height, CreateGraphics());
+                WindowGDI.Initialize(Graphics.FromImage(b));
+                foreach (GraphicCommand c in mCmds) {
+                    WindowGDI.Draw(c);
+                }
+                b.Save(s);
             }
-
-            b.Save(s);
-
-            mMutex.ReleaseMutex();
+            finally 
+            {
+                mMutex.ReleaseMutex();
+            }
         }
 
         public delegate void Proc();
@@ -87,11 +87,11 @@ namespace Cat
         {
             mMutex.WaitOne();
 
-            Drawer.Initialize(e.Graphics);
-            foreach (Function f in mFxns)
-                Drawer.draw(f);
+            WindowGDI.Initialize(e.Graphics);
+            foreach (GraphicCommand c in mCmds)
+                WindowGDI.Draw(c);
 
-            Drawer.draw_turtle();
+            WindowGDI.DrawTurtle();
 
             mMutex.ReleaseMutex();
         }
@@ -106,7 +106,7 @@ namespace Cat
         }
     }
 
-    public class Drawer
+    public class WindowGDI
     {
         static GraphWindow mWindow;
         static EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
@@ -128,13 +128,14 @@ namespace Cat
             mg.TranslateTransform(mWindow.Width / 2, mWindow.Height / 2);
         }
 
-        private static void private_draw(Function f)
+        private static void PrivateDraw(GraphicCommand c)
         {
             try
             {
                 Trace.Assert(mnRendering >= 0);
                 mnRendering++;
-                f.Eval(mExec);
+                
+                c.Invoke(null, typeof(WindowGDI));
             }
             finally
             {
@@ -143,12 +144,12 @@ namespace Cat
             }
         }
 
-        public static void draw(Function f)
+        public static void Draw(GraphicCommand c)
         {
             Trace.Assert(mnRendering == 0);
             try
             {
-                private_draw(f);
+                PrivateDraw(c);
             }
             finally
             {
@@ -156,7 +157,7 @@ namespace Cat
             }
         }
 
-        public static void render(Function f)
+        public static void Render(GraphicCommand c)
         {
             // WARNING: This might be a possible race condition 
             // I have to analyze it further.
@@ -164,50 +165,49 @@ namespace Cat
             {
                 if (mWindow == null)
                 {
-                    open_window();
+                    OpenWindow();
                 }
-                mWindow.AddFxn(f);
+                mWindow.AddCmd(c);
                 mWindow.Invalidate();
             }
             else
             {
-                private_draw(f);
+                PrivateDraw(c);
             }
         }
 
-        public static void rotate(double x)
+        public static void Rotate(double x)
         {
             mg.RotateTransform((float)x);
         }
 
-        public static void line_to(double x, double y)
+        public static void Line(double x1, double y1, double x2, double y2)
         {
             if (!mbPenUp)
-                mg.DrawLine(mPen, 0, 0, (float)x, (float)y);
-            mg.TranslateTransform((float)x, (float)y);
+                mg.DrawLine(mPen, (float)x1, (float)y1, (float)x2, (float)y2);
         }
 
-        public static void scale(double x)
+        public static void Slide(double x, double y)
         {
-            mg.ScaleTransform((float)x, (float)x);
+            mg.TranslateTransform((float)(x), (float)(y));
         }
 
-        public static void set_pen_up(bool b)
+        public static void Scale(double x, double y)
+        {
+            mg.ScaleTransform((float)x, (float)y);
+        }
+
+        public static void SetPenUp(bool b)
         {
             mbPenUp = b;
         }
 
-        public static bool get_pen_up()
+        public static bool IsPenUp()
         {
             return mbPenUp;
         }
 
-        public static void line(double x0, double y0, double x1, double y1)
-        {
-            if (!mbPenUp)
-                mg.DrawLine(mPen, (float)x0, (float)y0, (float)x1, (float)y1);
-        }
-
+        /*
         public static void rectangle(double x, double y, double w, double h)
         {
             if (!mbPenUp)
@@ -219,8 +219,9 @@ namespace Cat
             if (!mbPenUp)
                 mg.DrawEllipse(mPen, (float)w / 2, (float)h / 2, (float)w, (float)h);
         }
+         */
 
-        public static void draw_turtle_foot(int x, int y)
+        public static void DrawTurtleFoot(int x, int y)
         {
             int footSize = 10;
             Rectangle rect = new Rectangle(x - (footSize / 2), y - (footSize / 2), footSize, footSize);            
@@ -228,7 +229,7 @@ namespace Cat
             mg.DrawEllipse(turtlePen, rect);
         }
 
-        public static void draw_turtle()
+        public static void DrawTurtle()
         {
             int w = 26; 
             int h = 26;
@@ -236,13 +237,13 @@ namespace Cat
             // draw feet
             int x = (h / 2) - 3;
             int y = (w / 2) - 3;
-            draw_turtle_foot(-x, y);
-            draw_turtle_foot(-x, -y);
-            draw_turtle_foot(x, y);
-            draw_turtle_foot(x, -y);
+            DrawTurtleFoot(-x, y);
+            DrawTurtleFoot(-x, -y);
+            DrawTurtleFoot(x, y);
+            DrawTurtleFoot(x, -y);
 
             // draw head 
-            draw_turtle_foot(w / 2 + 3, 0);
+            DrawTurtleFoot(w / 2 + 3, 0);
 
             // draw eyes
             Rectangle eye1 = new Rectangle(w / 2 + 4, 2, 1, 1);
@@ -275,26 +276,27 @@ namespace Cat
             mg.ResetClip();
         }
 
-        public static void pen_color(Color x)
+        public static void SetPenColor(Color x)
         {
             mPen.Color = x;
         }
 
-        public static void pen_width(int x)
+        public static void SetPenWidth(int x)
         {
             mPen.Width = x;
         }
 
-        public static void set_solid_fill(Color x)
+        public static void SetSolidFill(Color x)
         {
             mPen.Brush = new SolidBrush(x);
         }
 
-        public static void no_fill()
+        public static void ClearFill()
         {
             mPen.Brush = null;
         }
 
+        /*
         public static void polygon(FList x)
         {
             mg.DrawPolygon(mPen, ListToPointArray(x));
@@ -304,14 +306,6 @@ namespace Cat
         {
             mg.DrawLines(mPen, ListToPointArray(x));
         }
-
-        #region color functions
-        static public Color blue() { return Color.Blue; }
-        static public Color red() { return Color.Red; }
-        static public Color green() { return Color.Green; }
-        static public Color rgb(int r, int g, int b) { return Color.FromArgb(r, g, b); }
-        #endregion
-
         #region helper functions
         private static Point ListToPoint(FList x)
         {
@@ -330,9 +324,17 @@ namespace Cat
             return result;
         }
         #endregion
+         */
+
+        #region color functions
+        static public Color Blue() { return Color.Blue; }
+        static public Color Red() { return Color.Red; }
+        static public Color Green() { return Color.Green; }
+        static public Color Rgb(int r, int g, int b) { return Color.FromArgb(r, g, b); }
+        #endregion
 
         #region public functions
-        static public void open_window()
+        static public void OpenWindow()
         {
             if (mWindow != null) return;
             Thread t = new Thread(new ThreadStart(LaunchWindow));
@@ -340,19 +342,19 @@ namespace Cat
             mWait.WaitOne();   
         }
 
-        static public void close_window()
+        static public void CloseWindow()
         {
             if (mWindow == null) return;
             mWindow.SafeClose();
             mWindow = null;
         }
 
-        static public void clear_screen()
+        static public void ClearWindow()
         {
-            mWindow.ClearFxns();
+            mWindow.ClearCmds();
         }
 
-        static public void save_window(string s)
+        static public void SaveWindowAsBmp(string s)
         {
             mWindow.SaveToFile(s);
         }
@@ -369,6 +371,50 @@ namespace Cat
             mWindow = new GraphWindow();
             mWait.Set();
             Application.Run(mWindow);
+        }
+    }
+
+    public class GraphicCommand
+    {
+        public GraphicCommand(string sCmd, Object[] args)
+        {
+            msCommand = sCmd;
+            maArgs = args;
+            maArgTypes = new Type[maArgs.Length];
+            for (int i = 0; i < maArgs.Length; ++i)
+                maArgTypes[i] = maArgs[i].GetType();
+        }
+        public MethodInfo GetMethod(Type t)
+        {
+            MethodInfo ret = t.GetMethod(msCommand);
+            if (ret == null)
+            {
+                ret = t.GetMethod(msCommand, GetArgTypes());
+                if (ret == null)
+                    throw new Exception("Could not find method " + msCommand + " on type " + t.ToString() + " with matching types");
+            }
+            return ret;
+        }
+        public Type[] GetArgTypes()
+        {
+            return maArgTypes;
+        }
+        public string GetMethodName()
+        {
+            return msCommand;
+        }
+        public Object[] GetArgs()
+        {
+            return maArgs;
+        }
+        string msCommand;
+        Object[] maArgs;
+        Type[] maArgTypes;
+
+        public void Invoke(Object o, Type t)
+        {
+            MethodInfo mi = GetMethod(t);
+            mi.Invoke(o, maArgs);
         }
     }
 }

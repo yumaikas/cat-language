@@ -312,7 +312,12 @@ namespace Cat
                 {
                     ret[n] = (head as FList).GetObjectArray();
                 }
+                else
+                {
+                    ret[n] = head;
+                }
                 iter = iter.GotoNext();
+                ++n;
             }
             Trace.Assert(n == Count());
             return ret;
