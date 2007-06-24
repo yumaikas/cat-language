@@ -90,7 +90,7 @@ namespace Cat
             WindowGDI.Initialize(e.Graphics);
             foreach (GraphicCommand c in mCmds)
                 WindowGDI.Draw(c);
-
+            
             WindowGDI.DrawTurtle();
 
             mMutex.ReleaseMutex();
@@ -115,7 +115,7 @@ namespace Cat
         static bool mbPenUp = false;
         static Pen turtlePen = new Pen(Color.Blue);
         static Brush turtleBrush = new SolidBrush(Color.DarkSeaGreen);
-        static int mnRendering = 0;
+        static bool mbShowTurtle = true;
         static Graphics mg;       
 
         public static void Initialize(Graphics g)
@@ -130,50 +130,18 @@ namespace Cat
 
         private static void PrivateDraw(GraphicCommand c)
         {
-            try
-            {
-                Trace.Assert(mnRendering >= 0);
-                mnRendering++;
-                
-                c.Invoke(null, typeof(WindowGDI));
-            }
-            finally
-            {
-                mnRendering--;
-                Trace.Assert(mnRendering >= 0);
-            }
+            c.Invoke(null, typeof(WindowGDI));
         }
 
         public static void Draw(GraphicCommand c)
         {
-            Trace.Assert(mnRendering == 0);
-            try
-            {
-                PrivateDraw(c);
-            }
-            finally
-            {
-                Trace.Assert(mnRendering == 0);
-            }
+            PrivateDraw(c);
         }
 
         public static void Render(GraphicCommand c)
         {
-            // WARNING: This might be a possible race condition 
-            // I have to analyze it further.
-            if (mnRendering == 0)
-            {
-                if (mWindow == null)
-                {
-                    OpenWindow();
-                }
-                mWindow.AddCmd(c);
-                mWindow.Invalidate();
-            }
-            else
-            {
-                PrivateDraw(c);
-            }
+            mWindow.AddCmd(c);
+            mWindow.Invalidate();
         }
 
         public static void Rotate(double x)
@@ -207,19 +175,11 @@ namespace Cat
             return mbPenUp;
         }
 
-        /*
-        public static void rectangle(double x, double y, double w, double h)
+        public static void Ellipse(double x, double y, double w, double h)
         {
             if (!mbPenUp)
-                mg.DrawRectangle(mPen, (float)x, (float)y, (float)w, (float)h);
+                mg.DrawEllipse(mPen, (float)x, (float)y, (float)w, (float)h);
         }
-
-        public static void ellipse(double w, double h)
-        {
-            if (!mbPenUp)
-                mg.DrawEllipse(mPen, (float)w / 2, (float)h / 2, (float)w, (float)h);
-        }
-         */
 
         public static void DrawTurtleFoot(int x, int y)
         {
@@ -229,8 +189,21 @@ namespace Cat
             mg.DrawEllipse(turtlePen, rect);
         }
 
+        public static void SetTurtleVisibility(bool b)
+        {
+            mbShowTurtle = b;
+        }
+
+        public static bool GetTurtleVisibility()
+        {
+            return mbShowTurtle;
+        }
+
         public static void DrawTurtle()
         {
+            if (!mbShowTurtle)
+                return;
+
             int w = 26; 
             int h = 26;
 

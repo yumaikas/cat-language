@@ -14,74 +14,57 @@ namespace Cat
 
         static TypeInferer gInferer = new TypeInferer();
 
-        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bVerbose)
+        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bVerbose, bool bCheck)
         {
             if (f == null) return null;
             if (g == null) return null;
-
-            try
-            {
-                return gInferer.InferType(f, g, bVerbose);
-            }
-            catch (Exception e)
-            {
-                MainClass.WriteLine("Type inference error: " + e.Message);
-                return null;
-            }
+            return gInferer.InferType(f, g, bVerbose, bCheck);
         }
 
-        public static CatFxnType Infer(List<Function> f, bool bVerbose)
+        public static CatFxnType Infer(List<Function> f, bool bVerbose, bool bCheck)
         {
-            try
+            if (f.Count == 0)
             {
-                if (f.Count == 0)
-                {
-                    if (bVerbose)
-                        MainClass.WriteLine("type is ( -> )");
-                    return CatFxnType.Create("( -> )");
-                }
-                else if (f.Count == 1)
-                {
-                    Function x = f[0];
-
-                    if (bVerbose)
-                        MainClass.WriteLine("type of " + x.msName + " is " + x.GetTypeString());
-                    return x.GetFxnType();
-                }
-                else
-                {
-                    Function x = f[0];
-                    CatFxnType ft = x.GetFxnType();
-                    if (bVerbose)
-                        MainClass.WriteLine("initial term = " + x.GetName() + " : " + x.GetTypeString());
-
-                    for (int i = 1; i < f.Count; ++i)
-                    {
-                        if (ft == null)
-                            return ft;
-                        Function y = f[i];
-                        if (bVerbose)
-                        {
-                            MainClass.WriteLine("Composing accumulated terms with next term");
-                            MainClass.Write("previous terms = { ");
-                            for (int j = 0; j < i; ++j)
-                                MainClass.Write(f[j].GetName() + " ");
-                            MainClass.WriteLine("} : " + ft.ToString());
-                            MainClass.WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
-                        }
-
-                        ft = TypeInferer.Infer(ft, y.GetFxnType(), bVerbose);
-                        
-                        if (ft == null)
-                            return null;
-                    }
-                    return ft;
-                }
+                if (bVerbose)
+                    MainClass.WriteLine("type is ( -> )");
+                return CatFxnType.Create("( -> )");
             }
-            catch (Exception e)
+            else if (f.Count == 1)
             {
-                MainClass.WriteLine("Type inference error: " + e.Message);
-                return null;
+                Function x = f[0];
+
+                if (bVerbose)
+                    MainClass.WriteLine("type of " + x.msName + " is " + x.GetTypeString());
+                return x.GetFxnType();
+            }
+            else
+            {
+                Function x = f[0];
+                CatFxnType ft = x.GetFxnType();
+                if (bVerbose)
+                    MainClass.WriteLine("initial term = " + x.GetName() + " : " + x.GetTypeString());
+
+                for (int i = 1; i < f.Count; ++i)
+                {
+                    if (ft == null)
+                        return ft;
+                    Function y = f[i];
+                    if (bVerbose)
+                    {
+                        MainClass.WriteLine("Composing accumulated terms with next term");
+                        MainClass.Write("previous terms = { ");
+                        for (int j = 0; j < i; ++j)
+                            MainClass.Write(f[j].GetName() + " ");
+                        MainClass.WriteLine("} : " + ft.ToString());
+                        MainClass.WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
+                    }
+
+                    ft = TypeInferer.Infer(ft, y.GetFxnType(), bVerbose, bCheck);
+                    
+                    if (ft == null)
+                        return null;
+                }
+                return ft;
             }
         }
 
@@ -96,7 +79,7 @@ namespace Cat
         /// observation that the production of the left function must be equal to the 
         /// consumption of the second function
         /// </summary>
-        private CatFxnType InferType(CatFxnType left, CatFxnType right, bool bVerbose)
+        private CatFxnType InferType(CatFxnType left, CatFxnType right, bool bVerbose, bool bCheck)
         {
             mUnifiers.Clear();
             VarRenamer renamer = new VarRenamer();
@@ -157,8 +140,9 @@ namespace Cat
                 MainClass.WriteLine("");
             }
 
-            // Check for free variables that appear only on the right
-            ret.CheckIfWellTyped();
+            if (bCheck)
+                ret.CheckIfWellTyped();
+
             return ret;
         }
 

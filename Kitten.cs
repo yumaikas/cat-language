@@ -51,7 +51,7 @@ namespace Cat
             if (term is AstQuoteNode)
             {
                 AstQuoteNode q = term as AstQuoteNode;
-                foreach (AstExprNode child in q.Terms)
+                foreach (AstExprNode child in q.mTerms)
                 {
                     if (TermContainsOrEquals(child, var))
                         return true;
@@ -72,7 +72,7 @@ namespace Cat
                 if (term is AstQuoteNode)
                 {
                     AstQuoteNode q = term as AstQuoteNode;
-                    ret += CountInstancesOf(var, q.Terms);
+                    ret += CountInstancesOf(var, q.mTerms);
                 }
                 else
                 {
@@ -125,7 +125,7 @@ namespace Cat
             {
                 Trace.Assert(terms[i] is AstQuoteNode);
                 AstQuoteNode subExpr = terms[i] as AstQuoteNode;
-                RemoveTerm(var, subExpr.Terms);
+                RemoveTerm(var, subExpr.mTerms);
                 terms.Insert(i + 1, new AstNameNode("bind"));
                 return;
             }

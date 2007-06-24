@@ -246,15 +246,23 @@ namespace Cat
             if (Config.gbVerboseInference)
                 MainClass.WriteLine("inferring type of quoted function " + msName);
 
-            CatFxnType childType = TypeInferer.Infer(mChildren, Config.gbVerboseInference);
-            if (childType != null)
+            try
             {
+                // Quotations can be unclear? 
+                CatFxnType childType = TypeInferer.Infer(mChildren, Config.gbVerboseInference, false);
+                
+                // Honestly this should never be true.
+                if (childType == null)
+                    throw new Exception("unknown type error");
+
                 mpFxnType = new CatQuotedFxnType(childType);
                 mpFxnType = VarRenamer.RenameVars(mpFxnType);
             }
-            else
+            catch (Exception e)
             {
-                throw new Exception("could not type quotation " + msName);
+                MainClass.WriteLine("Could not type quotation: " + msName);
+                MainClass.WriteLine("Type error: " + e.Message);
+                mpFxnType = null;
             }
         }
 
@@ -287,7 +295,9 @@ namespace Cat
                 msName += mChildren[i].GetName();
             }
 
-            mpFxnType = TypeInferer.Infer(mChildren, Config.gbVerboseInference);
+            // TEMP: I think I shouldn't be dynamically inferring types!
+            // mpFxnType = TypeInferer.Infer(mChildren, Config.gbVerboseInference, true);
+            mpFxnType = null;
         }
 
         public QuotedFunction(Function f)
@@ -309,7 +319,16 @@ namespace Cat
                 msName += mChildren[i].GetName();
             }
 
-            mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), true); ;
+            try
+            {
+                mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), Config.gbVerboseInference, true);
+            }
+            catch (Exception e)
+            {
+                MainClass.WriteLine("unable to type quotation: " + ToString());
+                MainClass.WriteLine("type error: " + e.Message);
+                mpFxnType = null;
+            }
         }
 
         public override void Eval(Executor exec)
@@ -395,7 +414,17 @@ namespace Cat
                    MainClass.Write(f.GetName() + " ");
                 MainClass.WriteLine("}");
             }
-            mpFxnType = TypeInferer.Infer(terms, Config.gbVerboseInference);
+
+            try
+            {
+                mpFxnType = TypeInferer.Infer(terms, Config.gbVerboseInference, true);
+            }
+            catch (Exception e)
+            {
+                MainClass.WriteLine("type error in function " + msName);
+                MainClass.WriteLine(e.Message);
+                mpFxnType = null;
+            }
         }
 
         public override void Eval(Executor exec)
@@ -482,7 +511,8 @@ namespace Cat
             : base(f.msName)
         {
             mpFxn = f;
-            mpFxnType = new CatSelfType();
+
+            mpFxnType = CatFxnType.GetSelfType();
         }
 
         public override void Eval(Executor exec)

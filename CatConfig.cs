@@ -88,6 +88,11 @@ namespace Cat
         public static bool gbShowInferredType = false;
 
         /// <summary>
+        /// Reports when type checking is successful.
+        /// </summary>
+        public static bool gbVerboseTypeChecking = false;
+
+        /// <summary>
         /// Version number 
         /// </summary>
         public static string gsVersion = "0.15";
@@ -97,9 +102,5 @@ namespace Cat
         /// </summary>
         public static string gsDate = DateTime.Now.ToLongDateString();
 
-        /// <summary>
-        /// Reports when type checking is successful.
-        /// </summary>
-        public static bool gbVerboseTypeChecking = false;
     }
 }

@@ -2,4 +2,4 @@
 "standard.cat" #load
 "macros.cat" #load
 "graphics.cat" #load
-//"demo.cat" #load
+"demo.cat" #load

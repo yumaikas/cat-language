@@ -1,4 +1,13 @@
 
+define rec_fact
+{ dup 1 lteq_int [pop 1] [dup [rec_fact] apply mul_int] if }
+
+// The following is expected to generate a type error
+/*
+define omega
+{ [dup apply] dup apply }
+*/
+
 define bind_self : (('A self -> 'B) -> ('A -> 'B))
 { dup bind }
 
