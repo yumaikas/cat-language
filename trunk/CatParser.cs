@@ -13,15 +13,29 @@ namespace Cat
     class CatParser
     {
         #region parsing functions
-        private static Quotation MakeQuoteFunction(AstQuoteNode node, DefinedFunction def, int level)
+        private static List<Function> TermsToFxns(List<AstExprNode> terms, DefinedFunction def)
         {
             List<Function> fxns = new List<Function>();
-            foreach (AstExprNode child in node.Terms)
-                fxns.Add(ExprToFunction(child, def, level + 1));
-            return new Quotation(fxns);
+            foreach (AstExprNode child in terms)
+            {
+                Function f = ExprToFunction(child, def);
+                fxns.Add(f);
+                
+                // HACK:
+                /*
+                if (f is SelfFunction)
+                    fxns.Add(new Primitives.RecursiveCast());
+                 */
+            }
+            return fxns;
         }
 
-        private static Function ExprToFunction(AstExprNode node, DefinedFunction def, int level)
+        private static Quotation MakeQuoteFunction(AstQuoteNode node, DefinedFunction def)
+        {
+            return new Quotation(TermsToFxns(node.mTerms, def));
+        }
+
+        private static Function ExprToFunction(AstExprNode node, DefinedFunction def)
         {
             if (node is AstIntNode)
                 return new PushValue<int>((node as AstIntNode).GetValue());
@@ -47,7 +61,7 @@ namespace Cat
                 return f;
             }
             else if (node is AstQuoteNode)
-                return MakeQuoteFunction(node as AstQuoteNode, def, level);
+                return MakeQuoteFunction(node as AstQuoteNode, def);
             else
                 throw new Exception("node " + node.ToString() + " does not have associated function");
         }
@@ -62,10 +76,7 @@ namespace Cat
 
             DefinedFunction def = new DefinedFunction(node.mName);
             Executor.Main.GetGlobalScope().AddFunction(def);
-            List<Function> fxns = new List<Function>();
-            foreach (AstExprNode term in node.mTerms)
-                fxns.Add(ExprToFunction(term, def, 0));
-            def.AddFunctions(fxns);
+            def.AddFunctions(TermsToFxns(node.mTerms, def));
 
             // Compare the inferred type with the declared type
             if (node.mType != null)
@@ -95,7 +106,7 @@ namespace Cat
         {
             if (node is AstExprNode)
             {
-                Function f = ExprToFunction(node as AstExprNode, null, 0);
+                Function f = ExprToFunction(node as AstExprNode, null);
                 f.Eval(exec);
             }
             else if (node is AstDefNode)

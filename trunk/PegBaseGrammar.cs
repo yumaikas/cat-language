@@ -315,6 +315,22 @@ namespace Peg
         }
 
         /// <summary>
+        /// Asssures that no more input exists
+        /// </summary>
+        public class EndOfInputRule : Rule
+        {
+            public override bool Match(Parser p)
+            {
+                return p.AtEnd();
+            }
+
+            public override string ToString()
+            {
+                return "_eof_";
+            }
+        }
+
+        /// <summary>
         /// This returns true if a rule can not be matched.
         /// It never advances the parser.
         /// </summary>
@@ -537,6 +553,7 @@ namespace Peg
             Rule mTerm;
         }
 
+        public static Rule EndOfInput() { return new EndOfInputRule(); }
         public static Rule Delay(RuleDelegate r) { return new DelayRule(r); }
         public static Rule SingleChar(char c) { return new SingleCharRule(c); }
         public static Rule CharSeq(string s) { return new CharSeqRule(s); }

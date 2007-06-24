@@ -420,11 +420,14 @@ namespace Cat
                     if (FxnContainsVar(child as CatFxnType, s))
                         return true;
                 }
+                /*
+                 * HACK: I am not sure that this is actually helpful
                 else if (child is CatTypeVector)
                 {
                     if (VectorContainsVar(child as CatTypeVector, s))
                         throw new Exception("illegal circular type vector reference found: " + s);
                 }
+                 */
             }
 
             return false;

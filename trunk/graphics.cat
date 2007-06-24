@@ -11,77 +11,51 @@ define ow
 define cw
 { close_window }
 
-define line_to(x y)
-{ (y, x, 0, 0) "Line" render }
+define line_to
+{ unit swons 0 cons 0 cons "Line" render }
 
-define move_to(x y)
-{ (y, x) "Slide" render }
+define move_to
+{ unit swons "Slide" render }
 
 define fd
 { dup 0 line_to 0 move_to}
 
-define turn_right(x)
-{ (x) "Rotate" render }
+define bk
+{ neg fd }
+
+define turn_right
+{ unit "Rotate" render }
 
 define tr
 { turn_right }
 
 define turn_left
-{ neg }
+{ neg tr }
 
 define tl
 { turn_left }
 
-
-/*
-define cs
-{ [clear_screen] render }
-
-define fd
-{ [0 line_to] bind render }
-
-define bk
-{ neg fd }
-
-define tr
-{ [rotate] bind render }
-
-define tl
-{ neg tr }
+define set_pen_up
+{ unit "SetPenUp" render }
 
 define pu
-{ [true set_pen_up] render }
+{ true set_pen_up }
 
 define pd
-{ [false set_pen_up] render }
+{ false set_pen_up }
 
-define pc
-{ [pen_color] bind render }
+define set_turtle_visibility
+{ unit "SetTurtleVisibility" render }
 
-define pw
-{ [pen_width] bind render }
+define show_turtle
+{ true set_turtle_visibility }
 
-define fc
-{ [set_solid_fill] bind render }
-
-define nf
-{ [no_fill] render }
-
-define el
-{ [ellipse] bind4 render }
-
-define ci
-{ 0 0 dig dup el }
-
-define rect
-{ [rectangle] bind4 render }
-
-define poly
-{ [polygon] bind render }
-
-define fill
-{ [set_solid_fill] bind render }
+define hide_turtle
+{ false set_turtle_visibility }
 
 define sq
+{{
+  desc{Draws a square with a given side}
+}}
 { [fd 90 tr] bind 4 repeat }
-*/
+

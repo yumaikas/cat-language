@@ -108,7 +108,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 QuotedFunction f = exec.TypedPop<QuotedFunction>();
-                CatFxnType ft = TypeInferer.Infer(f.GetChildren(), true);
+                CatFxnType ft = TypeInferer.Infer(f.GetChildren(), true, true);
                 if (ft == null)
                     MainClass.WriteLine("type could not be inferred");
                 else
@@ -389,6 +389,21 @@ namespace Cat
         #endregion 
 
         #region primitive function classes
+        /// <summary>
+        /// HACK: this is a big hack. But it works
+        /// </summary>
+        public class RecursiveCast : PrimitiveFunction
+        {
+            public RecursiveCast()
+                : base("self_call", "('A ('A -> 'B) -> 'B)", "used to make self-calls type safe")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                // does nothing
+            }
+        }
+
         public class Halt : PrimitiveFunction
         {
             public Halt()
@@ -1919,23 +1934,19 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                WindowGDI.OpenWindow();
+                WindowGDI.CloseWindow();
             }
         }
 
         public class ClearWindow : PrimitiveFunction
         {
             public ClearWindow()
-                : base("clear_window", "(list string ~> )", "clears the drawing window")
+                : base("clear", "( ~> )", "clears the drawing window")
             { }
 
             public override void Eval(Executor exec)
             {
-                string s = exec.TypedPop<string>();
-                FList f = exec.TypedPop<FList>();
-                Object[] args = f.GetObjectArray();
-                GraphicCommand c = new GraphicCommand(s, args);
-                WindowGDI.Draw(c);
+                WindowGDI.ClearWindow();
             }
         }
         

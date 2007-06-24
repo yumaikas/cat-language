@@ -292,9 +292,6 @@ namespace Cat
         CatTypeVector mCons;
         bool mbSideEffects;
 
-        // This is for simple memoization of results from calling CreateFxnType
-        static Dictionary<string, CatFxnType> gFxnTypePool = new Dictionary<string, CatFxnType>();
-
         public static CatFxnType Create(string sType)
         {
             if (gFxnTypePool.ContainsKey(sType))
@@ -464,6 +461,7 @@ namespace Cat
         /// Note that top-level self types implicitly carry all of the consumption variables so
         /// something like ('A self -> 'B) is well-typed because it expands to:
         /// ('A ('A self -> 'B) -> 'B) 
+        /// In the rare case of self-apply functions, ('A -> 'B) is okay as an intermediate step.
         /// </summary>
         public void CheckIfWellTyped()
         {
@@ -484,16 +482,52 @@ namespace Cat
                 {
                     string s = k.ToString();
                     if (!consVars.Contains(s))
-                        throw new Exception("ill-typed function: " + s + " appears in production and not in consumption");
+                        throw new Exception("type error: " + s + " appears in production and not in consumption");
                 }
             }
             
-            // TODO: Deal with functions that returning ill-typed functions. 
-            // There seems to be no easy way to deal with it. I don't even know if it implies
-            // that the result is ill-tyyped 
+            // TODO: Deal with functions that return ill-typed functions. 
         }
+
+        #region static data and functions
+        // Used to memoize of results from calling CreateFxnType
+        static Dictionary<string, CatFxnType> gFxnTypePool = new Dictionary<string, CatFxnType>();
+
+        // Used so we don't have to create self types over and over again
+        static CatSelfType gSelfType = new CatSelfType();
+        static CatFxnType gApplyType = CatFxnType.Create("('A ('A -> 'B) -> 'B)");
+        
+        // TODO: remove
+        //static CatFxnType gSelfApplyType = ComposeFxnTypes(gSelfType, gApplyType);
+
+        public static CatSelfType GetSelfType()
+        {
+            return gSelfType;
+        }
+
+        public static CatFxnType GetApplyType()
+        {
+            return gApplyType;
+        }
+
+        /* TODO: remove
+        public static CatFxnType GetSelfApplyType()
+        {
+            return gSelfApplyType;
+        }*/
+
+        public static CatFxnType ComposeFxnTypes(CatFxnType f, CatFxnType g)
+        {
+            CatFxnType ft = TypeInferer.Infer(f, g, Config.gbVerboseInference, true);
+            return ft;
+        }
+        #endregion
     }
 
+    /// <summary>
+    /// A self type is a function that pushes itself onto the stack.
+    /// self : ('A -> 'A self)
+    /// </summary>
     public class CatSelfType : CatFxnType
     {
         public CatSelfType()

@@ -233,6 +233,29 @@ namespace Cat
             while (n < node.GetNumChildren())
             {
                 PegAstNode child = node.GetChild(n);
+
+                if (child.GetLabel() != "param")
+                    break;
+
+                mParams.Add(new AstParamNode(child));
+                n++;
+            }
+
+            while (n < node.GetNumChildren())
+            {
+                PegAstNode child = node.GetChild(n);
+
+                if (child.GetLabel() != "meta_data_block")
+                    break;
+
+                // TODO: store meta data.
+
+                n++;
+            }
+
+            while (n < node.GetNumChildren())
+            {
+                PegAstNode child = node.GetChild(n);
                 CatAstNode expr = Create(child);
 
                 if (!(expr is AstExprNode))
@@ -303,7 +326,7 @@ namespace Cat
 
     public class AstQuoteNode : AstExprNode
     {
-        public List<AstExprNode> Terms = new List<AstExprNode>();
+        public List<AstExprNode> mTerms = new List<AstExprNode>();
 
         public AstQuoteNode(PegAstNode node) : base(node)
         {
@@ -313,26 +336,26 @@ namespace Cat
                 CatAstNode tmp = CatAstNode.Create(child);
                 if (!(tmp is AstExprNode))
                     throw new Exception("invalid child node " + child.ToString() + ", expected an expression node");
-                Terms.Add(tmp as AstExprNode);
+                mTerms.Add(tmp as AstExprNode);
             }
         }
 
         public AstQuoteNode(AstExprNode expr)
             : base("quote", "")
         {
-            Terms.Add(expr);
+            mTerms.Add(expr);
         }
 
         public AstQuoteNode(List<AstExprNode> expr)
             : base("quote", "")
         {
-            Terms.AddRange(expr);
+            mTerms.AddRange(expr);
         }
 
         public override string ToString()
         {
             string result = "[ ";
-            foreach (AstExprNode x in Terms)
+            foreach (AstExprNode x in mTerms)
                 result += x.ToString() + " ";
             result += "]";
             return result;
@@ -343,7 +366,7 @@ namespace Cat
             if (HasComment())
                 writer.WriteLine(IndentedString(nIndent, " // " + GetComment()));
             writer.WriteLine(IndentedString(nIndent, "["));
-            foreach (AstExprNode x in Terms)
+            foreach (AstExprNode x in mTerms)
                 x.Output(writer, nIndent + 1);
             writer.WriteLine(IndentedString(nIndent, "]"));
         }

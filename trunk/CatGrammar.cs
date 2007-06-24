@@ -23,16 +23,17 @@ namespace Cat
             return AstNode("meta_data_content", Seq(SingleChar('{'), WhileNot(Choice(Delay(MetaData), AnyChar()), SingleChar('}'))));
         }
         public static Rule LabeledMetaData()
-        {
+        {            
             return Seq(AstNode("meta_data_label", Ident()), UnlabeledMetaData());
         }
         public static Rule MetaData()
         {
-            return Choice(UnlabeledMetaData(), LabeledMetaData());
+            return Seq(Choice(UnlabeledMetaData(), LabeledMetaData()), WS());
         }
         public static Rule MetaDataBlock() 
         { 
-            return AstNode("meta_data_block", Seq(CharSeq("{{"), WhileNot(Choice(MetaData(), AnyChar()), CharSeq("}}")))); 
+            // Note: "}}" is not legal within a meta-data block
+            return Seq(AstNode("meta_data_block", Seq(CharSeq("{{"), WhileNot(Choice(MetaData(), AnyChar()), CharSeq("}}")))), WS()); 
         }
         public static Rule Comment() 
         { 
@@ -126,7 +127,7 @@ namespace Cat
         }
         public static Rule Lambda()
         {
-            return Seq(CharSeq("\\"), NoFail(Seq(Name(), CharSeq("."), Choice(Delay(Lambda), Quote())), "expected a lambda expression"));
+            return Seq(CharSeq("\\"), NoFail(Seq(Name(), CharSeq("."), Choice(Delay(Lambda), NoFail(Quote(), "expected a quotation or other lambda expression"))), "expected a lambda expression"));
         }
         public static Rule Expr()
         {
@@ -225,15 +226,15 @@ namespace Cat
         #endregion
         public static Rule Line()
         {
-            return Seq(WS(), Star(Choice(FxnDef(), MacroDef(), Expr())));
+            return Seq(WS(), Star(Choice(FxnDef(), MacroDef(), Expr())), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
         }
         public static Rule PlainCatProgram()
         {
-            return Star(Token(FxnDef()));
+            return Seq(Star(Token(FxnDef())), NoFail(EndOfInput(), "expected macro or function defintion"));
         }
         public static Rule MetaCatProgram()
         {
-            return Star(Choice(Token(FxnDef()), Token(MacroDef())));
+            return Seq(Star(Choice(Token(FxnDef()), Token(MacroDef()))), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
         }
     }
 }
