@@ -1,0 +1,80 @@
+//========================================================================================
+// Classical combinators, optimized definitions
+
+define y
+{ dup quote self compose swap apply }
+
+// \a.aa
+define m
+{ dup apply }
+
+//=========================================================================================
+// Combinatory logic combinators, classical definitions
+
+// \abc.ac(bc)
+define s
+{ peek swap [bind] dip2 apply }
+
+// \ab.a
+define k
+{ popd apply }
+
+// \a.a
+define i
+{ [k] [k] s }
+
+// \ab.b(ab)
+define o
+{ [i] s }
+
+// \abc.a(bc)
+define b
+{ [k] [[s] k] s }
+
+// \abcd.ab(cd)
+define d
+{ [b] b }
+
+// \ab.b(ab)
+define o
+{ [i] s }
+
+// \abc.acb
+define c
+{ [[k] k] [[s] [b] b] s }
+
+// \ab.ba
+define t
+{ [i] c }
+
+// \abcde.ab(cde)
+define e
+{ [b] [b] b b }
+
+// \abc.cba
+define f
+{ [t] [e] [t] [t] e }
+
+// \ab.a(bb)
+define l
+{ [m] [b] c }
+
+// \abc.bca
+define r
+{ [t] [b] b }
+
+// \ab.b(aab)
+define u
+{ [o] l }
+
+// \abc.cab
+define v
+{ [t] [c] b }
+
+// \ab.abb
+define w
+{ [r] [m] b c }
+
+// \ab.b
+define ki
+{ [i] k }

@@ -54,6 +54,8 @@ namespace Cat
                     return new AstNameNode(node);
                 case "param":
                     return new AstParamNode(node);
+                case "lambda":
+                    return new AstLambdaNode(node);
                 case "quote":
                     return new AstQuoteNode(node);
                 case "char":
@@ -321,6 +323,42 @@ namespace Cat
         public override void Output(TextWriter writer, int nIndent)
         {
             throw new Exception("The method or operation is not implemented.");
+        }
+    }
+
+    public class AstLambdaNode : AstExprNode
+    {
+        public List<string> mIdentifiers = new List<string>();
+        public List<AstExprNode> mTerms = new List<AstExprNode>();
+
+        public AstLambdaNode(PegAstNode node)
+            : base(node)
+        {
+            CheckLabel("lambda");
+            CheckChildCount(node, 2);
+            
+            AstParamNode name = new AstParamNode(node.GetChild(0));
+            mIdentifiers.Add(name.ToString());
+            CatAstNode tmp = Create(node.GetChild(1));
+
+            // lambda nodes either contain quotes or other lambda nodes
+            if (!(tmp is AstQuoteNode))
+            {
+                if (!(tmp is AstLambdaNode))
+                    throw new Exception("expected lambda expression or quotation");
+                AstLambdaNode lambda = tmp as AstLambdaNode;
+                mIdentifiers.AddRange(lambda.mIdentifiers);
+
+                // Take ownership of the terms from the child lambda expression
+                mTerms = lambda.mTerms;
+            }
+            else
+            {
+                AstQuoteNode q = tmp as AstQuoteNode;
+
+                // Take ownership of the terms from the quote
+                mTerms = q.mTerms;
+            }
         }
     }
 

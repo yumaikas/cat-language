@@ -127,7 +127,8 @@ namespace Cat
         }
         public static Rule Lambda()
         {
-            return Seq(CharSeq("\\"), NoFail(Seq(Name(), CharSeq("."), Choice(Delay(Lambda), NoFail(Quote(), "expected a quotation or other lambda expression"))), "expected a lambda expression"));
+            return AstNode("lambda", Seq(CharSeq("\\"), NoFail(Seq(Param(), CharSeq("."), Choice(Delay(Lambda), 
+                NoFail(Quote(), "expected a quotation or lambda expression"))), "expected a lambda expression")));
         }
         public static Rule Expr()
         {

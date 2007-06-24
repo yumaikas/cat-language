@@ -17,7 +17,7 @@ namespace Cat
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = false;
+        public static bool gbReleaseVersion = true;
 
         /// <summary>
         /// Controls how names are assigned to type variable declarations and type variables
