@@ -1,1 +1,1 @@
-C:\Progra~1\Mono-1.2.3.1\bin\gmcs *.cs -out:cat_mono.exe -r:System.Drawing -r:System.Windows.Forms 
+C:\Progra~1\Mono-1.2.3.1\bin\gmcs *.cs -out:cat_mono.exe -r:System.Drawing -r:System.Windows.Forms -r:System.Data

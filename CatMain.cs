@@ -60,9 +60,9 @@ namespace Cat
 
                 if (gsInputFiles.Count == 0)
                 {
-                    Console.WriteLine("warning: no files were passed as command line arguments."); 
-                    Console.WriteLine("This means the standard library hasn't been loaded.");
-                    Console.WriteLine("You can load the standard library by writing: \"path\\standard.cat\" #load");
+                    Console.WriteLine("warning: no files were passed as command line arguments,"); 
+                    Console.WriteLine("this means the standard library hasn't been loaded.");
+                    Console.WriteLine("You can load the standard library by writing: \"everything.cat\" #load");
                     Console.WriteLine("");
                 }
 
