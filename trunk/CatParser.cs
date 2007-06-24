@@ -19,19 +19,19 @@ namespace Cat
             foreach (AstExprNode child in terms)
             {
                 Function f = ExprToFunction(child, def);
-                fxns.Add(f);
-                
-                // HACK:
-                /*
-                if (f is SelfFunction)
-                    fxns.Add(new Primitives.RecursiveCast());
-                 */
+                fxns.Add(f);                
             }
             return fxns;
         }
 
         private static Quotation MakeQuoteFunction(AstQuoteNode node, DefinedFunction def)
         {
+            return new Quotation(TermsToFxns(node.mTerms, def));
+        }
+
+        private static Quotation MakeQuoteFunction(AstLambdaNode node, DefinedFunction def)
+        {
+            CatPointFreeForm.Convert(node);
             return new Quotation(TermsToFxns(node.mTerms, def));
         }
 
@@ -62,6 +62,8 @@ namespace Cat
             }
             else if (node is AstQuoteNode)
                 return MakeQuoteFunction(node as AstQuoteNode, def);
+            else if (node is AstLambdaNode)
+                return MakeQuoteFunction(node as AstLambdaNode, def);
             else
                 throw new Exception("node " + node.ToString() + " does not have associated function");
         }

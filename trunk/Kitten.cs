@@ -179,7 +179,23 @@ namespace Cat
                 }
             }
             terms.InsertRange(0, prolog);
-        }    
+        }
+
+        public static void Convert(AstLambdaNode l)
+        {
+            /*
+            // Replace the terms with a single quotation
+            AstQuoteNode q = new AstQuoteNode(l.mTerms);
+            l.mTerms.Clear();
+            l.mTerms.Add(q);
+             */
+            ConvertTerms(l.mIdentifiers, l.mTerms);            
+            
+            // We won't be needing the identifiers anymore and I don't want
+            // to have the conversion algorithm get run potentially multiple 
+            // times on each lambda term. 
+            l.mIdentifiers.Clear();
+        }
 
         /// <summary>
         /// This is known as an abstraction algorithm. It converts from 

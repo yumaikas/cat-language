@@ -140,6 +140,8 @@ namespace Cat
 
         public static void Render(GraphicCommand c)
         {
+            if (mWindow == null)
+                OpenWindow();
             mWindow.AddCmd(c);
             mWindow.Invalidate();
         }
