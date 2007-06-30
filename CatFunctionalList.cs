@@ -322,6 +322,30 @@ namespace Cat
             Trace.Assert(n == Count());
             return ret;
         }
+
+        public string ToShortString()
+        {
+            string result = ")";
+            int i = 0;
+            Accessor acc = delegate(Object o)
+            {
+                if (i++ > 0)
+                    result = ", " + result;
+                // we don't print the last one
+                // this way we know there is one more
+                // and that the ellipsis (...) is appropriate
+                if (i <= 4)
+                    result = Output.ObjectToString(o) + result;
+            };
+            TakeN(5).ForEach(acc);
+
+            if (i == 5)
+                result = "..." + result;
+
+            result = "(" + result;
+
+            return result;
+        }
     }
 
     public class EmptyList : FList

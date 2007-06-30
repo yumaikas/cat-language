@@ -23,21 +23,21 @@ namespace Cat
         private CatStack stack = new CatStack();
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
-        Scope mpScope;
+        Context mpScope;
         #endregion
 
         #region constructor
         public Executor()
         {
-            mpScope = new Scope();
+            mpScope = new Context();
         }
 
         public Executor(Executor exec)
         {
-            mpScope = new Scope(exec.GetGlobalScope());
+            mpScope = new Context(exec.GetGlobalScope());
         }
 
-        public Executor(Scope scope)
+        public Executor(Context scope)
         {
             mpScope = scope;
         }
@@ -136,7 +136,7 @@ namespace Cat
         #endregion
 
         #region environment serialization
-        public Scope GetGlobalScope()
+        public Context GetGlobalScope()
         {
             return mpScope;
         }
@@ -148,22 +148,11 @@ namespace Cat
         {
             try
             {
-                // Read the file 
-                System.IO.StreamReader file = new System.IO.StreamReader(s);
-                try
-                {
-                    string sInput = file.ReadToEnd();
-                    Execute(sInput);
-                }
-                finally 
-                {
-                    file.Close();
-                }
+                Execute(Util.FileToString(s));
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("Failed to load \"" + s + "\"");
-                MainClass.WriteLine("Error: " + e.Message);
+                MainClass.WriteLine("Failed to load \"" + s + "\" with message: " + e.Message);
             }
         }
         #endregion
@@ -195,7 +184,7 @@ namespace Cat
             for (int i = nMax - 1; i >= 0; --i)
             {
                 Object o = stk[i];
-                s += MainClass.ObjectToString(o) + " ";
+                s += Output.ObjectToString(o) + " ";
             }
             return s;
         }

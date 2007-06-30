@@ -88,13 +88,13 @@ namespace Cat
                 {
                     MainClass.WriteLine("type error in function " + def.GetName());
                     if (!Config.gbVerboseInference)
-                        MainClass.WriteLine("inferred type " + def.GetFxnType());
-                    MainClass.WriteLine("declared type " + declaredType.ToString());
+                        MainClass.WriteLine("inferred type " + def.GetFxnType().ToPrettyString());
+                    MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
                 }
                 else if (Config.gbVerboseTypeChecking)
                 {
                     MainClass.WriteLine("type check successful for " + def.GetName());
-                    MainClass.WriteLine("declared type " + declaredType.ToString());
+                    //MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
                 }
             }
         }
@@ -128,10 +128,20 @@ namespace Cat
         public static void Parse(string s, Executor exec)
         {
             Peg.Parser parser = new Peg.Parser(s);
-            bool bResult = parser.Parse(CatGrammar.Line());
-            
-            if (!bResult)
-                throw new Exception("failed to parse input");
+
+            try
+            {
+                bool bResult = parser.Parse(CatGrammar.Line());
+                if (!bResult)
+                    throw new Exception("failed to parse input");
+            }
+            catch (Exception e)
+            {
+                Output.WriteLine("Parsing error occured with message: " + e.Message);
+                Output.WriteLine(parser.ParserPosition);
+                throw e;
+            }
+
             Peg.PegAstNode node = parser.GetAst();
 
             foreach (Peg.PegAstNode child in node.GetChildren())

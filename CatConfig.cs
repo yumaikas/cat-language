@@ -95,7 +95,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.15";
+        public static string gsVersion = "0.15.1";
 
         /// <summary>
         /// Date of current build

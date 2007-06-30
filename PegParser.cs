@@ -126,16 +126,8 @@ namespace Peg
         public bool Parse(Peg.Grammar.Rule g)
         {
             bool b = false;
-            try
-            {
-                b = g.Match(this);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Parsing error occured with message: " + e.Message);
-                Console.WriteLine(ParserPosition);                
-            }
-
+            b = g.Match(this);
+            
             if (b)
             {
                 if (mCur != mTree)
