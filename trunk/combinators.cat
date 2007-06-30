@@ -1,80 +1,164 @@
 //========================================================================================
 // Classical combinators, optimized definitions
 
-define y
-{ dup quote self compose swap apply }
+//define y
+//{ dup quote self compose swap apply }
 
 // \a.aa
-define m
-{ dup apply }
+//define m
+//{ dup apply }
 
 //=========================================================================================
-// Combinatory logic combinators, classical definitions
+// Combinatory logic combinators
+
+define (
+{ }
+
+define )
+{ swap apply }
+
+/*
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// classical syntax
 
 // \abc.ac(bc)
-define s
-{ peek swap [bind] dip2 apply }
+// ((A b -> C (C d -> E) d) -> ((b -> A) -> (b -> E)))
+// Haskell (a -> b -> c) -> (a -> b) -> a -> c
+// Haskell Modified: (a -> (b -> c)) -> ((a -> b) -> (a -> c))
+define S
+{ \a.[\b.[\c.[b(c)(a(c))]]] }
 
 // \ab.a
-define k
-{ popd apply }
+define K
+{ \a.[\b.[a]] }
 
 // \a.a
-define i
-{ [k] [k] s }
+define I
+{ S(K)(K) }
+
+// \ab.b
+define KI
+{ K(I) }
 
 // \ab.b(ab)
-define o
-{ [i] s }
+// haskell: ((t -> t1) -> t) -> (t -> t1) -> t1
+//
+define O : (('A ('B -> 'C) -> 'B) -> ('A ('B -> 'C) -> 'C))
+{ S(I) }
+
+define M
+{ S(I)(I) }
 
 // \abc.a(bc)
-define b
-{ [k] [[s] k] s }
+define B
+{ S(K(S))(K) }
 
 // \abcd.ab(cd)
-define d
-{ [b] b }
-
-// \ab.b(ab)
-define o
-{ [i] s }
+define D
+{ B(B) }
 
 // \abc.acb
-define c
-{ [[k] k] [[s] [b] b] s }
+define C
+{ S(B(B)(S))(K(K))  }
 
 // \ab.ba
-define t
-{ [i] c }
+define T
+{ C(I) }
 
 // \abcde.ab(cde)
-define e
-{ [b] [b] b b }
+define E
+{ B(B(B)(B)) }
 
 // \abc.cba
-define f
-{ [t] [e] [t] [t] e }
+define F
+{ E(T)(T)(E)(T) }
 
 // \ab.a(bb)
-define l
-{ [m] [b] c }
+define L
+{ C(B)(M) }
 
 // \abc.bca
-define r
-{ [t] [b] b }
+define R
+{ B(B)(T) }
 
 // \ab.b(aab)
-define u
-{ [o] l }
+define U
+{ L(O) }
+
+// \abc.cab
+define V
+{ B(C)(T) }
+
+// \ab.abb
+define W
+{ C(B(M)(R)) }
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Cat Syntax
+
+// \abc.ac(bc)
+define S
+{ \a.[\b.[\c.[c b A c a A A]]] }
+
+// \ab.a
+define K
+{ \a.[\b.[a]] }
+
+// \a.a
+define I
+{ K K S A A }
+
+// \ab.b(ab)
+define O
+{ I S A }
+
+// \abc.a(bc)
+define B
+{ K S K A A S A }
+
+// \abcd.ab(cd)
+define D
+{ B B A }
+
+/*
+// \abc.acb
+define C
+{ K K A S B B A A S A A }
+
+// \ab.ba
+define T
+{ I C A }
+
+// \abcde.ab(cde)
+define E
+{ B B B A A B A }
+
+// \abc.cba
+define F
+{ T E T T E A A A A }
+
+// \ab.a(bb)
+define L
+{ M B C A A }
+
+// \abc.bca
+define R
+{ T B B A A }
+
+// \ab.b(aab)
+define U
+{ O L A }
 
 // \abc.cab
 define v
-{ [t] [c] b }
+{ T C B A A }
 
 // \ab.abb
-define w
-{ [r] [m] b c }
+define W
+{ R M B A A C A }
 
 // \ab.b
-define ki
-{ [i] k }
+define KI
+{ I K A }
+*/

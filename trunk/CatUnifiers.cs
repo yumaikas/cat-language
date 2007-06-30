@@ -18,9 +18,6 @@ namespace Cat
         {
             while (!v1.IsEmpty() && !v2.IsEmpty())
             {
-                // DEBUG: uncomment the next line
-                CheckConstraints();
-
                 CatKind k1 = v1.GetTop();
                 CatKind k2 = v2.GetTop();
 
@@ -75,16 +72,11 @@ namespace Cat
 
         public void AddFxnConstraint(CatFxnType f1, CatFxnType f2)
         {
-            CheckConstraints();
-
             if (f1 is CatSelfType || f2 is CatSelfType)
                 return;
 
             AddVectorConstraint(f1.GetCons(), f2.GetCons());
-            CheckConstraints();
-
             AddVectorConstraint(f1.GetProd(), f2.GetProd());
-            CheckConstraints();
         }
 
         /// <summary>
@@ -137,6 +129,7 @@ namespace Cat
                 {
                     if (list[i] is CatFxnType)
                     {
+                        CatFxnType ft = list[i] as CatFxnType;
                         AddFxnConstraint(k as CatFxnType, list[i] as CatFxnType);
                     }
                 }
@@ -159,47 +152,41 @@ namespace Cat
                 // We may have to merge two constraint lists
                 MergeConstraintListsIfNeccessary(k.ToString(), list);
             }
-
-            CheckConstraints();
         }
 
-        /// <summary>
-        /// Debugging paranoia.
-        /// </summary>
-        private void CheckConstraints()
+        /*
+        public bool DoesKindContainVar(CatKind k, string s)
         {
-            /*
-            foreach (List<CatKind> list in mConstraintListList)
+            if (k is CatTypeVector)
             {
-                if (!mConstraints.ContainsValue(list))
-                    throw new Exception("internal constraint error");
-
-                foreach (CatKind k in list)
-                {
-                    if (k.IsKindVar())
-                    {
-                        if (!mConstraints.ContainsKey(k.ToString()))
-                            throw new Exception("internal constraint error");
-
-                        if (mConstraints[k.ToString()] != list)
-                            throw new Exception("internal constraint error");
-                    }
-                }
+                CatTypeVector vec = k as CatTypeVector;
+                return VectorContainsVar(vec, s);
             }
-            
-            foreach (List<CatKind> list in mConstraints.Values)
+            else if (k is CatFxnType)
             {
-                if (!mConstraintListList.Contains(list))
-                    throw new Exception("internal constraints error");
+                CatFxnType ft = k as CatFxnType;
+                return FxnContainsVar(ft, s);
             }
-             */
+            else
+            {
+                return false;
+            }
         }
+        */
 
         public void AddConstraint(string s, CatKind k)
         {
-            // Don't add self-referential variables 
+            // Don't add  
             if (k.ToString().Equals(s))
                 return;
+
+            // Are we adding a self-type? 
+            if (k is CatFxnType)
+            {
+                CatFxnType ft = k as CatFxnType;
+                if (FxnContainsVar(ft, s, new Stack<CatKind>()))
+                    k = new CatSelfType();
+            }
 
             // Check for single unit vectors 
             if (k is CatTypeVector)
@@ -248,9 +235,6 @@ namespace Cat
             }
 
             AddConstraintToList(mConstraints[s], k);
-            
-            // DEBUG: uncomment the next line
-            CheckConstraints();
         }
 
         private CatKind CreateUnifier(CatKind k1, CatKind k2)
@@ -262,8 +246,6 @@ namespace Cat
 
             if (k1 is CatSelfType) 
             {
-                Trace.Assert(false); // TODO: throw an exception
-
                 if (!(k2 is CatFxnType) && !k2.IsKindVar())
                     throw new KindException(k1, k2);
 
@@ -271,8 +253,6 @@ namespace Cat
             }
             else if (k2 is CatSelfType)
             {
-                Trace.Assert(false); // TODO: throw an exception
-
                 if (!(k1 is CatFxnType) && !k1.IsKindVar())
                     throw new KindException(k1, k2);
 
@@ -362,8 +342,15 @@ namespace Cat
             return ret;
         }
 
-        private bool VectorContainsVar(CatTypeVector vec, string s)
+        private bool VectorContainsVar(CatTypeVector vec, string s, Stack<CatKind> visited)
         {
+            if (visited.Contains(vec))
+            {
+                // Cycle detected
+                return false;
+            }
+            visited.Push(vec);
+
             foreach (CatKind child in vec.GetKinds())
             {
                 if (child.ToString().Equals(s)) 
@@ -380,19 +367,14 @@ namespace Cat
                         }
                         else if (k is CatTypeVector)
                         {
-                            // TODO: verify that this indeed is correct. I suspect so, 
-                            // but I am not 100% convinced. 
-                            if (VectorContainsVar(k as CatTypeVector, s))
+                            if (VectorContainsVar(k as CatTypeVector, s, visited))
                                 return true;
                         }
-                            /* This is broken.
-                             * 
                         else if (k is CatFxnType)
                         {
-                            if (FxnContainsVar(k as CatFxnType, s))
-                                throw new Exception("Circular reference to '" + s + "' detected greater than one level deep ");
+                            if (FxnContainsVar(k as CatFxnType, s, visited))
+                                return true;
                         }
-                             */
                     }
                 }
             }
@@ -403,9 +385,16 @@ namespace Cat
             return false;
         }
 
-        private bool FxnContainsVar(CatFxnType ft, string s)
+        private bool FxnContainsVar(CatFxnType ft, string s, Stack<CatKind> visited)
         {
-            return VectorContainsVar(ft.GetCons(), s) || VectorContainsVar(ft.GetProd(), s);
+            if (visited.Contains(ft))
+            {
+                // Cycle detected 
+                return false;
+            }
+                
+            visited.Push(ft);
+            return VectorContainsVar(ft.GetCons(), s, visited) || VectorContainsVar(ft.GetProd(), s, visited);
         }
 
         private bool IsSelfType(string s)
@@ -417,7 +406,7 @@ namespace Cat
             {
                 if (child is CatFxnType)
                 {
-                    if (FxnContainsVar(child as CatFxnType, s))
+                    if (FxnContainsVar(child as CatFxnType, s, new Stack<CatKind>()))
                         return true;
                 }
                 /*

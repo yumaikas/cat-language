@@ -398,7 +398,7 @@ define uncons4 : (list -> list any any any any)
 define unpair : (list -> any any)
 { uncons [head] dip }
 
-define fold : ('A list 'b ('A 'b 'c -> 'A 'b) -> 'A 'b)
+define fold : (list 'b ('b 'c -> 'b) -> 'b)
 { swapd gfold }
 
 define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) (list 'd -> list 'd bool) -> 'A list)

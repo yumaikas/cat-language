@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Cat
 {
@@ -59,6 +60,7 @@ namespace Cat
         }
         public CatFxnType GetFxnType()
         {
+            Trace.Assert(mpFxnType != null);
             return mpFxnType;
         }
         public Executor GetExecutor()
@@ -268,7 +270,7 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
-            exec.Push(new QuotedFunction(mChildren));
+            exec.Push(new QuotedFunction(mChildren, mpFxnType.Unquote()));
         }
 
         public List<Function> GetChildren()
@@ -284,7 +286,7 @@ namespace Cat
     {
         List<Function> mChildren;
         
-        public QuotedFunction(List<Function> children)
+        public QuotedFunction(List<Function> children, CatFxnType pFxnType)
         {
             mChildren = new List<Function>(children.ToArray());
             msDesc = "anonymous function";
@@ -294,16 +296,19 @@ namespace Cat
                 if (i > 0) msName += " ";
                 msName += mChildren[i].GetName();
             }
+            mpFxnType = pFxnType;
+        }
 
-            // TEMP: I think I shouldn't be dynamically inferring types!
-            // mpFxnType = TypeInferer.Infer(mChildren, Config.gbVerboseInference, true);
-            mpFxnType = null;
+        public QuotedFunction(List<Function> children)
+         : this(children, TypeInferer.Infer(children, Config.gbVerboseInference, true))
+        {
         }
 
         public QuotedFunction(Function f)
         {
             mChildren = new List<Function>();
             mChildren.Add(f);
+            mpFxnType = f.GetFxnType();
         }
 
         public QuotedFunction(QuotedFunction first, QuotedFunction second)

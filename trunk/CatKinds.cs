@@ -298,8 +298,16 @@ namespace Cat
                 return gFxnTypePool[sType];
 
             Peg.Parser p = new Peg.Parser(sType);
-            if (!p.Parse(CatGrammar.FxnType()))
-                throw new Exception(sType + " is not a valid function type");
+            try
+            {
+                if (!p.Parse(CatGrammar.FxnType()))
+                    throw new Exception("no additional information");
+            }
+            catch (Exception e)
+            {
+                throw new Exception(sType + " is not a valid function type ", e);
+            }
+
             Peg.PegAstNode ast = p.GetAst();
             if (ast.GetNumChildren() != 1)
                 throw new Exception("invalid number of children in abstract syntax tree");
@@ -419,6 +427,69 @@ namespace Cat
             }
         }
 
+        public static string IntToPrettyString(int n)
+        {
+            string s = "";
+            if (n > 26) 
+                s += IntToPrettyString(n / 26);
+            char c = 'a';
+            c += (char)(n % 26);
+            s += c.ToString();
+            return s;
+        }
+
+        public static string ToPrettyString(CatTypeVector vec, Dictionary<string, string> dic)
+        {
+            string s = "";
+            for (int i=1; i < vec.GetKinds().Count; ++i)
+            {
+                if (i > 1) s += " ";
+                CatKind k = vec.GetKinds()[i];
+                if (k.IsKindVar())
+                {
+                    if (!dic.ContainsKey(k.ToString()))
+                    {
+                        string sNew = IntToPrettyString(dic.Count);
+                        if (k is CatStackVar)
+                            sNew = sNew.ToUpper();
+                        dic.Add(k.ToString(), sNew);
+                    }
+                    
+                    s += dic[k.ToString()];
+                        
+                }
+                else if (k is CatFxnType)
+                {
+                    s += ToPrettyString(k as CatFxnType, dic);
+                }
+                else if (k is CatTypeVector)
+                {
+                    s += ToPrettyString(k as CatFxnType, dic);
+                }
+                else
+                {
+                    s += k.ToString();
+                }
+            }
+            return s;
+        }
+
+        public string ToPrettyString()
+        {
+            return ToPrettyString(this, new Dictionary<string, string>());
+        }
+
+        public static string ToPrettyString(CatFxnType ft, Dictionary<string, string> dic)
+        {
+            string s = "(" + ToPrettyString(ft.GetCons(), dic);                        
+            if (ft.HasSideEffects())
+                s += " ~> ";
+            else
+                s += " -> ";
+            s += ToPrettyString(ft.GetProd(), dic) + ")";
+            return s;
+        }
+
         public override bool Equals(CatKind k)
         {
             if (!(k is CatFxnType)) return false;
@@ -489,6 +560,12 @@ namespace Cat
             // TODO: Deal with functions that return ill-typed functions. 
         }
 
+        public CatFxnType Unquote()
+        {
+            // TODO: should we turn checking off?
+            return TypeInferer.Infer(this, CatFxnType.GetApplyType(), Config.gbVerboseInference, true);
+        }
+
         #region static data and functions
         // Used to memoize of results from calling CreateFxnType
         static Dictionary<string, CatFxnType> gFxnTypePool = new Dictionary<string, CatFxnType>();
@@ -550,7 +627,7 @@ namespace Cat
     public class CatQuotedFxnType : CatFxnType
     {
         public CatQuotedFxnType(CatFxnType f)
-        {            
+        {
             GetProd().PushKind(f);
         }
     }

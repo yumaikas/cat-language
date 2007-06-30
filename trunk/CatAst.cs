@@ -18,16 +18,14 @@ namespace Cat
     /// </summary>
     public abstract class CatAstNode
     {
-        string msText;
+        PegAstNode mpPegNode;
         string msLabel;
         string msComment;
+        string msText;
 
         public CatAstNode(PegAstNode node)
         {
-            if (node.GetNumChildren() == 0)
-                msText = node.ToString();
-            else
-                msText = "";
+            mpPegNode = node;
             msLabel = node.GetLabel();
         }
 
@@ -46,8 +44,8 @@ namespace Cat
         {
             switch (node.GetLabel())
             {
-                case "program":
-                    return new AstProgram(node);
+                case "ast":
+                    return new AstRoot(node);
                 case "def":
                     return new AstDefNode(node);
                 case "name":
@@ -131,12 +129,10 @@ namespace Cat
 
         public override string ToString()
         {
-            return msText;
-        }
-
-        public void SetText(string sText)
-        {
-            msText = sText;
+            if (mpPegNode != null)
+                return mpPegNode.ToString();
+            else
+                return msText;
         }
 
         public string GetComment()
@@ -163,11 +159,11 @@ namespace Cat
         }
     }
 
-    public class AstProgram : CatAstNode
+    public class AstRoot : CatAstNode
     {
         public List<AstDefNode> Defs = new List<AstDefNode>();
 
-        public AstProgram(PegAstNode node) : base(node)
+        public AstRoot(PegAstNode node) : base(node)
         {
             CheckLabel("ast");
             foreach (PegAstNode child in node.GetChildren())
@@ -390,15 +386,6 @@ namespace Cat
             mTerms.AddRange(expr);
         }
 
-        public override string ToString()
-        {
-            string result = "[ ";
-            foreach (AstExprNode x in mTerms)
-                result += x.ToString() + " ";
-            result += "]";
-            return result;
-        }
-
         public override void Output(TextWriter writer, int nIndent)
         {
             if (HasComment())
@@ -544,14 +531,6 @@ namespace Cat
                 mTypes.Add(tmp as AstTypeNode);
             }
         }
-
-        public override string ToString()
-        {
-            string result = "";
-            foreach (AstTypeNode x in mTypes)
-                result += x.ToString() + " ";
-            return result;
-        }
     }
 
     public class AstTypeVarNode : AstTypeNode
@@ -600,18 +579,6 @@ namespace Cat
             mProd = new AstStackNode(node.GetChild(2));
         }
 
-        public override string ToString()
-        {
-            if (mbSideEffects)
-            {
-                return "( " + mCons.ToString() + "~> " + mProd.ToString() + ")";
-            }
-            else
-            {
-                return "( " + mCons.ToString() + "-> " + mProd.ToString() + ")";
-            }
-        }
-
         public bool HasSideEffects()
         {
             return mbSideEffects;
@@ -632,11 +599,6 @@ namespace Cat
             mSrc = new AstMacroPattern(node.GetChild(0));
             mDest = new AstMacroPattern(node.GetChild(1));
         }
-
-        public override string ToString()
-        {
-            return "{" + mSrc.ToString() + "} => {" + mDest.ToString() + "}";
-        }
     }
 
     public class AstMacroPattern : CatAstNode
@@ -654,15 +616,6 @@ namespace Cat
                     throw new Exception("invalid grammar: only macro terms can be children of an ast macro mPattern");
                 mPattern.Add(tmp);
             }
-        }
-
-        public override string ToString()
-        {
-            string ret = "";
-            foreach (AstMacroTerm t in mPattern)
-                ret += " " + t.ToString();
-            ret = ret.Substring(1);
-            return ret;
         }
     }
 
@@ -688,15 +641,6 @@ namespace Cat
                     throw new Exception("internal grammar error: macro quotations can only contain macro terms");
                 mTerms.Add(term);
             }
-        }
-
-        public override string ToString()
-        {
-            string ret = "";
-            foreach (AstMacroTerm t in mTerms)
-                ret += " " + t.ToString();
-            ret = ret.Substring(1);
-            return "[" + ret + "]";
         }
     }
 

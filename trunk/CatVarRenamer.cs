@@ -119,7 +119,18 @@ namespace Cat
             {
                 CatKind tmp = mNames[sName];
                 if (!(tmp is CatStackKind))
-                    throw new Exception(sName + " is not a stack kind");
+                {
+                    if (tmp is CatSelfType)
+                    {
+                        CatTypeVector v = new CatTypeVector();
+                        v.PushKind(tmp);
+                        tmp = v;
+                    }
+                    else
+                    {
+                        throw new Exception(sName + " is not a stack kind");
+                    }
+                }
                 return tmp as CatStackKind;
             }
 

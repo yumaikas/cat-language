@@ -112,7 +112,7 @@ namespace Cat
                 if (ft == null)
                     MainClass.WriteLine("type could not be inferred");
                 else
-                    MainClass.WriteLine(f.ToString() + " : " + ft.ToString());
+                    MainClass.WriteLine(f.ToString() + " : " + ft.ToPrettyString());
                 
             }
         }
@@ -328,7 +328,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(MainClass.ObjectToString(exec.Pop()));
+                exec.Push(Output.ObjectToString(exec.Pop()));
             }
         }
 
@@ -495,6 +495,19 @@ namespace Cat
         {
             public EvalFxn()
                 : base("apply", "('A ('A -> 'B) -> 'B)", "evaluates a function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.TypedPop<Function>();
+                f.Eval(exec);
+            }
+        }
+
+        public class ApplyOneFxn : PrimitiveFunction
+        {
+            public ApplyOneFxn()
+                : base("A", "('a ('a -> 'b) -> 'b)", "applies a unary function to its argument")
             { }
 
             public override void Eval(Executor exec)

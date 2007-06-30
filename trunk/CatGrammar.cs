@@ -231,11 +231,11 @@ namespace Cat
         }
         public static Rule PlainCatProgram()
         {
-            return Seq(Star(Token(FxnDef())), NoFail(EndOfInput(), "expected macro or function defintion"));
+            return Seq(WS(), Star(Token(FxnDef())), NoFail(EndOfInput(), "expected macro or function defintion"));
         }
         public static Rule MetaCatProgram()
         {
-            return Seq(Star(Choice(Token(FxnDef()), Token(MacroDef()))), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
+            return Seq(WS(), Star(Choice(Token(FxnDef()), Token(MacroDef()))), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
         }
     }
 }

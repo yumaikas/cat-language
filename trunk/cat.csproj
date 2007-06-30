@@ -97,13 +97,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CatOptimizer.cs" />
+    <Compile Include="CatOutput.cs" />
     <Compile Include="CatParser.cs" />
     <Compile Include="CatPrimitives.cs" />
-    <Compile Include="CatScope.cs" />
+    <Compile Include="CatContext.cs" />
     <Compile Include="CatTypeInferer.cs" />
     <Compile Include="CatUnifiers.cs" />
+    <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
-    <Compile Include="Kitten.cs" />
+    <Compile Include="LambdaCat.cs" />
     <Compile Include="MetaCat.cs" />
     <Compile Include="PegAst.cs" />
     <Compile Include="PegBaseGrammar.cs" />
