@@ -81,7 +81,8 @@ namespace Cat
             def.AddFunctions(TermsToFxns(node.mTerms, def));
 
             // Compare the inferred type with the declared type
-            if (node.mType != null)
+            // This is a crtical part of the type checker.
+            if (node.mType != null) 
             {
                 CatFxnType declaredType = new CatFxnType(node.mType);
                 if (!CatFxnType.CompareFxnTypes(declaredType, def.mpFxnType))

@@ -16,26 +16,14 @@ namespace Cat
     public class VarRenamer
     {
         int mnId = 0;
-        bool mbGenerateNames;
 
         Dictionary<string, CatKind> mNames;
 
         #region constructors
 
-        /// <summary>
-        /// When this cosntructor is used the renamer will not generate any new names
-        /// and will instead simply use the dictionary given to look up kinds.
-        /// </summary>
-        public VarRenamer(Dictionary<string, CatKind> names)
-        {
-            mNames = names;
-            mbGenerateNames = false;
-        }
-
         public VarRenamer()
         {
             mNames = new Dictionary<string, CatKind>();
-            mbGenerateNames = true;
         }
         #endregion
 
@@ -69,7 +57,7 @@ namespace Cat
         #endregion
 
         /// <summary>
-        /// This allows unique names to continue to be generated, from previously used variable names.
+        /// This forgets previously generated names, but assures that new names generated will be unique.
         /// </summary>
         public void ResetNames()
         {
@@ -108,7 +96,7 @@ namespace Cat
         {
             CatTypeVector ret = new CatTypeVector();
             foreach (CatKind k in s.GetKinds())
-                ret.PushKind(Rename(k));
+                ret.Add(Rename(k));
             return ret;
         }
 
@@ -120,10 +108,12 @@ namespace Cat
                 CatKind tmp = mNames[sName];
                 if (!(tmp is CatStackKind))
                 {
+                    // HACK: upon inspection I now have my doubts bout this code.
+                    // it needs to be examined
                     if (tmp is CatSelfType)
                     {
                         CatTypeVector v = new CatTypeVector();
-                        v.PushKind(tmp);
+                        v.Add(tmp);
                         tmp = v;
                     }
                     else
@@ -133,9 +123,6 @@ namespace Cat
                 }
                 return tmp as CatStackKind;
             }
-
-            if (!mbGenerateNames)
-                return s;
 
             CatStackVar var = new CatStackVar(GenerateNewName(sName));
             mNames.Add(sName, var);
@@ -160,9 +147,6 @@ namespace Cat
                         throw new Exception(sName + " is not a type kind");
                     return ret;
                 }
-
-                if (!mbGenerateNames)
-                    return t;
 
                 CatTypeVar var = new CatTypeVar(GenerateNewName(sName));
                 mNames.Add(sName, var);

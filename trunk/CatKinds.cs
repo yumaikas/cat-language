@@ -13,6 +13,8 @@ namespace Cat
     /// </summary>
     abstract public class CatKind 
     {
+        public static int gnId = 0;
+
         public static CatKind Create(AstTypeNode node)
         {
             if (node is AstSimpleTypeNode)
@@ -138,6 +140,33 @@ namespace Cat
         }
     }
 
+    public class CatTypeVar : CatTypeKind
+    {
+        string msName;
+
+        public CatTypeVar(string s)
+        {
+            msName = s;
+        }
+
+        public override string ToString()
+        {
+            return "'" + msName;
+        }
+
+        public static CatStackVar CreateUnique()
+        {
+            return new CatStackVar("$t" + (gnId++).ToString());
+        }
+
+        public override bool Equals(CatKind k)
+        {
+            if (!(k is CatTypeVar))
+                return false;
+            return ToString().CompareTo(k.ToString()) == 0;
+        }
+    }
+
     public abstract class CatStackKind : CatKind
     {
     }
@@ -173,7 +202,7 @@ namespace Cat
             return mList;
         }
 
-        public void PushKind(CatKind k)
+        public void Add(CatKind k)
         {
             Trace.Assert(k != null);
             if (k is CatTypeVector)
@@ -257,12 +286,19 @@ namespace Cat
                 return false;
             return true;
         }
+
+        public CatTypeVector Clone()
+        {
+            CatTypeVector ret = new CatTypeVector();
+            foreach (CatKind k in GetKinds())
+                ret.Add(k);
+            return ret;
+        }
     }
 
     public class CatStackVar : CatStackKind
     {
         string msName;
-        static int gnId = 0;
 
         public CatStackVar(string s)
         {
@@ -331,8 +367,6 @@ namespace Cat
             mbSideEffects = false;
             mCons = new CatTypeVector();
             mProd = new CatTypeVector();
-            mCons.PushKind(rho);
-            mProd.PushKind(rho);
         }
 
         public CatFxnType(AstFxnTypeNode node)
@@ -340,17 +374,42 @@ namespace Cat
             mbSideEffects = node.HasSideEffects();
             mCons = new CatTypeVector(node.mCons);
             mProd = new CatTypeVector(node.mProd);
-            AddImplicitRhoVariables();
         }
 
-        public void AddImplicitRhoVariables()
+        private CatTypeVector AddImplicitRhoVariables(CatTypeVector v)
         {
-            if (!(GetCons().GetBottom() is CatStackVar))
+            CatTypeVector ret = new CatTypeVector();
+            foreach (CatKind k in v.GetKinds())
+            {
+                if (k is CatFxnType)
+                    ret.Add((k as CatFxnType).AddImplicitRhoVariables());
+                else
+                    ret.Add(k);                    
+            }
+            return ret;
+        }
+
+        public virtual CatFxnType AddImplicitRhoVariables()
+        {
+            CatTypeVector cons = AddImplicitRhoVariables(GetCons());
+            CatTypeVector prod = AddImplicitRhoVariables(GetProd());            
+            //CatTypeVector cons = GetCons().Clone();
+            //CatTypeVector prod = GetProd().Clone();
+
+            if (!(cons.GetBottom() is CatStackVar))
             {
                 CatStackVar rho = CatStackVar.CreateUnique();
-                GetCons().PushKindBottom(rho);
-                GetProd().PushKindBottom(rho);
+                cons.PushKindBottom(rho);
+                prod.PushKindBottom(rho);
             }
+            else
+            {
+                // Writing ('A -> 'b) would be illegal.
+                // TODO: this fails for "qsort" which is very interesting!
+                // Trace.Assert(prod.GetBottom() is CatStackVar);
+            }
+
+            return new CatFxnType(cons, prod, HasSideEffects());
         }
 
         public CatFxnType Clone()
@@ -441,9 +500,9 @@ namespace Cat
         public static string ToPrettyString(CatTypeVector vec, Dictionary<string, string> dic)
         {
             string s = "";
-            for (int i=1; i < vec.GetKinds().Count; ++i)
+            for (int i=0; i < vec.GetKinds().Count; ++i)
             {
-                if (i > 1) s += " ";
+                if (i > 0) s += " ";
                 CatKind k = vec.GetKinds()[i];
                 if (k.IsKindVar())
                 {
@@ -455,8 +514,11 @@ namespace Cat
                         dic.Add(k.ToString(), sNew);
                     }
                     
-                    s += dic[k.ToString()];
-                        
+                    s += dic[k.ToString()];                        
+                }
+                else if (k is CatSelfType)
+                {
+                    s += "self";
                 }
                 else if (k is CatFxnType)
                 {
@@ -474,7 +536,7 @@ namespace Cat
             return s;
         }
 
-        public string ToPrettyString()
+        public virtual string ToPrettyString()
         {
             return ToPrettyString(this, new Dictionary<string, string>());
         }
@@ -490,37 +552,50 @@ namespace Cat
             return s;
         }
 
+        /// <summary>
+        /// This is a raw equivalency check: no normalization is done. 
+        /// To comparse function type normally you would use CompareFxnTypes,
+        /// which in turn calls this function.
+        /// </summary>
         public override bool Equals(CatKind k)
         {
             if (!(k is CatFxnType)) return false;
             CatFxnType f = k as CatFxnType;
-            return (f.GetCons().Equals(mCons) && f.GetProd().Equals(mProd) && f.HasSideEffects() == HasSideEffects());
+            return (GetCons().Equals(f.GetCons()) && GetProd().Equals(f.GetProd()) 
+                && HasSideEffects() == f.HasSideEffects());
         }
 
+        /// <summary>
+        /// Compares two function types, by first normalizing so that they each have 
+        /// names of variables that correspond to the locations in the function
+        /// </summary>
         public static bool CompareFxnTypes(CatFxnType f, CatFxnType g)
         {
-            CatFxnType f2 = VarRenamer.RenameVars(f);
-            CatFxnType g2 = VarRenamer.RenameVars(g);
+            CatFxnType f2 = VarRenamer.RenameVars(f.AddImplicitRhoVariables());
+            CatFxnType g2 = VarRenamer.RenameVars(g.AddImplicitRhoVariables());
             return f2.Equals(g2);
         }
 
-        private void GetAllVars(CatTypeVector vec, List<string> vars)
+        public void GetAllVars(Dictionary<string, CatKind> vars)
+        {
+            if (this is CatSelfType)
+                return;
+            GetAllVars(GetCons(), vars);
+            GetAllVars(GetProd(), vars);
+        }
+
+        private void GetAllVars(CatTypeVector vec, Dictionary<string, CatKind> vars)
         {
             foreach (CatKind k in vec.GetKinds())
             {
-                if (k is CatSelfType)
+                if (k is CatFxnType)
                 {
-                    // do nothing
-                }
-                else if (k is CatFxnType)
-                {
-                    CatFxnType ft = k as CatFxnType;
-                    GetAllVars(ft.GetCons(), vars);
-                    GetAllVars(ft.GetProd(), vars);
+                    (k as CatFxnType).GetAllVars(vars);
                 }
                 else if (k.IsKindVar())
                 {
-                    vars.Add(k.ToString());
+                    if (!vars.ContainsKey(k.ToString()))
+                        vars.Add(k.ToString(), k);
                 }
             }
         }
@@ -536,7 +611,7 @@ namespace Cat
         /// </summary>
         public void CheckIfWellTyped()
         {
-            List<string> consVars = new List<string>();
+            Dictionary<string, CatKind> consVars = new Dictionary<string, CatKind>();
 
             foreach (CatKind k in GetCons().GetKinds())
             {
@@ -552,7 +627,7 @@ namespace Cat
                 if (k.IsKindVar())
                 {
                     string s = k.ToString();
-                    if (!consVars.Contains(s))
+                    if (!consVars.ContainsKey(s))
                         throw new Exception("type error: " + s + " appears in production and not in consumption");
                 }
             }
@@ -610,10 +685,20 @@ namespace Cat
         public CatSelfType()
         {
             //GetProd().PushKind(new CatSimpleTypeKind("function"));
-            GetProd().PushKind(this);
+            GetProd().Add(this);
+        }
+
+        public override CatFxnType AddImplicitRhoVariables()
+        {
+            return this; 
         }
 
         public override string ToString()
+        {
+            return "self";
+        }
+
+        public override string ToPrettyString()
         {
             return "self";
         }
@@ -628,29 +713,7 @@ namespace Cat
     {
         public CatQuotedFxnType(CatFxnType f)
         {
-            GetProd().PushKind(f);
-        }
-    }
-
-    public class CatTypeVar : CatTypeKind
-    {
-        string msName;
-
-        public CatTypeVar(string s)
-        {
-            msName = s;
-        }
-
-        public override string ToString()
-        {
-            return "'" + msName;
-        }
-
-        public override bool Equals(CatKind k)
-        {
-            if (!(k is CatTypeVar)) 
-                return false;
-            return ToString().CompareTo(k.ToString()) == 0; 
+            GetProd().Add(f);
         }
     }
 }

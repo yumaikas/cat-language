@@ -501,7 +501,7 @@ namespace Cat
                 CatTypeVector v = k as CatTypeVector;
                 CatTypeVector ret = new CatTypeVector();
                 foreach (CatKind tmp in v.GetKinds())
-                    ret.PushKind(ResolveKind(tmp));
+                    ret.Add(ResolveKind(tmp));
                 return ret;
             }
             else if (k is CatSelfType)
