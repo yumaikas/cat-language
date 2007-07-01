@@ -25,7 +25,7 @@ namespace Cat
     }
 
     /// <summary>
-    /// This is used to as a base class for the variou dynamic function dispatch functions
+    /// This is used to as a base class for the various dynamic function dispatch functions
     /// It can not be placed with in the Primitives class, due to some design flaw.
     /// </summary>
     public class Dispatch : PrimitiveFunction
@@ -446,7 +446,7 @@ namespace Cat
         public class Dup : PrimitiveFunction
         {
             public Dup()
-                : base("dup", "('R 'a -> 'R 'a 'a)", "duplicate the top item on the stack")
+                : base("dup", "('a -> 'a 'a)", "duplicate the top item on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -465,7 +465,7 @@ namespace Cat
         public class Pop : PrimitiveFunction
         {
             public Pop()
-                : base("pop", "('R 'a -> 'R)", "removes the top item from the stack")
+                : base("pop", "('a -> )", "removes the top item from the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -477,7 +477,7 @@ namespace Cat
         public class Swap : PrimitiveFunction
         {
             public Swap()
-                : base("swap", "('R 'a 'b -> 'R 'b 'a)", "swap the top two items on the stack")
+                : base("swap", "('a 'b -> 'b 'a)", "swap the top two items on the stack")
             { }
 
             public override void Eval(Executor exec)
@@ -590,7 +590,7 @@ namespace Cat
         public class Compose : PrimitiveFunction
         {
             public Compose()
-                : base("compose", "('R ('A -> 'B) ('B -> 'C) -> 'R ('A -> 'C))",
+                : base("compose", "(('A -> 'B) ('B -> 'C) -> ('A -> 'C))",
                     "creates a function by composing (concatenating) two existing functions")
             { }
 
@@ -606,7 +606,7 @@ namespace Cat
         public class Quote : PrimitiveFunction
         {
             public Quote()
-                : base("quote", "('R 'a -> 'R ('S -> 'S 'a))",
+                : base("quote", "('a -> ( -> 'a))",
                     "creates a constant generating function from the top value on the stack")
             { }
 
@@ -837,7 +837,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Object o = exec.Peek();
+                Object o = exec.Pop();
                 if (o is FList)
                 {
                     // HACK: this is not the correct type! 

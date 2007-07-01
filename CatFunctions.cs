@@ -208,7 +208,7 @@ namespace Cat
         {
             mValue = x;
             msName = "{" + x.ToString() + "}";
-            mpFxnType = CatFxnType.Create("('R -> 'R " + CatKind.TypeNameFromObject(x) + ")");
+            mpFxnType = CatFxnType.Create("( -> " + CatKind.TypeNameFromObject(x) + ")");
         }
         public T GetValue()
         {
