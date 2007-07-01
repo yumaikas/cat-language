@@ -68,56 +68,69 @@ namespace Cat
             }
         }
 
-        CatFxnType ApplyUnifiers(CatFxnType env1, CatFxnType env2, CatFxnType ft, Dictionary<string, CatKind> u)
-        {            
-            CatTypeVector cons = ApplyUnifiers(env1, env2, ft.GetCons(), u);
-            CatTypeVector prod = ApplyUnifiers(env1, env2, ft.GetProd(), u);
+        CatFxnType UnifyFxnType(CatFxnType ft, Dictionary<string, CatKind> u, Stack<CatKind> visited)
+        {
+            CatTypeVector cons = UnifyTypeVector(ft.GetCons(), u, visited);
+            CatTypeVector prod = UnifyTypeVector(ft.GetProd(), u, visited);
             return new CatFxnType(cons, prod, ft.HasSideEffects());
         }
 
-        CatTypeVector ApplyUnifiers(CatFxnType env1, CatFxnType env2, CatTypeVector vec, Dictionary<string, CatKind> u)
+        CatKind Unify(CatKind k, Dictionary<string, CatKind> u, Stack<CatKind> visited)
         {
-            CatTypeVector ret = new CatTypeVector();
-            foreach (CatKind k in vec.GetKinds())
+            if (visited.Contains(k)) 
+                return k;
+            
+            visited.Push(k);
+
+            CatKind ret = k;
+
+            if (k is CatSelfType)
             {
-                if (k is CatSelfType)
-                {
-                    ret.Add(k);
-                }
-                else if (k is CatFxnType)
-                {
-                    ret.Add(ApplyUnifiers(env1, env2, k as CatFxnType, u));
-                }
-                else if (k.IsKindVar() && u.ContainsKey(k.ToString()))
-                {
-                    CatKind unifier = u[k.ToString()];
-                    
-                    if (unifier is CatFxnType)
-                    {
-                        // BUG: rename free vars is not correct
-                        // My definition of a free variable is apparently not correct.
-                        CatFxnType ft = unifier as CatFxnType;
-                        ft = RenameFreeVars(env1, env2, ft);
-                        ret.Add(ft);
-                    }
-                    else
-                    {
-                        ret.Add(unifier);
-                    }
-                }
-                else if (k is CatTypeVector)
-                {
-                    throw new Exception("Unexpected type vector in functionduring application of unifiers");
-                }
+                ret = k;
+            }
+            else if (k is CatFxnType)
+            {
+                ret = UnifyFxnType(k as CatFxnType, u, visited);
+            }
+            else if (k is CatTypeVar)
+            {
+                if (u.ContainsKey(k.ToString()))
+                    ret = Unify(u[k.ToString()], u, visited);
+                else
+                    ret = CatTypeVar.CreateUnique();
+            }
+            else if (k is CatStackVar)
+            {
+                if (u.ContainsKey(k.ToString()))
+                    ret = Unify(u[k.ToString()], u, visited);
                 else
                 {
-                    ret.Add(k);
+                    ret = CatStackVar.CreateUnique();
                 }
             }
+            else if (k is CatTypeVector)
+            {
+                throw new Exception("Unexpected type vector during unification");
+            }
+            else
+            {
+                ret = k;
+            }
+
+            visited.Pop();
             return ret;
         }
 
-        void GetFreeVars(CatFxnType dest, CatTypeVector src, Dictionary<string, CatKind> vars)
+        CatTypeVector UnifyTypeVector(CatTypeVector vec, Dictionary<string, CatKind> u, Dictionary<string, CatKind> gen, Stack<CatKind> visited)
+        {
+            CatTypeVector ret = new CatTypeVector();
+            foreach (CatKind k in vec.GetKinds())
+                ret.Add(Unify(k, u, visited));            
+            return ret;
+        }
+
+        /*
+        void GetFreeVars(CatFxnType dest, CatTypeVector src, Dictionary<string, CatKind> vars, Stack<CatKind> visited)
         {
             foreach (CatKind k in src.GetKinds())
             {
@@ -181,6 +194,7 @@ namespace Cat
         {
             return new CatFxnType(RenameVars(ft.GetCons(), vars), RenameVars(ft.GetProd(), vars), ft.HasSideEffects());
         }
+        */
 
         /// <summary>
         /// A composed function satisfy the type equation 
@@ -235,7 +249,9 @@ namespace Cat
             }                
 
             // Replace all vars with unifiers
-            CatFxnType ret = ApplyUnifiers(left, right, tmp, unifiers);
+            Stack<CatKind> visited = new Stack<CatKind>();
+            CatFxnType ret = Unify(tmp, unifiers, visited) as CatFxnType;
+            Trace.Assert(visited.Count == 0);
 
             if (bVerbose)
                 MainClass.WriteLine("Inferred type (before renaming): " + ret.ToString());
