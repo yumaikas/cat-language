@@ -157,5 +157,71 @@ namespace Cat
                 return t;
             }
         }
+        public static bool DoesVarOccurIn(CatKind k, CatTypeVector vec, CatFxnType except)
+        {
+            foreach (CatKind tmp in vec.GetKinds())
+            {
+                if (tmp.IsKindVar() && tmp.Equals(k))
+                    return true;
+
+                if (tmp is CatFxnType)
+                    if (DoesVarOccurIn(k, tmp as CatFxnType, except))
+                        return true;
+            }
+            return false;
+        }
+
+        public static bool DoesVarOccurIn(CatKind k, CatFxnType ft, CatFxnType except)
+        {
+            if (!k.IsKindVar()) return false;
+            if (k == except) return false;
+            return DoesVarOccurIn(k, ft.GetCons(), except) || DoesVarOccurIn(k, ft.GetProd(), except);
+        }
+
+        public static bool IsFreeVar(CatKind k, CatFxnType left, CatFxnType right, CatFxnType except)
+        {
+            return !DoesVarOccurIn(k, left, except) && !DoesVarOccurIn(k, right, except);
+        }
+
+        public static CatFxnType RenameFreeVars(CatFxnType left, CatFxnType right, CatFxnType ft)
+        {
+            TypeVarList vars = ft.GetAllVars();
+            foreach (string s in vars.Keys)
+            {
+                CatKind k = vars[s];
+                if (IsFreeVar(k, left, right, ft))
+                {
+                    if (k is CatTypeVar)
+                        vars[s] = CatTypeVar.CreateUnique();
+                    else
+                        vars[s] = CatStackVar.CreateUnique();
+                }
+            }
+            return RenameVars(ft, vars);
+        }
+
+        static CatTypeVector RenameVars(CatTypeVector vec, TypeVarList vars)
+        {
+            CatTypeVector ret = new CatTypeVector();
+            foreach (CatKind k in vec.GetKinds())
+            {
+                if (k.IsKindVar() && vars.ContainsKey(k.ToString()))
+                    ret.Add(vars[k.ToString()]);
+                else if (k is CatSelfType)
+                    ret.Add(k);
+                else if (k is CatFxnType)
+                    ret.Add(RenameVars(ret, vars));
+                else if (k is CatTypeVector)
+                    throw new Exception("unexpected type vector in function during renaming");
+                else
+                    ret.Add(k);
+            }
+            return ret;
+        }
+
+        static CatFxnType RenameVars(CatFxnType ft, TypeVarList vars)
+        {
+            return new CatFxnType(RenameVars(ft.GetCons(), vars), RenameVars(ft.GetProd(), vars), ft.HasSideEffects());
+        }
     }
 }
