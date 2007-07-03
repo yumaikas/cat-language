@@ -88,9 +88,9 @@ namespace Cat
                 if (!CatFxnType.CompareFxnTypes(declaredType, def.mpFxnType))
                 {
                     MainClass.WriteLine("type error in function " + def.GetName());
-                    if (!Config.gbVerboseInference)
-                        MainClass.WriteLine("inferred type " + def.GetFxnType().ToPrettyString());
-                    MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
+                    MainClass.WriteLine("inferred type " + def.GetFxnType().ToPrettyString(false));
+                    MainClass.WriteLine("declared type " + declaredType.ToPrettyString(false));
+                    bool bTmp = CatFxnType.CompareFxnTypes(declaredType, def.mpFxnType);
                 }
                 else if (Config.gbVerboseTypeChecking)
                 {

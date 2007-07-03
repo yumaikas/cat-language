@@ -17,13 +17,13 @@ namespace Cat
     {
         int mnId = 0;
 
-        Dictionary<string, CatKind> mNames;
+        TypeVarList mNames;
 
         #region constructors
 
         public VarRenamer()
         {
-            mNames = new Dictionary<string, CatKind>();
+            mNames = new TypeVarList();
         }
         #endregion
 

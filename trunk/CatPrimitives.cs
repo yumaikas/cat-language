@@ -110,10 +110,7 @@ namespace Cat
                 QuotedFunction f = exec.TypedPop<QuotedFunction>();
                 CatFxnType ft = TypeInferer.Infer(f.GetChildren(), true, true);
                 if (ft == null)
-                    MainClass.WriteLine("type could not be inferred");
-                else
-                    MainClass.WriteLine(f.ToString() + " : " + ft.ToPrettyString());
-                
+                    MainClass.WriteLine("type could not be inferred");                
             }
         }
 

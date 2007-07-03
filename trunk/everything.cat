@@ -1,4 +1,5 @@
 "type_tests.cat" #load
+"combinators.cat" #load
 "standard.cat" #load
 "macros.cat" #load
 "graphics.cat" #load

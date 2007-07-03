@@ -5,15 +5,8 @@
 
 //=============================================================================
 
-define test : ( -> ( -> int) ( -> int))
-{ [42] dup }
-
-/*
 define noop : ( -> )
 { }
-
-define dolittle : ( -> self)
-{ [dolittle] }
 
 //=============================================================================
 // Function manipulation operators
@@ -405,7 +398,7 @@ define unpair : (list -> any any)
 define fold : ('A list 'b ('A 'b 'c -> 'A 'b) -> 'A 'b)
 { swapd gfold }
 
-define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) (list 'd -> list 'd bool) -> 'A list)
+define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
 { [nil bury [consd] compose] dip whilen pop }
 
 // reverses a list
@@ -586,4 +579,3 @@ define qsort : (list -> list)
   [[swap cons] dip cat]
   bin_rec
 }
-*/

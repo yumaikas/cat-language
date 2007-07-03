@@ -1,164 +1,114 @@
 //========================================================================================
-// Classical combinators, optimized definitions
-
-//define y
-//{ dup quote self compose swap apply }
-
-// \a.aa
-//define m
-//{ dup apply }
-
-//=========================================================================================
-// Combinatory logic combinators
-
-define (
-{ }
-
-define )
-{ swap apply }
-
-/*
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// classical syntax
-
-// \abc.ac(bc)
-// ((A b -> C (C d -> E) d) -> ((b -> A) -> (b -> E)))
-// Haskell (a -> b -> c) -> (a -> b) -> a -> c
-// Haskell Modified: (a -> (b -> c)) -> ((a -> b) -> (a -> c))
-define S
-{ \a.[\b.[\c.[b(c)(a(c))]]] }
-
-// \ab.a
-define K
-{ \a.[\b.[a]] }
-
-// \a.a
-define I
-{ S(K)(K) }
-
-// \ab.b
-define KI
-{ K(I) }
-
-// \ab.b(ab)
-// haskell: ((t -> t1) -> t) -> (t -> t1) -> t1
+// Classical Logic Combinators
 //
-define O : (('A ('B -> 'C) -> 'B) -> ('A ('B -> 'C) -> 'C))
-{ S(I) }
+// Unlike other combinators these return quotations
 
-define M
-{ S(I)(I) }
-
-// \abc.a(bc)
-define B
-{ S(K(S))(K) }
-
-// \abcd.ab(cd)
-define D
-{ B(B) }
-
-// \abc.acb
-define C
-{ S(B(B)(S))(K(K))  }
-
-// \ab.ba
-define T
-{ C(I) }
-
-// \abcde.ab(cde)
-define E
-{ B(B(B)(B)) }
-
-// \abc.cba
-define F
-{ E(T)(T)(E)(T) }
-
-// \ab.a(bb)
-define L
-{ C(B)(M) }
-
-// \abc.bca
-define R
-{ B(B)(T) }
-
-// \ab.b(aab)
-define U
-{ L(O) }
-
-// \abc.cab
-define V
-{ B(C)(T) }
-
-// \ab.abb
-define W
-{ C(B(M)(R)) }
-*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Cat Syntax
-
+// Starling
 // \abc.ac(bc)
 define S
 { \a.[\b.[\c.[c b A c a A A]]] }
 
+// Kestrel
 // \ab.a
-define K
+define K : ( -> ('a -> ('b -> 'a)))
 { \a.[\b.[a]] }
 
+// Identity
 // \a.a
-define I
+// S(K)(K)
+define I : ( -> ('a -> 'a))
 { K K S A A }
 
+// Kite
+// \ab.b
+// K(I)
+define KI : ( -> ('a -> ('b -> 'b)))
+{ I K A }
+
+// Mockingbird
+// \a.aa
+// S(I)(I)
+define M
+{ I I S A A }
+
+// Owl
 // \ab.b(ab)
-define O
+// S(I)
+// Bug, 'C needed as a workaround
+//define O : ( -> ((('a -> 'b) -> 'a) -> (('a -> 'b) -> 'b)))
+define O : ( -> ((('C 'a -> 'C 'b) -> 'a) -> (('C 'a -> 'C 'b) -> 'b)))
 { I S A }
 
+// Bluebird
 // \abc.a(bc)
-define B
-{ K S K A A S A }
+// S(K(S))(K)
+define B : ( -> (('a -> 'b) -> (('c -> 'a) -> ('c -> 'b))))
+{ K S K A S A A }
 
+// Double mockingbird
+// \ab.ab(ab)
+define M2 : ( -> (('a -> (self -> 'b)) -> ('a -> 'b)))
+{ M B A }
+
+// Dove
 // \abcd.ab(cd)
-define D
+// B(B)
+define D : ( -> (('a -> ('b -> 'c)) -> ('a -> (('d -> 'b) -> ('d -> 'c)))))
 { B B A }
 
-/*
+// Cardinal
 // \abc.acb
-define C
+// S(B(B)(S))(K(K))
+define C : ( -> (('a -> ('b -> 'c)) -> ('b -> ('a -> 'c))))
 { K K A S B B A A S A A }
 
+// Thrush
 // \ab.ba
-define T
+// C(I)
+define T : ( -> ('a -> (('a -> 'b) -> 'b)))
 { I C A }
 
+// Eagle
 // \abcde.ab(cde)
-define E
+// B(B(B)(B))
+define E : ( -> (('a -> ('b -> 'c)) -> ('a -> (('d -> ('e -> 'b)) -> ('d -> ('e -> 'c))))))
 { B B B A A B A }
 
+// Finch
 // \abc.cba
-define F
+// E(T)(T)(E)(T)
+define F : ( -> ('a -> ('b -> (('b -> ('a -> 'c)) -> 'c))))
 { T E T T E A A A A }
 
+// Lark
 // \ab.a(bb)
-define L
+// C(B)(M)
+define L : ( -> (('a -> 'b) -> ((self -> 'a) -> 'b)))
 { M B C A A }
 
+// Robin
 // \abc.bca
-define R
+// B(B)(T)
+define R : ( -> ('a -> (('b -> ('a -> 'c)) -> ('b -> 'c))))
 { T B B A A }
 
+// Turing
 // \ab.b(aab)
-define U
+// L(O)
+// bug, 'C is needed as a workaround
+//define U : ( -> ((self -> (('a -> 'b) -> 'a)) -> (('a -> 'b) -> 'b)))
+define U : ( -> ((self -> (('C 'a -> 'C 'b) -> 'a)) -> (('C 'a -> 'C 'b) -> 'b)))
 { O L A }
 
+// Vireo
 // \abc.cab
-define v
+// B(C)(T)
+define V : ( -> ('a -> ('b -> (('a -> ('b -> 'c)) -> 'c))))
 { T C B A A }
 
+// Warbler
 // \ab.abb
-define W
+// C(B(M)(R))
+// Bug, expected: ( -> (('a -> ('a -> 'b)) -> ('a -> 'b)))
+define W : ( -> (self -> (self -> 'c)))
 { R M B A A C A }
-
-// \ab.b
-define KI
-{ I K A }
-*/

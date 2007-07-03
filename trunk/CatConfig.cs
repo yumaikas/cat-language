@@ -80,7 +80,7 @@ namespace Cat
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
-        public static bool gbVerboseInference = true;
+        public static bool gbVerboseInference = false;
 
         /// <summary>
         /// Outputs the result of a type inference
