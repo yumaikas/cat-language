@@ -12,7 +12,8 @@ namespace Cat
     {
         List<List<CatKind>> mConstraintListList = new List<List<CatKind>>();
         Dictionary<string, List<CatKind>> mConstraints = new Dictionary<string, List<CatKind>>();
-        Dictionary<string, CatKind> mUnifiers = new Dictionary<string, CatKind>();
+        TypeVarList mUnifiers = new TypeVarList();
+        Dictionary<CatSelfType, CatFxnType> mSelfTypes = new Dictionary<CatSelfType, CatFxnType>();
 
         public void AddVectorConstraint(CatTypeVector v1, CatTypeVector v2)
         {
@@ -72,11 +73,24 @@ namespace Cat
 
         public void AddFxnConstraint(CatFxnType f1, CatFxnType f2)
         {
-            if (f1 is CatSelfType || f2 is CatSelfType)
+            if (f1 == f2)
                 return;
 
-            AddVectorConstraint(f1.GetCons(), f2.GetCons());
-            AddVectorConstraint(f1.GetProd(), f2.GetProd());
+            if (f1 is CatSelfType)
+            {
+                CatFxnType g = mSelfTypes[f1 as CatSelfType];
+                AddFxnConstraint(g, f2);
+            }
+            else if (f2 is CatSelfType)
+            {
+                CatFxnType g = mSelfTypes[f2 as CatSelfType];
+                AddFxnConstraint(f1, g);
+            }
+            else 
+            {
+                AddVectorConstraint(f1.GetCons(), f2.GetCons());
+                AddVectorConstraint(f1.GetProd(), f2.GetProd());
+            }
         }
 
         /// <summary>
@@ -467,9 +481,14 @@ namespace Cat
                 string s = k.ToString();
                 if (mUnifiers.ContainsKey(s))
                 {
-                    // TEMP:
                     if (IsSelfType(s))
-                        return new CatSelfType();
+                    {
+                        CatSelfType tmp = new CatSelfType();
+                        CatFxnType ft = mUnifiers[s] as CatFxnType;
+                        Trace.Assert(ft != null);
+                        AddSelfType(tmp, ft);
+                        return tmp;
+                    }
 
                     return mUnifiers[s];
                 }
@@ -512,9 +531,8 @@ namespace Cat
             }
         }
 
-        public Dictionary<string, CatKind> GetResolvedUnifiers()
+        public TypeVarList GetResolvedUnifiers()
         {
-            //DetectSelfTypes();
             CreateUnifiers();
             ResolveUnifiers();
             return mUnifiers;
@@ -525,7 +543,50 @@ namespace Cat
             mConstraintListList.Clear();
             mConstraints.Clear();
             mUnifiers.Clear();
+            mSelfTypes.Clear();
+        }
+
+        private void AddSelfType(CatSelfType t, CatFxnType ft)
+        {
+            CatFxnType tmp = ft.RemoveImplicitRhoVariables();
+            if (!mSelfTypes.ContainsKey(t))
+                mSelfTypes.Add(t, tmp);
+        }
+
+        private void AddSelfTypes(CatFxnType ft, CatTypeVector vec)
+        {
+            foreach (CatKind k in vec.GetKinds())
+            {
+                if (k is CatSelfType)
+                {
+                    AddSelfType(k as CatSelfType, ft);
+                }
+                else if (k is CatFxnType)
+                {
+                    AddSelfTypes(k as CatFxnType);
+                }
+                else if (k is CatTypeVector)
+                {
+                    AddSelfTypes(ft, k as CatTypeVector);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Associates self-types with their parents. 
+        /// This assures that proper constraint relations can be made with self types.
+        /// </summary>
+        public void AddSelfTypes(CatFxnType ft)
+        {
+            if (ft is CatSelfType)
+                throw new Exception("Unexpected self type");
+            AddSelfTypes(ft, ft.GetCons());
+            AddSelfTypes(ft, ft.GetProd());
+        }
+
+        public Dictionary<CatSelfType, CatFxnType> GetSelfTypes()
+        {
+            return mSelfTypes;
         }
     }
-
 }

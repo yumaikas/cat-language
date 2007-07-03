@@ -517,7 +517,7 @@ namespace Cat
         {
             mpFxn = f;
 
-            mpFxnType = CatFxnType.GetSelfType();
+            mpFxnType = new CatSelfType();
         }
 
         public override void Eval(Executor exec)

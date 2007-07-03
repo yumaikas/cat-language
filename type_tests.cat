@@ -1,27 +1,63 @@
 
+/*
+
 define rec_fact
 { dup 1 lteq_int [pop 1] [dup [rec_fact] apply mul_int] if }
-
-// The following is expected to generate a type error
-/*
-define omega
-{ [dup apply] dup apply }
 */
+
+define dolittle : ( -> self)
+{ [dolittle] }
+
+define test_dolittle : ( -> self)
+{ dolittle }
+
+define test_dolittle2 : ( -> self)
+{ dolittle apply }
+
+define test_appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C)
+{ apply apply }
+
+define test_app : ('A ('A -> 'B) -> 'B)
+{ 42 swap dip pop }
+
+define test_noop : ( -> )
+{ }
+
+define test_42 : ( -> int)
+{ 42 }
+
+define test_dup : ('a -> 'a 'a)
+{ dup }
+
+define test_42_dup : ( -> int int)
+{ 42 dup }
+
+define test_q42_dup : ( -> ( -> int) ( -> int))
+{ [42] dup }
+
+define test_quote_dip : ('a 'b -> ( -> 'a) 'b)
+{ [quote] dip }
+
+define test_bind : ('a ('B 'a -> 'C) -> ('B -> 'C))
+{ [quote] dip compose }
 
 define bind_self : (('A self -> 'B) -> ('A -> 'B))
 { dup bind }
 
-define test
+define test_bool
 { true [true] [false] if }
 
-define rec_noop
-{ [rec_noop] }
+define binary_dolittle
+{ [binary_dolittle] [binary_dolittle] }
 
-define bin_rec_noop
-{ [bin_rec_noop] [bin_rec_noop] }
-
-define m
+define m : ('A ('A self -> 'B) -> 'B)
 { dup apply }
+
+/*
+// The following is expected to generate a type error
+define omega
+{ [dup apply] dup apply }
+*/
 
 define y
 { [dup bind] swap compose dup apply }
