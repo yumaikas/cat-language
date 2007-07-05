@@ -639,6 +639,20 @@ namespace Cat
         #endregion
 
         #region control flow primitives 
+        public class CallCC : PrimitiveFunction
+        {
+            public CallCC()
+                : base("callcc", "('A ('A ('B -> 'C) -> 'B) ~> 'B)", "calls a function with the current continuation")
+            { }
+
+            public override void Eval(Executor exec)            
+            {
+                throw new Exception("unimplemented");
+                // TODO: make a copy of the stack, and a pointer to the current instruction. 
+                // this implies that I need to make a copy of the index stream.
+            }
+        }
+
         public class While : PrimitiveFunction
         {
             public While()
@@ -1835,6 +1849,18 @@ namespace Cat
                 exec.Push(mGen.NextDouble());
             }
         }
+
+        public class Null : PrimitiveFunction
+        {
+            public Null()
+                : base("null", "( -> " + CatClass.GetNullType() + ")", "returns a null object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(CatObject.GetNullObject());
+            }
+        }
         #endregion 
 
         #region casting functions
@@ -1933,6 +1959,18 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 WindowGDI.OpenWindow();
+            }
+        }
+
+        public class SaveWindow  : PrimitiveFunction
+        {
+            public SaveWindow()
+                : base("save_window", "(string ~> )", "saves a bitmap of the viewport")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                WindowGDI.SaveToFile(exec.TypedPop<string>());
             }
         }
 

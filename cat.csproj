@@ -96,6 +96,7 @@
     <Compile Include="CatMutableList.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CatClass.cs" />
     <Compile Include="CatOptimizer.cs" />
     <Compile Include="CatOutput.cs" />
     <Compile Include="CatParser.cs" />

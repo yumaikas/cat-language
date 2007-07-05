@@ -67,28 +67,17 @@ namespace Cat
 
         public static string TypeNameFromObject(Object o)
         {
-            if (o is HashList)
-                return "hash_list";
-            if (o is ByteBlock)
-                return "byte_block";
-            if (o is FList)
-                return "list";
-            if (o is Boolean)
-                return "bool";
-            if (o is int)
-                return "int";
-            if (o is Double)
-                return "double";
-            if (o is string)
-                return "string";
-            if (o is Byte)
-                return "byte";
-            if (o is Primitives.Bit)
-                return "bit";
-            if (o is Function)
-                return (o as Function).GetTypeString();
-            if (o is Char)
-                return "char";
+            if (o is HashList) return "hash_list";
+            if (o is ByteBlock) return "byte_block";
+            if (o is FList) return "list";
+            if (o is Boolean) return "bool";
+            if (o is int) return "int";
+            if (o is Double) return "double";
+            if (o is string) return "string";
+            if (o is Byte) return "byte";
+            if (o is Primitives.Bit) return "bit";
+            if (o is Function) return (o as Function).GetTypeString();
+            if (o is Char) return "char";
             return "any";
         }
 
@@ -108,6 +97,13 @@ namespace Cat
                 case ("Char"): return "char";
                 default: return t.Name;
             }
+        }
+
+        public static CatKind GetKindFromObject(object o)
+        {
+            if (o is CatObject) return (o as CatObject).GetClass();
+            if (o is Function) return (o as Function).GetFxnType();
+            return new CatSimpleTypeKind(TypeNameFromObject(o));
         }
     }
 
@@ -762,6 +758,76 @@ namespace Cat
         public CatQuotedFxnType(CatFxnType f)
         {
             GetProd().Add(f);
+        }
+    }
+
+    public class CatCustomKind : CatKind
+    {
+        int mnId;
+        static List<CatCustomKind> gpPool = new List<CatCustomKind>();
+
+        public CatCustomKind()
+        {
+            mnId = gpPool.Count;
+            gpPool.Add(this);
+        }
+
+        public int GetId()
+        {
+            return mnId;
+        }
+
+        public override string ToString()
+        {
+ 	        return "_" + mnId.ToString();
+        }
+
+        public static CatCustomKind GetCustomKind(int n)
+        {
+            return gpPool[n];
+        }
+
+        public static CatCustomKind GetCustomKind(string s)
+        {
+            Trace.Assert(s.Length > 1);
+            Trace.Assert(s[0] == '_');
+            int n = Int32.Parse(s.Substring(1));
+            return GetCustomKind(n);
+        }
+
+        public static bool IsCustomKind(string s)
+        {
+            return (s.Length > 0) && (s[0] == '_');
+        }
+        
+        public override bool Equals(CatKind k)
+        {
+            return k == this;
+        }
+    }
+
+    public class CatMetaValue<T> : CatCustomKind
+    {
+        T mData;
+
+        public CatMetaValue(T x)
+        {
+            mData = x;
+        }
+
+        public T GetData()
+        {
+            return mData;
+        }
+
+        public override bool Equals(CatKind k)
+        {
+            if (k == this)
+                return true;
+            if (!(k is CatMetaValue<T>))
+                return false;
+            CatMetaValue<T> tmp = k as CatMetaValue<T>;
+            return tmp.GetData().Equals(mData);
         }
     }
 }

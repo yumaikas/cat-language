@@ -54,7 +54,17 @@ namespace Cat
                 string s = node.ToString();
                 Function f = Executor.Main.GetGlobalScope().Lookup(s);
                 if (f == null)
+                {
+                    switch (s)
+                    {
+                        case "_set_":
+                            return new SetFieldFxn();
+                        case "_get_":
+                            return new GetFieldFxn();
+                    }
+
                     throw new Exception("could not find function " + node.ToString());
+                }
                 if (def != null)
                     if (s.Equals(def.GetName()))
                         return new SelfFunction(f);
@@ -82,7 +92,7 @@ namespace Cat
 
             // Compare the inferred type with the declared type
             // This is a crtical part of the type checker.
-            if (node.mType != null) 
+            if (node.mType != null)
             {
                 CatFxnType declaredType = new CatFxnType(node.mType);
                 if (!CatFxnType.CompareFxnTypes(declaredType, def.mpFxnType))
@@ -98,6 +108,10 @@ namespace Cat
                     //MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
                 }
             }
+            else if (Config.gbShowInferredType)
+            {
+                MainClass.WriteLine("type: " + def.GetFxnType().ToPrettyString(false));
+            }
         }
 
         private static void ProcessMacro(AstMacroNode node)
@@ -110,7 +124,7 @@ namespace Cat
             if (node is AstExprNode)
             {
                 Function f = ExprToFunction(node as AstExprNode, null);
-                f.Eval(exec);
+                exec.ExecuteFunction(f);
             }
             else if (node is AstDefNode)
             {

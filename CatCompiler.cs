@@ -202,6 +202,10 @@ namespace Cat
 
             // Create a dynamic wrapper assembly around a module around a type.
             mAsmName.Name = sAsmName;
+
+            // TODO: use this to save this to the correct folder. 
+            // AppDomain.DefineDynamicAssembly (AssemblyName, AssemblyBuilderAccess, String, PermissionSet, PermissionSet, PermissionSet) 
+
             mAssembly = AppDomain.CurrentDomain.DefineDynamicAssembly(mAsmName, AssemblyBuilderAccess.RunAndSave);
             mModule = mAssembly.DefineDynamicModule(sModuleName, sFileName);
             mTypeBldr = mModule.DefineType(sTypeName);
@@ -244,8 +248,7 @@ namespace Cat
             try
             {
                 // The following line doesn't work on XP.
-                // sFileName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "/" + sFileName;
-
+                // sFileName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "/" + sFileName;                
                 mAssembly.Save(sFileName);
                 MainClass.WriteLine("Saved compiled target to " + sFileName);
             }

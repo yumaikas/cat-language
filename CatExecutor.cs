@@ -24,6 +24,7 @@ namespace Cat
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
         Context mpScope;
+        List<Function> fxns = new List<Function>();
         #endregion
 
         #region constructor
@@ -146,6 +147,8 @@ namespace Cat
         }
         public void LoadModule(string s)
         {
+            bool b = Config.gbShowInferredType;
+            Config.gbShowInferredType = false;
             try
             {
                 Execute(Util.FileToString(s));
@@ -154,6 +157,7 @@ namespace Cat
             {
                 MainClass.WriteLine("Failed to load \"" + s + "\" with message: " + e.Message);
             }
+            Config.gbShowInferredType = b;
         }
         #endregion
 
@@ -166,8 +170,13 @@ namespace Cat
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("exception: " + e.Message);
+                MainClass.WriteLine("error: " + e.Message);
             }
+        }
+        public void ExecuteFunction(Function f)
+        {
+            f.Eval(this);
+            fxns.Add(f);
         }
         #endregion
 

@@ -203,16 +203,17 @@ namespace Cat
 
     public class PushValue<T> : Function
     {
-        T mValue;
+        CatMetaValue<T> mValue;
+        
         public PushValue(T x)
         {
-            mValue = x;
-            msName = "{" + x.ToString() + "}";
-            mpFxnType = CatFxnType.Create("( -> " + CatKind.TypeNameFromObject(x) + ")");
+            mValue = new CatMetaValue<T>(x);
+            msName = mValue.GetData().ToString(); 
+            mpFxnType = CatFxnType.Create("( -> " + mValue.ToString() + ")");
         }
         public T GetValue()
         {
-            return mValue;
+            return mValue.GetData();
         }
         #region overrides
         public override void Eval(Executor exec)
@@ -525,4 +526,93 @@ namespace Cat
             mpFxn.Eval(exec);
         }
     }
+
+    public abstract class FieldAccessorFxn : Function
+    {
+        protected CatKind mpFieldType;
+        protected CatClass mpClass;
+        protected string msFieldName;
+
+        public bool IsInitialized()
+        {
+            return mpFieldType != null && mpClass != null;
+        }
+
+        protected void CheckInitialized()
+        {
+            if (!IsInitialized())
+                throw new Exception("field accessor is uninitialized");        
+        }
+    }
+
+    public class GetFieldFxn : FieldAccessorFxn
+    {
+        public CatClass Init(CatClass c, string sName)
+        {
+            mpClass = c;
+            msFieldName = sName;
+            if (!mpClass.HasField(msFieldName))
+                throw new Exception("object does not have field " + msFieldName);
+            mpFieldType = mpClass.GetFieldType(msFieldName);
+            mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " string -> " + mpClass.ToString() + " " + mpFieldType.ToString() + ")");
+            return mpClass;
+        }
+
+        public override void Eval(Executor exec)
+        {
+            if (!IsInitialized())
+            {
+                Object o1 = exec.GetStack()[0];
+                Object o2 = exec.GetStack()[1];
+                Init((o2 as CatObject).GetClass(), (string)o1);
+            }
+            string s = exec.TypedPop<string>();
+            if (!s.Equals(msFieldName))
+                throw new Exception("internal error: incorrect field name");
+            CatObject o = exec.TypedPeek<CatObject>();
+            exec.Push(o.GetField(s));
+        }
+    }
+
+    public class SetFieldFxn : FieldAccessorFxn
+    {
+        public CatClass Init(CatClass c, CatKind val, string sName)
+        {
+            mpClass = c;
+            msFieldName = sName;
+            if (!mpClass.HasField(msFieldName))
+            {
+                mpClass = mpClass.AddFieldType(msFieldName, val);
+                mpFieldType = val;
+            }
+            else
+            {
+                mpFieldType = mpClass.GetFieldType(msFieldName);
+                // TODO: compare field types, and maybe add a new wider field if neccessary.
+            }
+            mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " 'a string -> " + mpClass.ToString() + " " + mpFieldType.ToString() + ")");
+            return mpClass;
+        }
+
+        public override void Eval(Executor exec)
+        {
+            if (!IsInitialized())
+            {
+                Object o1 = exec.GetStack()[0];
+                Object o2 = exec.GetStack()[1];
+                Object o3 = exec.GetStack()[2];
+                Init((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
+            }
+
+            string s = exec.TypedPop<string>();
+            if (!s.Equals(msFieldName))
+                throw new Exception("internal error: incorrect field name");
+            
+            // TODO: dynamically check that arg is of the right type.
+            Object arg = exec.Pop();
+            CatObject o = exec.TypedPeek<CatObject>();
+            o.SetField(s, o, mpClass);
+        }
+    }
+
 }

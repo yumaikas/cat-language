@@ -209,6 +209,11 @@ macro { $c $b $a peek } => { $c $b $a $c }
 
 // Oscillation patterns
 // Every macro pass will cause these patterns to shift back and forth
+// The advantage is that other opportunities can reveal themselves
 macro { swap } => { quote dip }
 macro { quote dip } => { swap }
+
+// Tail-Call Recursion elimination
+// not implemented yet
+// macro { [$E:('a -> 'a bool) [$D:('a -> 'a)] [$C:('a -> 'a) $B:self $A:('a -> 'a)] if] } => { [$E] [$D] [$C] [$A] tail_rec }
 
