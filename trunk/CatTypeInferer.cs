@@ -65,7 +65,7 @@ namespace Cat
                         MainClass.WriteLine("} : " + ft.ToString());
                         MainClass.WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
                     }
-
+                    
                     ft = TypeInferer.Infer(ft, y.GetFxnType(), bVerbose, bCheck);
                     
                     if (ft == null)

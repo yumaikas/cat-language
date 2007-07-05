@@ -85,7 +85,7 @@ namespace Cat
         /// <summary>
         /// Outputs the result of a type inference
         /// </summary>
-        public static bool gbShowInferredType = false;
+        public static bool gbShowInferredType = true;
 
         /// <summary>
         /// Reports when type checking is successful.

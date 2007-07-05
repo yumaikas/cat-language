@@ -11,6 +11,9 @@ define ow
 define cw
 { close_window }
 
+define sw
+{ save_window }
+
 define line_to
 { unit swons 0 cons 0 cons "Line" render }
 
@@ -20,8 +23,14 @@ define move_to
 define fd
 { dup 0 line_to 0 move_to}
 
+define forward
+{ fd }
+
 define bk
 { neg fd }
+
+define back
+{ bk }
 
 define turn_right
 { unit "Rotate" render }
@@ -50,12 +59,17 @@ define set_turtle_visibility
 define show_turtle
 { true set_turtle_visibility }
 
+define st
+{ show_turtle }
+
 define hide_turtle
 { false set_turtle_visibility }
+
+define ht
+{ hide_turtle }
 
 define sq
 {{
   desc{Draws a square with a given side}
 }}
 { [fd 90 tr] bind 4 repeat }
-

@@ -329,7 +329,7 @@ namespace Cat
             mWindow.ClearCmds();
         }
 
-        static public void SaveWindowAsBmp(string s)
+        static public void SaveToFile(string s)
         {
             mWindow.SaveToFile(s);
         }
