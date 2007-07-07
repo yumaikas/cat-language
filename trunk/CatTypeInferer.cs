@@ -12,22 +12,8 @@ namespace Cat
     {
         Constraints mConstraints = new Constraints();
 
+        #region static fields and methods
         static TypeInferer gInferer = new TypeInferer();
-
-        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bVerbose, bool bCheck)
-        {
-            if (f == null) return null;
-            if (g == null) return null;
-            return gInferer.InferType(f, g, bVerbose, bCheck);
-        }
-
-        public static void OutputInferredType(CatFxnType ft)
-        {
-            MainClass.WriteLine("After rewriting");
-            MainClass.WriteLine("ML style type: " + ft.ToPrettyString(true));
-            MainClass.WriteLine("Cat style:     " + ft.ToPrettyString(false));
-            MainClass.WriteLine("");
-        }
 
         public static CatFxnType Infer(List<Function> f, bool bVerbose, bool bCheck)
         {
@@ -65,14 +51,57 @@ namespace Cat
                         MainClass.WriteLine("} : " + ft.ToString());
                         MainClass.WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
                     }
-                    
+
                     ft = TypeInferer.Infer(ft, y.GetFxnType(), bVerbose, bCheck);
-                    
+
                     if (ft == null)
                         return null;
                 }
                 return ft;
             }
+        }
+
+        public static CatFxnType Infer(CatFxnType f, CatFxnType g, bool bVerbose, bool bCheck)
+        {
+            if (f == null) return null;
+            if (g == null) return null;
+            return gInferer.InferType(f, g, bVerbose, bCheck);
+        }
+
+        public static void OutputInferredType(CatFxnType ft)
+        {
+            MainClass.WriteLine("After rewriting");
+            MainClass.WriteLine("ML style type: " + ft.ToPrettyString(true));
+            MainClass.WriteLine("Cat style:     " + ft.ToPrettyString(false));
+            MainClass.WriteLine("");
+        }
+        #endregion
+
+        public CatTypeVector ReplaceWithVars(CatTypeVector vec)
+        {
+            CatTypeVector ret = new CatTypeVector();
+            foreach (CatKind k in vec.GetKinds())
+            {
+                if (k is CatFxnType)
+                    ret.Add(ReplaceWithVars(k as CatFxnType));
+                else
+                {
+                    if (k.IsKindVar())
+                        ret.Add(k);
+                    else
+                    {
+                        CatTypeVar v = CatTypeVar.CreateUnique();
+                        ret.Add(v);
+                        mConstraints.AddConstraint(v.ToString(), k);
+                    }
+                }
+            }
+            return ret;
+        }
+
+        public CatFxnType ReplaceWithVars(CatFxnType ft)
+        {
+            return new CatFxnType(ReplaceWithVars(ft.GetCons()), ReplaceWithVars(ft.GetProd()), ft.HasSideEffects());
         }
 
         /// <summary>
@@ -94,6 +123,9 @@ namespace Cat
             left = renamer.Rename(left.AddImplicitRhoVariables());
             renamer.ResetNames();
             right = renamer.Rename(right.AddImplicitRhoVariables());
+            
+            CatFxnType varOnlyLeft = ReplaceWithVars(left);
+            CatFxnType varOnlyRight = ReplaceWithVars(right);
 
             if (bVerbose)
             {
@@ -102,8 +134,9 @@ namespace Cat
                 MainClass.WriteLine("right term : " + right.ToString());
             }
 
-            mConstraints.AddSelfTypes(left);
-            mConstraints.AddSelfTypes(right);
+            // TEMP: this has been temporarily removed
+            //mConstraints.AddSelfTypes(left);
+            //mConstraints.AddSelfTypes(right);
 
             // This recursively adds constraints as needed 
             mConstraints.AddVectorConstraint(left.GetProd(), right.GetCons());
