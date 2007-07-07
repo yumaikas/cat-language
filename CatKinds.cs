@@ -53,7 +53,7 @@ namespace Cat
 
         public abstract bool Equals(CatKind k);
 
-        public bool IsSubtypeOf(CatKind k)
+        public virtual bool IsSubtypeOf(CatKind k)
         {
             if (this.ToString().Equals("any")) 
                 return true;
@@ -693,7 +693,7 @@ namespace Cat
 
         public CatFxnType Unquote()
         {
-            return TypeInferer.Infer(this, CatFxnType.GetApplyType(), true /*TEMP: Config.gbVerboseInference*/, true);
+            return TypeInferer.Infer(this, CatFxnType.GetApplyType(), Config.gbVerboseInference, true);
         }
 
         #region static data and functions
@@ -809,6 +809,7 @@ namespace Cat
     public class CatMetaValue<T> : CatCustomKind
     {
         T mData;
+        CatSimpleTypeKind mpSuperType = new CatSimpleTypeKind(TypeToString(typeof(T)));
 
         public CatMetaValue(T x)
         {
@@ -829,5 +830,18 @@ namespace Cat
             CatMetaValue<T> tmp = k as CatMetaValue<T>;
             return tmp.GetData().Equals(mData);
         }
+
+        public CatKind GetSuperType()
+        {
+            return mpSuperType;
+        }
+
+        public override bool IsSubtypeOf(CatKind k)
+        {
+            if (k is CatSimpleTypeKind)
+                return GetSuperType().IsSubtypeOf(k);               
+            return this.Equals(k);
+        }
+
     }
 }
