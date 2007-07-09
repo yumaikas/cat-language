@@ -101,6 +101,8 @@ namespace Cat
 
         public CatFxnType ReplaceWithVars(CatFxnType ft)
         {
+            if (ft is CatSelfType)
+                return ft;
             return new CatFxnType(ReplaceWithVars(ft.GetCons()), ReplaceWithVars(ft.GetProd()), ft.HasSideEffects());
         }
 
@@ -135,8 +137,8 @@ namespace Cat
             }
 
             // TEMP: this has been temporarily removed
-            //mConstraints.AddSelfTypes(left);
-            //mConstraints.AddSelfTypes(right);
+            mConstraints.AddSelfTypes(left);
+            mConstraints.AddSelfTypes(right);
 
             // This recursively adds constraints as needed 
             mConstraints.AddVectorConstraint(left.GetProd(), right.GetCons());

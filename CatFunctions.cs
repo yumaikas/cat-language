@@ -327,7 +327,9 @@ namespace Cat
 
             try
             {
-                mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), Config.gbVerboseInference, true);
+                // BUG PRI3: this occurs during "demo" calls. I suspect it is a symptom of errors in the recursion code.
+                mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), Config.gbVerboseInference, false);
+                // mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), Config.gbVerboseInference, true);
             }
             catch (Exception e)
             {
