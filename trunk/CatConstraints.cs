@@ -48,24 +48,6 @@ namespace Cat
                     AddFxnConstraint(k1 as CatFxnType, k2 as CatFxnType);
                 }
 
-                // The problem here is that I need to replace a CatSimpleTypeKind 
-                // with a variable, and unify it. Complicated isn't it! 
-
-                if (k1 is CatSimpleTypeKind && !(k2 is CatTypeVar))
-                {
-                    if (!k2.IsSubtypeOf(k1) && !k1.IsSubtypeOf(k2))
-                        throw new KindException(k1, k2);     
-                   
-                    // TODO: create unifiers for simple types 
-                }
-                if (k2 is CatSimpleTypeKind && !(k1 is CatTypeVar))
-                {
-                    if (!k2.IsSubtypeOf(k1) && !k1.IsSubtypeOf(k2))
-                        throw new KindException(k1, k2);
-
-                    // TODO: create unifiers for simple types 
-                }
-
                 v1 = v1.GetRest();
                 v2 = v2.GetRest();
             }
@@ -231,6 +213,50 @@ namespace Cat
             AddConstraintToList(mConstraints[s], k);
         }
 
+        private CatKind CreateFxnUnifier(CatFxnType ft, CatKind k)
+        {
+            if (!(k is CatFxnType))
+            {
+                if (k.IsAny() || k.IsDynFxn())
+                {
+                    if (!ft.IsRuntimePolymorphic())
+                        throw new Exception("Function " + ft.ToPrettyString(false) + " is not runtime polymorphic");
+                    return ft;
+                }
+                if (!k.IsKindVar())
+                    throw new KindException(ft, k);
+                
+                // Q: this is the opposite of what I expected. 
+                return ft;
+            }
+            else
+            {
+                CatFxnType ft2 = k as CatFxnType;
+                if (ft.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count)
+                    return ft;
+                else
+                    return ft2;
+            }
+        }
+
+        private CatKind CreateVectorUnifier(CatTypeVector vec, CatKind k)
+        {
+            if (!(k is CatTypeVector))
+            {
+                if (k.IsAny() || k.IsKindVar())
+                    return vec;
+                throw new KindException(vec, k);
+            }
+            else
+            {
+                CatTypeVector vec2 = k as CatTypeVector;
+                if (vec.GetKinds().Count >= vec2.GetKinds().Count)
+                    return vec;
+                else
+                    return vec2;
+            }
+        }
+
         private CatKind CreateUnifier(CatKind k1, CatKind k2)
         {
             if (k1 == null)
@@ -252,27 +278,17 @@ namespace Cat
 
                 return k2;
             }
-            else if ((k1 is CatFxnType) || (k2 is CatFxnType))
+            else if (k1 is CatFxnType) 
             {
-                if (!(k1 is CatFxnType)) return k2;
-                if (!(k2 is CatFxnType)) return k1;
-                CatFxnType ft1 = k1 as CatFxnType;
-                CatFxnType ft2 = k2 as CatFxnType;
-                if (ft1.GetCons().GetKinds().Count >= ft2.GetCons().GetKinds().Count)
-                    return ft1;
-                else
-                    return ft2;
+                return CreateFxnUnifier(k1 as CatFxnType, k2);
             }
-            else if ((k1 is CatTypeVector) || (k2 is CatTypeVector))
+            else if (k2 is CatFxnType)
             {
-                if (!(k1 is CatTypeVector)) return k2;
-                if (!(k2 is CatTypeVector)) return k1;
-                CatTypeVector vec1 = k1 as CatTypeVector;
-                CatTypeVector vec2 = k2 as CatTypeVector;
-                if (vec1.GetKinds().Count >= vec2.GetKinds().Count)
-                    return vec1;
-                else
-                    return vec2;
+                return CreateFxnUnifier(k2 as CatFxnType, k1);
+            }            
+            else if (k1 is CatTypeVector) 
+            {
+                return CreateVectorUnifier(k1 as CatTypeVector, k2);
             }
             else if (k1.IsKindVar())
             {
@@ -294,27 +310,13 @@ namespace Cat
                 // TODO: check that they are both the same kind
                 return k1;
             }
-            else if (k1 is CatSimpleTypeKind)
+            else if (k1.IsSubtypeOf(k2))
             {
-                string s1 = k1.ToString();
-                string s2 = k2.ToString();
-                if (!(k2 is CatSimpleTypeKind))
-                    throw new Exception(s1 + " is not compatible with " + s2);
-
-                if (k1.IsSubtypeOf(k2))
-                {
-                    return k1;
-                }
-                else if (k2.IsSubtypeOf(k1))
-                {
-                    return k2;
-                }
-                else
-                {
-                    if (Config.gbVerboseInference)
-                        MainClass.WriteLine("warning unfiying over 'any': " + s1 + " is not compatible with " + s2);
-                    return new CatSimpleTypeKind("any");
-                }
+                return k1;
+            }
+            else if (k2.IsSubtypeOf(k1))
+            {
+                return k2;
             }
             else
             {

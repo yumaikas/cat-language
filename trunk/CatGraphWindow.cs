@@ -41,12 +41,18 @@ namespace Cat
         public void AddCmd(GraphicCommand c)
         {
             mMutex.WaitOne();
-            mCmds.Add(c);
-            mMutex.ReleaseMutex();
+            try
+            {
+                mCmds.Add(c);
+            }
+            finally
+            {
+                mMutex.ReleaseMutex();
+            }
 
             // Tell the parent thread to invalidate
-            MethodInvoker p = Invalidate;  
-            Invoke(p);
+            //MethodInvoker p = Invalidate;  
+            //Invoke(p);
         }
 
         public void SaveToFile(string s)

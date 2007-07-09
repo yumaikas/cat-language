@@ -79,6 +79,8 @@ namespace Cat
                 return Rename(k as CatStackVar);
             else if (k is CatTypeVector)
                 return Rename(k as CatTypeVector);
+            else if (k is CatCustomKind)
+                return k;
             else
                 throw new Exception(k.ToString() + " is an unrecognized kind");
         }

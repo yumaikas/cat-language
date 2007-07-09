@@ -19,10 +19,14 @@ namespace Cat
         {
             if (node is AstSimpleTypeNode)
             {
-                if (node.ToString().Equals("self"))
+                string s = node.ToString();
+                Trace.Assert(s.Length > 0);
+                if (s.Equals("self"))
                     return new CatSelfType();
-                else
-                    return new CatSimpleTypeKind(node.ToString());
+                else if (s.Length > 1 && s[0] == '_')
+                    return CatCustomKind.GetCustomKind(s);
+                else 
+                    return new CatSimpleTypeKind(s);
             }
             else if (node is AstTypeVarNode)
             {
@@ -55,7 +59,7 @@ namespace Cat
 
         public virtual bool IsSubtypeOf(CatKind k)
         {
-            if (this.ToString().Equals("any")) 
+            if (k.ToString().Equals("any")) 
                 return true;
             return this.Equals(k);
         }
@@ -91,7 +95,7 @@ namespace Cat
                 case ("Double"): return "double";
                 case ("FList"): return "list";
                 case ("Object"): return "any";
-                case ("Function"): return "function";
+                case ("Function"): return "fun";
                 case ("Boolean"): return "bool";
                 case ("String"): return "string";
                 case ("Char"): return "char";
@@ -104,6 +108,16 @@ namespace Cat
             if (o is CatObject) return (o as CatObject).GetClass();
             if (o is Function) return (o as Function).GetFxnType();
             return new CatSimpleTypeKind(TypeNameFromObject(o));
+        }
+
+        public virtual bool IsAny()
+        {
+            return false;
+        }
+
+        public virtual bool IsDynFxn()
+        {
+            return false;
         }
     }
 
@@ -133,6 +147,16 @@ namespace Cat
         public override bool Equals(CatKind k)
         {
             return (k is CatSimpleTypeKind) && (msName == k.ToString());
+        }
+
+        public override bool IsAny()
+        {
+            return msName.Equals("any");
+        }
+
+        public override bool IsDynFxn()
+        {
+            return msName.Equals("fun");
         }
     }
 
@@ -279,6 +303,29 @@ namespace Cat
             if (!v1.IsEmpty())
                 return false;
             if (!v2.IsEmpty())
+                return false;
+            return true;
+        }
+
+        public override bool IsSubtypeOf(CatKind k)
+        {
+            if (k.IsAny())
+                return true;
+            if (!(k is CatTypeVector))
+                return false;
+            CatTypeVector v1 = this;
+            CatTypeVector v2 = k as CatTypeVector;
+            while (!v1.IsEmpty() && !v2.IsEmpty())
+            {
+                CatKind t1 = v1.GetTop();
+                CatKind t2 = v2.GetTop();
+                if (!t1.IsSubtypeOf(t2))
+                    return false;
+                v1 = v1.GetRest();
+                v2 = v2.GetRest();
+            }
+            // v1 has to be at least as long to be a subtype
+            if (v1.IsEmpty() && !v2.IsEmpty())
                 return false;
             return true;
         }
@@ -614,6 +661,19 @@ namespace Cat
                 && HasSideEffects() == f.HasSideEffects());
         }
 
+        public override bool IsSubtypeOf(CatKind k)
+        {
+            if (k.IsAny() || k.IsDynFxn())
+                return IsRuntimePolymorphic();
+            if (!(k is CatFxnType)) 
+                return false;
+            CatFxnType f = k as CatFxnType;
+            bool ret = GetCons().IsSubtypeOf(f.GetCons()) && GetProd().IsSubtypeOf(f.GetProd());
+            if (HasSideEffects())
+                ret = ret && f.HasSideEffects();
+            return ret;
+        }
+
         /// <summary>
         /// Compares two function types, by first normalizing so that they each have 
         /// names of variables that correspond to the locations in the function
@@ -622,7 +682,7 @@ namespace Cat
         {
             CatFxnType f2 = VarRenamer.RenameVars(f.AddImplicitRhoVariables());
             CatFxnType g2 = VarRenamer.RenameVars(g.AddImplicitRhoVariables());
-            return f2.Equals(g2);
+            return f2.IsSubtypeOf(g2);
         }
 
         public void GetAllVars(TypeVarList vars)
@@ -714,11 +774,20 @@ namespace Cat
             return ft;
         }
         #endregion
+
+        /// <summary>
+        /// Returns true if this function can be converted to either "any" or a "fxn".
+        /// </summary>
+        public bool IsRuntimePolymorphic()
+        {
+            return (GetCons().GetKinds().Count == 1) && (GetProd().GetKinds().Count == 1);
+        }
     }
 
     /// <summary>
     /// A self type is a function that pushes itself onto the stack.
     /// self : ('A -> 'A self)
+    /// TODO: make this not a fxn type.
     /// </summary>
     public class CatSelfType : CatFxnType
     {
@@ -748,6 +817,11 @@ namespace Cat
         }
 
         public override bool Equals(CatKind k)
+        {
+            return k is CatSelfType;
+        }
+
+        public override bool IsSubtypeOf(CatKind k)
         {
             return k is CatSelfType;
         }
@@ -802,7 +876,17 @@ namespace Cat
         
         public override bool Equals(CatKind k)
         {
-            return k == this;
+            if (!(k is CatCustomKind))
+                return false;
+            if ((k as CatCustomKind).GetId() == GetId())
+            {
+                Trace.Assert(k == this);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 
