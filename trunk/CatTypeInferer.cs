@@ -52,6 +52,13 @@ namespace Cat
                         MainClass.WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
                     }
 
+                    // Object field functions (_def_, _get_, _set_) have to be 
+                    // computed at the last minute, because their types are dependent on the previous types
+                    if (y is ObjectFieldFxn)
+                    {
+                        (y as ObjectFieldFxn).ComputeType(ft);
+                    }
+                    
                     ft = TypeInferer.Infer(ft, y.GetFxnType(), bVerbose, bCheck);
 
                     if (ft == null)
@@ -77,6 +84,9 @@ namespace Cat
         }
         #endregion
 
+        /// <summary>
+        /// This is a help function for ReplaceWithVars(CatFxnType ft)
+        /// </summary>
         public CatTypeVector ReplaceWithVars(CatTypeVector vec)
         {
             CatTypeVector ret = new CatTypeVector();
@@ -99,6 +109,12 @@ namespace Cat
             return ret;
         }
 
+        /// <summary>
+        /// This assures that any simple types, or custom types, will be replaced 
+        /// with a type variable, and a cosntraint will be generated. 
+        /// This simplifies things a bit, so that the algorithms don't have to 
+        /// worry about edge cases.
+        /// </summary>
         public CatFxnType ReplaceWithVars(CatFxnType ft)
         {
             if (ft is CatSelfType)
@@ -136,7 +152,6 @@ namespace Cat
                 MainClass.WriteLine("right term : " + right.ToString());
             }
 
-            // TEMP: this has been temporarily removed
             mConstraints.AddSelfTypes(left);
             mConstraints.AddSelfTypes(right);
 
@@ -184,9 +199,6 @@ namespace Cat
 
             if (bVerbose)
                 OutputInferredType(ret);
-
-            if (bCheck)
-                ret.CheckIfWellTyped();
 
             return ret;
         }

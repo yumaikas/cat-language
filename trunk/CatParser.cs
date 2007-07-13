@@ -53,21 +53,11 @@ namespace Cat
             {
                 string s = node.ToString();
                 Function f = Executor.Main.GetGlobalScope().Lookup(s);
-                if (f == null)
-                {
-                    switch (s)
-                    {
-                        case "_set_":
-                            return new SetFieldFxn();
-                        case "_get_":
-                            return new GetFieldFxn();
-                    }
-
-                    throw new Exception("could not find function " + node.ToString());
-                }
                 if (def != null)
                     if (s.Equals(def.GetName()))
                         return new SelfFunction(f);
+                if (f == null)
+                    throw new Exception("could not find function " + s);
                 return f;
             }
             else if (node is AstQuoteNode)
@@ -108,10 +98,6 @@ namespace Cat
                     MainClass.WriteLine("type check successful for " + def.GetName());
                     //MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
                 }
-            }
-            else if (Config.gbShowInferredType)
-            {
-                MainClass.WriteLine("type: " + def.GetFxnType().ToPrettyString(false));
             }
         }
 

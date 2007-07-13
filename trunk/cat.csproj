@@ -82,6 +82,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CatFunctions.cs" />
+    <Compile Include="CatFxnType.cs" />
     <Compile Include="CatGrammar.cs" />
     <Compile Include="CatGraphWindow.cs">
       <SubType>Form</SubType>

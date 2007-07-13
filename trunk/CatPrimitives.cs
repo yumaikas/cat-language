@@ -26,7 +26,7 @@ namespace Cat
 
     /// <summary>
     /// This is used to as a base class for the various dynamic function dispatch functions
-    /// It can not be placed with in the Primitives class, due to some design flaw.
+    /// It can not be placed in with the Primitives class, due to some design flaw.
     /// </summary>
     public class Dispatch : PrimitiveFunction
     {
@@ -511,49 +511,6 @@ namespace Cat
             {
                 Function f = exec.TypedPop<Function>();
                 f.Eval(exec);
-            }
-        }
-
-        public class Invoke : PrimitiveFunction
-        {
-            public Invoke()
-                : base("invoke", "(any list string -> any any)", "calls a .NET method")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                string s = exec.TypedPop<string>();
-                FList a = exec.TypedPop<FList>();
-                Object self = exec.Peek();
-                MethodInfo m = self.GetType().GetMethod(s, a.GetTypeArray());
-                if (m == null)
-                    throw new Exception("could not find method " + s + " on object of type " + self.GetType().ToString() + " with matching types");
-                Object o = m.Invoke(self, a.GetObjectArray());
-                exec.Push(o);
-            }            
-        }
-
-
-        public class New : PrimitiveFunction
-        {
-            public New()
-                : base("new", "(list string -> any)", "constructs a new .NET object")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                string s = exec.TypedPop<string>();
-                FList a = exec.TypedPop<FList>();
-                Type t = Type.GetType(s);
-                if (t == null)
-                    throw new Exception("could not find type " + s);                
-                ConstructorInfo c = t.GetConstructor(a.GetTypeArray());
-                if (c == null)
-                    throw new Exception("could not find constructor for object of type " + t.ToString() + " with matching types");
-                Object o = c.Invoke(a.GetObjectArray());
-                if (o == null)
-                    throw new Exception(s + " object could not be constructed");
-                exec.Push(o);
             }
         }
 
@@ -1853,7 +1810,7 @@ namespace Cat
         public class Null : PrimitiveFunction
         {
             public Null()
-                : base("null", "( -> " + CatClass.GetNullType() + ")", "returns a null object")
+                : base("null", "( -> " + CatClass.GetNullType() + ")", "returns the default object with no fields")
             { }
 
             public override void Eval(Executor exec)
@@ -2031,6 +1988,122 @@ namespace Cat
             }
         }
 
+        #endregion
+
+        #region .NET (CLR) reflection API
+
+        public class Invoke : PrimitiveFunction
+        {
+            public Invoke()
+                : base("clr_invoke", "(any list string -> any any)", "calls a method on a .NET object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.TypedPop<string>();
+                FList a = exec.TypedPop<FList>();
+                Object self = exec.Peek();
+                MethodInfo m = self.GetType().GetMethod(s, a.GetTypeArray());
+                if (m == null)
+                    throw new Exception("could not find method " + s + " on object of type " + self.GetType().ToString() + " with matching types");
+                Object o = m.Invoke(self, a.GetObjectArray());
+                exec.Push(o);
+            }
+        }
+
+        public class SetField : PrimitiveFunction
+        {
+            public SetField()
+                : base("clr_set_field", "(any any string -> any)", "assigns a value to a field of a .NET object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.TypedPop<string>();
+                Object val = exec.Pop();
+                Object self = exec.Peek();
+                FieldInfo fi = self.GetType().GetField(s);
+                if (fi == null)
+                    throw new Exception("could not find field " + s + " on object of type " + self.GetType().ToString());
+                fi.SetValue(self, val);
+            }
+        }
+
+        public class GetField : PrimitiveFunction
+        {
+            public GetField()
+                : base("clr_get_field", "(any string -> any any)", "retrieves the value of a field from a .NET object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.TypedPop<string>();
+                Object self = exec.Peek();
+                FieldInfo fi = self.GetType().GetField(s);
+                if (fi == null)
+                    throw new Exception("could not find field " + s + " on object of type " + self.GetType().ToString());
+                exec.Push(fi.GetValue(self));
+            }
+        }
+
+        public class ListFields : PrimitiveFunction
+        {
+            public ListFields()
+                : base("clr_list_fields", "(any -> any list)", "retrieves a list of field names from a .NET object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object self = exec.Peek();
+                List<string> list = new List<string>();
+                FieldInfo[] fis = self.GetType().GetFields();
+                foreach (FieldInfo fi in fis)
+                    list.Add(fi.Name);
+                string[] a = list.ToArray();
+                exec.Push(new FArray<string>(a));
+            }
+        }
+
+        public class ListMethods : PrimitiveFunction
+        {
+            public ListMethods()
+                : base("clr_list_methods", "(any -> any list)", "retrieves a list of field names from a .NET object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object self = exec.Peek();
+                List<string> list = new List<string>();
+                FieldInfo[] fis = self.GetType().GetFields();
+                foreach (FieldInfo fi in fis)
+                    list.Add(fi.Name);
+                string[] a = list.ToArray();
+                exec.Push(new FArray<string>(a));
+            }
+        }
+
+        public class New : PrimitiveFunction
+        {
+            public New()
+                : base("clr_new", "(list string -> any)", "constructs a new .NET object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.TypedPop<string>();
+                FList a = exec.TypedPop<FList>();
+                Type t = Type.GetType(s);
+                if (t == null)
+                    throw new Exception("could not find type " + s);
+                ConstructorInfo c = t.GetConstructor(a.GetTypeArray());
+                if (c == null)
+                    throw new Exception("could not find constructor for object of type " + t.ToString() + " with matching types");
+                Object o = c.Invoke(a.GetObjectArray());
+                if (o == null)
+                    throw new Exception(s + " object could not be constructed");
+                exec.Push(o);
+            }
+        }
         #endregion
     }
 }

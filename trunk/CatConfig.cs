@@ -12,29 +12,18 @@ namespace Cat
     /// of the interpreter and compiler. This is not actively maintained, and could
     /// easily be out of sync with the rest of the code
     /// </summary>
-    static class Config
+    class Config
     {
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = true;
+        public static bool gbReleaseVersion = false;
 
-        /// <summary>
-        /// Controls how names are assigned to type variable declarations and type variables
-        /// </summary>
-        public static bool gbSimpleTypeNames = true;
-        
         /// <summary>
         /// Controls whether or not to display the welcome text.
         /// </summary>
         public static bool gbShowLogo = true;
         
-        /// <summary>
-        /// Controls whether type checking and type inference is used. 
-        /// If you turn this off, then no type checking is done.
-        /// </summary>
-        public static bool gbStaticTyping = false;
-
         /// <summary>
         /// Determines whether the contents of the stacks is reported 
         /// after each line entry into the interpreter.
@@ -64,7 +53,7 @@ namespace Cat
         /// <summary>
         /// Set this to false to prevent implicit redefining existing functions. 
         /// </summary>
-        public static bool gbAllowImplicitRedefines = true;
+        public static bool gbAllowRedefines = true;
 
         /// <summary>
         /// Set to false to only implement point-free Cat
@@ -80,22 +69,18 @@ namespace Cat
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
-        public static bool gbVerboseInference = false;
+        public static bool gbVerboseInference = true;
 
         /// <summary>
-        /// Outputs the result of a type inference
+        /// Outputs detailed information of each of the inference mechanism works
+        /// while loading a module.
         /// </summary>
-        public static bool gbShowInferredType = true;
-
-        /// <summary>
-        /// Reports when type checking is successful.
-        /// </summary>
-        public static bool gbVerboseTypeChecking = false;
+        public static bool gbVerboseInferenceOnLoad = false;
 
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.16.0";
+        public static string gsVersion = "0.16.1";
 
         /// <summary>
         /// Date of current build

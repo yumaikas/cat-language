@@ -580,8 +580,7 @@ namespace Cat
         /// </summary>
         public void AddSelfTypes(CatFxnType ft)
         {
-            if (ft is CatSelfType)
-                throw new Exception("Unexpected self type");
+            if (ft is CatSelfType) return;
             AddSelfTypes(ft, ft.GetCons());
             AddSelfTypes(ft, ft.GetProd());
         }

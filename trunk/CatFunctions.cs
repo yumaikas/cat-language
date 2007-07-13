@@ -529,7 +529,7 @@ namespace Cat
         }
     }
 
-    public abstract class FieldAccessorFxn : Function
+    public abstract class ObjectFieldFxn : Function
     {
         protected CatKind mpFieldType;
         protected CatClass mpClass;
@@ -540,6 +540,8 @@ namespace Cat
             return mpFieldType != null && mpClass != null;
         }
 
+        public abstract void ComputeType(CatFxnType ft);
+
         protected void CheckInitialized()
         {
             if (!IsInitialized())
@@ -547,9 +549,27 @@ namespace Cat
         }
     }
 
-    public class GetFieldFxn : FieldAccessorFxn
+    public class GetFieldFxn : ObjectFieldFxn
     {
-        public CatClass Init(CatClass c, string sName)
+        public override void ComputeType(CatFxnType ft)
+        {
+            List<CatKind> prod = ft.GetProd().GetKinds();
+            int n = prod.Count;
+            if (n < 2) 
+                throw new Exception("invalid usage of _get_, insufficient arguments");
+            CatKind kName = prod[n - 1];
+            CatKind kClass = prod[n - 2];
+            CatMetaValue<string> metaName = kName as CatMetaValue<string>;
+            if (metaName == null) 
+                throw new Exception("invalid usage of _get_, missing field identifier");
+            string sName = metaName.GetData();
+            CatClass cClass = kClass as CatClass;
+            if (cClass == null)
+                throw new Exception("invalid usage of _get_, missing object");
+            ComputeType(cClass, sName);
+        }
+
+        public void ComputeType(CatClass c, string sName)
         {
             mpClass = c;
             msFieldName = sName;
@@ -557,16 +577,16 @@ namespace Cat
                 throw new Exception("object does not have field " + msFieldName);
             mpFieldType = mpClass.GetFieldType(msFieldName);
             mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " string -> " + mpClass.ToString() + " " + mpFieldType.ToString() + ")");
-            return mpClass;
         }
 
         public override void Eval(Executor exec)
         {
             if (!IsInitialized())
             {
+                // Compute the type now
                 Object o1 = exec.GetStack()[0];
                 Object o2 = exec.GetStack()[1];
-                Init((o2 as CatObject).GetClass(), (string)o1);
+                ComputeType((o2 as CatObject).GetClass(), (string)o1);
             }
             string s = exec.TypedPop<string>();
             if (!s.Equals(msFieldName))
@@ -576,34 +596,114 @@ namespace Cat
         }
     }
 
-    public class SetFieldFxn : FieldAccessorFxn
+    public class SetFieldFxn : ObjectFieldFxn
     {
-        public CatClass Init(CatClass c, CatKind val, string sName)
+        public override void ComputeType(CatFxnType ft)
+        {
+            List<CatKind> prod = ft.GetProd().GetKinds();
+            int n = prod.Count;
+            if (n < 3)
+                throw new Exception("invalid usage of _set_, insufficient arguments");
+            CatKind kName = prod[n - 1];
+            CatKind kValue = prod[n - 2];
+            CatKind kClass = prod[n - 3];
+            CatMetaValue<string> metaName = kName as CatMetaValue<string>;
+            if (metaName == null)
+                throw new Exception("invalid usage of _set_, missing field identifier");
+            string sName = metaName.GetData();
+            CatClass cClass = kClass as CatClass;
+            if (cClass == null)
+                throw new Exception("invalid usage of _set_, missing object");
+            ComputeType(cClass, kValue, sName);
+        }
+
+        public void ComputeType(CatClass c, CatKind val, string sName)
         {
             mpClass = c;
             msFieldName = sName;
             if (!mpClass.HasField(msFieldName))
             {
-                mpClass = mpClass.AddFieldType(msFieldName, val);
-                mpFieldType = val;
+                throw new Exception("the field " + msFieldName + " has not been defined");
             }
             else
             {
-                mpFieldType = mpClass.GetFieldType(msFieldName);
-                // TODO: compare field types, and maybe add a new wider field if neccessary.
+                CatKind pFieldType = mpClass.GetFieldType(msFieldName);
+                if (!pFieldType.IsSubtypeOf(mpFieldType))
+                    throw new Exception("invalid type, expected " + mpFieldType.ToString() + " but recieved " + pFieldType.ToString());
             }
-            mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " 'a string -> " + mpClass.ToString() + " " + mpFieldType.ToString() + ")");
-            return mpClass;
+            mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " 'a string -> " + mpClass.ToString() + ")");
         }
 
         public override void Eval(Executor exec)
         {
             if (!IsInitialized())
             {
+                // Compute the type now 
                 Object o1 = exec.GetStack()[0];
                 Object o2 = exec.GetStack()[1];
                 Object o3 = exec.GetStack()[2];
-                Init((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
+                ComputeType((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
+            }
+
+            string s = exec.TypedPop<string>();
+            if (!s.Equals(msFieldName))
+                throw new Exception("internal error: incorrect field name");
+
+            // TODO: dynamically check that arg is of the right type.
+            Object arg = exec.Pop();
+            CatObject o = exec.TypedPeek<CatObject>();
+            o.SetField(s, o, mpClass);
+        }
+    }
+
+    public class DefFieldFxn : ObjectFieldFxn
+    {
+        /// <summary>
+        /// This implementation is almost precisely the same as SetFieldFxn
+        /// </summary>
+        public override void ComputeType(CatFxnType ft)
+        {
+            List<CatKind> prod = ft.GetProd().GetKinds();
+            int n = prod.Count;
+            if (n < 3)
+                throw new Exception("invalid usage of _def_, insufficient arguments");
+            CatKind kName = prod[n - 1];
+            CatKind kValue = prod[n - 2];
+            CatKind kClass = prod[n - 3];
+            CatMetaValue<string> metaName = kName as CatMetaValue<string>;
+            if (metaName == null)
+                throw new Exception("invalid usage of _def_, missing field identifier");
+            string sName = metaName.GetData();
+            CatClass cClass = kClass as CatClass;
+            if (cClass == null)
+                throw new Exception("invalid usage of _def_, missing object");
+            ComputeType(cClass, kValue, sName);
+        }
+
+        public void ComputeType(CatClass c, CatKind val, string sName)
+        {
+            msFieldName = sName;
+            if (!c.HasField(msFieldName))
+            {
+                mpClass = c.AddFieldType(msFieldName, val);
+                mpFieldType = val;
+            }
+            else
+            {
+                throw new Exception("the field " + msFieldName + " has already been defined");
+            }
+            mpFxnType = CatFxnType.Create("(" + c.ToString() + " 'a string -> " + mpClass.ToString() + ")");
+        }
+
+        public override void Eval(Executor exec)
+        {
+            if (!IsInitialized())
+            {
+                // Compute the type now
+                Object o1 = exec.GetStack()[0];
+                Object o2 = exec.GetStack()[1];
+                Object o3 = exec.GetStack()[2];
+                ComputeType((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
             }
 
             string s = exec.TypedPop<string>();
@@ -616,5 +716,4 @@ namespace Cat
             o.SetField(s, o, mpClass);
         }
     }
-
 }
