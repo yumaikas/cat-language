@@ -147,8 +147,8 @@ namespace Cat
         }
         public void LoadModule(string s)
         {
-            bool b = Config.gbShowInferredType;
-            Config.gbShowInferredType = false;
+            bool b = Config.gbVerboseInference;
+            Config.gbVerboseInference = Config.gbVerboseInferenceOnLoad;
             try
             {
                 Execute(Util.FileToString(s));
@@ -157,7 +157,7 @@ namespace Cat
             {
                 MainClass.WriteLine("Failed to load \"" + s + "\" with message: " + e.Message);
             }
-            Config.gbShowInferredType = b;
+            Config.gbVerboseInference = b;
         }
         #endregion
 
@@ -166,7 +166,7 @@ namespace Cat
         {
             try
             {
-                CatParser.Parse(s, this);
+                CatParser.Parse(s + "\n", this);
             }
             catch (Exception e)
             {

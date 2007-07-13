@@ -49,10 +49,22 @@ namespace Cat
         {
             if (s.Length < 1)
                 throw new Exception("trying to lookup a function with no name");
+            
             if (mpFunctions.ContainsKey(s))
                 return mpFunctions[s];
-            else
-                return null;
+            
+            // Special functions. Not primitives.
+            switch (s)
+            {
+                case "_set_":
+                    return new SetFieldFxn();
+                case "_get_":
+                    return new GetFieldFxn();
+                case "_def_":
+                    return new DefFieldFxn();
+            }
+            
+            return null;
         }
 
         public void Clear()
@@ -65,7 +77,7 @@ namespace Cat
             string s = f.GetName();
             if (mpFunctions.ContainsKey(s))
             {
-                if (!Config.gbAllowImplicitRedefines)
+                if (!Config.gbAllowRedefines)
                     throw new Exception("attempting to redefine " + s);
                 mpFunctions[s] = f;
             }

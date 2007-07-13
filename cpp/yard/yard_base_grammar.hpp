@@ -204,7 +204,7 @@ namespace yard
 		}
 	};
 
-	// Start matches a rule 0 or more times, as many times as possible.
+	// Star matches a rule 0 or more times, as many times as possible.
 	// This always returns true
 	// note: unlike Perl regular expression, partial backtracking is not
 	// performed   
@@ -271,8 +271,8 @@ namespace yard
 		}
 	};
   
-	// Until eats single characters until the rule is successfully matched 
-	// or end of file is reached. Until returns false only if the end of the file
+	// UntilPast eats single characters until the rule is successfully matched 
+	// or end of file is reached. UntilPast returns false only if the end of the file
 	// is found before before the rule. 
 	template<typename Rule_T>
 	struct UntilPast 
@@ -306,15 +306,43 @@ namespace yard
 		Store<Label_T, Finao<Rule_T> > 
 	{ };
 
+	// Matches the second rule if the first rule matches, but will not recover if the second
+	// rule fails to match
 	template<typename T, typename U>
 	struct FinaoIf : 
 		Seq<T, Finao<U> >
 	{ };
 
+	// Constructs an AST node from the second rule if the first rule matches
 	template<typename Label_T, typename T, typename U>
 	struct StoreIf : 
 		Seq<T, StoreFinao<Label_T, U> >
 	{ };
+
+	// This matches a sequence, but will not recover if the first item matched
+	template
+	<		
+		typename T0
+		, typename T1
+		, typename T2 = True_T
+		, typename T3 = True_T
+		, typename T4 = True_T
+		, typename T5 = True_T
+		, typename T6 = True_T
+		, typename T7 = True_T
+		, typename T8 = True_T
+		, typename T9 = True_T
+	>
+	struct NoFailSeq : FinaoIf<T0, Seq<T1, T2, T3, T4, T5, T6, T7, T8> >
+	{ };
+
+	// While rule T matches goes on to match U
+	template<typename T, typename U>
+	struct RepeatWhile : Star<Seq<T, U> > { }
+
+	// While rule T matches goes on to match U, but does not allow failure.
+	template<typename T, typename U>
+	struct RepeatWhileNoFail : Star<Seq<T, NoFail<U> > > { }
 }
 
 #endif // #ifndef YARD_BASE_GRAMMAR_HPP

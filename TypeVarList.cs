@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Diagnostics;
 
 namespace Cat
 {
@@ -13,5 +14,13 @@ namespace Cat
         public TypeVarList(TypeVarList list)
             : base(list)
         { }
+
+        public void Add(CatKind k)
+        {
+            if (ContainsKey(k.ToString()))
+                return;
+            Trace.Assert(k.IsKindVar());
+            base.Add(k.ToString(), k);
+        }
     }
 }

@@ -1708,7 +1708,6 @@ namespace Cat
         #endregion 
     }
 
-
     public class FlattenedFList : FList
     {
         #region fields
