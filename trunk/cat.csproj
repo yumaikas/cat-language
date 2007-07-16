@@ -108,6 +108,7 @@
     <Compile Include="CatUnificationApplier.cs" />
     <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
+    <Compile Include="CatVarScopes.cs" />
     <Compile Include="LambdaCat.cs" />
     <Compile Include="MetaCat.cs" />
     <Compile Include="PegAst.cs" />
@@ -120,7 +121,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="TypeVarList.cs" />
+    <Compile Include="CatTypeReconstructor.cs" />
+    <Compile Include="CatTypeVarList.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

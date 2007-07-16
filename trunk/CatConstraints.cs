@@ -12,7 +12,7 @@ namespace Cat
     {
         List<List<CatKind>> mConstraintListList = new List<List<CatKind>>();
         Dictionary<string, List<CatKind>> mConstraints = new Dictionary<string, List<CatKind>>();
-        TypeVarList mUnifiers = new TypeVarList();
+        CatTypeVarList mUnifiers = new CatTypeVarList();
         Dictionary<CatSelfType, CatFxnType> mSelfTypes = new Dictionary<CatSelfType, CatFxnType>();
 
         public void AddVectorConstraint(CatTypeVector v1, CatTypeVector v2)
@@ -533,7 +533,7 @@ namespace Cat
             }
         }
 
-        public TypeVarList GetResolvedUnifiers()
+        public CatTypeVarList GetResolvedUnifiers()
         {
             CreateUnifiers();
             ResolveUnifiers();

@@ -135,6 +135,9 @@ namespace Cat
         /// </summary>        
         private CatFxnType InferType(CatFxnType left, CatFxnType right, bool bVerbose, bool bCheck)
         {
+            return CatTypeReconstructor.ComposeTypes(left, right);
+
+            /*
             mConstraints.Clear();
             VarRenamer renamer = new VarRenamer();
 
@@ -175,7 +178,7 @@ namespace Cat
                 MainClass.WriteLine(mConstraints.ToString());
             }
 
-            TypeVarList unifiers = mConstraints.GetResolvedUnifiers();
+            CatTypeVarList unifiers = mConstraints.GetResolvedUnifiers();
             
             if (bVerbose)
             {
@@ -201,9 +204,10 @@ namespace Cat
                 OutputInferredType(ret);
 
             return ret;
+             */
         }
 
-        public void OutputUnifiers(TypeVarList unifiers)
+        public void OutputUnifiers(CatTypeVarList unifiers)
         {
             MainClass.WriteLine("UnificationApplier:");
             foreach (KeyValuePair<string, CatKind> kvp in unifiers)

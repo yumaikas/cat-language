@@ -93,11 +93,6 @@ namespace Cat
                     MainClass.WriteLine("declared type " + declaredType.ToPrettyString(false));
                     bool bTmp = CatFxnType.CompareFxnTypes(def.mpFxnType, declaredType);
                 }
-                else if (Config.gbVerboseTypeChecking)
-                {
-                    MainClass.WriteLine("type check successful for " + def.GetName());
-                    //MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
-                }
             }
         }
 
