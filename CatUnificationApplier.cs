@@ -7,7 +7,7 @@ namespace Cat
 {
     public class UnificationApplier
     {        
-        public UnificationApplier(CatFxnType context, TypeVarList u)
+        public UnificationApplier(CatFxnType context, CatTypeVarList u)
         {
             mUnifiers = u;
             mContextVars = context.GetAllVars();
@@ -15,9 +15,9 @@ namespace Cat
                 AddBoundVars(s, u[s]);
         }
 
-        TypeVarList mUnifiers;
-        TypeVarList mContextVars;
-        TypeVarList mGeneratedVars = new TypeVarList();
+        CatTypeVarList mUnifiers;
+        CatTypeVarList mContextVars;
+        CatTypeVarList mGeneratedVars = new CatTypeVarList();
         Dictionary<string, string> mAllVars = new Dictionary<string, string>();
         List<string> mBoundVars = new List<string>();
 
@@ -114,8 +114,8 @@ namespace Cat
 
         CatFxnType RenameFreeVars(CatFxnType ft)
         {
-            TypeVarList old = mGeneratedVars;
-            mGeneratedVars = new TypeVarList();
+            CatTypeVarList old = mGeneratedVars;
+            mGeneratedVars = new CatTypeVarList();
             mGeneratedVars.Clear();
             CatFxnType ret = RenameFreeVars(ft, ft);
             mGeneratedVars = old;

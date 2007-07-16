@@ -338,11 +338,11 @@ namespace yard
 
 	// While rule T matches goes on to match U
 	template<typename T, typename U>
-	struct RepeatWhile : Star<Seq<T, U> > { }
+	struct RepeatWhile : Star<Seq<T, U> > { };
 
 	// While rule T matches goes on to match U, but does not allow failure.
 	template<typename T, typename U>
-	struct RepeatWhileNoFail : Star<Seq<T, NoFail<U> > > { }
+	struct RepeatWhileNoFail : Star<Seq<T, Finao<U> > > { };
 }
 
 #endif // #ifndef YARD_BASE_GRAMMAR_HPP

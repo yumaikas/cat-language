@@ -17,13 +17,13 @@ namespace Cat
     {
         int mnId = 0;
 
-        TypeVarList mNames;
+        CatTypeVarList mNames;
 
         #region constructors
 
         public VarRenamer()
         {
-            mNames = new TypeVarList();
+            mNames = new CatTypeVarList();
         }
         #endregion
 
@@ -187,7 +187,7 @@ namespace Cat
 
         public static CatFxnType RenameFreeVars(CatFxnType left, CatFxnType right, CatFxnType ft)
         {
-            TypeVarList vars = ft.GetAllVars();
+            CatTypeVarList vars = ft.GetAllVars();
             foreach (string s in vars.Keys)
             {
                 CatKind k = vars[s];
@@ -202,7 +202,7 @@ namespace Cat
             return RenameVars(ft, vars);
         }
 
-        static CatTypeVector RenameVars(CatTypeVector vec, TypeVarList vars)
+        static CatTypeVector RenameVars(CatTypeVector vec, CatTypeVarList vars)
         {
             CatTypeVector ret = new CatTypeVector();
             foreach (CatKind k in vec.GetKinds())
@@ -221,7 +221,7 @@ namespace Cat
             return ret;
         }
 
-        static CatFxnType RenameVars(CatFxnType ft, TypeVarList vars)
+        static CatFxnType RenameVars(CatFxnType ft, CatTypeVarList vars)
         {
             return new CatFxnType(RenameVars(ft.GetCons(), vars), RenameVars(ft.GetProd(), vars), ft.HasSideEffects());
         }

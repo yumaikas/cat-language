@@ -1,10 +1,12 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>everything.cat</StartArguments>
+    <StartArguments>
+    </StartArguments>
     <StartWorkingDirectory>C:\dev\cat\src\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <StartArguments>everything.cat</StartArguments>
+    <StartArguments>
+    </StartArguments>
     <StartWorkingDirectory>C:\dev\cat\src\</StartWorkingDirectory>
   </PropertyGroup>
 </Project>

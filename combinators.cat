@@ -28,6 +28,7 @@ define KI : ( -> ('a -> ('b -> 'b)))
 // Mockingbird
 // \a.aa
 // S(I)(I)
+// TODO: add type annotation
 define M
 { I I S A A }
 
@@ -35,10 +36,11 @@ define M
 // \ab.b(ab)
 // S(I)
 // Bug, 'C needed as a workaround
-//define O : ( -> ((('a -> 'b) -> 'a) -> (('a -> 'b) -> 'b)))
-define O : ( -> ((('C 'a -> 'C 'b) -> 'a) -> (('C 'a -> 'C 'b) -> 'b)))
+//define O : ( -> ((('C 'a -> 'C 'b) -> 'a) -> (('C 'a -> 'C 'b) -> 'b)))
+define O : ( -> ((('a -> 'b) -> 'a) -> (('a -> 'b) -> 'b)))
 { I S A }
 
+/*
 // Bluebird
 // \abc.a(bc)
 // S(K(S))(K)
@@ -112,3 +114,4 @@ define V : ( -> ('a -> ('b -> (('a -> ('b -> 'c)) -> 'c))))
 // Bug, expected: ( -> (('a -> ('a -> 'b)) -> ('a -> 'b)))
 define W : ( -> (self -> (self -> 'c)))
 { R M B A A C A }
+*/

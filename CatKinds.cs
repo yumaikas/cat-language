@@ -121,6 +121,7 @@ namespace Cat
         }
 
         public abstract IEnumerable<CatKind> GetChildKinds();
+        public abstract IEnumerable<CatKind> GetDescendantKinds();
     }
 
     /// <summary>
@@ -165,6 +166,11 @@ namespace Cat
         {
             yield return this;
         }
+
+        public override IEnumerable<CatKind> GetDescendantKinds()
+        {
+            yield return this;
+        }
     }
 
     public class CatTypeVar : CatTypeKind
@@ -194,6 +200,11 @@ namespace Cat
         }
 
         public override IEnumerable<CatKind> GetChildKinds()
+        {
+            yield return this;
+        }
+
+        public override IEnumerable<CatKind> GetDescendantKinds()
         {
             yield return this;
         }
@@ -361,6 +372,13 @@ namespace Cat
                 yield return k;
         }
 
+        public override IEnumerable<CatKind> GetDescendantKinds()
+        {
+            foreach (CatKind k in GetKinds())
+                foreach (CatKind j in k.GetDescendantKinds())
+                    yield return j;
+        }
+
         public bool IsValid()
         {
             foreach (CatKind k in GetKinds())
@@ -399,61 +417,10 @@ namespace Cat
         {
             yield return this;
         }
-    }
 
-    /// <summary>
-    /// A self type is a function that pushes itself onto the stack.
-    /// self : ('A -> 'A self)
-    /// TODO: make this not a fxn type.
-    /// </summary>
-    public class CatSelfType : CatFxnType
-    {
-        public CatSelfType()
-        {
-            GetProd().Add(this);
-        }
-
-        public override CatFxnType AddImplicitRhoVariables()
-        {
-            return this; 
-        }
-
-        public override CatFxnType RemoveImplicitRhoVariables()
-        {
-            return this;
-        }
-
-        public override string ToString()
-        {
-            return "self";
-        }
-
-        public override string ToPrettyString(bool bMLStyle)
-        {
-            return "self";
-        }
-
-        public override bool Equals(CatKind k)
-        {
-            return k is CatSelfType;
-        }
-
-        public override bool IsSubtypeOf(CatKind k)
-        {
-            return k is CatSelfType;
-        }
-        
-        public override IEnumerable<CatKind> GetChildKinds()
+        public override IEnumerable<CatKind> GetDescendantKinds()
         {
             yield return this;
-        }
-    }
-
-    public class CatQuotedFxnType : CatFxnType
-    {
-        public CatQuotedFxnType(CatFxnType f)
-        {
-            GetProd().Add(f);
         }
     }
 
@@ -491,11 +458,6 @@ namespace Cat
             return GetCustomKind(n);
         }
 
-        public static bool IsCustomKind(string s)
-        {
-            return (s.Length > 0) && (s[0] == '_');
-        }
-        
         public override bool Equals(CatKind k)
         {
             if (!(k is CatCustomKind))
@@ -512,6 +474,11 @@ namespace Cat
         }
 
         public override IEnumerable<CatKind> GetChildKinds()
+        {
+            yield return this;
+        }
+
+        public override IEnumerable<CatKind> GetDescendantKinds()
         {
             yield return this;
         }
@@ -557,6 +524,16 @@ namespace Cat
         public override IEnumerable<CatKind> GetChildKinds()
         {
             yield return this;
+        }
+
+        public override IEnumerable<CatKind> GetDescendantKinds()
+        {
+            yield return this;
+        }
+
+        public override string ToString()
+        {
+            return "meta_" + TypeToString(typeof(T));
         }
     }
 }
