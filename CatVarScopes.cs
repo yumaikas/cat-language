@@ -70,7 +70,9 @@ namespace Cat
         {
             string ret = "";
             foreach (VarScope vs in this)
-                ret += vs.mName + " in " + vs.mScope.ToIdString() + "\n";
+                if (vs.mScope == null)
+                    ret += vs.mName + " in __top__\n"; else                
+                    ret += vs.mName + " in " + vs.mScope.ToIdString() + "\n";
             return ret;
         }
     }

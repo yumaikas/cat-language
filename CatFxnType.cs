@@ -13,7 +13,7 @@ namespace Cat
         bool mbSideEffects;
         CatFxnType mpParent;
         CatTypeVarList mpFreeVars = new CatTypeVarList();
-        int mnId = gnId++;
+        protected int mnId = gnId++;
         #endregion
 
         #region static functions 
@@ -214,9 +214,11 @@ namespace Cat
         /// but we can't always do that. 
         /// </summary>
         /// <param name="scopes"></param>
-        private void ComputeVarScopes(VarScopes scopes)
+        private void ComputeVarScopes(VarScopes scopes, Stack<CatFxnType> visited)
         {
-            // TODO: assure myself that this really does work as intended
+            if (visited.Contains(this))
+                return;
+
             foreach (CatKind k in GetChildKinds())
             {
                 if (k.IsKindVar())
@@ -226,7 +228,9 @@ namespace Cat
                 else if (k is CatFxnType)
                 {
                     CatFxnType ft = k as CatFxnType;
-                    ft.ComputeVarScopes(scopes);
+                    visited.Push(ft);
+                    ft.ComputeVarScopes(scopes, visited);
+                    visited.Pop();
                 }
             }
         }
@@ -234,14 +238,14 @@ namespace Cat
         private VarScopes ComputeVarScopes()
         {
             VarScopes scopes = new VarScopes();
-            ComputeVarScopes(scopes);
+            ComputeVarScopes(scopes, new Stack<CatFxnType>());
             return scopes;
         }
 
         private void ComputeFreeVars()
         {
             VarScopes scopes = ComputeVarScopes();
-            SetFreeVars(scopes);
+            SetFreeVars(scopes, new Stack<CatFxnType>());
 
             // TODO:
             // Use the scopes to find out if a function type is well-formed or not.
@@ -253,15 +257,21 @@ namespace Cat
             return scopes.IsFreeVar(this, k);
         }
 
-        private void SetFreeVars(VarScopes scopes)
+        private void SetFreeVars(VarScopes scopes, Stack<CatFxnType> visited)
         {
+            if (visited.Contains(this))
+                return;
             foreach (CatKind k in GetDescendantKinds())
             {
                 // iterate over the values
                 if (IsFreeVar(k, scopes))
                     mpFreeVars.Add(k);
                 else if (k is CatFxnType)
-                    (k as CatFxnType).SetFreeVars(scopes);
+                {
+                    visited.Push(this);
+                    (k as CatFxnType).SetFreeVars(scopes, visited);
+                    visited.Pop();
+                }
             }
         }
 
@@ -331,18 +341,18 @@ namespace Cat
         public override string ToString()
         {
             if (mbSideEffects)
-            {
-                return "(" + GetCons().ToString() + " ~> " + GetProd().ToString() + ")";
-            }
-            else
-            {
+                return "(" + GetCons().ToString() + " ~> " + GetProd().ToString() + ")"; else
                 return "(" + GetCons().ToString() + " -> " + GetProd().ToString() + ")";
-            }
         }
 
-        public string ToIdString()
+        public override string ToIdString()
         {
-            return ToString() + "_" + mnId.ToString();
+            string ret = "";
+            if (mbSideEffects)
+                ret = "(" + GetCons().ToIdString() + " ~> " + GetProd().ToIdString() + ")"; else
+                ret = "(" + GetCons().ToIdString() + " -> " + GetProd().ToIdString() + ")";
+            ret += "_" + mnId.ToString();
+            return ret;
         }
 
         public static string IntToPrettyString(int n)
@@ -598,7 +608,6 @@ namespace Cat
     {
         public CatSelfType()
         {
-            GetProd().Add(this);
         }
 
         public override CatFxnType AddImplicitRhoVariables()
@@ -614,6 +623,11 @@ namespace Cat
         public override string ToString()
         {
             return "self";
+        }
+
+        public override string ToIdString()
+        {
+            return "self_" + mnId.ToString();
         }
 
         public override string ToPrettyString(bool bMLStyle)

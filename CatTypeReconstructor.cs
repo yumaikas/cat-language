@@ -49,7 +49,8 @@ namespace Cat
         {
             if (Config.gbVerboseInference)
             {
-                WriteLine("inferring composing types");
+                WriteLine("");
+                WriteLine("Composing Types");
                 WriteLine("left  = " + left.ToString());
                 WriteLine("right = " + right.ToString());
             }
@@ -74,8 +75,10 @@ namespace Cat
                 WriteLine("after renaming");
                 WriteLine("left  = " + left.ToString());
                 WriteLine("right = " + right.ToString());
+                WriteLine("---");
                 WriteLine("unresolved inferred type");
                 WriteLine(tmp.ToString());
+                WriteLine("---");
             }
 
             // Create a list of all variables used including the left-most and right-most
@@ -86,6 +89,9 @@ namespace Cat
             {
                 WriteLine("all variables");
                 WriteLine(mVars.ToString());
+
+                WriteLine("equality");
+                WriteLine(left.GetProd() + " = " + right.GetCons());
             }
 
             mConstraints.AddVectorConstraint(left.GetProd(), right.GetCons());
@@ -98,13 +104,15 @@ namespace Cat
 
             mConstraints.RemoveUnusedConstraints(tmp);
 
+            /*
             if (Config.gbVerboseInference)
             {
                 WriteLine("used constraints");
                 Write(mConstraints.ToString());
             }
+             */
 
-            mConstraints.ComputeScopes(mScopes);
+            mConstraints.ComputeScopes(tmp, mScopes);
 
             if (Config.gbVerboseInference)
             {
@@ -119,6 +127,15 @@ namespace Cat
                 WriteLine("unresolved unifiers");
                 Write(mUnifiers.ToString());
             }
+            
+            ResolveSelfTypes();
+
+            /*
+            if (Config.gbVerboseInference)
+            {
+                WriteLine("resolved self-types in unifiers");
+                Write(mUnifiers.ToString());
+            }*/
 
             ResolveUnifiers();
 
@@ -128,12 +145,21 @@ namespace Cat
                 Write(mUnifiers.ToString());
             }
 
+            mScopes.Clear();
+            mConstraints.ComputeScopes(tmp, mScopes);
+
+            if (Config.gbVerboseInference)
+            {
+                WriteLine("resolved variable scopes");
+                Write(mScopes.ToString());
+            }
+
             CatFxnType ret = CreateNewType(left, right);
 
             if (Config.gbVerboseInference)
             {
                 WriteLine("reconstructed type");
-                WriteLine(ret.ToString());
+                WriteLine(ret.ToIdString());
                 WriteLine("ML style  : " + ret.ToPrettyString(true));
                 WriteLine("Cat style : " + ret.ToPrettyString(false));
                 WriteLine("");
@@ -155,6 +181,17 @@ namespace Cat
             {
                 Trace.Assert(visited.Count == 0);
                 mUnifiers[s] = ResolveVars(mUnifiers[s], visited);
+            }
+        }
+
+        private void ResolveSelfTypes()
+        {
+            foreach (string s in new List<string>(mUnifiers.Keys))
+            {
+                if (IsSelfType(s, mUnifiers[s]))
+                {
+                    mUnifiers[s] = new CatSelfType();
+                }
             }
         }
 
@@ -184,17 +221,19 @@ namespace Cat
 
         public CatFxnType ResolveVars(CatFxnType ft, Stack<CatKind> visited)
         {
-            CatTypeVector cons = ResolveVars(ft.GetCons(), visited);
-            CatTypeVector prod = ResolveVars(ft.GetProd(), visited);
-            CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
-            ret = RenameFreeVars(ret);
+            if (ft is CatSelfType)
+                return ft;
+            CatFxnType ret = RenameFreeVars(ft);
+            CatTypeVector cons = ResolveVars(ret.GetCons(), visited);
+            CatTypeVector prod = ResolveVars(ret.GetProd(), visited);
+            ret = new CatFxnType(cons, prod, ft.HasSideEffects());
             return ret;
         }
 
         public CatKind ResolveVars(CatKind k, Stack<CatKind> visited)
         {
             if (visited.Contains(k))
-                throw new Exception("cycle in resolution, indicates a recursive type");
+               return k;
             visited.Push(k);
 
             CatKind ret = k;
@@ -204,7 +243,7 @@ namespace Cat
                 ret = ResolveVars(k as CatTypeVector, visited);
             else if (k.IsKindVar())
             {
-                CatKind u = mUnifiers.GetUnifier(k);
+                CatKind u = ResolveVars(mUnifiers.GetUnifier(k), visited);
                 if (u is CatFxnType)
                     ret = RenameFreeVars(u as CatFxnType);
                 else
@@ -227,13 +266,24 @@ namespace Cat
             {
                 CatKind ret;
                 if (k is CatStackVar)
-                    ret = CatStackVar.CreateUnique();
-                else
+                    ret = CatStackVar.CreateUnique(); else
                     ret = CatTypeVar.CreateUnique();
 
                 gen.Add(s, ret);
                 return ret;
             }
+        }
+
+        bool IsFreeVar(CatFxnType ft, CatKind k)
+        {
+            if (!mScopes.IsFreeVar(ft, k))
+                return false;
+            string s = k.ToString();
+            if (mUnifiers.ContainsKey(s))
+                if (mUnifiers[s] is CatTypeVar)
+                    return IsFreeVar(ft, mUnifiers[s]); else
+                    return false;
+            return true;
         }
 
         CatTypeVector RenameFreeVars(CatFxnType context, CatTypeVector vec, CatTypeVarList gen)
@@ -249,7 +299,7 @@ namespace Cat
                     ret.Add(RenameFreeVars(context, k as CatTypeVector, gen));
                 else if (k.IsKindVar())
                 {
-                    if (mScopes.IsFreeVar(context, k))
+                    if (IsFreeVar(context, k))
                         ret.Add(GenerateVar(k, gen));
                     else
                         ret.Add(k);
@@ -264,22 +314,91 @@ namespace Cat
 
         CatFxnType RenameFreeVars(CatFxnType context, CatFxnType ft, CatTypeVarList gen)
         {
+            if (ft is CatSelfType)
+                return ft;
             CatTypeVector cons = RenameFreeVars(context, ft.GetCons(), gen);
             CatTypeVector prod = RenameFreeVars(context, ft.GetProd(), gen);
-            return new CatFxnType(cons, prod, ft.HasSideEffects());
+            CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
+            return ret;
         }
 
         CatFxnType RenameFreeVars(CatFxnType ft)
         {
             CatTypeVarList gen = new CatTypeVarList();
-            CatFxnType ret = RenameFreeVars(ft, ft, gen);
-            if (Config.gbVerboseInference)
-            {
-                WriteLine("Renamed free variables:");
-                WriteLine(gen.ToString());
-            }
+            CatFxnType ret = RenameFreeVars(ft, ft, gen);            
             return ret;
         }
+        #endregion
+
+        #region self function resolution
+        /// <summary>
+        /// Used for the identification of "self" types, so it does not 
+        /// recurse into functions
+        /// </summary>
+        /// <returns></returns>
+        bool DoesKindContain(CatKind k, string s)
+        {
+            if (k.IsKindVar())
+            {
+                if (k.ToString().Equals(s))
+                {
+                    return true;
+                }
+                else
+                {
+                    if (mConstraints.ContainsKey(k.ToString()))
+                    {
+                        foreach (CatKind j in mConstraints[k.ToString()])
+                        {
+                            if (DoesKindContain(j, s))
+                                return true;
+                        }
+                    }
+                }
+            }
+            else if (k is CatTypeVector)
+            {
+                CatTypeVector vec = k as CatTypeVector;
+                foreach (CatKind j in vec.GetKinds())
+                {
+                    if (DoesKindContain(j, s))
+                        return true;
+                }
+            }
+            else if (k is CatFxnType)
+            {
+                // do nothing
+                // This algorithm does not go into functions. It is only used to look one level deep 
+                // in order to identify "self" types.
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Used to identify self types, which are defined as function types which refer to themselves
+        /// at the top-level of the consumption, or production. In other words: 
+        /// ( -> self) is a self type but, ( -> ( -> self)) is not a self type. The term "self" always 
+        /// refers to the enclosing scope.
+        /// </summary>
+        private bool FxnContainsVar(CatFxnType ft, string s)
+        {
+            foreach (CatKind tmp in ft.GetChildKinds())
+            {
+                if (tmp.IsKindVar())
+                    if (DoesKindContain(tmp, s))
+                        return true;                    
+            }
+            return false;
+        }
+
+        private bool IsSelfType(string s, CatKind k)
+        {
+            if (k is CatFxnType)
+                return FxnContainsVar(k as CatFxnType, s);
+            return false;
+        }
+
         #endregion
 
         #region member classes
@@ -471,12 +590,7 @@ namespace Cat
                 {
                     ret += kvp.Key + " = ";
                     foreach (CatKind k in kvp.Value)
-                    {
-                        if (k is CatFxnType)
-                            ret += (k as CatFxnType).ToIdString() + "; "; 
-                        else
-                            ret += k + "; ";
-                    }
+                        ret += k.ToIdString() + "; ";
                     ret += "\n";
                 }
                 return ret;
@@ -523,7 +637,7 @@ namespace Cat
                         Remove(s);
             }
 
-            private void AssignVarsToScope(CatFxnType context, VarScopes scopes, CatKind k, Stack<CatKind> visited)
+            public void AssignVarsToScope(CatFxnType context, VarScopes scopes, CatKind k, Stack<CatKind> visited)
             {
                 if (visited.Contains(k))
                     return;
@@ -532,8 +646,7 @@ namespace Cat
                 if (k.IsKindVar())
                 {
                     string s = k.ToString();
-                    if (context != null)
-                        scopes.Add(s, context);
+                    scopes.Add(s, context);
                     if (ContainsKey(s))
                     {
                         List<CatKind> tmp = this[s];
@@ -577,10 +690,10 @@ namespace Cat
                         yield return k;
             }
 
-            public void ComputeScopes(VarScopes scopes)
+            public void ComputeScopes(CatFxnType ft, VarScopes scopes)
             {
                 foreach (CatKind k in GetKinds())
-                    AssignVarsToScope(null, scopes, k, new Stack<CatKind>());
+                    AssignVarsToScope(ft, scopes, k, new Stack<CatKind>());
             }
         }
         
@@ -590,7 +703,7 @@ namespace Cat
             {
                 string ret = "";
                 foreach (KeyValuePair<string, CatKind> kvp in this)
-                    ret += kvp.Key + " = " + kvp.Value + "\n";
+                    ret += kvp.Key + " = " + kvp.Value.ToIdString() + "\n";
                 return ret;
             }
 
@@ -722,7 +835,7 @@ namespace Cat
                     string tmp = "";
                     for (int i = 0; i < list.Count; ++i)
                         tmp += list[i].ToString();
-                    MainClass.WriteLine("Merging constraints: " + tmp);
+                    MainClass.WriteLine("Merging constraints for " + s + " : " + tmp);
                 }
 
                 Add(s, null);
@@ -745,8 +858,6 @@ namespace Cat
                 if (Config.gbVerboseInference)
                     WriteLine("Unifier = " + k.ToString());
 
-                // NOTE: this used to be "ResolveKind" which
-                // I am now considered with rubbish.
                 this[s] = k;
             }
         }
