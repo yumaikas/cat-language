@@ -55,6 +55,11 @@ namespace Cat
             throw new Exception("ToString must be overridden");
         }
 
+        public virtual string ToIdString()
+        {
+            return ToString();
+        }
+
         public abstract bool Equals(CatKind k);
 
         public virtual bool IsSubtypeOf(CatKind k)
@@ -249,26 +254,16 @@ namespace Cat
         {
             Trace.Assert(k != null);
             if (k is CatTypeVector)
-            {
-                mList.AddRange((k as CatTypeVector).GetKinds());
-            }
-            else
-            {
+                mList.AddRange((k as CatTypeVector).GetKinds()); else
                 mList.Add(k);
-            }
         }
 
         public void PushKindBottom(CatKind k)
         {
             Trace.Assert(k != null);
             if (k is CatTypeVector)
-            {
-                mList.InsertRange(0, (k as CatTypeVector).GetKinds());
-            }
-            else
-            {
+                mList.InsertRange(0, (k as CatTypeVector).GetKinds()); else
                 mList.Insert(0, k);
-            }
         }
 
         public bool IsEmpty()
@@ -279,16 +274,14 @@ namespace Cat
         public CatKind GetBottom()
         {
             if (mList.Count > 0)
-                return mList[0];
-            else
+                return mList[0]; else
                 return null;
         }
 
         public CatKind GetTop()
         {
             if (mList.Count > 0)
-                return mList[mList.Count - 1];
-            else
+                return mList[mList.Count - 1]; else
                 return null;
         }
 
@@ -303,8 +296,17 @@ namespace Cat
             foreach (CatKind k in mList)
                 ret += " " + k.ToString();
             if (mList.Count > 0)
-                return ret.Substring(1);
-            else
+                return ret.Substring(1); else
+                return "";
+        }
+
+        public override string ToIdString()
+        {
+            string ret = "";
+            foreach (CatKind k in mList)
+                ret += " " + k.ToIdString();
+            if (mList.Count > 0)
+                return ret.Substring(1); else
                 return "";
         }
 

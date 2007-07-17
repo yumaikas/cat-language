@@ -76,15 +76,6 @@ namespace Cat
         {
             return stack.Pop();
         }
-        public T TypedPop<T>()
-        {
-            if (stack.Count == 0)
-                throw new Exception("Trying to pop an empty stack");
-            Object o = stack.Pop();
-            if (!(o is T))
-                throw new Exception("Expected type " + typeof(T).Name + " but instead found " + o.GetType().Name);
-            return (T)o;
-        }
         public int PopInt()
         {
             return TypedPop<int>();
@@ -105,13 +96,21 @@ namespace Cat
         {
             return stack.Peek();
         }
+        public T TypedPop<T>()
+        {
+            T result = TypedPeek<T>();
+            stack.Pop();
+            return result;
+        }
         public T TypedPeek<T>()
         {
             if (stack.Count == 0)
                 throw new Exception("Trying to peek into an empty stack ");
             Object o = stack.Peek();
             if (!(o is T))
+            {
                 throw new Exception("Expected type " + typeof(T).Name + " but instead found " + o.GetType().Name);
+            }
             return (T)o;
         }
         public Function PeekProgram()

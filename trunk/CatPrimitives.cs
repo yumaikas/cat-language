@@ -1349,7 +1349,7 @@ namespace Cat
         public class List : PrimitiveFunction
         {
             public List()
-                : base("to_list", "(( -> 'A) -> list)", "creates a list from a function")
+                : base("@", "(( -> 'A) -> list)", "creates a list from a function")
             { }
 
             public override void Eval(Executor exec)
