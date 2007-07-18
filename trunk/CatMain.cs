@@ -97,6 +97,15 @@ namespace Cat
             }
         }
 
+        public static void OutputHelp(QuotedFunction q)
+        {           
+            foreach (Function f in q.GetChildren())
+            {
+                MainClass.WriteLine(f.msName + " : " + q.GetTypeString());
+                MainClass.WriteLine(f.msDesc);
+            }
+        }
+
         public static void OutputHelp(string s)
         {
             if (gpHelp == null)

@@ -1,0 +1,15 @@
+// 
+// This file allows controlling the behaviour of the interpreter
+
+define get_config_class { nil "Cat.Config" clr_new }
+define twiddle_config_field { get_config_class swap dup [clr_get_field not] dip clr_set_field pop }
+
+define ~verbose_inference { "gbVerboseInference" twiddle_config_field }
+define ~allow_redefines { "gbAllowRedefines" twiddle_config_field }
+define ~verbose_type_checking { "gbVerboseTypeChecking" twiddle_config_field }
+define ~show_point_free_conversion { "gbShowPointFreeConversion" twiddle_config_field }
+define ~show_timings { "gbShowTimeElapsed" twiddle_config_field }
+define ~show_stack { "gbOutputStack" twiddle_config_field }
+
+
+

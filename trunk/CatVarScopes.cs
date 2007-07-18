@@ -5,18 +5,18 @@ using System.Diagnostics;
 
 namespace Cat
 {
-    public struct VarScope
+    public struct CatVarScope
     {
         public string mName;
         public CatFxnType mScope;
-        public VarScope(string s, CatFxnType ft)
+        public CatVarScope(string s, CatFxnType ft)
         {
             mScope = ft;
             mName = s;
         }
     }
 
-    public class VarScopes : List<VarScope>
+    public class CatVarScopes : List<CatVarScope>
     {
         public void Add(CatKind k, CatFxnType ft)
         {
@@ -28,7 +28,7 @@ namespace Cat
         {
             if (HasScope(s, ft))
                 return;
-            base.Add(new VarScope(s, ft));
+            base.Add(new CatVarScope(s, ft));
         }
 
         public IEnumerable<CatFxnType> GetAssociatedScopes(CatKind k)
@@ -39,14 +39,14 @@ namespace Cat
 
         public IEnumerable<CatFxnType> GetAssociatedScopes(string s)
         {
-            foreach (VarScope vs in this)
+            foreach (CatVarScope vs in this)
                 if (vs.mName == s)
                     yield return vs.mScope;
         }
 
         public bool HasScope(string s, CatFxnType ft)
         {
-            foreach (VarScope vs in this)
+            foreach (CatVarScope vs in this)
                 if (vs.mName.Equals(s) && vs.mScope == ft)
                     return true;
             return false;
@@ -69,7 +69,7 @@ namespace Cat
         public override string ToString()
         {
             string ret = "";
-            foreach (VarScope vs in this)
+            foreach (CatVarScope vs in this)
                 if (vs.mScope == null)
                     ret += vs.mName + " in __top__\n"; else                
                     ret += vs.mName + " in " + vs.mScope.ToIdString() + "\n";

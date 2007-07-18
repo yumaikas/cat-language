@@ -13,7 +13,7 @@ namespace Cat
     /// The renamer assigns new names to a set of variables either from a supplied 
     /// dictionary or by generating unique names.
     /// </summary>
-    public class VarRenamer
+    public class CatVarRenamer
     {
         int mnId = 0;
 
@@ -21,7 +21,7 @@ namespace Cat
 
         #region constructors
 
-        public VarRenamer()
+        public CatVarRenamer()
         {
             mNames = new CatTypeVarList();
         }
@@ -66,7 +66,7 @@ namespace Cat
 
         public static CatFxnType RenameVars(CatFxnType ft)
         {
-            return (new VarRenamer()).Rename(ft);
+            return (new CatVarRenamer()).Rename(ft);
         }
 
         public CatKind Rename(CatKind k)
