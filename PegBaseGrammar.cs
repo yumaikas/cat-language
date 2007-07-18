@@ -538,8 +538,6 @@ namespace Peg
                         p.SetPos(pos);
                         return false;
                     }
-
-
                 }
                 return true;
             }

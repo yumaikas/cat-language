@@ -29,12 +29,17 @@ namespace Cat
         {
             return mpParent;
         }
-        public CatMetaData FindChild(string s)
+        public CatMetaData Find(string s)
         {
             foreach (CatMetaData child in this)
                 if (child.msName.Equals(s))
                     return child;
             return null;
+        }
+
+        public string GetContent()
+        {
+            return msContent;
         }
     }
 

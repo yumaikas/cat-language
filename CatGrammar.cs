@@ -32,7 +32,7 @@ namespace Cat
         }
         public static Rule MetaDataLine()
         {
-            return Seq(Opt(MetaDataLabel()), WS(), MetaDataContent());
+            return Seq(Opt(MetaDataLabel()), Star(CharSet(" \t")), MetaDataContent());
         }
         public static Rule MetaDataBlock() 
         {

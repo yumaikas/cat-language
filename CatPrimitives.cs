@@ -324,6 +324,20 @@ namespace Cat
                 exec.GetStack().Clear();
             }
         }
+
+        public class Test : PrimitiveFunction
+        {
+            public Test()
+                : base("#test", "(function ~> )", "runs tests associated with the function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction q = exec.PopFunction();
+                foreach (Function f in q.GetChildren())
+                    f.RunTests(exec);
+            }
+        }
     }
 
     public class Primitives
@@ -1367,9 +1381,12 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.TypedPop<Function>();
-                f.Eval(GetExecutor());
-                exec.Push(GetExecutor().GetStack().ToList());
-                GetExecutor().GetStack().Clear();
+                CatStack stk = exec.GetStack();
+                exec.SetStack(new CatStack());
+                f.Eval(exec);
+                FList list = exec.GetStack().ToList();
+                exec.SetStack(stk);
+                exec.Push(list);
             }
         }
 

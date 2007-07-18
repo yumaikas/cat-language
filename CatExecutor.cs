@@ -49,6 +49,10 @@ namespace Cat
         {
             return stack;
         }
+        public void SetStack(CatStack newStack)
+        {
+            stack = newStack;
+        }
         public void Swap()
         {
             object tmp1 = Pop();
