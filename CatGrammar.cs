@@ -10,30 +10,33 @@ namespace Cat
 {
     public class CatGrammar : Grammar
     {
+        public static Rule UntilEndOfLine()
+        {
+            return NoFail(WhileNot(AnyChar(), NL()), "expected a new line");
+        }
         public static Rule LineComment() 
         { 
-            return Seq(CharSeq("//"), NoFail(WhileNot(AnyChar(), NL()), "expected a new line")); 
+            return Seq(CharSeq("//"), UntilEndOfLine()); 
         }
         public static Rule BlockComment()
         {
             return Seq(CharSeq("/*"), NoFail(WhileNot(AnyChar(), CharSeq("*/")), "expected a new line"));
         }
-        public static Rule UnlabeledMetaData()
+        public static Rule MetaDataContent()
         {
-            return AstNode("meta_data_content", Seq(SingleChar('{'), WhileNot(Choice(Delay(MetaData), AnyChar()), SingleChar('}'))));
+            return AstNode("meta_data_content", UntilEndOfLine());
         }
-        public static Rule LabeledMetaData()
+        public static Rule MetaDataLabel()
         {            
-            return Seq(AstNode("meta_data_label", Ident()), UnlabeledMetaData());
+            return AstNode("meta_data_label", Seq(Star(CharSet(" \t")), Ident(), SingleChar(':')));
         }
-        public static Rule MetaData()
+        public static Rule MetaDataLine()
         {
-            return Seq(Choice(UnlabeledMetaData(), LabeledMetaData()), WS());
+            return Seq(Opt(MetaDataLabel()), WS(), MetaDataContent());
         }
         public static Rule MetaDataBlock() 
-        { 
-            // Note: "}}" is not legal within a meta-data block
-            return Seq(AstNode("meta_data_block", Seq(CharSeq("{{"), WhileNot(Choice(MetaData(), AnyChar()), CharSeq("}}")))), WS()); 
+        {
+            return Seq(AstNode("meta_data_block", Seq(CharSeq("{{"), UntilEndOfLine(), WhileNot(MetaDataLine(), CharSeq("}}")))), WS()); 
         }
         public static Rule Comment() 
         { 
@@ -146,13 +149,17 @@ namespace Cat
         {
             return Seq(Token("("), Star(Param()), NoFail(Token(")"), "missing ')'"));
         }
+        public static Rule TypeModifier()
+        {
+            return AstNode("type_modifier", Opt(SingleChar('*')));
+        }
         public static Rule TypeVar()
         {
-            return AstNode("type_var", Seq(Opt(CharSeq("$")), LowerCaseLetter(), Star(IdentNextChar())));
+            return AstNode("type_var", Seq(Opt(CharSeq("$")), LowerCaseLetter(), Star(IdentNextChar()), TypeModifier()));
         }
         public static Rule StackVar()
         {
-            return AstNode("stack_var", Seq(Opt(CharSeq("$")), UpperCaseLetter(), Star(IdentNextChar())));
+            return AstNode("stack_var", Seq(Opt(CharSeq("$")), UpperCaseLetter(), Star(IdentNextChar()), TypeModifier()));
         }
         public static Rule TypeOrStackVar()
         {
@@ -160,7 +167,7 @@ namespace Cat
         }
         public static Rule TypeName()
         {
-            return Token(AstNode("type_name", Ident()));
+            return Token(AstNode("type_name", Seq(Ident(), TypeModifier())));        
         }
         public static Rule TypeComponent()
         {
@@ -180,7 +187,7 @@ namespace Cat
         }
         public static Rule FxnType()
         {
-            return AstNode("type_fxn", Seq(Token("("), Production(), NoFail(Arrow(), "expected either -> or ~>"), Consumption(), NoFail(Token(")"), "expected closing paranthesis")));
+            return AstNode("type_fxn", Seq(Token("("), Production(), NoFail(Arrow(), "expected either -> or ~>"), Consumption(), NoFail(Token(")"), "expected closing paranthesis"), TypeModifier()));
         }
         public static Rule TypeDecl()
         {
@@ -225,17 +232,9 @@ namespace Cat
             return AstNode("macro", Seq(Word("macro"), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
         }
         #endregion
-        public static Rule Line()
+        public static Rule CatProgram()
         {
-            return Seq(WS(), Star(Choice(FxnDef(), MacroDef(), Expr())), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
-        }
-        public static Rule PlainCatProgram()
-        {
-            return Seq(WS(), Star(Token(FxnDef())), NoFail(EndOfInput(), "expected macro or function defintion"));
-        }
-        public static Rule MetaCatProgram()
-        {
-            return Seq(WS(), Star(Choice(Token(FxnDef()), Token(MacroDef()))), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
+            return Seq(WS(), Star(Choice(MetaDataBlock(), FxnDef(), MacroDef(), Expr())), WS(), NoFail(EndOfInput(), "expected macro or function defintion"));
         }
     }
 }

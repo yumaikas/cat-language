@@ -40,16 +40,49 @@ define neg : (any -> any)
 { [int [neg_int] pair double [neg_dbl] pair] to_list dispatch1 }
 
 define add : (any any -> any)
-{ [int [add_int] pair double [add_dbl] pair byte [add_byte] pair bit [add_bit] pair string [add_str] pair] to_list dispatch2 }
+{
+  [
+    int [add_int] pair
+    double [add_dbl] pair
+    byte [add_byte] pair
+    bit [add_bit] pair
+    string [add_str] pair
+  ] @
+  dispatch
+}
 
 define sub : (any any -> any)
-{ [int [sub_int] pair double [sub_dbl] pair byte [sub_byte] pair bit [sub_bit] pair] to_list dispatch2 }
+{
+  [
+    int [sub_int] pair
+    double [sub_dbl] pair
+    byte [sub_byte] pair
+    bit [sub_bit] pair
+  ] @
+  dispatch
+}
 
 define mul : (any any -> any)
-{ [int [mul_int] pair double [mul_dbl] pair byte [mul_byte] pair bit [mul_bit] pair] to_list dispatch2 }
+{
+  [
+    int [mul_int] pair
+    double [mul_dbl] pair
+    byte [mul_byte] pair
+    bit [mul_bit] pair
+  ] @
+  dispatch
+}
 
 define mod : (any any -> any)
-{ [int [mod_int] pair double [mod_dbl] pair byte [mod_byte] pair bit [mod_bit] pair] to_list dispatch2 }
+{
+  [
+    int [mod_int] pair
+    double [mod_dbl] pair
+    byte [mod_byte] pair
+    bit [mod_bit] pair
+  ] @
+  dispatch
+}
 
 define div : (any any -> any)
 { [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch2 }
@@ -230,7 +263,7 @@ define gteqz : (int -> int bool) { dup 0 gteq_int }
 define ltz : (int -> int bool) { dup 0 lt_int }
 define lteqz : (int -> int bool) { dup 0 lteq_int }
 
-// Not really a predicate, but used to generate predicate
+// Not really a predicate, but used to generate predicates
 define modn : (any any -> any bool) { dupd mod 0 eq }
 
 define even : (any -> any bool) { 2 modn }
@@ -296,16 +329,29 @@ define compare : (any any -> any any bool)
 //=============================================================================
 // Additional combinators
 
-// swap then compose (or reverse compose)
 define rcompose : (('B -> 'C) ('A -> 'B) -> ('A -> 'C))
+{{
+  desc
+    swap then compose (or reverse compose)
+  semantics
+    [$A] [$B] rcompose == [$B $A]
+}}
 { swap compose }
 
-// Sometime called "slip"
-define swip : ('A ('A -> 'B) 'c -> 'B 'c)
+define slip : ('A ('A -> 'B) 'c -> 'B 'c)
+{{
+  semantics
+    $A [$B] $c slip == $A $B $c
+}}
 { swap dip }
 
-// Sometimes called "sip"
 define keep : ('A 'b ('A 'b -> 'C) -> 'C 'b)
+{{
+  notes
+    sometimes called "sip"
+  semantics
+    $A $b [$C] sip == $A $C $b
+}}
 { dupd dip }
 
 define sweep : ('A ('A 'b -> 'C) 'b -> 'C 'b)
@@ -323,39 +369,74 @@ define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 //==============================================================================
 // Looping constructions
 
-// execute a loop a number of times
 define repeat : ('A ('A -> 'A) int -> 'A)
+{{
+  desc
+    Executes a loop a fixed number of times
+  semantics
+    $A [$B] $c repeat == $A $c eqz [] [$B $c dec] if
+}}
 {
   swap            // 'A int [body]
   [dip dec] bind  // 'A int [[body] dip dec]
   [neqz] while pop
 }
 
-// while condition is not true
-define whilen
+define whilen : ('A ('A -> 'A bool) ('A bool -> 'A) -> 'A)
+{{
+  desc
+    Executes a while loop, while a condition is not true
+  semantics
+    $A [$B] [$C] whilen == $A $C not [$B [$B][$C] whilen] [] if
+}}
 { [not] compose while }
 
-// while top list is not empty
-define whilene
-{ [empty] whilen }
+define whilene : ('A list ('A list -> 'A list) -> 'A)
+{{
+  desc
+    Executes a function while the list on the top of the stack is not empty
+  semantics
+    $A $b [$C] whilene == $A $b empty not [$C [$C] whilene] [pop] if
+}}
+{ [empty] whilen pop }
 
-// while top value is not equal to zero
-define whilenz
-{ [neqz] while }
+define whilenz : ('A int ('A int -> 'A int) -> 'A)
+{{
+  desc
+    Executes a function while the value on the top of the stack is not equal to zero.
+  semantics
+    $A $b [$C] whilenz == $A $b neqz [$C [$C] whilenz] [pop] if
+}}
+{ [neqz] while pop }
 
-define for_each : ('A list ('A any -> 'A) -> 'A)
+define for_each : ('A list ('A list any -> 'A list) -> 'A)
+{{
+  desc
+    executes function with each item in the list
+  semantics
+    $A $b [$C] for_each == $A $b empty not [uncons pop [$C] for_each] [pop] if }
+}}
 { [dip] bind [uncons swap] rcompose whilene pop }
 
-// like repeat but an index is passed at each iteration (0..n-1)
 define for : ('A ('A int -> 'A) int -> 'A)
+{{
+  desc
+    like repeat but an index is passed at each iteration (0..n-1)
+}}
 { swap [dip inc] bind [dup] rcompose swap neqf 0 bury while pop }
 
-// a for loop but the index decreases from n down to 1
 define rfor : ('A ('A int -> 'A) int -> 'A)
+{{
+  desc
+    a for loop but the index decreases from n down to 1
+}}
 { swap [dip dec] bind [dup] rcompose whilenz pop }
 
-// Output
 define print_list : (list ~> list)
+{{
+  desc
+    outputs a list to the console window
+}}
 { dup [writeln] for_each }
 
 //=============================================================================
@@ -373,8 +454,11 @@ define )
 define ()
 { nil }
 
-// list comprehension
 define lc : (list ('a -> bool) ('b -> 'c) -> list)
+{{
+  desc
+    list comprehension
+}}
 { [take_while] dip map }
 
 define consd
@@ -398,19 +482,32 @@ define unpair : (list -> any any)
 define fold : ('A list 'b ('A 'b 'c -> 'A 'b) -> 'A 'b)
 { swapd gfold }
 
-define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
+define unfold : ('A 'b ('A 'c* 'b -> 'A 'c* 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
+{{
+  desc
+    generates a function
+}}
 { [nil bury [consd] compose] dip whilen pop }
 
-// reverses a list
 define rev : (list -> list)
+{{
+  desc
+    reverses a list
+}}
 { nil [cons] fold }
 
-// Returns true if a list contains one element or is empty
 define small : (list -> list bool)
+{{
+  desc
+    Returns true if a list contains one element or is empty
+}}
 { empty [true] [rest empty nip] if }
 
-// Splits a list into two new lists
 define split : ('A list ('A list list 'b 'b -> 'A list list 'c bool) -> 'A list list)
+{{
+  desc
+    Splits a list into two new lists
+}}
 {
   nil bury nil bury
   [dup] rcompose
@@ -418,26 +515,42 @@ define split : ('A list ('A list list 'b 'b -> 'A list list 'c bool) -> 'A list 
   gfold
 }
 
-// Appends item to first list in a pair of lists
 define cons_first : (list 'a -> list)
+{{
+  desc
+    Appends item to first list in a pair of lists
+}}
 { [unpair] dip cons pair }
 
-// Appends item to second list in a pair of lists
 define cons_second : (list 'a -> list)
+{{
+  desc
+    Appends item to second list in a pair of lists
+}}
 { [unpair] dip swap [cons] dip pair }
 
-// Removes head from first list and gives it to the next one
 define move_head : (list list -> list list)
+{{
+  desc
+    Returns the index of a value in a list or the size of the list
+    if not found
+}}
 { uncons swap [cons] dip }
 
-// Returns the index of a value in a list or the size of the list
-// if not found
 define index_of : (list 'a -> list int)
+{{
+  desc
+    Returns the index of a value in a list or the size of the list
+    if not found
+}}
 { [neq] bind count_while }
 
-// splits a list in two at an index, the top result contains the second half
-// and the second result contains the first half of the original list
 define split_at : (list int -> list list)
+{{
+  desc
+    splits a list in two at an index, the top result contains the second half
+    sand the second result contains the first half of the original list
+}}
 { nil bury [move_head] swap repeat }
 
 //=============================================================================
@@ -488,8 +601,11 @@ define translate_dbl_vector : (list double -> list)
 //==============================================================================
 // Hash helper functions
 
-// Gets a value from a hash_list. If it doesn't exist then uses the default
 define hash_safe_get : (hash_list any any -> hash_list any)
+{{
+  desc
+    Gets a value from a hash_list. If it doesn't exist then uses the default
+}}
 {
   [[hash_contains] keep] dip // => hash_list bool key default
   quote                      // => hash_list bool key [default]
@@ -497,9 +613,12 @@ define hash_safe_get : (hash_list any any -> hash_list any)
   if                         // => hash_list result
 }
 
-// Adds an element as unit list to a hash_list if it doesn't exist,
-// otherwise chain it to the current list item.
 define hash_add_chain : (hash_list any 'a -> hash_list)
+{{
+  desc
+    Adds an element as unit list to a hash_list if it doesn't exist,
+    otherwise chain it to the current list item.
+}}
 {
   [[nil hash_safe_get] keep] dip // => hash_list curr key value
   swapd cons                     // => hash_list key list(curr, value)
@@ -509,12 +628,18 @@ define hash_add_chain : (hash_list any 'a -> hash_list)
 define list_to_hash : (list -> hash_list)
 {  hash_list [unpair swap hash_add_chain] fold }
 
-// performs an inner self-join on a list of pairs based the first item.
 define self_join : (list -> list)
+{{
+  desc
+    performs an inner self-join on a list of pairs based the first item.
+}}
 { list_to_hash hash_to_list }
 
-// performs an inner join on two lists of pairs
 define join : (list list -> list)
+{{
+  desc
+    performs an inner join on two lists of pairs
+}}
 { cat self_join }
 
 //=============================================================================
@@ -541,8 +666,11 @@ define throw_if : (bool any -> )
 define assert : (bool -> )
 { "assertion failed" throw_if }
 
-// a default handler for simple procedures
 define try : ('A ('A -> 'A) -> 'A)
+{{
+  desc
+    provides a simple default exception handler
+}}
 { ["exception data: " write writeln] try_catch }
 
 //=============================================================================

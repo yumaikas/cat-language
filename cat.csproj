@@ -94,6 +94,7 @@
     <Compile Include="CatHelp.cs" />
     <Compile Include="CatKinds.cs" />
     <Compile Include="CatMain.cs" />
+    <Compile Include="CatMetaData.cs" />
     <Compile Include="CatMutableList.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -103,9 +104,6 @@
     <Compile Include="CatParser.cs" />
     <Compile Include="CatPrimitives.cs" />
     <Compile Include="CatContext.cs" />
-    <Compile Include="CatTypeInferer.cs" />
-    <Compile Include="CatConstraints.cs" />
-    <Compile Include="CatUnificationApplier.cs" />
     <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
     <Compile Include="CatVarScopes.cs" />

@@ -78,6 +78,8 @@ namespace Cat
                     return new AstSimpleTypeNode(node);
                 case "stack_var":
                     return new AstStackVarNode(node);
+                case "type_modifier":
+                    throw new Exception("no associated AST node");
                 case "macro":
                     return new AstMacroNode(node);
                 case "macro_pattern":
@@ -195,6 +197,7 @@ namespace Cat
     {
         public string mName;
         public AstFxnTypeNode mType;
+        public AstMetaDataBlock mMetaData;
         public List<AstParamNode> mParams = new List<AstParamNode>();
         public List<AstExprNode> mTerms = new List<AstExprNode>();
 
@@ -246,8 +249,7 @@ namespace Cat
                 if (child.GetLabel() != "meta_data_block")
                     break;
 
-                // TODO: store meta data.
-
+                mMetaData = new AstMetaDataBlock(child);
                 n++;
             }
 
@@ -509,9 +511,18 @@ namespace Cat
 
     public class AstTypeNode : CatAstNode
     {
+        public string mModifier;
+
         public AstTypeNode(PegAstNode node)
             : base(node)
         {
+            int n = node.GetNumChildren() - 1;
+            if (n < 0)
+                throw new Exception("invalid type AST node, insufficient number of child nodes, probably missing type-modifier");
+            PegAstNode tmp = node.GetChildren()[n];
+            if (!tmp.GetLabel().Equals("type_modifier"))
+                throw new Exception("invalid type AST node, missing modifier node");
+            mModifier = tmp.ToString();
         }
     }
 
@@ -539,7 +550,7 @@ namespace Cat
             : base(node)
         {
             CheckLabel("type_var");
-            CheckIsLeaf(node);
+            CheckChildCount(node, 1);
         }
     }
 
@@ -549,7 +560,7 @@ namespace Cat
             : base(node)
         {
             CheckLabel("type_name");
-            CheckIsLeaf(node);
+            CheckChildCount(node, 1);
         }
     }
 
@@ -559,7 +570,7 @@ namespace Cat
             : base(node)
         {
             CheckLabel("stack_var");
-            CheckIsLeaf(node);
+            CheckChildCount(node, 1);
         }
     }
 
@@ -573,7 +584,7 @@ namespace Cat
             : base(node)
         {
             CheckLabel("type_fxn");
-            CheckChildCount(node, 3);
+            CheckChildCount(node, 4);
             mCons = new AstStackNode(node.GetChild(0));
             mbSideEffects = node.GetChild(1).ToString().Equals("~>");
             mProd = new AstStackNode(node.GetChild(2));

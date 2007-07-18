@@ -1,0 +1,156 @@
+{{
+  filename: parsing.cat
+  author: Christopher Diggins
+  license: Public Domain
+  url: http://www.cat-language.com
+  desc:
+    this is a combinator parsing library for recursive
+    descent parsing of parsing expression grammars (PEGs)
+}}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Basic combinators that I need
+
+define dhead
+{ first }
+
+define dtail
+{ rest }
+
+define head_eq : (list any -> list bool)
+{ [dhead] dip }
+
+define nip
+{ swap pop }
+
+define slip : ('A ('A -> 'B) 'c -> 'B 'c)
+{ [apply] dip }
+
+define dupd : ('a 'b -> 'a 'a 'b)
+{ [dup] dup }
+
+define over : ('a 'b -> 'a 'b 'a)
+{ dupd swap }
+
+define keep : ('A 'b ('A -> 'B) -> 'A 'b)
+{ over slip }
+
+define kapply : ('A ('A -> 'B) -> 'B ('A -> 'B))
+{ [apply] keep }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Parsing combinator library functions
+
+define p_token : (list any -> list bool)
+{{
+  desc:
+    Matches a single token on the input stream.
+  test:
+    in: [1 2 3] @ 1 p_token
+    out: [1 2 3] @ false
+  test:
+    in: [1 2 3] @ 3 p_token
+    out: [1 2] @ true
+}}
+{ head_eq [tail true] [false] if }
+
+define p_star : ('A ('A -> 'A bool) -> 'A bool)
+{{
+  desc:
+    Matches a parse rule against input repeatedly until it fails,
+    and will always return true.
+}}
+{ [kapply] [swap] while true }
+
+define p_opt : ('A ('A -> 'A 'b) -> 'A bool)
+{{
+  desc:
+    Matches a parse rule against input, returning true whether
+    or not it was successful
+}}
+{ apply pop true }
+
+define p_plus : ('A ('A -> 'A bool) -> 'A bool)
+{{
+  desc:
+    Matches a parse rule against input repeatedly until it fails.
+    Returns true if it succeeds at least once.
+}}
+{ kapply swap [[kapply swap] [] while true] [false] if nip }
+
+define p_at : ('A 'b ('A 'b 'b -> 'B 'c 'd bool) -> 'B 'd bool)
+{{
+  desc:
+    Returns true if the parse rule will return true if matched.
+    Does not advance the input
+}}
+{ dupd apply nip }
+
+define p_not : (list ('A -> list bool) -> list bool)
+{{
+  desc:
+    Returns true if the parse rule will fail if matched.
+    Does not advance the input.
+}}
+{ p_at not }
+
+define p_end : (list -> list bool)
+{{
+  desc:
+    returns true if there is no more input to be parsed
+}}
+{ empty }
+
+define p_or : ('A list ('A list -> 'A list bool)* -> 'B bool)
+{{
+  desc:
+    Applies a list of parsing rules in order, until one succeeds, at which
+    point it returns true, otherwise it returns false.
+}}
+{ false [uncons dip] [not [empty not] dip or] while nip }
+
+define p_seq : ('A ('A -> 'A bool)* -> 'B bool)
+{{
+  desc:
+    Applies a list of parsing rules in sequence, returning true if it succeeds
+    or returning false and restoring the input if it fails.
+}}
+{ true [uncons dip] [[empty not] dip and] while nip }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// abstract syntax tree building code
+
+define start_ast_node : (list list -> list list)
+{{
+  desc:
+    Add a new node to the abstract syntax tree.
+}}
+{ [unit cons] keep }
+
+define complete_ast_node : (list list -> list list)
+{{
+  desc:
+    Updates the most recent node with the current input state.
+}}
+{ [[uncons] dip cons cons] keep }
+
+define abandon_ast_node : (list list -> list list)
+{{
+  desc:
+    Deletes the most recently created node.
+}}
+{ [uncons tail cons] dip }
+
+define p_ast : (list list (list -> list bool) -> list list bool)
+{{
+  desc:
+    Matches a parse rule, and if successful adds a node to the tree.
+}}
+{
+  [start_ast_node] dip apply
+    [complete_ast_node true]
+    [abandon_ast_node false]
+  if
+}
+
+

@@ -79,10 +79,14 @@ namespace Cat
             DefinedFunction def = new DefinedFunction(node.mName);
             Executor.Main.GetGlobalScope().AddFunction(def);
             def.AddFunctions(TermsToFxns(node.mTerms, def));
+            
+            // Construct a representation of the meta data if neccessary
+            if (node.mMetaData != null)
+                def.SetMetaData(new CatMetaDataBlock(node.mMetaData));
 
             // Compare the inferred type with the declared type
             // This is a crtical part of the type checker.
-            if (node.mType != null)
+            if (Config.gbInferTypes && (node.mType != null))
             {
                 CatFxnType declaredType = new CatFxnType(node.mType);
 
@@ -116,6 +120,10 @@ namespace Cat
             {
                 ProcessMacro(node as AstMacroNode);
             }
+            else if (node is AstMetaDataBlock)
+            {
+                // do nothing
+            }
             else
             {
                 throw new Exception("Unhandled AST node type " + node.GetLabel());
@@ -128,7 +136,7 @@ namespace Cat
 
             try
             {
-                bool bResult = parser.Parse(CatGrammar.Line());
+                bool bResult = parser.Parse(CatGrammar.CatProgram());
                 if (!bResult)
                     throw new Exception("failed to parse input");
             }

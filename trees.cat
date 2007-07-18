@@ -1,0 +1,62 @@
+{{
+  filename trees.cat
+  license public domain
+  author Christopher Diggins
+  url http://www.cat-language.com
+  description
+    this file contains functions for dealing with trees.
+    each tree node is a pair (children, data)
+}}
+
+define second
+{ 1 nth }
+
+define set_first
+{ 0 set_at }
+
+define set_second
+{ 1 set_at }
+
+define tree_create : ('a -> list)
+{ nil swap pair }
+
+define tree_children : (list -> list list)
+{ second }
+
+define tree_remove_child : (list -> list)
+{ [tree_children] dip tree_create cons set_second }
+
+define tree_add_child : (list 'a -> list)
+{ [tree_children] dip tree_create cons set_second }
+
+define tree_get_data
+{ first }
+
+define tree_set_data : (list 'a -> list)
+{{
+  desc
+    replaces the data node of a tree
+}}
+{ set_first }
+
+define tree_child_count
+{ tree_children count }
+
+define treeify_function : (('a -> 'b) -> (list -> list))
+{{
+  desc
+    transforms a transform function so that it acts upon data nodes of a tree
+}}
+{ [uncons] rcompose [cons] apply  }
+
+define tree_apply_data : (list ('a -> 'b) -> (list -> list))
+{ }
+
+define tree_map : (list ('a -> 'b) -> list)
+{{
+  desc
+    applies a function to each data node
+}}
+{ tree_children swap map }
+
+

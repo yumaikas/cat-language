@@ -17,7 +17,7 @@ namespace Cat
         ConstraintList mConstraints = new ConstraintList();
         UnifierList mUnifiers = new UnifierList();
         CatTypeVarList mVars = new CatTypeVarList();
-        VarScopes mScopes = new VarScopes();
+        CatVarScopes mScopes = new CatVarScopes();
         #endregion 
 
         #region constructor
@@ -28,8 +28,75 @@ namespace Cat
         #endregion
 
         #region static functions
+        public static void OutputInferredType(CatFxnType ft)
+        {
+            MainClass.WriteLine("After rewriting");
+            MainClass.WriteLine("ML style type: " + ft.ToPrettyString(true));
+            MainClass.WriteLine("Cat style:     " + ft.ToPrettyString(false));
+            MainClass.WriteLine("");
+        }
+
+        public static CatFxnType Infer(List<Function> f)
+        {
+            if (!Config.gbInferTypes)
+                return null;
+
+            if (f.Count == 0)
+            {
+                if (Config.gbVerboseInference)
+                    WriteLine("type is ( -> )");
+                return CatFxnType.Create("( -> )");
+            }
+            else if (f.Count == 1)
+            {
+                Function x = f[0];
+                if (Config.gbVerboseInference)
+                    OutputInferredType(x.GetFxnType());
+                return x.GetFxnType();
+            }
+            else
+            {
+                Function x = f[0];
+                CatFxnType ft = x.GetFxnType();
+                if (Config.gbVerboseInference)
+                    WriteLine("initial term = " + x.GetName() + " : " + x.GetTypeString());
+
+                for (int i = 1; i < f.Count; ++i)
+                {
+                    if (ft == null)
+                        return ft;
+                    Function y = f[i];
+                    if (Config.gbVerboseInference)
+                    {
+                        WriteLine("Composing accumulated terms with next term");
+                        Write("previous terms = { ");
+                        for (int j = 0; j < i; ++j)
+                            Write(f[j].GetName() + " ");
+                        WriteLine("} : " + ft.ToString());
+                        WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
+                    }
+
+                    // Object field functions (_def_, _get_, _set_) have to be 
+                    // computed at the last minute, because their types are dependent on the previous types
+                    if (y is ObjectFieldFxn)
+                    {
+                        (y as ObjectFieldFxn).ComputeType(ft);
+                    }
+
+                    ft = ComposeTypes(ft, y.GetFxnType());
+
+                    if (ft == null)
+                        return null;
+                }
+                return ft;
+            }
+        }
+
         public static CatFxnType ComposeTypes(CatFxnType left, CatFxnType right)
         {
+            if (!Config.gbInferTypes)
+                return null;
+
             return gpTypeReconstructor.LocalComposeTypes(left, right);
         }
 
@@ -63,7 +130,7 @@ namespace Cat
 
             // Make sure that the variables on the left function and the variables
             // on the right function are different
-            VarRenamer renamer = new VarRenamer();
+            CatVarRenamer renamer = new CatVarRenamer();
             left = renamer.Rename(left.AddImplicitRhoVariables());
             renamer.ResetNames();
             right = renamer.Rename(right.AddImplicitRhoVariables());
@@ -637,7 +704,7 @@ namespace Cat
                         Remove(s);
             }
 
-            public void AssignVarsToScope(CatFxnType context, VarScopes scopes, CatKind k, Stack<CatKind> visited)
+            public void AssignVarsToScope(CatFxnType context, CatVarScopes scopes, CatKind k, Stack<CatKind> visited)
             {
                 if (visited.Contains(k))
                     return;
@@ -690,7 +757,7 @@ namespace Cat
                         yield return k;
             }
 
-            public void ComputeScopes(CatFxnType ft, VarScopes scopes)
+            public void ComputeScopes(CatFxnType ft, CatVarScopes scopes)
             {
                 foreach (CatKind k in GetKinds())
                     AssignVarsToScope(ft, scopes, k, new Stack<CatKind>());

@@ -108,9 +108,21 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 QuotedFunction f = exec.TypedPop<QuotedFunction>();
-                CatFxnType ft = TypeInferer.Infer(f.GetChildren(), true, true);
-                if (ft == null)
-                    MainClass.WriteLine("type could not be inferred");                
+                bool bVerbose = Config.gbVerboseInference;
+                bool bInfer = Config.gbInferTypes;
+                Config.gbVerboseInference = true;
+                Config.gbInferTypes = true;
+                try
+                {
+                    CatFxnType ft = CatTypeReconstructor.Infer(f.GetChildren());
+                    if (ft == null)
+                        MainClass.WriteLine("type could not be inferred");
+                }
+                finally
+                {
+                    Config.gbVerboseInference = bVerbose;
+                    Config.gbInferTypes = bInfer;
+                }
             }
         }
 
@@ -168,12 +180,12 @@ namespace Cat
         public class CommandHelp : PrimitiveFunction
         {
             public CommandHelp()
-                : base("#h", "(string ~> )", "prints help about a command")
+                : base("#h", "(function ~> )", "prints help about a command")
             { }
 
             public override void Eval(Executor exec)
             {
-                MainClass.OutputHelp(exec.PopString());
+                MainClass.OutputHelp(exec.PopFunction());
             }
         }
 
@@ -1757,7 +1769,7 @@ namespace Cat
         public class SetAt : PrimitiveFunction
         {
             public SetAt()
-                : base("set_at", "(list 'a int -> list)", "sets an item in a mutable list")
+                : base("set_at", "(list 'a int -> list)", "sets an item in a list")
             { }
 
             public override void Eval(Executor exec)

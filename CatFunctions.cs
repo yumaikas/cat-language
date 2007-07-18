@@ -34,6 +34,7 @@ namespace Cat
         public string msDesc = "";
         public CatFxnType mpFxnType;
         private Executor mExec;
+        CatMetaDataBlock mMetaData;
         #endregion
 
         public Function()
@@ -60,7 +61,6 @@ namespace Cat
         }
         public CatFxnType GetFxnType()
         {
-            Trace.Assert(mpFxnType != null);
             return mpFxnType;
         }
         public Executor GetExecutor()
@@ -68,6 +68,15 @@ namespace Cat
             if (mExec == null)
                 mExec = new Executor();
             return mExec;
+        }
+        public void SetMetaData(CatMetaDataBlock meta)
+        {
+            mMetaData = meta;
+            CatMetaData desc = meta.FindChild("desc");
+            if (desc != null)
+            {
+                msDesc = desc.msContent;
+            }
         }
 
         #region virtual functions
@@ -246,32 +255,38 @@ namespace Cat
             }
             msName += "]";
 
-            if (Config.gbVerboseInference)
+            if (Config.gbVerboseInference && Config.gbInferTypes)
+            {
                 MainClass.WriteLine("inferring type of quoted function " + msName);
 
-            try
-            {
-                // Quotations can be unclear? 
-                CatFxnType childType = TypeInferer.Infer(mChildren, Config.gbVerboseInference, false);
-                
-                // Honestly this should never be true.
-                if (childType == null)
-                    throw new Exception("unknown type error");
+                try
+                {
+                    // Quotations can be unclear?
+                    CatFxnType childType = CatTypeReconstructor.Infer(mChildren);
 
-                mpFxnType = new CatQuotedFxnType(childType);
-                mpFxnType = VarRenamer.RenameVars(mpFxnType);
+                    // Honestly this should never be true.
+                    if (childType == null)
+                        throw new Exception("unknown type error");
+
+                    mpFxnType = new CatQuotedFxnType(childType);
+                    mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
+                }
+                catch (Exception e)
+                {
+                    MainClass.WriteLine("Could not type quotation: " + msName);
+                    MainClass.WriteLine("Type error: " + e.Message);
+                    mpFxnType = null;
+                }
             }
-            catch (Exception e)
+            else
             {
-                MainClass.WriteLine("Could not type quotation: " + msName);
-                MainClass.WriteLine("Type error: " + e.Message);
                 mpFxnType = null;
             }
         }
 
         public override void Eval(Executor exec)
         {
-            exec.Push(new QuotedFunction(mChildren, mpFxnType.Unquote()));
+            exec.Push(new QuotedFunction(mChildren, CatFxnType.Unquote(mpFxnType)));
         }
 
         public List<Function> GetChildren()
@@ -301,7 +316,7 @@ namespace Cat
         }
 
         public QuotedFunction(List<Function> children)
-         : this(children, TypeInferer.Infer(children, Config.gbVerboseInference, true))
+            : this(children, CatTypeReconstructor.Infer(children))
         {
         }
 
@@ -327,9 +342,7 @@ namespace Cat
 
             try
             {
-                // BUG PRI3: this occurs during "demo" calls. I suspect it is a symptom of errors in the recursion code.
-                mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), Config.gbVerboseInference, false);
-                // mpFxnType = TypeInferer.Infer(first.GetFxnType(), second.GetFxnType(), Config.gbVerboseInference, true);
+                mpFxnType = CatTypeReconstructor.ComposeTypes(first.GetFxnType(), second.GetFxnType());
             }
             catch (Exception e)
             {
@@ -413,19 +426,12 @@ namespace Cat
             foreach (Function f in mTerms)
                 msDesc += f.GetName() + " ";
 
-            if (Config.gbVerboseInference)
-            {
-                MainClass.WriteLine("");
+            if (Config.gbVerboseInference && Config.gbInferTypes)
                 MainClass.WriteLine("inferring type");
-                MainClass.Write(msName + " = { ");
-                foreach (Function f in terms)
-                   MainClass.Write(f.GetName() + " ");
-                MainClass.WriteLine("}");
-            }
 
             try
             {
-                mpFxnType = TypeInferer.Infer(terms, Config.gbVerboseInference, true);
+                mpFxnType = CatTypeReconstructor.Infer(terms);
             }
             catch (Exception e)
             {
@@ -459,7 +465,7 @@ namespace Cat
             mObject = o;
             string sType = MethodToTypeString(mi);
             mpFxnType = CatFxnType.Create(sType);
-            mpFxnType = VarRenamer.RenameVars(mpFxnType);
+            mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
         }
 
         public override void Eval(Executor exec)
@@ -507,7 +513,7 @@ namespace Cat
             : base(sName, sDesc)
         {
             mpFxnType = CatFxnType.Create(sType);
-            mpFxnType = VarRenamer.RenameVars(mpFxnType);
+            mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
         }
     }
 

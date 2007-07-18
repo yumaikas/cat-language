@@ -51,8 +51,22 @@ namespace Cat
 
         public static CatFxnType ComposeFxnTypes(CatFxnType f, CatFxnType g)
         {
-            CatFxnType ft = TypeInferer.Infer(f, g, Config.gbVerboseInference, true);
+            CatFxnType ft = CatTypeReconstructor.ComposeTypes(f, g);
             return ft;
+        }
+
+        public static CatFxnType Unquote(CatFxnType ft)
+        {
+            if (ft == null)
+                return null;
+            if (ft.GetCons().GetKinds().Count > 0)
+                throw new Exception("Can't unquote a function type with a consumption size greater than zero");
+            if (ft.GetProd().GetKinds().Count != 1)
+                throw new Exception("Can't unquote a function type which does not produce a single function");
+            CatKind k = ft.GetProd().GetKinds()[0];
+            if (!(k is CatFxnType))
+                throw new Exception("Can't unquote a function type which does not produce a single function");
+            return k as CatFxnType;
         }
         #endregion
 
@@ -214,7 +228,7 @@ namespace Cat
         /// but we can't always do that. 
         /// </summary>
         /// <param name="scopes"></param>
-        private void ComputeVarScopes(VarScopes scopes, Stack<CatFxnType> visited)
+        private void ComputeVarScopes(CatVarScopes scopes, Stack<CatFxnType> visited)
         {
             if (visited.Contains(this))
                 return;
@@ -235,16 +249,16 @@ namespace Cat
             }
         }
 
-        private VarScopes ComputeVarScopes()
+        private CatVarScopes ComputeVarScopes()
         {
-            VarScopes scopes = new VarScopes();
+            CatVarScopes scopes = new CatVarScopes();
             ComputeVarScopes(scopes, new Stack<CatFxnType>());
             return scopes;
         }
 
         private void ComputeFreeVars()
         {
-            VarScopes scopes = ComputeVarScopes();
+            CatVarScopes scopes = ComputeVarScopes();
             SetFreeVars(scopes, new Stack<CatFxnType>());
 
             // TODO:
@@ -252,12 +266,12 @@ namespace Cat
             // i.e. CheckIsWellFormed(scopes);
         }
 
-        private bool IsFreeVar(CatKind k, VarScopes scopes)
+        private bool IsFreeVar(CatKind k, CatVarScopes scopes)
         {
             return scopes.IsFreeVar(this, k);
         }
 
-        private void SetFreeVars(VarScopes scopes, Stack<CatFxnType> visited)
+        private void SetFreeVars(CatVarScopes scopes, Stack<CatFxnType> visited)
         {
             if (visited.Contains(this))
                 return;
@@ -477,8 +491,8 @@ namespace Cat
         /// </summary>
         public static bool CompareFxnTypes(CatFxnType f, CatFxnType g)
         {
-            CatFxnType f2 = VarRenamer.RenameVars(f.AddImplicitRhoVariables());
-            CatFxnType g2 = VarRenamer.RenameVars(g.AddImplicitRhoVariables());
+            CatFxnType f2 = CatVarRenamer.RenameVars(f.AddImplicitRhoVariables());
+            CatFxnType g2 = CatVarRenamer.RenameVars(g.AddImplicitRhoVariables());
             return f2.IsSubtypeOf(g2);
         }
         #endregion
@@ -522,12 +536,6 @@ namespace Cat
         public bool HasSideEffects()
         {
             return mbSideEffects;
-        }
-        public CatFxnType Unquote()
-        {
-            // TEMP:
-            //return TypeInferer.Infer(this, CatFxnType.GetApplyType(), Config.gbVerboseInference, true);
-            return null;
         }
 
         /// <summary>

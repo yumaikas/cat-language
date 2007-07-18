@@ -69,6 +69,11 @@ namespace Cat
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
+        public static bool gbInferTypes = false;
+
+        /// <summary>
+        /// Outputs detailed information of each of the inference mechanism works
+        /// </summary>
         public static bool gbVerboseInference = true;
 
         /// <summary>
@@ -80,7 +85,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.16.1";
+        public static string gsVersion = "0.17.0 alpha 1";
 
         /// <summary>
         /// Date of current build

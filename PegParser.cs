@@ -57,7 +57,7 @@ namespace Peg
                     }
                 }
                 int nCol = mIndex - nLastLineChar;
-                ret += "Line " + nLine.ToString() + ", Column " + nCol + "\n";
+                ret += "CatProgram " + nLine.ToString() + ", Column " + nCol + "\n";
                 
                 int nNextLine = mIndex;
                 while (nNextLine < mData.Length && !mData[nNextLine].Equals('\n'))
