@@ -1,4 +1,4 @@
-{{
+/*
   filename: parsing.cat
   author: Christopher Diggins
   license: Public Domain
@@ -6,12 +6,18 @@
   desc:
     this is a combinator parsing library for recursive
     descent parsing of parsing expression grammars (PEGs)
-}}
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Basic combinators that I need
 
 define dhead
+{{
+  tests:
+    test:
+      in: [1 2] @ dhead
+      out: [1 2] @ 2
+}}
 { first }
 
 define dtail
@@ -45,12 +51,13 @@ define p_token : (list any -> list bool)
 {{
   desc:
     Matches a single token on the input stream.
-  test:
-    in: [1 2 3] @ 1 p_token
-    out: [1 2 3] @ false
-  test:
-    in: [1 2 3] @ 3 p_token
-    out: [1 2] @ true
+  tests:
+    test:
+      in: [1 2 3] @ 1 p_token
+      out: [1 2 3] @ false
+    test:
+      in: [1 2 3] @ 3 p_token
+      out: [1 2] @ true
 }}
 { head_eq [tail true] [false] if }
 

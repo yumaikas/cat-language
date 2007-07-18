@@ -72,10 +72,33 @@ namespace Cat
         public void SetMetaData(CatMetaDataBlock meta)
         {
             mMetaData = meta;
-            CatMetaData desc = meta.FindChild("desc");
+            CatMetaData desc = meta.Find("desc");
             if (desc != null)
             {
                 msDesc = desc.msContent;
+            }
+        }
+        public void RunTests(Executor exec)
+        {
+            if (mMetaData == null)
+                return;
+            CatMetaData tests = mMetaData.Find("tests");
+            if (tests == null)
+                return;
+            foreach (CatMetaData test in tests)
+            {
+                if (test.Find("in") == null)
+                    throw new Exception("invalid test");
+                string sIn = test.Find("in").GetContent();
+                if (test.Find("out") == null)
+                    throw new Exception("invalid test");
+                string sOut = test.Find("out").GetContent();
+                
+                MainClass.WriteLine("input: " + sIn);
+                MainClass.WriteLine("expected: " + sOut);
+                exec.Execute("[" + sIn + "] @ dup writeln");
+                exec.Execute("[" + sOut + "] @ dup writeln");
+                exec.Execute("eq [\"test succeeded\"] [\"test failed\"] if writeln");
             }
         }
 
