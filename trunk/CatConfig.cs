@@ -83,6 +83,11 @@ namespace Cat
         public static bool gbVerboseInferenceOnLoad = false;
 
         /// <summary>
+        /// Tells the compiler to output details of each test
+        /// </summary>
+        public static bool gbVerboseTests = true;
+
+        /// <summary>
         /// Version number 
         /// </summary>
         public static string gsVersion = "0.17.0 alpha 1";
