@@ -11,53 +11,105 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Basic combinators that I need
 
-define dhead
+define inc
+{ 1 add_int }
+
+define popd : ('a 'b -> 'b)
 {{
-  tests:
-    test:
-      in: [1 2] @ dhead
-      out: [1 2] @ 2
+  desc:
+    Pop the item below the top of the stack
+  test:
+    in: 1 2 popd
+    out: 2
+}}
+{ swap pop }
+
+
+define dhead : (list -> list any)
+{{
+  desc:
+    Returns the head of a list, leaving the original list on the stack.
+  test:
+    in: [1 2] @ dhead
+    out: [1 2] @ 2
 }}
 { first }
 
-define dtail
+define dtail : (list -> list list)
+{{
+  desc:
+    Returns the tail of a list, leaving the original list on the stack.
+  test:
+    in: [1 2 3] @ dtail
+    out: [1 2 3] @ [1 2] @
+}}
 { rest }
 
 define head_eq : (list any -> list bool)
-{ [dhead] dip }
+{{
+  test:
+    in: [1 2] @ 2 head_eq popd
+    out: true
 
-define nip
-{ swap pop }
+  test:
+    in: [1 2] @ 1 head_eq popd
+    out: false
+}}
+{ [dhead] dip eq }
 
 define slip : ('A ('A -> 'B) 'c -> 'B 'c)
+{{
+  test:
+    in: 4 [inc] 2 slip
+    out: 5 2
+}}
 { [apply] dip }
 
 define dupd : ('a 'b -> 'a 'a 'b)
-{ [dup] dup }
+{{
+  test:
+    in: 1 2 dupd
+    out: 1 1 2
+}}
+{ [dup] dip }
 
 define over : ('a 'b -> 'a 'b 'a)
+{{
+  test:
+    in: 1 2 over
+    out: 1 2 1
+}}
 { dupd swap }
 
-define keep : ('A 'b ('A -> 'B) -> 'A 'b)
+define keep : ('A 'b ('A 'b -> 'C) -> 'C 'b)
+{{
+  test:
+    in: 1 [inc] keep
+    out: 2 1
+}}
 { over slip }
 
 define kapply : ('A ('A -> 'B) -> 'B ('A -> 'B))
+{{
+  test:
+    in: 1 [inc] kapply apply
+    out: 3
+}}
 { [apply] keep }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Parsing combinator library functions
 
-define p_token : (list any -> list bool)
+define p_tok : (list any -> list bool)
 {{
   desc:
     Matches a single token on the input stream.
-  tests:
-    test:
-      in: [1 2 3] @ 1 p_token
-      out: [1 2 3] @ false
-    test:
-      in: [1 2 3] @ 3 p_token
-      out: [1 2] @ true
+  test:
+    in: [1 2 3] @ 1 p_tok
+    out: [1 2 3] @ false
+  test:
+    in: [1 2 3] @ 3 p_tok
+    out: [1 2] @ true
 }}
 { head_eq [tail true] [false] if }
 
@@ -66,14 +118,29 @@ define p_star : ('A ('A -> 'A bool) -> 'A bool)
   desc:
     Matches a parse rule against input repeatedly until it fails,
     and will always return true.
+  test:
+    in: [0 1 0 1 1 1] @ [1 p_tok] p_star
+    out: [0 1 0] @ true
+  test:
+    in: [0 1 0] @ [1 p_tok] p_star
+    out: [0 1 0] @ true
+  test:
+    in: [0 1 0] @ [0 p_tok] p_star
+    out: [0 1] @ true
 }}
-{ [kapply] [swap] while true }
+{ true swap [kapply] [swap] while true popd }
 
 define p_opt : ('A ('A -> 'A 'b) -> 'A bool)
 {{
   desc:
     Matches a parse rule against input, returning true whether
     or not it was successful
+  test:
+    in: [0 1] @ [1 p_tok] p_opt
+    out: [0] @ true
+  test:
+    in: [0 1] @ [0 p_tok] p_opt
+    out: [0 1] @ true
 }}
 { apply pop true }
 
@@ -82,22 +149,40 @@ define p_plus : ('A ('A -> 'A bool) -> 'A bool)
   desc:
     Matches a parse rule against input repeatedly until it fails.
     Returns true if it succeeds at least once.
+  test:
+    in: [0 1 1] @ [1 p_tok] p_plus
+    out: [0] @ true
+  test:
+    in: [0 1 1] @ [0 p_tok] p_plus
+    out: [0 1 1] @ false
 }}
-{ kapply swap [[kapply swap] [] while true] [false] if nip }
+{ kapply swap [p_star] [pop false] if }
 
 define p_at : ('A 'b ('A 'b 'b -> 'B 'c 'd bool) -> 'B 'd bool)
 {{
   desc:
     Returns true if the parse rule will return true if matched.
     Does not advance the input
+  test:
+    in: [0 1] @ [1 p_tok] p_at
+    out: [0 1] @ true
+  test:
+    in: [0 1] @ [0 p_tok] p_at
+    out: [0 1] @ false
 }}
-{ dupd apply nip }
+{ dupd apply popd }
 
 define p_not : (list ('A -> list bool) -> list bool)
 {{
   desc:
     Returns true if the parse rule will fail if matched.
     Does not advance the input.
+  test:
+    in: [0 1] @ [1 p_tok] p_not
+    out: [0 1] @ false
+  test:
+    in: [0 1] @ [0 p_tok] p_not
+    out: [0 1] @ true
 }}
 { p_at not }
 
@@ -105,6 +190,12 @@ define p_end : (list -> list bool)
 {{
   desc:
     returns true if there is no more input to be parsed
+  test:
+    in: [0 1] @ p_end
+    out: [0 1] @ false
+  test:
+    in: [] @ p_end
+    out: [] @ true
 }}
 { empty }
 
@@ -113,16 +204,28 @@ define p_or : ('A list ('A list -> 'A list bool)* -> 'B bool)
   desc:
     Applies a list of parsing rules in order, until one succeeds, at which
     point it returns true, otherwise it returns false.
+  test:
+    in: [0 1] @ [[0 p_tok] [1 p_tok]] @ p_or
+    out: [0] @ true
+  test:
+    in: [0 1] @ [[0 p_tok] [2 p_tok]] @ p_or
+    out: [0 1] @ false
 }}
-{ false [uncons dip] [not [empty not] dip or] while nip }
+{ false [uncons dip] [empty not] while }
 
 define p_seq : ('A ('A -> 'A bool)* -> 'B bool)
 {{
   desc:
     Applies a list of parsing rules in sequence, returning true if it succeeds
     or returning false and restoring the input if it fails.
+  test:
+    in: [2 0 1] @ [[1 p_tok] [0 p_tok]] @ p_seq
+    out: [2] @ true
+  test:
+    in: [2 0 1] @ [[1 p_tok] [1 p_tok]] @ p_seq
+    out: [2 0 1] @ false
 }}
-{ true [uncons dip] [[empty not] dip and] while nip }
+{ true [uncons dip] [[empty not] dip and] while popd }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // abstract syntax tree building code

@@ -7,8 +7,8 @@ namespace Cat
 {
     public class CatMetaData : List<CatMetaData>
     {
-        public string msName;
-        public string msContent;
+        public string msName = "";
+        public string msContent = "";
         public CatMetaData mpParent;
         public CatMetaData(string sName, CatMetaData pParent)
         {
@@ -17,7 +17,7 @@ namespace Cat
         }
         public void AddContent(string s)
         {
-            msContent += s;
+            msContent = msContent.Trim() + " " + s.Trim();
         }
         public CatMetaData NewChild(string sName)
         {
@@ -35,6 +35,14 @@ namespace Cat
                 if (child.msName.Equals(s))
                     return child;
             return null;
+        }
+        public List<CatMetaData> FindAll(string s)
+        {
+            List<CatMetaData> ret = new List<CatMetaData>();
+            foreach (CatMetaData child in this)
+                if (child.msName.Equals(s))
+                    ret.Add(child);
+            return ret;
         }
 
         public string GetContent()

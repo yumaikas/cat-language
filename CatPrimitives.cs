@@ -338,6 +338,19 @@ namespace Cat
                     f.RunTests(exec);
             }
         }
+
+        public class TestAll : PrimitiveFunction
+        {
+            public TestAll()
+                : base("#ta", "( ~> )", "runs tests associated with all loaded functions")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                foreach (Function f in exec.GetGlobalScope().GetAllFunctions())
+                    f.RunTests(exec);
+            }
+        }
     }
 
     public class Primitives

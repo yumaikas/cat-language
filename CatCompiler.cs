@@ -29,6 +29,11 @@ namespace Cat
             {
                 mMethod.Invoke(null, new object[] { exec });
             }
+
+            public override string GetImpl()
+            {
+                return "compiled function";
+            }
         }
 
         public static int gnId = 0;

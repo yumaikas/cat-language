@@ -82,28 +82,82 @@ namespace Cat
         {
             if (mMetaData == null)
                 return;
-            CatMetaData tests = mMetaData.Find("tests");
-            if (tests == null)
-                return;
+
+            List<CatMetaData> tests = mMetaData.FindAll("test");
             foreach (CatMetaData test in tests)
             {
+                if (Config.gbVerboseTests)
+                {
+                    MainClass.WriteLine("");
+                    MainClass.WriteLine("Testing " + msName);
+                }
+
                 if (test.Find("in") == null)
                     throw new Exception("invalid test");
                 string sIn = test.Find("in").GetContent();
                 if (test.Find("out") == null)
                     throw new Exception("invalid test");
                 string sOut = test.Find("out").GetContent();
-                
-                MainClass.WriteLine("input: " + sIn);
-                MainClass.WriteLine("expected: " + sOut);
-                exec.Execute("[" + sIn + "] @ dup writeln");
-                exec.Execute("[" + sOut + "] @ dup writeln");
-                exec.Execute("eq [\"test succeeded\"] [\"test failed\"] if writeln");
+
+                if (Config.gbVerboseTests)
+                {
+                    MainClass.WriteLine("input: " + sIn);
+                    MainClass.WriteLine("expected: " + sOut);
+                    exec.Execute("[" + sIn + "] @ dup writeln");
+                    exec.Execute("[" + sOut + "] @ dup writeln");
+                }
+                else
+                {
+                    exec.Execute("[" + sIn + "] @");
+                    exec.Execute("[" + sOut + "] @");
+                }
+                exec.Execute("eq");
+                if (exec.PopBool())
+                {
+                    MainClass.WriteLine("testing " + msName + " SUCCEEDED");
+                }
+                else
+                {
+                    MainClass.WriteLine("testing " + msName + " FAILED");
+                }
+
+
+                exec.Execute("#clr");
             }
+        }
+
+        public void OutputDetails()
+        {
+            MainClass.WriteLine("Name: ");
+            MainClass.WriteLine("  " + msName);
+            MainClass.WriteLine("Type: ");
+            MainClass.WriteLine("  " + GetTypeString());
+            MainClass.WriteLine("Description:");
+            MainClass.WriteLine("  " + msDesc);
+
+            if (mMetaData != null)
+            {
+                List<CatMetaData> tests = mMetaData.FindAll("test");
+                foreach (CatMetaData test in tests)
+                {
+                    if (test.Find("in") != null && test.Find("out") != null)
+                    {
+                        string sIn = test.Find("in").GetContent();
+                        string sOut = test.Find("out").GetContent();
+                        MainClass.WriteLine("Test: ");
+                        MainClass.WriteLine("  input    : " + sIn);
+                        MainClass.WriteLine("  expected : " + sOut);
+                    }
+                }
+            }
+
+            MainClass.WriteLine("Implementation:");
+            MainClass.WriteLine("  " + GetImpl());
         }
 
         #region virtual functions
         public abstract void Eval(Executor exec);
+        public abstract string GetImpl();
         #endregion
 
         #region invocation functions        
@@ -247,6 +301,12 @@ namespace Cat
         {
             return mValue.GetData();
         }
+
+        public override string GetImpl()
+        {
+            return mValue.ToString();
+        }
+
         #region overrides
         public override void Eval(Executor exec)
         {
@@ -315,6 +375,14 @@ namespace Cat
         public List<Function> GetChildren()
         {
             return mChildren;
+        }
+
+        public override string GetImpl()
+        {
+            string ret = "";
+            foreach (Function f in mChildren)
+                ret += f.msName + " ";
+            return ret;
         }
     }
 
@@ -397,6 +465,14 @@ namespace Cat
             ret += "]";
             return ret;
         }
+    
+        public override string GetImpl()
+        {
+            string ret = "[";
+            foreach (Function f in mChildren)
+                ret += f.msName + " ";
+            return ret + "]";
+        }
     }
 
     /// <summary>
@@ -474,6 +550,14 @@ namespace Cat
         {
             return mTerms;
         }
+
+        public override string GetImpl()
+        {
+            string ret = "";
+            foreach (Function f in mTerms)
+                ret += f.msName + " ";
+            return ret;
+        }
     }
 
    public class Method : Function, ITypeArray
@@ -515,6 +599,11 @@ namespace Cat
             return mMethod;
         }
 
+       public override string GetImpl()
+       {
+           return "primitive";
+       }
+
         #region ITypeArray Members
 
         public int Count
@@ -538,6 +627,11 @@ namespace Cat
             mpFxnType = CatFxnType.Create(sType);
             mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
         }
+
+        public override string GetImpl()
+        {
+            return "primitive";
+        }
     }
 
     public class SelfFunction : Function
@@ -555,6 +649,11 @@ namespace Cat
         public override void Eval(Executor exec)
         {
             mpFxn.Eval(exec);
+        }
+
+        public override string GetImpl()
+        {
+            return "self";
         }
     }
 
@@ -623,6 +722,11 @@ namespace Cat
             CatObject o = exec.TypedPeek<CatObject>();
             exec.Push(o.GetField(s));
         }
+    
+        public override string GetImpl()
+        {
+            return "primitive";
+        }
     }
 
     public class SetFieldFxn : ObjectFieldFxn
@@ -682,6 +786,11 @@ namespace Cat
             Object arg = exec.Pop();
             CatObject o = exec.TypedPeek<CatObject>();
             o.SetField(s, o, mpClass);
+        }
+
+        public override string GetImpl()
+        {
+            return "primitive";
         }
     }
 
@@ -743,6 +852,11 @@ namespace Cat
             Object arg = exec.Pop();
             CatObject o = exec.TypedPeek<CatObject>();
             o.SetField(s, o, mpClass);
+        }
+
+        public override string GetImpl()
+        {
+            return "primitive";
         }
     }
 }
