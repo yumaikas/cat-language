@@ -8,94 +8,7 @@
     descent parsing of parsing expression grammars (PEGs)
 */
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Basic combinators that I need
-
-define inc
-{ 1 add_int }
-
-define popd : ('a 'b -> 'b)
-{{
-  desc:
-    Pop the item below the top of the stack
-  test:
-    in: 1 2 popd
-    out: 2
-}}
-{ swap pop }
-
-
-define dhead : (list -> list any)
-{{
-  desc:
-    Returns the head of a list, leaving the original list on the stack.
-  test:
-    in: [1 2] @ dhead
-    out: [1 2] @ 2
-}}
-{ first }
-
-define dtail : (list -> list list)
-{{
-  desc:
-    Returns the tail of a list, leaving the original list on the stack.
-  test:
-    in: [1 2 3] @ dtail
-    out: [1 2 3] @ [1 2] @
-}}
-{ rest }
-
-define head_eq : (list any -> list bool)
-{{
-  test:
-    in: [1 2] @ 2 head_eq popd
-    out: true
-
-  test:
-    in: [1 2] @ 1 head_eq popd
-    out: false
-}}
-{ [dhead] dip eq }
-
-define slip : ('A ('A -> 'B) 'c -> 'B 'c)
-{{
-  test:
-    in: 4 [inc] 2 slip
-    out: 5 2
-}}
-{ [apply] dip }
-
-define dupd : ('a 'b -> 'a 'a 'b)
-{{
-  test:
-    in: 1 2 dupd
-    out: 1 1 2
-}}
-{ [dup] dip }
-
-define over : ('a 'b -> 'a 'b 'a)
-{{
-  test:
-    in: 1 2 over
-    out: 1 2 1
-}}
-{ dupd swap }
-
-define keep : ('A 'b ('A 'b -> 'C) -> 'C 'b)
-{{
-  test:
-    in: 1 [inc] keep
-    out: 2 1
-}}
-{ over slip }
-
-define kapply : ('A ('A -> 'B) -> 'B ('A -> 'B))
-{{
-  test:
-    in: 1 [inc] kapply apply
-    out: 3
-}}
-{ [apply] keep }
+"standard.cat" #load
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Parsing combinator library functions
@@ -157,6 +70,9 @@ define p_plus : ('A ('A -> 'A bool) -> 'A bool)
     out: [0 1 1] @ false
 }}
 { kapply swap [p_star] [pop false] if }
+
+
+
 
 define p_at : ('A 'b ('A 'b 'b -> 'B 'c 'd bool) -> 'B 'd bool)
 {{

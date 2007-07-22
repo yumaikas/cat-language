@@ -109,9 +109,9 @@ namespace Cat
             {
                 QuotedFunction f = exec.TypedPop<QuotedFunction>();
                 bool bVerbose = Config.gbVerboseInference;
-                bool bInfer = Config.gbInferTypes;
+                bool bInfer = Config.gbTypeChecking;
                 Config.gbVerboseInference = true;
-                Config.gbInferTypes = true;
+                Config.gbTypeChecking = true;
                 try
                 {
                     CatFxnType ft = CatTypeReconstructor.Infer(f.GetChildren());
@@ -121,7 +121,7 @@ namespace Cat
                 finally
                 {
                     Config.gbVerboseInference = bVerbose;
-                    Config.gbInferTypes = bInfer;
+                    Config.gbTypeChecking = bInfer;
                 }
             }
         }
@@ -134,9 +134,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                foreach (Function f in exec.GetGlobalScope().GetAllFunctions())
+                foreach (Function f in exec.GetGlobalContext().GetAllFunctions())
                 {
-                    string s = f.GetTypeString();
+                    string s = f.GetFxnTypeString();
                     if (!s.Equals("untyped"))
                     {
                         try
@@ -165,15 +165,19 @@ namespace Cat
                 MainClass.WriteLine("  #clr - clears the stack");
                 MainClass.WriteLine("  #defs - lists all defined functions");
                 MainClass.WriteLine("  #exit - exits the interpreter");
-                MainClass.WriteLine("  \"command\" #h  - provides help on a primitive");
                 MainClass.WriteLine("  \"filename\" #load - loads and executes a Cat file");
                 MainClass.WriteLine("  \"filename\" #save - saves a transcript of session");
+                MainClass.WriteLine("  [...] #h - provides documentation on an instruction");
                 MainClass.WriteLine("  [...] #t - infers the type of a quotation");
                 MainClass.WriteLine("  [...] #i - performs inline expansion within a quotation");
                 MainClass.WriteLine("  [...] #p - partially evaluates a quotation");
                 MainClass.WriteLine("  [...] #m - applies macros to a quotation");
                 MainClass.WriteLine("  [...] #o - optimizes a quotation");
-                MainClass.WriteLine("  [...] #c #run - compiles and runs a quotation");
+                MainClass.WriteLine("  [...] #c - compiles a quotation into an assembly");
+                MainClass.WriteLine("  #run - runs a compiled assembly");
+                MainClass.WriteLine("  [...] #test - tests all instruction in a quotation");
+                MainClass.WriteLine("  #ta - tests all defined instruction");
+                MainClass.WriteLine("  [...] #e - shows the instruction editor");
             }
         }
 
@@ -290,7 +294,7 @@ namespace Cat
         public class MakeHtmlHelp : PrimitiveFunction
         {
             public MakeHtmlHelp()
-                : base("#html", "( ~> )", "outputs html documentation")
+                : base("#html", "( ~> )", "outputs html documentation (deprecated)")
             {
             }
 
@@ -303,7 +307,7 @@ namespace Cat
         public class MakeLibrary : PrimitiveFunction
         {
             public MakeLibrary()
-                : base("#lib", "( ~> )", "outputs a kernel library with tests")
+                : base("#lib", "( ~> )", "outputs a kernel library with tests (deprecated)")
             {
             }
 
@@ -335,7 +339,7 @@ namespace Cat
             {
                 QuotedFunction q = exec.PopFunction();
                 foreach (Function f in q.GetChildren())
-                    f.RunTests(exec);
+                    f.RunTests();
             }
         }
 
@@ -347,8 +351,53 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                foreach (Function f in exec.GetGlobalScope().GetAllFunctions())
-                    f.RunTests(exec);
+                foreach (Function f in exec.GetGlobalContext().GetAllFunctions())
+                    f.RunTests();
+            }
+        }
+
+        public class Edit : PrimitiveFunction
+        {
+            public Edit()
+                : base("#edit", "(function ~> )", "shows a function editor dialog box for a given function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction qf = exec.PopFunction();
+                if ((qf.GetChildren().Count != 1) || !(qf.GetChildren()[0] is DefinedFunction))
+                    throw new Exception("You can only edit single functions that have been defined");
+                Function f = EditDefForm.EditFunction(qf.GetChildren()[0]);
+                if (f == null)
+                {
+                    MainClass.WriteLine("no function was defined");
+                }
+                else
+                {
+                    MainClass.WriteLine(f.GetName() + " was redefined");
+                    Executor.Main.GetGlobalContext().AddFunction(f);
+                }
+            }
+        }
+
+        public class Def : PrimitiveFunction
+        {
+            public Def()
+                : base("#def", "( ~> )", "shows a function editor dialog box for a given function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = EditDefForm.DefineNewFunction();
+                if (f == null)
+                {
+                    MainClass.WriteLine("no function was defined");
+                }
+                else
+                {
+                    MainClass.WriteLine(f.GetName() + " was defined");
+                    Executor.Main.GetGlobalContext().AddFunction(f);
+                }
             }
         }
     }
@@ -1036,6 +1085,12 @@ namespace Cat
         public static bool lteq_byte(byte x, byte y) { return x <= y; }
         #endregion
 
+        #region char functions
+        public static int to_ascii(char c) { return (int)c; }
+        public static char from_ascii(int n) { return (char)n; }
+        public static string char_to_str(char c) { return c.ToString(); }
+        #endregion
+
         #region bit functions
         public struct Bit
         {
@@ -1131,6 +1186,7 @@ namespace Cat
         public static string new_str(char c, int n) { return new string(c, n); }
         public static int index_of(string x, string y) { return x.IndexOf(y); }
         public static string replace_str(string x, string y, string z) { return x.Replace(y, z); }
+        public static FList str_to_array(string x) { return new FArray<char>(x.ToCharArray()); }
         #endregion
 
         #region console functions

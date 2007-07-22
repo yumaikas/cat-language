@@ -19,6 +19,9 @@ namespace Cat
         #region static functions 
         public static CatFxnType Create(string sType)
         {
+            if (sType.Length == 0)
+                return null;
+
             Peg.Parser p = new Peg.Parser(sType);
             try
             {
@@ -436,11 +439,9 @@ namespace Cat
             CatTypeVector cons = new CatTypeVector(ft.GetCons());
             CatTypeVector prod = new CatTypeVector(ft.GetProd());
 
-            if (cons.GetBottom() is CatStackVar && prod.GetBottom().Equals(cons.GetBottom()))
-            {
-                cons.RemoveBottom();
-                prod.RemoveBottom();
-            }
+            // TODO:
+            // This involves assuring that a function is 
+            //RemoveRhoVariables();
 
             string s = ToPrettyString(cons, dic, bMLStyle);                        
             if (ft.HasSideEffects())
@@ -448,7 +449,7 @@ namespace Cat
             else
                 s += " -> ";
 
-            // Uses Haskell style so instead of (A -> (B -> C)) we get (A -> B -> C)
+            // Uses ML style so instead of (A -> (B -> C)) we get (A -> B -> C)
             if (bMLStyle && (prod.GetKinds().Count == 1) && (prod.GetKinds()[0] is CatFxnType))
                 s += ToPrettyString(prod.GetKinds()[0] as CatFxnType, dic, bMLStyle);
             else

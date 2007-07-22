@@ -31,14 +31,15 @@ namespace Cat
         public static void OutputInferredType(CatFxnType ft)
         {
             MainClass.WriteLine("After rewriting");
-            MainClass.WriteLine("ML style type: " + ft.ToPrettyString(true));
-            MainClass.WriteLine("Cat style:     " + ft.ToPrettyString(false));
+            //MainClass.WriteLine("ML style type: " + ft.ToPrettyString(true));
+            //MainClass.WriteLine("Cat style:     " + ft.ToPrettyString(false));
+            MainClass.WriteLine(ft.ToPrettyString(false));
             MainClass.WriteLine("");
         }
 
         public static CatFxnType Infer(List<Function> f)
         {
-            if (!Config.gbInferTypes)
+            if (!Config.gbTypeChecking)
                 return null;
 
             if (f.Count == 0)
@@ -59,7 +60,7 @@ namespace Cat
                 Function x = f[0];
                 CatFxnType ft = x.GetFxnType();
                 if (Config.gbVerboseInference)
-                    WriteLine("initial term = " + x.GetName() + " : " + x.GetTypeString());
+                    WriteLine("initial term = " + x.GetName() + " : " + x.GetFxnTypeString());
 
                 for (int i = 1; i < f.Count; ++i)
                 {
@@ -73,7 +74,7 @@ namespace Cat
                         for (int j = 0; j < i; ++j)
                             Write(f[j].GetName() + " ");
                         WriteLine("} : " + ft.ToString());
-                        WriteLine("next term = " + y.GetName() + " : " + y.GetTypeString());
+                        WriteLine("next term = " + y.GetName() + " : " + y.GetFxnTypeString());
                     }
 
                     // Object field functions (_def_, _get_, _set_) have to be 
@@ -94,7 +95,7 @@ namespace Cat
 
         public static CatFxnType ComposeTypes(CatFxnType left, CatFxnType right)
         {
-            if (!Config.gbInferTypes)
+            if (!Config.gbTypeChecking)
                 return null;
 
             return gpTypeReconstructor.LocalComposeTypes(left, right);
@@ -197,12 +198,11 @@ namespace Cat
             
             ResolveSelfTypes();
 
-            /*
             if (Config.gbVerboseInference)
             {
                 WriteLine("resolved self-types in unifiers");
                 Write(mUnifiers.ToString());
-            }*/
+            }
 
             ResolveUnifiers();
 
@@ -403,12 +403,17 @@ namespace Cat
         /// recurse into functions
         /// </summary>
         /// <returns></returns>
-        bool DoesKindContain(CatKind k, string s)
+        bool DoesKindContain(CatKind k, string s, Stack<CatKind> visited)
         {
+            if (visited.Contains(k))
+                return false;
+
+            visited.Push(k);
             if (k.IsKindVar())
             {
                 if (k.ToString().Equals(s))
                 {
+                    visited.Pop();
                     return true;
                 }
                 else
@@ -417,8 +422,11 @@ namespace Cat
                     {
                         foreach (CatKind j in mConstraints[k.ToString()])
                         {
-                            if (DoesKindContain(j, s))
+                            if (DoesKindContain(j, s, visited))
+                            {
+                                visited.Pop();
                                 return true;
+                            }
                         }
                     }
                 }
@@ -428,8 +436,11 @@ namespace Cat
                 CatTypeVector vec = k as CatTypeVector;
                 foreach (CatKind j in vec.GetKinds())
                 {
-                    if (DoesKindContain(j, s))
+                    if (DoesKindContain(j, s, visited))
+                    {
+                        visited.Pop();
                         return true;
+                    }
                 }
             }
             else if (k is CatFxnType)
@@ -439,6 +450,7 @@ namespace Cat
                 // in order to identify "self" types.
             }
 
+            visited.Pop();
             return false;
         }
 
@@ -450,10 +462,11 @@ namespace Cat
         /// </summary>
         private bool FxnContainsVar(CatFxnType ft, string s)
         {
+            Stack<CatKind> visited = new Stack<CatKind>();
             foreach (CatKind tmp in ft.GetChildKinds())
             {
                 if (tmp.IsKindVar())
-                    if (DoesKindContain(tmp, s))
+                    if (DoesKindContain(tmp, s, visited))
                         return true;                    
             }
             return false;
@@ -476,7 +489,23 @@ namespace Cat
         /// </summary>
         class ConstraintList : Dictionary<string, List<CatKind>>
         {
+            List<CatKindPair> mProcessedList = new List<CatKindPair>();
             public static List<CatKind> gEmptyConstraintList = new List<CatKind>();
+
+            struct CatKindPair
+            {
+                CatKind mFirst;
+                CatKind mSecond;
+                public CatKindPair(CatKind x, CatKind y)
+                {
+                    mFirst = x;
+                    mSecond = y;
+                }
+                public bool Equals(CatKindPair that)
+                {
+                    return (this.mFirst == that.mFirst && this.mSecond == that.mSecond);
+                }
+            }
 
             public void AddConstraint(string s, CatKind k)
             {
@@ -588,8 +617,28 @@ namespace Cat
                     return gEmptyConstraintList;
             }
 
+            bool HasConstraintBeenProcessed(CatKind x, CatKind y)
+            {
+                CatKindPair tmp = new CatKindPair(x, y);
+                foreach (CatKindPair kp in mProcessedList)
+                {
+                    if (kp.Equals(tmp))
+                        return true;
+                }
+                return false;
+            }
+            void AddConstraintToProcessedList(CatKind x, CatKind y)
+            {
+                CatKindPair tmp = new CatKindPair(x, y);
+                mProcessedList.Add(tmp);
+            }
+
             public void AddVectorConstraint(CatTypeVector v1, CatTypeVector v2)
             {
+                if (HasConstraintBeenProcessed(v1, v2))
+                    return;
+                AddConstraintToProcessedList(v1, v2);
+
                 while (!v1.IsEmpty() && !v2.IsEmpty())
                 {
                     CatKind k1 = v1.GetTop();
@@ -626,22 +675,38 @@ namespace Cat
                 }
             }
 
+            public void AddSelfTypeConstraint(CatSelfType st, CatFxnType ft)
+            {
+                if (ft is CatSelfType)
+                {
+                    ft = ft.GetParent();
+                    if (ft == null)
+                        throw new Exception("self-type missing parent");
+                }
+
+                CatFxnType parent = st.GetParent();
+                if (parent == null)
+                    throw new Exception("self-type missing parent");
+
+                AddFxnConstraint(parent, ft);
+            }
+
             public void AddFxnConstraint(CatFxnType f1, CatFxnType f2)
             {
                 if (f1 == f2)
                     return;
+                if (HasConstraintBeenProcessed(f1, f2))
+                    return;
+                AddConstraintToProcessedList(f1, f2);
 
+                
                 if (f1 is CatSelfType)
                 {
-                    throw new Exception("todo");
-                    //CatFxnType g = mSelfTypes[f1 as CatSelfType];
-                    //AddFxnConstraint(g, f2);
+                    AddSelfTypeConstraint(f1 as CatSelfType, f2);
                 }
                 else if (f2 is CatSelfType)
                 {
-                    throw new Exception("todo");
-                    //CatFxnType g = mSelfTypes[f2 as CatSelfType];
-                    //AddFxnConstraint(f1, g);
+                    AddSelfTypeConstraint(f2 as CatSelfType, f1);
                 }
                 else
                 {
@@ -662,7 +727,6 @@ namespace Cat
                 }
                 return ret;
             }
-
 
             private void GetUsedConstraints(CatKind k, List<string> used, Stack<CatKind> visited)
             {
@@ -760,6 +824,14 @@ namespace Cat
             public void ComputeScopes(CatFxnType ft, CatVarScopes scopes)
             {
                 foreach (CatKind k in GetKinds())
+                    AssignVarsToScope(ft, scopes, k, new Stack<CatKind>());
+                
+                // NOTE: this might not work, I might have to instead 
+                // add everything that is in the function as a new "constraint".
+                // even if unused? I am not sure. 
+                // My big concern is that the sub-functions in "tmp" are not the 
+                // same as in constraints.
+                foreach (CatKind k in ft.GetDescendantKinds())
                     AssignVarsToScope(ft, scopes, k, new Stack<CatKind>());
             }
         }

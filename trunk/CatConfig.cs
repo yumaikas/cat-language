@@ -67,9 +67,9 @@ namespace Cat
         public static bool gbShowPointFreeConversion = true;
 
         /// <summary>
-        /// Outputs detailed information of each of the inference mechanism works
+        /// Turns on type checking and type reconstruction algorithms
         /// </summary>
-        public static bool gbInferTypes = false;
+        public static bool gbTypeChecking = true;
 
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
@@ -80,7 +80,7 @@ namespace Cat
         /// Outputs detailed information of each of the inference mechanism works
         /// while loading a module.
         /// </summary>
-        public static bool gbVerboseInferenceOnLoad = false;
+        public static bool gbVerboseInferenceOnLoad = true;
 
         /// <summary>
         /// Tells the compiler to output details of each test
@@ -91,11 +91,5 @@ namespace Cat
         /// Version number 
         /// </summary>
         public static string gsVersion = "0.17.0 alpha 1";
-
-        /// <summary>
-        /// Date of current build
-        /// </summary>
-        public static string gsDate = DateTime.Now.ToLongDateString();
-
     }
 }

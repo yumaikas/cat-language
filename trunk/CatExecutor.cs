@@ -35,7 +35,7 @@ namespace Cat
 
         public Executor(Executor exec)
         {
-            mpScope = new Context(exec.GetGlobalScope());
+            mpScope = new Context(exec.GetGlobalContext());
         }
 
         public Executor(Context scope)
@@ -140,7 +140,7 @@ namespace Cat
         #endregion
 
         #region environment serialization
-        public Context GetGlobalScope()
+        public Context GetGlobalContext()
         {
             return mpScope;
         }

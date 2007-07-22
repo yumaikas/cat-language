@@ -44,12 +44,19 @@ define tree_child_count
 
 define treeify_function : (('a -> 'b) -> (list -> list))
 {{
-  desc
-    transforms a transform function so that it acts upon data nodes of a tree
+  desc:
+    Transforms a transform function so that it acts only upon the data node of a tree
 }}
 { [uncons] rcompose [cons] apply  }
 
-define tree_apply_data : (list ('a -> 'b) -> (list -> list))
+
+define tree_apply_data : (list ('a -> 'b) -> list)
+{{
+  desc:
+    Applies a function to the data part of a tree node.
+  test:
+
+}}
 { }
 
 define tree_map : (list ('a -> 'b) -> list)

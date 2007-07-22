@@ -13,7 +13,7 @@ namespace Cat
     class CatParser
     {
         #region parsing functions
-        private static List<Function> TermsToFxns(List<AstExprNode> terms, DefinedFunction def)
+        public static List<Function> TermsToFxns(List<AstExprNode> terms, DefinedFunction def)
         {
             List<Function> fxns = new List<Function>();
             foreach (AstExprNode child in terms)
@@ -52,7 +52,7 @@ namespace Cat
             else if (node is AstNameNode)
             {
                 string s = node.ToString();
-                Function f = Executor.Main.GetGlobalScope().Lookup(s);
+                Function f = Executor.Main.GetGlobalContext().Lookup(s);
                 if (def != null)
                     if (s.Equals(def.GetName()))
                         return new SelfFunction(f);
@@ -77,16 +77,16 @@ namespace Cat
                 throw new Exception("named parameters are not enabled");
 
             DefinedFunction def = new DefinedFunction(node.mName);
-            Executor.Main.GetGlobalScope().AddFunction(def);
+            Executor.Main.GetGlobalContext().AddFunction(def);
             def.AddFunctions(TermsToFxns(node.mTerms, def));
             
             // Construct a representation of the meta data if neccessary
-            if (node.mMetaData != null)
-                def.SetMetaData(new CatMetaDataBlock(node.mMetaData));
+            if (node.mpMetaData != null)
+                def.SetMetaData(new CatMetaDataBlock(node.mpMetaData));
 
             // Compare the inferred type with the declared type
             // This is a crtical part of the type checker.
-            if (Config.gbInferTypes && (node.mType != null))
+            if (Config.gbTypeChecking && (node.mType != null))
             {
                 CatFxnType declaredType = new CatFxnType(node.mType);
 
@@ -122,7 +122,7 @@ namespace Cat
             }
             else if (node is AstMetaDataBlock)
             {
-                // do nothing
+                throw new Exception("meta-data blocks can only occur in definitions");
             }
             else
             {
@@ -151,6 +151,28 @@ namespace Cat
 
             foreach (Peg.PegAstNode child in node.GetChildren())
                 ProcessNode(CatAstNode.Create(child), exec);
+        }
+
+        public static List<AstExprNode> ParseExpr(string s)
+        {
+            Peg.Parser parser = new Peg.Parser(s);
+
+            try
+            {
+                bool bResult = parser.Parse(CatGrammar.CatProgram());
+                if (!bResult)
+                    throw new Exception("failed to parse input");
+            }
+            catch (Exception e)
+            {
+                Output.WriteLine("Parsing error occured with message: " + e.Message);
+                Output.WriteLine(parser.ParserPosition);
+                throw e;
+            }
+
+            AstExprListNode tmp = new AstExprListNode(parser.GetAst());
+
+            return tmp.mTerms;
         }
         #endregion
     }
