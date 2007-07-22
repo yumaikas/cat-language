@@ -85,6 +85,17 @@ namespace Cat
                 return "";
             return mpMetaData.ToString();
         }
+
+        public CatMetaDataBlock GetMetaData()
+        {
+            return mpMetaData;
+        }
+
+        public bool HasMetaData()
+        {
+            return ((mpMetaData != null) && (mpMetaData.Count > 0));
+        }
+
         public void RunTests()
         {
             Executor exec = new Executor();
@@ -369,9 +380,10 @@ namespace Cat
             }
             msName += "]";
 
-            if (Config.gbVerboseInference && Config.gbTypeChecking)
+            if (Config.gbTypeChecking)
             {
-                MainClass.WriteLine("inferring type of quoted function " + msName);
+                if (Config.gbVerboseInference)
+                    MainClass.WriteLine("inferring type of quoted function " + msName);
 
                 try
                 {

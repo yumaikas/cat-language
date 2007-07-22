@@ -92,11 +92,11 @@ namespace Cat
             return mpFunctions.Values;
         }
 
-        private IEnumerable<Function> GetDefinedFunctions()
+        public IEnumerable<DefinedFunction> GetDefinedFunctions()
         {
             foreach (Function f in mpFunctions.Values)
                 if (f is DefinedFunction)
-                    yield return f;
+                    yield return f as DefinedFunction;
         }
 
         private void RemoveFunction(string s)
@@ -207,29 +207,5 @@ namespace Cat
                 mpFunctions.Remove(s);
         }
 
-        public static int CompareFxns(Function f1, Function f2)
-        {
-            return f1.GetName().CompareTo(f2.GetName());
-        }
-
-        public void SaveToFile(string sFile)
-        {
-            using (StreamWriter sw = new StreamWriter(sFile))
-            {
-                sw.WriteLine("// session file created on " + DateTime.Now);
-                sw.WriteLine();
-                
-                List<Function> fxns = new List<Function>(GetDefinedFunctions());
-                fxns.Sort(CompareFxns);
-
-                foreach (Function f in fxns)
-                {
-                    f.WriteTo(sw);
-                    sw.WriteLine();
-                }
-                sw.Flush();
-                sw.Close();
-            }
-        }
     }
 }

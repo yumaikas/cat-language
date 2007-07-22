@@ -474,8 +474,16 @@ namespace Cat
         public char GetValue()
         {
             string s = ToString();
-            // strip quotes
-            return char.Parse(s.Substring(1, s.Length - 2));
+            s = s.Substring(1, s.Length - 2);
+            switch (s)
+            {
+                case "\\t": return '\t';
+                case "\\n": return '\n';
+                case "\\'": return '\'';
+                case "\\\"": return '\"';
+                case "\\r": return '\r';
+                default: return char.Parse(s);
+            }
         }
     }
 

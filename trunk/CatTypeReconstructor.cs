@@ -905,6 +905,9 @@ namespace Cat
                 if (k2 == null)
                     return k1;
 
+                if (k1.IsAny()) return k1;
+                if (k2.IsAny()) return k2;
+
                 if (k1 is CatSelfType)
                 {
                     if (!(k2 is CatFxnType) && !k2.IsKindVar())
@@ -959,7 +962,11 @@ namespace Cat
                 }
                 else
                 {
-                    throw new Exception("Unsupported kinds " + k1.ToString() + ":" + k1.GetType().ToString()
+                    if (k1.IsSubtypeOf(k2))
+                        return k2;
+                    if (k2.IsSubtypeOf(k1))
+                        return k1;
+                    throw new Exception("Incompatible kinds " + k1.ToString() + ":" + k1.GetType().ToString()
                         + " and " + k2.ToString() + ":" + k2.GetType().ToString());
                 }
             }
