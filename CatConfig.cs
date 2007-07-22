@@ -80,7 +80,7 @@ namespace Cat
         /// Outputs detailed information of each of the inference mechanism works
         /// while loading a module.
         /// </summary>
-        public static bool gbVerboseInferenceOnLoad = true;
+        public static bool gbVerboseInferenceOnLoad = false;
 
         /// <summary>
         /// Tells the compiler to output details of each test

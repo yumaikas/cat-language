@@ -424,17 +424,17 @@ define pop4 : ('a 'b 'c 'd -> )
 //==============================================================================
 // UnderN
 
-define under2 : ('a 'b 'c -> 'a 'b 'c 'a)
-{ [under] dip swap }
+define under2 : ('a 'b 'c -> 'c 'a 'b 'c)
+{ swap [under] dip swap }
 
-define under3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
-{ [under2] dip swap }
+define under3 : ('a 'b 'c 'd -> 'd 'a 'b 'c 'd)
+{ swap [under2] dip swap }
 
-define under4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
-{ [under3] dip swap }
+define under4 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd 'e)
+{ swap [under3] dip swap }
 
-define under5 : ('a 'b 'c 'd 'e 'f -> 'a 'b 'c 'd 'e 'f 'a)
-{ [under4] dip swap }
+define under5 : ('a 'b 'c 'd 'e 'f -> 'f 'a 'b 'c 'd 'e 'f)
+{ swap [under4] dip swap }
 
 //==============================================================================
 // OverN
@@ -507,21 +507,21 @@ define flip2 : ('a 'b 'c 'd -> 'd 'b 'c 'a)
   desc:
     Swaps the top and fourth item on the stack.
 }}
-{ [flip] dip swap }
+{ swap [flip] dip swap }
 
 define flip3 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd 'a)
 {{
   desc:
     Swaps the top and fifth item on the stack.
 }}
-{ [flip2] dip swap }
+{ swap [flip2] dip swap }
 
 define flip4 : ('a 'b 'c 'd 'e 'f -> 'f 'b 'c 'd 'e 'a)
 {{
   desc:
     Swaps the top and sixth item on the stack.
 }}
-{ [flip3] dip swap }
+{ swap [flip3] dip swap }
 
 //==============================================================================
 // DipN
@@ -706,7 +706,7 @@ define repeat : ('A ('A -> 'A) int -> 'A)
   [neqz] while pop
 }
 
-define whilen : ('A ('A -> 'A bool) ('A bool -> 'A) -> 'A)
+define whilen : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
 {{
   desc:
     Executes a while loop, while a condition is not true
@@ -733,14 +733,14 @@ define whilenz : ('A int ('A int -> 'A int) -> 'A)
 }}
 { [neqz] while pop }
 
-define for_each : ('A list ('A list any -> 'A list) -> 'A)
+define for_each : ('A list ('A any -> 'A) -> 'A)
 {{
   desc:
     Executes a function with each item in the list, and consumes the list.
   semantics:
     $A $b [$C] for_each == $A $b empty not [uncons pop [$C] for_each] [pop] if }
 }}
-{ [dip] bind [uncons swap] rcompose whilene pop }
+{ [dip] bind [uncons swap] rcompose whilene }
 
 define for : ('A ('A int -> 'A) int -> 'A)
 {{
@@ -756,12 +756,14 @@ define rfor : ('A ('A int -> 'A) int -> 'A)
     Reverse for loop. Behaves like a for loop but the index decreases from
     n down to 1.
 }}
-{ swap [dip dec] bind [dup] rcompose whilenz pop }
+{ swap [dip dec] bind [dup] rcompose whilenz }
 
-define print_list : (list ~> list)
+define print_list : ('A list ~> 'A list)
 {{
   desc:
     Outputs a list to the console window
+  bugs:
+    The type checker requires variabe 'A to be written explicitly
 }}
 { dup [writeln] for_each }
 
@@ -828,7 +830,7 @@ define unpair : (list -> any any)
 define fold : ('A list 'b ('A 'b 'c -> 'A 'b) -> 'A 'b)
 { swapd gfold }
 
-define unfold : ('A 'b ('A 'c* 'b -> 'A 'c* 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
+define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
 {{
   desc
     generates a function

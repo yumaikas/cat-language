@@ -71,9 +71,6 @@ define p_plus : ('A ('A -> 'A bool) -> 'A bool)
 }}
 { kapply swap [p_star] [pop false] if }
 
-
-
-
 define p_at : ('A 'b ('A 'b 'b -> 'B 'c 'd bool) -> 'B 'd bool)
 {{
   desc:

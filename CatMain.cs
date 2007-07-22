@@ -86,7 +86,7 @@ namespace Cat
                             WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
                         if (Config.gbOutputStack)
                             Executor.Main.OutputStack();
-                        Executor.Main.GetGlobalContext().SaveToFile(gsSessionFile);
+                        CatSession.SaveToFile(gsSessionFile);
                     }
                 }
             }

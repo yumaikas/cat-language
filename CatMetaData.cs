@@ -7,12 +7,12 @@ namespace Cat
 {
     public class CatMetaData : List<CatMetaData>
     {
-        public string msName = "";
+        public string msLabel = "";
         public string msContent = "";
         public CatMetaData mpParent;
         public CatMetaData(string sName, CatMetaData pParent)
         {
-            msName = sName;
+            msLabel = sName;
             mpParent = pParent;
         }
         public void AddContent(string s)
@@ -32,7 +32,7 @@ namespace Cat
         public CatMetaData Find(string s)
         {
             foreach (CatMetaData child in this)
-                if (child.msName.Equals(s))
+                if (child.msLabel.Equals(s))
                     return child;
             return null;
         }
@@ -40,7 +40,7 @@ namespace Cat
         {
             List<CatMetaData> ret = new List<CatMetaData>();
             foreach (CatMetaData child in this)
-                if (child.msName.Equals(s))
+                if (child.msLabel.Equals(s))
                     ret.Add(child);
             return ret;
         }
@@ -58,10 +58,15 @@ namespace Cat
             return ret.TrimEnd();
         }
 
+        public string GetLabel()
+        {
+            return msLabel;
+        }
+
         public string ToIndentedString(int nIndent)
         {
             string sIndent = new String(' ', nIndent * 2);
-            string ret = sIndent + msName + ":\n";
+            string ret = sIndent + msLabel + ":\n";
             if (GetContent().Length > 0)
                 ret += sIndent + "  " + GetContent() + "\n";
             foreach (CatMetaData child in this)

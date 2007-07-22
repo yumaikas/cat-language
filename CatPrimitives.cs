@@ -126,33 +126,6 @@ namespace Cat
             }
         }
 
-        public class AllTypes : PrimitiveFunction
-        {
-            public AllTypes()
-                : base("#at", "(function -> )", "experimental")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                foreach (Function f in exec.GetGlobalContext().GetAllFunctions())
-                {
-                    string s = f.GetFxnTypeString();
-                    if (!s.Equals("untyped"))
-                    {
-                        try
-                        {
-                            CatFxnType t = CatFxnType.Create(s);
-                            MainClass.WriteLine(f.GetName() + "\t" + s + "\t" + t.ToString());
-                        }
-                        catch (Exception e)
-                        {
-                            MainClass.WriteLine(f.GetName() + "\t" + s + "\t" + "error:" + e.Message);
-                        }
-                    }
-                }
-            }
-        }
-
         public class Help : PrimitiveFunction
         {
             public Help()
@@ -398,6 +371,18 @@ namespace Cat
                     MainClass.WriteLine(f.GetName() + " was defined");
                     Executor.Main.GetGlobalContext().AddFunction(f);
                 }
+            }
+        }
+
+        public class View : PrimitiveFunction
+        {
+            public View()
+                : base("#v", "( ~> )", "displays all of the loaded functions visually")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CodeViewForm.Show("");
             }
         }
     }
@@ -1086,8 +1071,8 @@ namespace Cat
         #endregion
 
         #region char functions
-        public static int to_ascii(char c) { return (int)c; }
-        public static char from_ascii(int n) { return (char)n; }
+        public static int char_to_int(char c) { return (int)c; }
+        public static char int_to_char(int n) { return (char)n; }
         public static string char_to_str(char c) { return c.ToString(); }
         #endregion
 
@@ -1229,7 +1214,7 @@ namespace Cat
         public class ReadKey : PrimitiveFunction
         {
             public ReadKey()
-                : base("read", "( ~> char)", "inputs a single character from the user (or console)")
+                : base("readch", "( ~> char)", "inputs a single character from the user (or console)")
             { }
 
             public override void Eval(Executor exec)
