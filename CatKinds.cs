@@ -85,7 +85,7 @@ namespace Cat
             if (o is string) return "string";
             if (o is Byte) return "byte";
             if (o is Primitives.Bit) return "bit";
-            if (o is Function) return (o as Function).GetTypeString();
+            if (o is Function) return (o as Function).GetFxnTypeString();
             if (o is Char) return "char";
             return "any";
         }
@@ -143,7 +143,7 @@ namespace Cat
         string msName;
 
         public CatSimpleTypeKind(string s)
-        {
+        {            
             msName = s;
         }
 
@@ -155,6 +155,25 @@ namespace Cat
         public override bool Equals(CatKind k)
         {
             return (k is CatSimpleTypeKind) && (msName == k.ToString());
+        }
+
+        public override bool IsSubtypeOf(CatKind k)
+        {
+            if (Equals(k))
+                return true;
+
+            // meta_int is a subtype of int
+            // and meta_bool is a subtype of bool
+            // and so on.
+            if (msName.IndexOf("meta_") == 0)
+            {
+                string s = k.ToString();
+                if (s.Length == 0)
+                    throw new Exception("missing type name");
+                if (msName.IndexOf(s) == 5)
+                    return true;
+            }
+            return false;
         }
 
         public override bool IsAny()

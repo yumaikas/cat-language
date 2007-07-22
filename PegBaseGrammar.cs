@@ -420,8 +420,7 @@ namespace Peg
 
             public override string ToString()
             {
-                return "";
-                //return mData;
+                return "[" + mData + "]";
             }
 
             string mData;

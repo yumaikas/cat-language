@@ -197,7 +197,7 @@ namespace Cat
     {
         public string mName;
         public AstFxnTypeNode mType;
-        public AstMetaDataBlock mMetaData;
+        public AstMetaDataBlock mpMetaData;
         public List<AstParamNode> mParams = new List<AstParamNode>();
         public List<AstExprNode> mTerms = new List<AstExprNode>();
 
@@ -249,7 +249,7 @@ namespace Cat
                 if (child.GetLabel() != "meta_data_block")
                     break;
 
-                mMetaData = new AstMetaDataBlock(child);
+                mpMetaData = new AstMetaDataBlock(child);
                 n++;
             }
 
@@ -729,6 +729,25 @@ namespace Cat
             : base(node)
         {
             CheckLabel("meta_data_block");
+        }
+    }
+
+    public class AstExprListNode : CatAstNode
+    {
+        public List<AstExprNode> mTerms = new List<AstExprNode>();
+
+        public AstExprListNode(Peg.PegAstNode node)
+            : base(node)
+        {
+            foreach (Peg.PegAstNode child in node.GetChildren())
+            {
+                CatAstNode expr = CatAstNode.Create(child);
+
+                if (!(expr is AstExprNode))
+                    throw new Exception("expected expression node");
+
+                mTerms.Add(expr as AstExprNode);
+            }
         }
     }
     #endregion

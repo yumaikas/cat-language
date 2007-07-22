@@ -163,7 +163,7 @@ namespace Cat
                         string s = t.ToString();
                         if (s.Length < 1) 
                             throw new Exception("itnernal error: macro name is empty string");
-                        Function f = Executor.Main.GetGlobalScope().Lookup(s);
+                        Function f = Executor.Main.GetGlobalContext().Lookup(s);
                         if (f == null)
                         {
                             if (Char.IsDigit(s[0]))

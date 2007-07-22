@@ -167,7 +167,7 @@ namespace Cat
 
                 ilg.EmitCall(OpCodes.Call, mb, new Type[] { });
             }
-            else if (f is PrimitiveFunction)
+            else if (f is PrimitiveFunction || f is Method)
             {
                 // Every Cat function has one argument: a stack. So every function call
                 // takes the function as an argument places it on the stack, and calls the next function.

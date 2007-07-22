@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace Cat
 {
@@ -34,7 +35,7 @@ namespace Cat
         public string msDesc = "";
         public CatFxnType mpFxnType;
         private Executor mExec;
-        CatMetaDataBlock mMetaData;
+        CatMetaDataBlock mpMetaData;
         #endregion
 
         public Function()
@@ -52,7 +53,7 @@ namespace Cat
         {
             return "[" + msName + "]";
         }
-        public string GetTypeString()
+        public string GetFxnTypeString()
         {
             if (GetFxnType() == null)
                 return "untyped";
@@ -71,19 +72,27 @@ namespace Cat
         }
         public void SetMetaData(CatMetaDataBlock meta)
         {
-            mMetaData = meta;
+            mpMetaData = meta;
             CatMetaData desc = meta.Find("desc");
             if (desc != null)
             {
                 msDesc = desc.msContent;
             }
         }
-        public void RunTests(Executor exec)
+        public string GetMetaDataString()
         {
-            if (mMetaData == null)
+            if (mpMetaData == null)
+                return "";
+            return mpMetaData.ToString();
+        }
+        public void RunTests()
+        {
+            Executor exec = new Executor();
+
+            if (mpMetaData == null)
                 return;
 
-            List<CatMetaData> tests = mMetaData.FindAll("test");
+            List<CatMetaData> tests = mpMetaData.FindAll("test");
             foreach (CatMetaData test in tests)
             {
                 if (Config.gbVerboseTests)
@@ -131,13 +140,13 @@ namespace Cat
             MainClass.WriteLine("Name: ");
             MainClass.WriteLine("  " + msName);
             MainClass.WriteLine("Type: ");
-            MainClass.WriteLine("  " + GetTypeString());
+            MainClass.WriteLine("  " + GetFxnTypeString());
             MainClass.WriteLine("Description:");
             MainClass.WriteLine("  " + msDesc);
 
-            if (mMetaData != null)
+            if (mpMetaData != null)
             {
-                List<CatMetaData> tests = mMetaData.FindAll("test");
+                List<CatMetaData> tests = mpMetaData.FindAll("test");
                 foreach (CatMetaData test in tests)
                 {
                     if (test.Find("in") != null && test.Find("out") != null)
@@ -153,6 +162,28 @@ namespace Cat
 
             MainClass.WriteLine("Implementation:");
             MainClass.WriteLine("  " + GetImpl());
+        }
+
+        public void WriteTo(StreamWriter sw)
+        {
+            sw.Write("define ");
+            sw.Write(msName);
+            if (mpFxnType != null)
+            {
+                sw.Write(" : ");
+                sw.Write(mpFxnType);
+            }
+            sw.WriteLine();
+            if (mpMetaData != null)
+            {
+                sw.WriteLine("{{");
+                sw.WriteLine(mpMetaData.ToString());
+                sw.WriteLine("}}");
+            }
+            sw.WriteLine("{");
+            sw.Write("  ");
+            sw.WriteLine(GetImpl());
+            sw.WriteLine("}");
         }
 
         #region virtual functions
@@ -338,7 +369,7 @@ namespace Cat
             }
             msName += "]";
 
-            if (Config.gbVerboseInference && Config.gbInferTypes)
+            if (Config.gbVerboseInference && Config.gbTypeChecking)
             {
                 MainClass.WriteLine("inferring type of quoted function " + msName);
 
@@ -525,8 +556,12 @@ namespace Cat
             foreach (Function f in mTerms)
                 msDesc += f.GetName() + " ";
 
-            if (Config.gbVerboseInference && Config.gbInferTypes)
-                MainClass.WriteLine("inferring type");
+            if (Config.gbVerboseInference && Config.gbTypeChecking)
+            {
+                MainClass.WriteLine("");
+                MainClass.WriteLine("inferring type of " + msName);
+                MainClass.WriteLine("===");
+            }
 
             try
             {

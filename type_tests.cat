@@ -1,114 +1,40 @@
-
 /*
-
-define rec_fact
-{ dup 1 lteq_int [pop 1] [dup [rec_fact] apply mul_int] if }
+define test_noop : ( -> ) { }
+define test_appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C) { apply apply }
+define inc_int : (int -> int) { 1 add_int }
+define test_42 : ( -> int) { 42 }
+define test_dup : ('a -> 'a 'a) { dup }
+define test_42_dup : ( -> int int) { 42 dup }
+define test_q42_dup : ( -> ( -> int) ( -> int)) { [42] dup }
+define aa : ('a -> 'a 'a) { dup }
+define aaa : ('a -> 'a 'a 'a) { dup dup }
+define aaaa : ('a -> 'a 'a 'a 'a) { dup dup dup }
+define aaaa_2 : ('a -> 'a 'a 'a 'a) { aaa dup }
+define pop2 : ('a 'b -> ) { pop pop }
+define pop3 : ('a 'b 'c -> ) { pop pop pop }
+define pop3_2 : ('adam 'bob 'carl -> ) { pop pop2 }
+define swapswap : ('a 'b -> 'a 'b) { swap swap }
+define test_bool : ( -> bool) { true [true] [false] if }
+define test_quote_dip : ('a 'b -> ( -> 'a) 'b) { [quote] dip }
+define app_1 : ('A ('A -> 'B) -> 'B)  { apply }
+define app_2 : ('A ('A -> 'B) -> 'B)  { true swap dup if }
+define app_3 : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
+define test_bind : ('a ('B 'a -> 'C) -> ('B -> 'C)) { [quote] dip compose }
+define test_app : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
 */
 
-define dolittle : ( -> self)
-{ [dolittle] }
+// recursive tests
+define dolittle : ( -> self) { [dolittle] }
+define test_dolittle : ( -> self) { dolittle }
+define bind_self : (('A self -> 'B) -> ('A -> 'B)) { dup bind }
+define test_dolittle2 : ( -> self) { dolittle apply }
+define binary_dolittle { [binary_dolittle] [binary_dolittle] }
+define m : ('A self -> 'B) { dup apply }
+define y { [dup bind] swap compose dup apply }
+define dec { 1 sub_int }
+define eqz { dup 0 eq }
+define fix_step { [eqz] dip swap [pop] [[dec dup writeln] dip apply] if }
+define fix_test { 10 [fix_step] y }
 
-define test_dolittle : ( -> self)
-{ dolittle }
-
-define test_dolittle2 : ( -> self)
-{ dolittle apply }
-
-define test_appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C)
-{ apply apply }
-
-define test_app : ('A ('A -> 'B) -> 'B)
-{ 42 swap dip pop }
-
-define test_noop : ( -> )
-{ }
-
-define test_42 : ( -> int)
-{ 42 }
-
-define test_dup : ('a -> 'a 'a)
-{ dup }
-
-define test_42_dup : ( -> int int)
-{ 42 dup }
-
-define test_q42_dup : ( -> ( -> int) ( -> int))
-{ [42] dup }
-
-define test_quote_dip : ('a 'b -> ( -> 'a) 'b)
-{ [quote] dip }
-
-define test_bind : ('a ('B 'a -> 'C) -> ('B -> 'C))
-{ [quote] dip compose }
-
-define bind_self : (('A self -> 'B) -> ('A -> 'B))
-{ dup bind }
-
-define test_bool
-{ true [true] [false] if }
-
-define binary_dolittle
-{ [binary_dolittle] [binary_dolittle] }
-
-define m : ('A ('A self -> 'B) -> 'B)
-{ dup apply }
-
-/*
 // The following is expected to generate a type error
-define omega
-{ [dup apply] dup apply }
-*/
-
-define y
-{ [dup bind] swap compose dup apply }
-
-define eqz
-{ dup 0 eq }
-
-define dec
-{ 1 sub_int }
-
-define fix_step
-{ [eqz] dip swap [pop] [[dec dup writeln] dip apply] if }
-
-define fix_test
-{ 10 [fix_step] y }
-
-define aa : ('a -> 'a 'a)
-{ dup }
-
-define aaa : ('a -> 'a 'a 'a)
-{ dup dup }
-
-define aaaa : ('a -> 'a 'a 'a 'a)
-{ dup dup dup }
-
-define aaaa_2 : ('a -> 'a 'a 'a 'a)
-{ aaa dup }
-
-define pop2 : ('a 'b -> )
-{ pop pop }
-
-define pop3 : ('a 'b 'c -> )
-{ pop pop pop }
-
-define pop3_2 : ('adam 'bob 'carl -> )
-{ pop pop2 }
-
-define swapswap : ('a 'b -> 'a 'b)
-{ swap swap }
-
-define app_1 : ('A ('A -> 'B) -> 'B)
-{ apply }
-
-define app_2 : ('A ('A -> 'B) -> 'B)
-{ true swap dup if }
-
-define app_3 : ('A ('A -> 'B) -> 'B)
-{ 42 swap dip pop }
-
-define appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C)
-{ apply apply }
-
-define inc_int : (int -> int)
-{ 1 add_int }
+define omega { [dup apply] dup apply }

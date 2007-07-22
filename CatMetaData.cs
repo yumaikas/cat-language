@@ -49,6 +49,25 @@ namespace Cat
         {
             return msContent;
         }
+
+        public override string ToString()
+        {
+            string ret = "";
+            foreach (CatMetaData child in this)
+                ret += child.ToIndentedString(1);
+            return ret.TrimEnd();
+        }
+
+        public string ToIndentedString(int nIndent)
+        {
+            string sIndent = new String(' ', nIndent * 2);
+            string ret = sIndent + msName + ":\n";
+            if (GetContent().Length > 0)
+                ret += sIndent + "  " + GetContent() + "\n";
+            foreach (CatMetaData child in this)
+                ret += child.ToIndentedString(nIndent + 1);
+            return ret;
+        }
     }
 
     public class CatMetaDataBlock : CatMetaData 
@@ -67,6 +86,23 @@ namespace Cat
                 throw new Exception("invalid meta-data label: " + sName);
             // strip the trailing ':'
             sName = sName.Substring(0, sName.Length - 1);
+        }
+
+        public static CatMetaDataBlock Create(string s)
+        {
+            s = "{{\n" + s + "\n}}\n";
+            Peg.Parser parser = new Peg.Parser(s);
+            bool bResult = parser.Parse(CatGrammar.MetaDataBlock());
+            if (!bResult)
+                throw new Exception("failed to parse meta-data block");
+            Peg.PegAstNode tree = parser.GetAst();
+            if (tree.GetNumChildren() == 0)
+                return null;
+            if (tree.GetNumChildren() != 1)
+                throw new Exception("invalid number of child nodes in meta-data block node");
+            AstMetaDataBlock node = new AstMetaDataBlock(tree.GetChild(0));
+            CatMetaDataBlock ret = new CatMetaDataBlock(node);
+            return ret;
         }
 
         public CatMetaDataBlock(AstMetaDataBlock node)

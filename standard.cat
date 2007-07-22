@@ -13,31 +13,68 @@ define noop : ( -> )
 
 // quote operation aliases
 define constantly : ('a -> ( -> 'a))
+{{
+  desc:
+    An alias for the quote instruction.
+}}
 { quote }
 
 define bind : ('a ('B 'a -> 'C) -> ('B -> 'C))
+{{
+  desc:
+    Partial application function, bind the top-most argument
+    of a function to the second value on the stack creating a new function.
+  test:
+    in: 3 5 [+] bind apply
+    out: 8
+}}
 { [quote] dip compose }
 
 define bind2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
+{{
+  desc:
+    Partial application function, bind the top two arguments
+    of a function to the second and third values on the stack
+    to create a new function.
+  test:
+    in: 3 5 7 [+ +] bind2 apply
+    out: 15
+}}
 { bind bind }
 
 define bind3 : ('a 'b 'c ('D 'a 'b 'c -> 'E) -> ('D -> 'E))
+{{
+  desc:
+    Binds three arguments of a function to values on the stack.
+}}
 { bind bind bind }
 
-define bind4 : ('a 'b 'c 'd ('E 'a 'b 'c 'd -> 'F) -> ('E -> 'F))
-{ bind bind bind bind }
-
-define bind5 : ('a 'b 'c 'd 'e ('F 'a 'b 'c 'd 'e -> 'G) -> ('F -> 'G))
-{ bind bind bind bind bind }
-
 define rbind : (('B 'a -> 'C) 'a -> ('B -> 'C))
+{{
+  desc:
+    Binds the top argument of the function in the second position on the stack
+    to the value on the top of the stack.
+  test:
+    in: 5 [+] 3 rbind apply
+    out: 8
+}}
 { quote swap compose }
 
 //=============================================================================
 // Dynamically dispatched functions
 
 define neg : (any -> any)
-{ [int [neg_int] pair double [neg_dbl] pair] to_list dispatch1 }
+{{
+  desc:
+    Negates a values.
+}}
+{
+  [
+    int [neg_int] pair
+    double [neg_dbl] pair
+  ] @
+  dispatch1
+}
 
 define add : (any any -> any)
 {
@@ -48,7 +85,7 @@ define add : (any any -> any)
     bit [add_bit] pair
     string [add_str] pair
   ] @
-  dispatch
+  dispatch2
 }
 
 define sub : (any any -> any)
@@ -59,7 +96,7 @@ define sub : (any any -> any)
     byte [sub_byte] pair
     bit [sub_bit] pair
   ] @
-  dispatch
+  dispatch2
 }
 
 define mul : (any any -> any)
@@ -70,7 +107,7 @@ define mul : (any any -> any)
     byte [mul_byte] pair
     bit [mul_bit] pair
   ] @
-  dispatch
+  dispatch2
 }
 
 define mod : (any any -> any)
@@ -81,42 +118,130 @@ define mod : (any any -> any)
     byte [mod_byte] pair
     bit [mod_bit] pair
   ] @
-  dispatch
+  dispatch2
 }
 
 define div : (any any -> any)
-{ [int [div_int] pair double [div_dbl] pair byte [div_byte] pair bit [div_bit] pair] to_list dispatch2 }
+{
+  [
+    int [div_int] pair
+    double [div_dbl] pair
+    byte [div_byte] pair
+    bit [div_bit] pair
+  ] @
+  dispatch2
+}
 
 define lt : (any any -> bool)
-{ [int [lt_int] pair double [lt_dbl] pair byte [lt_byte] pair bit [lt_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
+{
+  [
+    int [lt_int] pair
+    double [lt_dbl] pair
+    byte [lt_byte] pair
+    bit [lt_bit] pair
+    string [lt_str] pair
+  ] @
+  dispatch2
+  as_bool
+}
 
 define gt : (any any -> bool)
-{ [int [gt_int] pair double [gt_dbl] pair byte [gt_byte] pair bit [gt_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
+{
+  [
+    int [gt_int] pair
+    double [gt_dbl] pair
+    byte [gt_byte] pair
+    bit [gt_bit] pair
+    string [lt_str] pair
+  ] @
+  dispatch2
+  as_bool
+}
 
 define lteq : (any any -> bool)
-{ [int [lteq_int] pair double [lteq_dbl] pair byte [lteq_byte] pair bit [lteq_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
+{
+  [
+    int [lteq_int] pair
+    double [lteq_dbl] pair
+    byte [lteq_byte] pair
+    bit [lteq_bit] pair
+    string [lt_str] pair
+  ] @
+  dispatch2
+  as_bool
+}
 
 define gteq : (any any -> bool)
-{ [int [gteq_int] pair double [gteq_dbl] pair byte [gteq_byte] pair bit [gteq_bit] pair string [lt_str] pair] to_list dispatch2 as_bool }
+{
+  [
+    int [gteq_int] pair
+    double [gteq_dbl] pair
+    byte [gteq_byte] pair
+    bit [gteq_bit] pair
+    string [lt_str] pair
+  ] @
+  dispatch2
+  as_bool
+}
 
 //=============================================================================
 // Mathematical definitions
 
-// Not equals
 define neq : ('a 'a -> bool)
+{{
+  desc:
+    Pushes true if the top two values on the stack are not equal.
+  test:
+    in: 3 5 neq
+    out: true
+  test:
+    in: 'a' 'a' neq
+    out: false
+}}
 { eq not }
 
-// Increment a value
-define inc : (int -> int) { 1 add_int }
+define inc : (int -> int)
+{{
+  desc:
+    Increments an integer on the top of the stack by one.
+  test:
+    in: 3 inc
+    out: 4
+}}
+{ 1 add_int }
 
-// Decrement a value
-define dec : (int -> int) { 1 sub_int }
+define dec : (int -> int)
+{{
+  desc:
+    Decrements an integer on the top of the stack by one.
+  test:
+    in: 3 dec
+    out: 2
+}}
+{ 1 sub_int }
 
-// Multiply a value by itself
-define sqr : (any -> any) { dup mul }
+define sqr : (any -> any)
+{{
+  desc:
+    Multiplies a value by itself
+  test:
+    in: 3 sqr
+    out: 9
+}}
+{ dup mul }
 
-// Treats top two values as a fraction 6 2 3 frac = 6 * (2 / 3)
-define frac : (int int int -> int) { [mul_int] dip div_int }
+define frac : (int int int -> int)
+{{
+  desc:
+    Multiplies an integer by a fraction.
+    x num den -> (x * num) / den)
+  test:
+    in: 6 2 3 frac
+    out: 4
+  semantics:
+    $a $b $c frac == $a $b mul_int $c div_int
+}}
+{ [mul_int] dip div_int }
 
 //=============================================================================
 // Mathematical symbols
@@ -137,81 +262,200 @@ define != { neq }
 // Basic shuffling operators
 
 define swapd : ('a 'b 'c -> 'b 'a 'c)
+{{
+  desc:
+    Swaps the second and third items on the stack.
+  test:
+    in: 1 2 3 swapd
+    out: 2 1 3
+  semantics:
+    $a $b $c swapd == $b $a $c
+}}
 { [swap] dip }
 
 define swapdd : ('a 'b 'c 'd -> 'b 'a 'c 'd)
+{{
+  desc:
+    Swaps the third and fourth items on the stack.
+  test:
+    in: 1 2 3 4 swapdd
+    out: 2 1 3 4
+  semantics:
+    $a $b $c $d swapd == $b $a $c $d
+}}
 { [swapd] dip }
 
 define dupd : ('a 'b -> 'a 'a 'b)
+{{
+  desc:
+    Duplicate the second item on the stack.
+  test:
+    in: 1 2 dupd
+    out: 1 1 2
+  semantics:
+    $a $b swapd == $a $a $b
+}}
 { [dup] dip }
 
 define dupdd : ('a 'b 'c -> 'a 'a 'b 'c)
+{{
+  desc:
+    Duplicate the third item on the stack.
+  test:
+    in: 1 2 3 dupdd
+    out: 1 1 2 3
+  semantics:
+    $a $b $c dupdd == $a $a $b $c
+}}
 { [dupd] dip }
 
 define popd : ('a 'b -> 'b)
+{{
+  desc:
+    Removes the second item from the stack.
+  test:
+    in: 1 2 popd
+    out: 2
+  semantics:
+    $a $b popd == $b
+}}
 { [pop] dip }
 
 define popdd : ('a 'b 'c -> 'b 'c)
+{{
+  desc:
+    Removes the third item from the stack.
+  test:
+    in: 1 2 3 popdd
+    out: 2 3
+  semantics:
+    $a $b $c popd == $b $c
+}}
 { [popd] dip }
 
-define pop2 : ('a 'b -> )
-{ pop pop }
-
-define pop3 : ('a 'b 'c -> )
-{ pop pop pop }
-
-define pop4 : ('a 'b 'c 'd -> )
-{ pop pop pop pop }
-
-define nip : ('a 'b -> 'b)
-{ popd }
-
 define over : ('a 'b -> 'a 'b 'a)
+{{
+  desc:
+    Places a copy of the second item on the top of the stack.
+  semantics:
+    $a $b over == $b $a
+}}
 { dupd swap }
 
 define under : ('a 'b -> 'b 'a 'b)
+{{
+  desc:
+    Places a copy of the top item on the stack under the second.
+  test:
+    in: 1 2 under
+    out: 2 1 2
+}}
 { dup swapd }
 
 define flip : ('a 'b 'c -> 'c 'b 'a)
+{{
+  desc:
+    Swaps the top and third item on the stack.
+  test:
+    in: 1 2 3 flip
+    out: 3 2 1
+}}
 { swapd swap swapd }
 
 define bury : ('a 'b 'c -> 'c 'a 'b)
+{{
+  desc:
+    Place the top item on the stack under the second item.
+  test:
+    in: 1 2 3 bury
+    out: 3 1 2
+}}
 { swap swapd }
 
 define dig : ('a 'b 'c -> 'b 'c 'a)
+{{
+  desc:
+    Place the third item on the stack on the top.
+  test:
+    in: 1 2 3 dig
+    out: 2 3 1
+}}
 { swapd swap }
-
-define peek : ('a 'b 'c -> 'a 'b 'c 'a)
-{ dupdd dig }
-
-define poke : ('a 'b 'c -> 'c 'b)
-{ popdd swap }
 
 //==============================================================================
 // PeekN, DigN and BuryN functions
 
-define peek1 : ('a 'b -> 'a 'b 'a)
-{ dupd swap }
+define pop2 : ('a 'b -> )
+{{
+  desc:
+    Removes two item from the top of the stack.
+  test:
+    in: 1 2 pop2
+    out:
+  semantics:
+    $a $b pop2 == noop
+}}
+{ pop pop }
 
-// The same as ordinary "peek"
-define peek2 : ('a 'b 'c -> 'a 'b 'c 'a)
-{ [peek1] dip swap }
+define pop3 : ('a 'b 'c -> )
+{{
+  desc:
+    Removes three item from the top of the stack.
+  test:
+    in: 1 2 3 pop3
+    out:
+  semantics:
+    $a $b $c pop2 == noop
+}}
+{ pop pop pop }
 
-define peek3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
-{ [peek2] dip swap }
+define pop4 : ('a 'b 'c 'd -> )
+{{
+  desc:
+    Removes four items from the top of the stack.
+  test:
+    in: 1 2 3 4 pop4
+    out:
+  semantics:
+    $a $b $c $d pop4 == noop
+}}
+{ pop pop pop pop }
 
-define peek4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
-{ [peek3] dip swap }
+//==============================================================================
+// UnderN
 
-define peek5 : ('a 'b 'c 'd 'e 'f -> 'a 'b 'c 'd 'e 'f 'a)
-{ [peek4] dip swap }
+define under2 : ('a 'b 'c -> 'a 'b 'c 'a)
+{ [under] dip swap }
 
-define dig1 : ('a 'b -> 'b 'a)
-{ swap }
+define under3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
+{ [under2] dip swap }
 
-// The same as ordinary "dig"
+define under4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
+{ [under3] dip swap }
+
+define under5 : ('a 'b 'c 'd 'e 'f -> 'a 'b 'c 'd 'e 'f 'a)
+{ [under4] dip swap }
+
+//==============================================================================
+// OverN
+
+define over2 : ('a 'b 'c -> 'a 'b 'c 'a)
+{ [over] dip swap }
+
+define over3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
+{ [over2] dip swap }
+
+define over4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
+{ [over3] dip swap }
+
+define over5 : ('a 'b 'c 'd 'e 'f -> 'a 'b 'c 'd 'e 'f 'a)
+{ [over4] dip swap }
+
+//==============================================================================
+// DigN
+
 define dig2 : ('a 'b 'c -> 'b 'c 'a)
-{ [dig1] dip swap }
+{ dig }
 
 define dig3 : ('a 'b 'c 'd -> 'b 'c 'd 'a)
 { [dig2] dip swap }
@@ -225,9 +469,11 @@ define dig5 : ('a 'b 'c 'd 'e 'f -> 'b 'c 'd 'e 'f 'a)
 define bury1 : ('a 'b -> 'b 'a)
 { swap }
 
-// The same as ordinary "bury"
+//==============================================================================
+// BuryN
+
 define bury2 : ('a 'b 'c -> 'c 'a 'b)
-{ swap [bury1] dip }
+{ bury }
 
 define bury3 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
 { swap [bury2] dip }
@@ -242,16 +488,64 @@ define bury5 : ('a 'b 'c 'd 'e 'f -> 'f 'a 'b 'c 'd 'e)
 // DupN
 
 define dup2 : ('a 'b -> 'a 'b 'a 'b)
-{ peek1 peek1 }
+{ over over }
 
 define dup3 : ('a 'b 'c -> 'a 'b 'c 'a 'b 'c)
-{ peek2 peek2 peek2 }
+{ over2 over2 over2 }
 
 define dup4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a 'b 'c 'd)
-{ peek3 peek3 peek3 peek3 }
+{ over3 over3 over3 over3 }
 
 define dup5 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a 'b 'c 'd 'e)
-{ peek4 peek4 peek4 peek4 peek4 }
+{ over4 over4 over4 over4 over4 }
+
+//==============================================================================
+// FlipN
+
+define flip2 : ('a 'b 'c 'd -> 'd 'b 'c 'a)
+{{
+  desc:
+    Swaps the top and fourth item on the stack.
+}}
+{ [flip] dip swap }
+
+define flip3 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd 'a)
+{{
+  desc:
+    Swaps the top and fifth item on the stack.
+}}
+{ [flip2] dip swap }
+
+define flip4 : ('a 'b 'c 'd 'e 'f -> 'f 'b 'c 'd 'e 'a)
+{{
+  desc:
+    Swaps the top and sixth item on the stack.
+}}
+{ [flip3] dip swap }
+
+//==============================================================================
+// DipN
+
+define dip2 : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
+{{
+  desc:
+    Applies a function to the stack, temporarily removing the next two items.
+}}
+{ swap [dip] dip }
+
+define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
+{{
+  desc:
+    Applies a function to the stack, temporarily removing the next three items.
+}}
+{ swap [dip2] dip }
+
+define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
+{{
+  desc:
+    Applies a function to the stack, temporarily removing the next four items.
+}}
+{ swap [dip3] dip }
 
 //=============================================================================
 // Predicates and comparison functions
@@ -331,49 +625,79 @@ define compare : (any any -> any any bool)
 
 define rcompose : (('B -> 'C) ('A -> 'B) -> ('A -> 'C))
 {{
-  desc
+  desc:
     swap then compose (or reverse compose)
-  semantics
+  semantics:
     [$A] [$B] rcompose == [$B $A]
 }}
 { swap compose }
 
 define slip : ('A ('A -> 'B) 'c -> 'B 'c)
 {{
-  semantics
+  test:
+    in: 4 [inc] 2 slip
+    out: 5 2
+  semantics:
     $A [$B] $c slip == $A $B $c
 }}
 { swap dip }
 
 define keep : ('A 'b ('A 'b -> 'C) -> 'C 'b)
 {{
-  notes
-    sometimes called "sip"
-  semantics
-    $A $b [$C] sip == $A $C $b
+  desc:
+    Applies a function to the stack, but restores the top of the stack
+    afterwards to what it was before the function was applied.
+  semantics:
+    $A $b [$C] keep == $A $C $b
 }}
 { dupd dip }
 
 define sweep : ('A ('A 'b -> 'C) 'b -> 'C 'b)
+{{
+  desc:
+    Swaps the top of the stack, with a function below it. Applies the function to
+    the stack, and pushes the original top value back on to the stack at the end.
+}}
 { swap keep }
 
-define dip2 : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
-{ swap [dip] dip }
+define kapply : ('A ('A -> 'B) -> 'B ('A -> 'B))
+{{
+  desc:
+    Applies a function to the stack, and afterwards replaces the function.
+  test:
+    in: 1 [inc] kapply apply
+    out: 3
+}}
+{ dup dip }
 
-define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
-{ swap [dip2] dip }
+define apply2 : ('A ('A -> 'A) -> 'A)
+{{
+  desc:
+    Applies a function to a stack twice.
+  semantics:
+    $A [$B] apply2 == $A $B $B
+}}
+{ kapply apply }
 
-define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
-{ swap [dip3] dip }
+
+define apply3 : ('A ('A -> 'A) -> 'A)
+{{
+  desc:
+    Applies a function to a stack three times.
+  semantics:
+    $A [$B] apply3 == $A $B $B $B
+}}
+{ kapply apply2 }
+
 
 //==============================================================================
 // Looping constructions
 
 define repeat : ('A ('A -> 'A) int -> 'A)
 {{
-  desc
+  desc:
     Executes a loop a fixed number of times
-  semantics
+  semantics:
     $A [$B] $c repeat == $A $c eqz [] [$B $c dec] if
 }}
 {
@@ -384,58 +708,60 @@ define repeat : ('A ('A -> 'A) int -> 'A)
 
 define whilen : ('A ('A -> 'A bool) ('A bool -> 'A) -> 'A)
 {{
-  desc
+  desc:
     Executes a while loop, while a condition is not true
-  semantics
+  semantics:
     $A [$B] [$C] whilen == $A $C not [$B [$B][$C] whilen] [] if
 }}
 { [not] compose while }
 
 define whilene : ('A list ('A list -> 'A list) -> 'A)
 {{
-  desc
+  desc:
     Executes a function while the list on the top of the stack is not empty
-  semantics
+  semantics:
     $A $b [$C] whilene == $A $b empty not [$C [$C] whilene] [pop] if
 }}
 { [empty] whilen pop }
 
 define whilenz : ('A int ('A int -> 'A int) -> 'A)
 {{
-  desc
+  desc:
     Executes a function while the value on the top of the stack is not equal to zero.
-  semantics
+  semantics:
     $A $b [$C] whilenz == $A $b neqz [$C [$C] whilenz] [pop] if
 }}
 { [neqz] while pop }
 
 define for_each : ('A list ('A list any -> 'A list) -> 'A)
 {{
-  desc
-    executes function with each item in the list
-  semantics
+  desc:
+    Executes a function with each item in the list, and consumes the list.
+  semantics:
     $A $b [$C] for_each == $A $b empty not [uncons pop [$C] for_each] [pop] if }
 }}
 { [dip] bind [uncons swap] rcompose whilene pop }
 
 define for : ('A ('A int -> 'A) int -> 'A)
 {{
-  desc
-    like repeat but an index is passed at each iteration (0..n-1)
+  desc:
+    A for loop. Behaves like repeat but an montonically increasing index value is
+    passed to the loop body on each iteration, starting at 0.
 }}
 { swap [dip inc] bind [dup] rcompose swap neqf 0 bury while pop }
 
 define rfor : ('A ('A int -> 'A) int -> 'A)
 {{
-  desc
-    a for loop but the index decreases from n down to 1
+  desc:
+    Reverse for loop. Behaves like a for loop but the index decreases from
+    n down to 1.
 }}
 { swap [dip dec] bind [dup] rcompose whilenz pop }
 
 define print_list : (list ~> list)
 {{
-  desc
-    outputs a list to the console window
+  desc:
+    Outputs a list to the console window
 }}
 { dup [writeln] for_each }
 
@@ -443,25 +769,45 @@ define print_list : (list ~> list)
 // list operators
 
 define (
+{{
+  desc:
+    List initializer.
+}}
 { nil }
 
 define ,
+{{
+  desc:
+    List separator.
+}}
 { cons }
 
 define )
+{{
+  desc:
+    List terminator.
+}}
 { cons }
 
 define ()
+{{
+  Desc:
+    Empty list.
+}}
 { nil }
 
 define lc : (list ('a -> bool) ('b -> 'c) -> list)
 {{
-  desc
-    list comprehension
+  desc:
+    List comprehension.
 }}
 { [take_while] dip map }
 
 define consd
+{{
+  desc:
+    Cons the second item on stack to a list in the third position.
+}}
 { [cons] dip }
 
 define swons : ('a list -> list)
@@ -501,7 +847,7 @@ define small : (list -> list bool)
   desc
     Returns true if a list contains one element or is empty
 }}
-{ empty [true] [rest empty nip] if }
+{ empty [true] [rest empty popd] if }
 
 define split : ('A list ('A list list 'b 'b -> 'A list list 'c bool) -> 'A list list)
 {{
@@ -553,6 +899,39 @@ define split_at : (list int -> list list)
 }}
 { nil bury [move_head] swap repeat }
 
+define dhead : (list -> list any)
+{{
+  desc:
+    Returns the head of a list, leaving the original list on the stack.
+  test:
+    in: [1 2] @ dhead
+    out: [1 2] @ 2
+}}
+{ first }
+
+define dtail : (list -> list list)
+{{
+  desc:
+    Returns the tail of a list, leaving the original list on the stack.
+  test:
+    in: [1 2 3] @ dtail
+    out: [1 2 3] @ [1 2] @
+}}
+{ rest }
+
+define head_eq : (list any -> list bool)
+{{
+  test:
+    in: [1 2] @ 2 head_eq popd
+    out: true
+
+  test:
+    in: [1 2] @ 1 head_eq popd
+    out: false
+}}
+{ [dhead] dip eq }
+
+
 //=============================================================================
 // Infinite list generators
 
@@ -583,20 +962,26 @@ define ones : ( -> list)
 //==============================================================================
 // Vector functions
 
-define sum : (list -> any)
+define vec_sum : (list -> any)
+{{
+  desc:
+    Computes the sum of elements in a vector.
+}}
 { 0 [+] fold }
 
-define scale_int_vector : (list int -> list)
-{ [mul_int] bind map }
+define vec_scale : (list any -> list)
+{{
+  desc:
+    Multiplies all items in a vector by a scalar value.
+}}
+{ [*] bind map }
 
-define translate_int_vector : (list int -> list)
-{ [add_int] bind map }
-
-define scale_dbl_vector : (list double -> list)
-{ [mul_dbl] bind map }
-
-define translate_dbl_vector : (list double -> list)
-{ [add_dbl] bind map }
+define vec_slide : (list any -> list)
+{{
+  desc:
+    Adds a value to all items in a vector.
+}}
+{ [+] bind map }
 
 //==============================================================================
 // Hash helper functions
@@ -630,14 +1015,14 @@ define list_to_hash : (list -> hash_list)
 
 define self_join : (list -> list)
 {{
-  desc
+  desc:
     performs an inner self-join on a list of pairs based the first item.
 }}
 { list_to_hash hash_to_list }
 
 define join : (list list -> list)
 {{
-  desc
+  desc:
     performs an inner join on two lists of pairs
 }}
 { cat self_join }
@@ -694,15 +1079,22 @@ define map_reduce
 // Quick sort algorithm
 
 define qsort : (list -> list)
+{{
+  desc:
+    This is a naive but simple implementation of a quick sort algorithm
+  test:
+    in: [5 4 2 1 3 2 4] @ qsort
+    out: [1 2 2 3 4 4 5] @
+}}
 {
-  // Does to_list have 0 or 1 elements?
+  // Does list have 0 or 1 elements?
   [small]
   // Base case do nothing
   []
-  // Split the to_list using the head as a pivot
+  // Split the list using the head as a pivot
   // storing the pivot under for later use
   [uncons under [lt] bind split]
-  // Append the pivot to the first to_list
+  // Append the pivot to the first list
   // then concatenate the two lists.
   [[swap cons] dip cat]
   bin_rec
