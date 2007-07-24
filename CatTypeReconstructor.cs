@@ -343,13 +343,26 @@ namespace Cat
 
         bool IsFreeVar(CatFxnType ft, CatKind k)
         {
-            if (!mScopes.IsFreeVar(ft, k))
-                return false;
+            return IsFreeVar(ft, k, new Stack<CatKind>());
+        }
+
+        bool IsFreeVar(CatFxnType ft, CatKind k, Stack<CatKind> visited)
+        {
+            if (visited.Contains(k))
+                return true;
             string s = k.ToString();
             if (mUnifiers.ContainsKey(s))
+            {
                 if (mUnifiers[s] is CatTypeVar)
-                    return IsFreeVar(ft, mUnifiers[s]); else
+                {
+                    visited.Push(k);
+                    return IsFreeVar(ft, mUnifiers[s], visited);
+                }
+                else
+                {
                     return false;
+                }
+            }
             return true;
         }
 
