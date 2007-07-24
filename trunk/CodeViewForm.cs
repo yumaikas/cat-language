@@ -7,14 +7,17 @@ using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
 
+using Rtf;
+
 namespace Cat
 {
     public partial class CodeViewForm : Form
     {
         static CodeViewForm form = new CodeViewForm();
-
-        CatSession mpSession;
+        CatRtfWriter mWriter = new CatRtfWriter();
+        Session mpSession;
         string msOptions;
+        ToolTip mToolTip = new ToolTip();
 
         public CodeViewForm()
         {
@@ -23,10 +26,22 @@ namespace Cat
 
         private void CodeViewForm_Load(object sender, EventArgs e)
         {
+            // Create the ToolTip and associate with the Form container.
+            ToolTip toolTip1 = new ToolTip();
 
+            // Set up the delays for the ToolTip.
+            toolTip1.AutoPopDelay = 5000;
+            toolTip1.InitialDelay = 500;
+            toolTip1.ReshowDelay = 500;
+            
+            // Force the ToolTip text to be displayed whether or not the form is active.
+            toolTip1.ShowAlways = true;
+
+            // Set up the ToolTip text for the Button and Checkbox.
+            toolTip1.SetToolTip(this.mEdit, "some text");
         }
 
-        public void Display(string sOptions, CatSession pSession)
+        public void Display(string sOptions, Session pSession)
         {
             mpSession = pSession;
             msOptions = sOptions;
@@ -35,7 +50,7 @@ namespace Cat
 
         public static void Show(string sOptions)
         {
-            form.Display(sOptions, CatSession.GetGlobalSession());
+            form.Display(sOptions, Session.GetGlobalSession());
         }
 
         private void mEdit_TextChanged(object sender, EventArgs e)
@@ -45,233 +60,126 @@ namespace Cat
 
         private void CodeViewForm_Shown(object sender, EventArgs e)
         {
-            mEdit.Clear();
-            CatTextEditWriter w = new CatTextEditWriter(mEdit);
-            mpSession.Output(w);
-        }
-    }
-
-    public class CatTextEditWriter : CatWriter
-    {
-        RichTextBox mEdit;
-        List<Target> mTokens = new List<Target>();
-        List<Target> mFxns = new List<Target>();
-        Target mCurFxn;
-        int mnIndent;
-
-        public CatTextEditWriter(RichTextBox edit)
-        {
-            mEdit = edit;
+            Rebuild();
         }
 
-        public class Target
+        private void mEdit_MouseMove(object sender, MouseEventArgs e)
         {
-            public int Begin;
-            public int End;
-            public Object Data;
-            public Target(int begin, Object data)
-                : this(begin, begin, data)
+            DefTarget def = mWriter.GetDefTargetFromCallPos(MouseEventToPos(e));
+            
+            if (def != null)
             {
+                DefinedFunction f = def.Data;
+                mToolTip.SetToolTip(mEdit, f.GetInfoString());
             }
-            public Target(int begin, int end, Object data)
+            else
             {
-                Trace.Assert(end >= begin);
-                Begin = begin;
-                End = end;
-                Data = data;
-            }
-            public void SetEnd(int end)
-            {
-                Trace.Assert(end >= Begin);
-                End = end; 
+                mToolTip.RemoveAll();
             }
         }
 
-        public Target TokenFromPos(int pos)
+        private int MouseEventToPos(MouseEventArgs e)
         {
-            return FindTarget(mTokens, pos, 0, mTokens.Count - 1);
+            return mEdit.GetCharIndexFromPosition(new Point(e.X, e.Y));
         }
 
-        public DefinedFunction FunctionFromPos(int pos)
+        private void mEdit_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            Target t = FindTarget(mFxns, pos, 0, mFxns.Count - 1);
-            if (t == null) return null;
-            return t.Data as DefinedFunction;
+            DefTarget def = mWriter.GetDefTargetFromCallPos(MouseEventToPos(e));
+            if (def == null)
+                return;
+            mEdit.SelectionLength = 0;
+            mEdit.SelectionStart = def.Begin;
+            mEdit.ScrollToCaret();
         }
 
-        public Target FindTarget(List<Target> list, int pos, int begin, int end)
+        private void Rebuild()
         {
-            if (begin > end)
+            int nPos = mEdit.GetCharIndexFromPosition(new Point(0, 0));
+            double dPos = 0.0;
+            if (mEdit.TextLength > 0)
+                dPos = (double)nPos / (double)mEdit.TextLength;            
+
+            mWriter.Clear();
+            mWriter.ShowComments(ShowCommentsMenuItem.Checked);
+            mWriter.ShowImplementation(ShowImplMenuItem.Checked);
+            mWriter.ShowInferredTypes(ShowInferredTypeMenuItem.Checked);
+            mWriter.ShowCondensed(ShowCondensedMenuItem.Checked);
+            mpSession.Output(mWriter);
+            mEdit.Rtf = mWriter.GetRtf(mEdit.Font);
+
+            dPos = (double)mEdit.TextLength * dPos;
+            nPos = (int)dPos;
+            mEdit.SelectionStart = nPos;
+            mEdit.ScrollToCaret();
+        }
+
+        private void ShowCommentsMenuItem_Click(object sender, EventArgs e)
+        {
+            Rebuild();
+        }
+
+        private void ShowImplMenuItem_Click(object sender, EventArgs e)
+        {
+            Rebuild();
+        }
+
+        private void ShowInferredTypeMenuItem_Click(object sender, EventArgs e)
+        {
+            Rebuild();
+        }
+
+        private void ShowCondensedMenuItem_Click(object sender, EventArgs e)
+        {
+            Rebuild();
+        }
+
+        private void mEdit_MouseClick(object sender, MouseEventArgs e)
+        {
+        }
+
+        private void contextMenuStrip1_Closed(object sender, ToolStripDropDownClosedEventArgs e)
+        {
+            EditDefMenuItem.Enabled = false;
+            EditDefMenuItem.Text = "Edit Definition";
+        }
+
+        private void toolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void EditDefMenuItem_Click(object sender, EventArgs e)
+        {
+            DefinedFunction f = EditDefMenuItem.Tag as DefinedFunction;
+            DefinedFunction g = EditDefForm.EditFunction(f);
+            if (g != null)
             {
-                return null;
+                Session.GetGlobalSession().RedefineFunction(g);
             }
-            else 
-            if (begin == end)
+        }
+
+        private void mEdit_VScroll(object sender, EventArgs e)
+        {
+        }
+
+        private void mEdit_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
             {
-                Target t = list[begin];
-                if (pos >= t.Begin && pos <= t.End)
-                    return t;
-                return null;
-            }
-            else 
-            {
-                int cnt = end - begin;
-                int n = begin + (cnt / 2);
-                Target t = list[n];
-                if (pos < t.Begin)
+                ContextMenu m = mEdit.ContextMenu;
+                int nPos = MouseEventToPos(e);
+                DefinedFunction def = mWriter.GetDefFromPos(nPos);
+
+                if (def != null)
                 {
-                    return FindTarget(list, pos, begin, n - 1);
-                }
-                else if (pos > t.End)
-                {
-                    return FindTarget(list, pos, n + 1, end);
-                }
-                else
-                {
-                    return t;
+                    EditDefMenuItem.Enabled = true;
+                    string s = "Edit Definition of " + def.GetName();
+                    EditDefMenuItem.Text = s;
+                    EditDefMenuItem.Tag = def;
                 }
             }
         }
+   }
 
-        int GetCurPos()
-        {
-            return mEdit.SelectionStart;
-        }
-
-        public override void StartFxnDef(DefinedFunction def) 
-        {
-            Trace.Assert(mCurFxn == null);
-            mCurFxn = new Target(GetCurPos(), def);
-            mFxns.Add(mCurFxn);
-            WriteLine("define " + def.GetName());
-        }
-
-        public override void EndFxnDef() 
-        {
-            mCurFxn.SetEnd(GetCurPos());
-            mCurFxn = null;
-        }
- 
-        void Write(string s) 
-        {
-            mEdit.AppendText(s);
-        }
-
-        void WriteLine(string s) 
-        {
-            Write(s);
-            WriteLine();
-        }
-
-        void WriteLine()
-        {
-            Write("\n");
-        }
-
-        void WriteIndent()
-        {
-            Write(new String(' ', mnIndent * 2));
-        }
- 
-        public override void WriteType(string s) 
-        {
-            WriteLine("   : " + s);
-        }
-
-        public override void StartMetaBlock() 
-        {
-            WriteLine("{{");
-        }
-
-        public override void EndMetaBlock() 
-        {
-            Trace.Assert(mnIndent == 0);
-            WriteLine("}}");
-        }
-
-        public override void StartMetaNode() 
-        {
-            mnIndent++;
-        }
-
-        public override void EndMetaNode() 
-        {
-            mnIndent--;
-        }
-
-        public override void StartImpl() 
-        {
-            WriteLine("{");
-            mnIndent++;
-            WriteIndent();
-        }
-
-        public override void EndImpl() 
-        {
-            WriteLine();
-            mnIndent--;
-            WriteIndent();
-            WriteLine("}");
-        }
-        
-        public override void WriteMetaLabel(string s) 
-        {
-            WriteIndent();
-            WriteLine(s);
-        }
-
-        public override void WriteMetaContent(string s) 
-        {
-            WriteIndent();
-            Write("  ");
-            WriteLine(s);
-        }
-
-        public override void WritePrimitive(string s) 
-        {
-            Write(s + " ");
-        }
-
-        public override void WriteNumber(string s) 
-        {
-            Write(s + " ");
-        }
-
-        public override void WriteString(string s) 
-        {
-            Write(s + " ");
-        }
-
-        public override void WriteChar(string s) 
-        {
-            Write(s + " ");
-        }
-
-        public override void WriteUnknown(string s) 
-        {
-            Write(s + " ");
-        }
-
-        public override void StartQuotation() 
-        {
-            WriteLine("");
-            WriteIndent();
-            WriteLine("[");
-            mnIndent++;
-            WriteIndent();
-        }
-
-        public override void EndQuotation() 
-        {
-            WriteLine();
-            mnIndent--;
-            WriteLine("]");
-            WriteIndent();
-        }
-
-        public override void WriteFunctionCall(DefinedFunction def) 
-        {
-            Write(def.GetName() + " ");
-        }
-    }
 }

@@ -1,4 +1,3 @@
-/*
 define test_noop : ( -> ) { }
 define test_appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C) { apply apply }
 define inc_int : (int -> int) { 1 add_int }
@@ -21,7 +20,6 @@ define app_2 : ('A ('A -> 'B) -> 'B)  { true swap dup if }
 define app_3 : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
 define test_bind : ('a ('B 'a -> 'C) -> ('B -> 'C)) { [quote] dip compose }
 define test_app : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
-*/
 
 // recursive tests
 define dolittle : ( -> self) { [dolittle] }
@@ -37,4 +35,4 @@ define fix_step { [eqz] dip swap [pop] [[dec dup writeln] dip apply] if }
 define fix_test { 10 [fix_step] y }
 
 // The following is expected to generate a type error
-define omega { [dup apply] dup apply }
+//define omega { [dup apply] dup apply }

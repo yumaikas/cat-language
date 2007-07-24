@@ -8,18 +8,18 @@ namespace Cat
     /// <summary>
     /// A CatSession contains all loaded and defined functions, for saving loading and editing. 
     /// </summary>
-    public class CatSession
+    public class Session
     {
-        static CatSession gpSession = new CatSession(Executor.Main.GetGlobalContext());
+        static Session gpSession = new Session(Executor.Main.GetGlobalContext());
 
         Context mpContext;
 
-        public CatSession(Context pContext)
+        public Session(Context pContext)
         {
             mpContext = pContext;
         }
 
-        public static CatSession GetGlobalSession()
+        public static Session GetGlobalSession()
         {
             return gpSession;
         }
@@ -44,8 +44,17 @@ namespace Cat
 
         public static void SaveToFile(string sFile)
         {
-            throw new Exception("unimplemented");
+            // TODO:
         }
 
+        public void AddFunction(DefinedFunction f)
+        {
+            mpContext.AddFunction(f);
+        }
+
+        public void RedefineFunction(DefinedFunction f)
+        {
+            mpContext.RedefineFunction(f);
+        }
     }
 }

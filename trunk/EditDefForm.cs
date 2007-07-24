@@ -10,7 +10,7 @@ namespace Cat
     partial class EditDefForm : Form
     {
         #region public fields
-        public Function result;
+        public DefinedFunction result;
         #endregion 
 
         #region constructors
@@ -26,7 +26,7 @@ namespace Cat
         #endregion 
 
         #region static functions
-        public static Function EditFunction(Function f)
+        public static DefinedFunction EditFunction(DefinedFunction f)
         {
             form.Init(f);
             DialogResult result = form.ShowDialog();
@@ -37,7 +37,7 @@ namespace Cat
             return form.result;
         }
 
-        public static Function DefineNewFunction()
+        public static DefinedFunction DefineNewFunction()
         {
             form.Init();
             DialogResult result = form.ShowDialog();
@@ -56,13 +56,17 @@ namespace Cat
                 messages.AppendText(s);
         }
 
-        public void Init(Function f)
+        public void Init(DefinedFunction f)
         {
             result = null;
             textBoxName.Text = f.GetName();
-            textBoxMetadata.Text = f.GetMetaDataString();
-            textBoxType.Text = f.GetFxnTypeString();
-            textBoxImpl.Text = f.GetImpl();
+            if (f.GetMetaData() != null)
+                textBoxMetadata.Text = f.GetMetaData().ToString();
+            
+            if (f.IsTypeExplicit())
+                textBoxType.Text = f.GetFxnTypeString();
+
+            textBoxImpl.Text = f.GetImplString();
         }
 
         public void Init()
