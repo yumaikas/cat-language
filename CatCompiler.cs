@@ -30,7 +30,7 @@ namespace Cat
                 mMethod.Invoke(null, new object[] { exec });
             }
 
-            public override string GetImpl()
+            public override string GetImplString()
             {
                 return "compiled function";
             }

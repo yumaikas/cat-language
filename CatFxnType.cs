@@ -128,21 +128,6 @@ namespace Cat
             return ret;
         }
 
-        private CatTypeVector RemoveImplicitRhoVariables(CatTypeVector v)
-        {
-            CatTypeVector ret = new CatTypeVector();
-            foreach (CatKind k in v.GetKinds())
-            {
-                if (k is CatFxnType)
-                    ret.Add((k as CatFxnType).RemoveImplicitRhoVariables());
-                else if (k is CatTypeVector)
-                    ret.Add(RemoveImplicitRhoVariables(k as CatTypeVector));
-                else
-                    ret.Add(k);
-            }
-            return ret;
-        }
-
         public virtual CatFxnType AddImplicitRhoVariables()
         {
             CatTypeVector cons = AddImplicitRhoVariables(GetCons());
@@ -158,20 +143,55 @@ namespace Cat
             return new CatFxnType(cons, prod, HasSideEffects());
         }
 
-        public virtual CatFxnType RemoveImplicitRhoVariables()
+        public void RemoveImplicitRhoVariables()
         {
-            CatTypeVector cons = RemoveImplicitRhoVariables(GetCons());
-            CatTypeVector prod = RemoveImplicitRhoVariables(GetProd());
-
-            if (!(cons.GetBottom() is CatStackVar) && (cons.GetBottom().Equals(prod.GetBottom())))
-            {
-                CatStackVar rho = CatStackVar.CreateUnique();
-                cons.GetKinds().RemoveAt(0);
-                prod.GetKinds().RemoveAt(0);
-            }
-
-            return new CatFxnType(cons, prod, HasSideEffects());
+            RemoveImplicitRhoVariables(this);
         }
+
+        /// <summary>
+        /// This function modifies the function
+        /// </summary>
+        public void RemoveImplicitRhoVariables(CatFxnType ft)
+        {
+            foreach (CatKind k in ft.GetChildKinds())
+                if (k is CatFxnType)
+                    RemoveImplicitRhoVariables(k as CatFxnType);
+
+            if (!ft.GetCons().IsEmpty() && !ft.GetProd().IsEmpty())
+            {
+                CatKind k1 = ft.GetCons().GetBottom();
+                CatKind k2 = ft.GetProd().GetBottom();
+                
+                // Does both consumption and production share the same
+                // stack variable at the bottom, if so, then we might have 
+                // an implicit Rho variables
+                if (k1 is CatStackVar && k1.Equals(k2)) 
+                {
+                    // try removing the stack variable
+                    ft.GetCons().GetKinds().RemoveAt(0);
+                    ft.GetProd().GetKinds().RemoveAt(0);
+
+                    // is the variable used anywhere else?
+                    // if so, then we have to restore it
+                    // otherwise we leave it taken away
+                    if (DoesVarExist(k1))
+                    {
+                        ft.GetCons().GetKinds().Insert(0, k1);
+                        ft.GetProd().GetKinds().Insert(0, k2);
+                    }                
+                }
+            }
+        }
+
+        public bool DoesVarExist(CatKind k)
+        {
+            Trace.Assert(k.IsKindVar());
+            foreach (CatKind tmp in GetDescendantKinds())
+                if (tmp.Equals(k))
+                    return true;
+            return false;
+        }
+
         public CatTypeVarList GetAllVars()
         {
             CatTypeVarList ret = new CatTypeVarList();
@@ -383,7 +403,7 @@ namespace Cat
             return s;
         }
 
-        public static string ToPrettyString(CatTypeVector vec, Dictionary<string, string> dic, bool bMLStyle)
+        public static string ToPrettyString(CatTypeVector vec, Dictionary<string, string> dic)
         {
             string s = "";
             for (int i=0; i < vec.GetKinds().Count; ++i)
@@ -400,9 +420,6 @@ namespace Cat
                         dic.Add(k.ToString(), sNew);
                     }
 
-                    if (!bMLStyle)
-                        s += "'";
-
                     s += dic[k.ToString()];                        
                 }
                 else if (k is CatSelfType)
@@ -411,11 +428,11 @@ namespace Cat
                 }
                 else if (k is CatFxnType)
                 {
-                    s += "(" + ToPrettyString(k as CatFxnType, dic, bMLStyle) + ")";
+                    s += "(" + ToPrettyString(k as CatFxnType, dic) + ")";
                 }
                 else if (k is CatTypeVector)
                 {
-                    s += ToPrettyString(k as CatFxnType, dic, bMLStyle);
+                    s += ToPrettyString(k as CatFxnType, dic);
                 }
                 else
                 {
@@ -425,35 +442,27 @@ namespace Cat
             return s;
         }
 
-        public virtual string ToPrettyString(bool bMLStyle)
+        public virtual string ToPrettyString()
         {
-            return "(" + ToPrettyString(this, new Dictionary<string, string>(), bMLStyle) + ")";
+            return "(" + ToPrettyString(this, new Dictionary<string, string>()) + ")";
         }
 
-        public static string ToPrettyString(CatFxnType ft, Dictionary<string, string> dic, bool bMLStyle)
+        public static string ToPrettyString(CatFxnType ft, Dictionary<string, string> dic)
         {
             if (ft is CatSelfType)
                 return "self";
 
             // remove rho variables
-            CatTypeVector cons = new CatTypeVector(ft.GetCons());
-            CatTypeVector prod = new CatTypeVector(ft.GetProd());
+            ft = ft.Clone();
+            ft.RemoveImplicitRhoVariables();
 
-            // TODO:
-            // This involves assuring that a function is 
-            //RemoveRhoVariables();
-
-            string s = ToPrettyString(cons, dic, bMLStyle);                        
+            string s = ToPrettyString(ft.GetCons(), dic);                        
             if (ft.HasSideEffects())
                 s += " ~> ";
             else
                 s += " -> ";
 
-            // Uses ML style so instead of (A -> (B -> C)) we get (A -> B -> C)
-            if (bMLStyle && (prod.GetKinds().Count == 1) && (prod.GetKinds()[0] is CatFxnType))
-                s += ToPrettyString(prod.GetKinds()[0] as CatFxnType, dic, bMLStyle);
-            else
-                s += ToPrettyString(prod, dic, bMLStyle);
+            s += ToPrettyString(ft.GetProd(), dic);
 
             return s;
         }
@@ -624,11 +633,6 @@ namespace Cat
             return this;
         }
 
-        public override CatFxnType RemoveImplicitRhoVariables()
-        {
-            return this;
-        }
-
         public override string ToString()
         {
             return "self";
@@ -639,7 +643,7 @@ namespace Cat
             return "self_" + mnId.ToString();
         }
 
-        public override string ToPrettyString(bool bMLStyle)
+        public override string ToPrettyString()
         {
             return "self";
         }

@@ -31,9 +31,7 @@ namespace Cat
         public static void OutputInferredType(CatFxnType ft)
         {
             MainClass.WriteLine("After rewriting");
-            //MainClass.WriteLine("ML style type: " + ft.ToPrettyString(true));
-            //MainClass.WriteLine("Cat style:     " + ft.ToPrettyString(false));
-            MainClass.WriteLine(ft.ToPrettyString(false));
+            MainClass.WriteLine(ft.ToPrettyString());
             MainClass.WriteLine("");
         }
 
@@ -227,8 +225,7 @@ namespace Cat
             {
                 WriteLine("reconstructed type");
                 WriteLine(ret.ToIdString());
-                WriteLine("ML style  : " + ret.ToPrettyString(true));
-                WriteLine("Cat style : " + ret.ToPrettyString(false));
+                WriteLine(ret.ToPrettyString());
                 WriteLine("");
             }
 
@@ -290,10 +287,9 @@ namespace Cat
         {
             if (ft is CatSelfType)
                 return ft;
-            CatFxnType ret = RenameFreeVars(ft);
-            CatTypeVector cons = ResolveVars(ret.GetCons(), visited);
-            CatTypeVector prod = ResolveVars(ret.GetProd(), visited);
-            ret = new CatFxnType(cons, prod, ft.HasSideEffects());
+            CatTypeVector cons = ResolveVars(ft.GetCons(), visited);
+            CatTypeVector prod = ResolveVars(ft.GetProd(), visited);
+            CatFxnType ret = new CatFxnType(cons, prod, ft.HasSideEffects());
             return ret;
         }
 
@@ -310,11 +306,15 @@ namespace Cat
                 ret = ResolveVars(k as CatTypeVector, visited);
             else if (k.IsKindVar())
             {
-                CatKind u = ResolveVars(mUnifiers.GetUnifier(k), visited);
-                if (u is CatFxnType)
-                    ret = RenameFreeVars(u as CatFxnType);
-                else
-                    ret = u;
+                ret = mUnifiers.GetUnifier(k);
+
+                if (ret is CatFxnType)
+                    ret = RenameFreeVars(ret as CatFxnType);
+
+                ret = ResolveVars(ret, visited);
+                
+                if (ret is CatFxnType)
+                    ret = RenameFreeVars(ret as CatFxnType); 
             }
             visited.Pop();
             return ret;
@@ -367,7 +367,12 @@ namespace Cat
                 else if (k.IsKindVar())
                 {
                     if (IsFreeVar(context, k))
-                        ret.Add(GenerateVar(k, gen));
+                    {
+                        CatKind j = GenerateVar(k, gen);
+                        if (Config.gbVerboseInference)
+                            MainClass.WriteLine("renamed free variable " + k + " to " + j); 
+                        ret.Add(j);
+                    }
                     else
                         ret.Add(k);
                 }
@@ -861,7 +866,7 @@ namespace Cat
                     if (k.IsAny() || k.IsDynFxn())
                     {
                         if (!ft.IsRuntimePolymorphic())
-                            throw new Exception("Function " + ft.ToPrettyString(false) + " is not runtime polymorphic");
+                            throw new Exception("Function " + ft.ToPrettyString() + " is not runtime polymorphic");
                         return ft;
                     }
                     if (!k.IsKindVar())

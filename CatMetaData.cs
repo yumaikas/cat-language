@@ -47,7 +47,7 @@ namespace Cat
 
         public string GetContent()
         {
-            return msContent;
+            return msContent.Trim();
         }
 
         public override string ToString()

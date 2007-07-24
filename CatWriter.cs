@@ -7,12 +7,24 @@ namespace Cat
 {
     public abstract class CatWriter
     {
+        protected bool mbShowComments = true;
+        protected bool mbShowTypes = true;
+        protected bool mbShowInferredTypes = true;
+        protected bool mbShowImplementation = true;
+
         public void WriteFunction(DefinedFunction def)
         {
             StartFxnDef(def);
-            if (def.GetFxnType() != null)
-                WriteType(def.GetFxnTypeString());
-            if (def.HasMetaData())
+            if (mbShowTypes)
+            {
+                bool bExplicit = def.IsTypeExplicit();
+                bool bError = def.HasTypeError();
+                if (mbShowInferredTypes || bExplicit)
+                {
+                    WriteType(def.GetFxnTypeString(), bExplicit, bError);
+                }
+            }
+            if (def.HasMetaData() && mbShowComments)
             {
                 StartMetaBlock();
                 CatMetaDataBlock block = def.GetMetaData();
@@ -20,10 +32,13 @@ namespace Cat
                     WriteMetaData(child);
                 EndMetaBlock();
             }
-            StartImpl();
-            foreach (Function f in def.GetChildren())
-                WriteTerm(f);
-            EndImpl();
+            if (mbShowImplementation)
+            {
+                StartImpl();
+                foreach (Function f in def.GetChildren())
+                    WriteTerm(f);
+                EndImpl();
+            }
             EndFxnDef();
         }
 
@@ -31,20 +46,20 @@ namespace Cat
         {
             if (f is DefinedFunction)
                 WriteFunctionCall(f as DefinedFunction);
-            else if (f is PushValue<int>)
-                WriteNumber(f.ToString());
             else if (f is PushValue<char>)
-                WriteChar(f.ToString());
+                WriteChar((f as PushValue<char>).GetValue());
             else if (f is PushValue<string>)
-                WriteString(f.ToString());
+                WriteString((f as PushValue<string>).GetValue());
             else if (f is PushValue<int>)
-                WriteNumber(f.ToString());
+                WriteInt((f as PushValue<int>).GetValue());
+            else if (f is PushValue<double>)
+                WriteDouble((f as PushValue<double>).GetValue());
             else if (f is Quotation)
                 WriteQuotation(f as Quotation);
             else if (f is PrimitiveFunction)
-                WritePrimitive(f.ToString());
+                WritePrimitive(f.GetName());
             else
-                WriteUnknown(f.ToString());
+                WriteUnknown(f.GetName());
         }
 
         public void WriteQuotation(Quotation q)
@@ -59,15 +74,38 @@ namespace Cat
         {
             StartMetaNode();
             WriteMetaLabel(mb.GetLabel());
-            WriteMetaContent(mb.GetContent());
+            string sContent = mb.GetContent();
+            if (sContent.Length > 0)
+                WriteMetaContent(sContent);
             foreach (CatMetaData child in mb)
                 WriteMetaData(child);
             EndMetaNode();
         }
 
+        public void ShowComments(bool b)
+        {
+            mbShowComments = b;
+        }
+
+        public void ShowTypes(bool b)
+        {
+            mbShowTypes = b;
+        }
+
+        public void ShowInferredTypes(bool b)
+        {
+            mbShowInferredTypes = b;
+        }
+
+        public void ShowImplementation(bool b)
+        {
+            mbShowImplementation = b;
+        }
+
+        public abstract void Clear();      
         public abstract void StartFxnDef(DefinedFunction def);
         public abstract void EndFxnDef();
-        public abstract void WriteType(string s);
+        public abstract void WriteType(string s, bool bExplicit, bool bError);
         public abstract void StartMetaBlock();
         public abstract void EndMetaBlock();
         public abstract void StartMetaNode();
@@ -77,9 +115,10 @@ namespace Cat
         public abstract void WriteMetaLabel(string s);
         public abstract void WriteMetaContent(string s);
         public abstract void WritePrimitive(string s);
-        public abstract void WriteNumber(string s);
-        public abstract void WriteString(string s);
-        public abstract void WriteChar(string s);
+        public abstract void WriteInt(int x);
+        public abstract void WriteDouble(double x);
+        public abstract void WriteString(string x);
+        public abstract void WriteChar(char x);
         public abstract void WriteUnknown(string s);
         public abstract void StartQuotation();
         public abstract void EndQuotation();

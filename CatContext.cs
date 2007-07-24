@@ -72,13 +72,21 @@ namespace Cat
             mpFunctions.Clear();
         }
 
+        public void RedefineFunction(Function f)
+        {
+            string s = f.GetName();
+            if (!mpFunctions.ContainsKey(s))
+                throw new Exception("Cannot redefine " + s + " because it doesn't exist");
+            mpFunctions[s] = f;
+        }
+
         public void AddFunction(Function f)
         {
             string s = f.GetName();
             if (mpFunctions.ContainsKey(s))
             {
                 if (!Config.gbAllowRedefines)
-                    throw new Exception("attempting to redefine " + s);
+                    throw new Exception("Attempting to redefine " + s);
                 mpFunctions[s] = f;
             }
             else

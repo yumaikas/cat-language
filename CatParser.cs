@@ -89,13 +89,15 @@ namespace Cat
             if (Config.gbTypeChecking && (node.mType != null))
             {
                 CatFxnType declaredType = new CatFxnType(node.mType);
+                def.SetTypeExplicit();
 
                 if (!CatFxnType.CompareFxnTypes(def.mpFxnType, declaredType))
                 {
                     MainClass.WriteLine("type error in function " + def.GetName());
-                    MainClass.WriteLine("inferred type " + def.GetFxnType().ToPrettyString(false));
-                    MainClass.WriteLine("declared type " + declaredType.ToPrettyString(false));
+                    MainClass.WriteLine("inferred type " + def.GetFxnType().ToPrettyString());
+                    MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
                     bool bTmp = CatFxnType.CompareFxnTypes(def.mpFxnType, declaredType);
+                    def.SetTypeError();
                 }
             }
         }

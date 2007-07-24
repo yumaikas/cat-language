@@ -58,7 +58,7 @@ namespace Cat
             if (GetFxnType() == null)
                 return "untyped";
             else
-                return GetFxnType().ToString();
+                return GetFxnType().ToPrettyString();
         }
         public CatFxnType GetFxnType()
         {
@@ -79,11 +79,15 @@ namespace Cat
                 msDesc = desc.msContent;
             }
         }
-        public string GetMetaDataString()
+        public string GetInfoString()
         {
-            if (mpMetaData == null)
-                return "";
-            return mpMetaData.ToString();
+            string s = "";
+            s += "name:\n  " + GetName();
+            s += "\ntype:\n  " + GetFxnTypeString();
+            if (mpMetaData != null)
+                s += mpMetaData.ToString();
+            s += "\nimplementation:\n  " + GetImplString();
+            return s;
         }
 
         public CatMetaDataBlock GetMetaData()
@@ -172,7 +176,7 @@ namespace Cat
             }
 
             MainClass.WriteLine("Implementation:");
-            MainClass.WriteLine("  " + GetImpl());
+            MainClass.WriteLine("  " + GetImplString());
         }
 
         public void WriteTo(StreamWriter sw)
@@ -193,13 +197,13 @@ namespace Cat
             }
             sw.WriteLine("{");
             sw.Write("  ");
-            sw.WriteLine(GetImpl());
+            sw.WriteLine(GetImplString());
             sw.WriteLine("}");
         }
 
         #region virtual functions
         public abstract void Eval(Executor exec);
-        public abstract string GetImpl();
+        public abstract string GetImplString();
         #endregion
 
         #region invocation functions        
@@ -344,7 +348,7 @@ namespace Cat
             return mValue.GetData();
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             return mValue.ToString();
         }
@@ -420,7 +424,7 @@ namespace Cat
             return mChildren;
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             string ret = "";
             foreach (Function f in mChildren)
@@ -509,7 +513,7 @@ namespace Cat
             return ret;
         }
     
-        public override string GetImpl()
+        public override string GetImplString()
         {
             string ret = "[";
             foreach (Function f in mChildren)
@@ -542,6 +546,8 @@ namespace Cat
     public class DefinedFunction : Function
     {
         List<Function> mTerms;
+        bool mbExplicitType = false;
+        bool mbTypeError = false;
 
         public DefinedFunction(string s)
         {
@@ -598,12 +604,32 @@ namespace Cat
             return mTerms;
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             string ret = "";
             foreach (Function f in mTerms)
                 ret += f.msName + " ";
             return ret;
+        }
+
+        public bool IsTypeExplicit()
+        {
+            return mbExplicitType;
+        }
+
+        public bool HasTypeError()
+        {
+            return mbTypeError;
+        }
+
+        public void SetTypeExplicit()
+        {
+            mbExplicitType = true;
+        }
+        
+        public void SetTypeError()
+        {
+            mbTypeError = true;
         }
     }
 
@@ -646,7 +672,7 @@ namespace Cat
             return mMethod;
         }
 
-       public override string GetImpl()
+       public override string GetImplString()
        {
            return "primitive";
        }
@@ -675,7 +701,7 @@ namespace Cat
             mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             return "primitive";
         }
@@ -698,7 +724,7 @@ namespace Cat
             mpFxn.Eval(exec);
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             return "self";
         }
@@ -770,7 +796,7 @@ namespace Cat
             exec.Push(o.GetField(s));
         }
     
-        public override string GetImpl()
+        public override string GetImplString()
         {
             return "primitive";
         }
@@ -835,7 +861,7 @@ namespace Cat
             o.SetField(s, o, mpClass);
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             return "primitive";
         }
@@ -901,7 +927,7 @@ namespace Cat
             o.SetField(s, o, mpClass);
         }
 
-        public override string GetImpl()
+        public override string GetImplString()
         {
             return "primitive";
         }

@@ -340,7 +340,7 @@ namespace Cat
                 QuotedFunction qf = exec.PopFunction();
                 if ((qf.GetChildren().Count != 1) || !(qf.GetChildren()[0] is DefinedFunction))
                     throw new Exception("You can only edit single functions that have been defined");
-                Function f = EditDefForm.EditFunction(qf.GetChildren()[0]);
+                DefinedFunction f = EditDefForm.EditFunction(qf.GetChildren()[0] as DefinedFunction);
                 if (f == null)
                 {
                     MainClass.WriteLine("no function was defined");
