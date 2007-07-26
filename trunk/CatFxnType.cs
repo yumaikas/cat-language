@@ -153,6 +153,9 @@ namespace Cat
         /// </summary>
         public void RemoveImplicitRhoVariables(CatFxnType ft)
         {
+            if (ft is CatSelfType)
+                return;
+
             foreach (CatKind k in ft.GetChildKinds())
                 if (k is CatFxnType)
                     RemoveImplicitRhoVariables(k as CatFxnType);

@@ -17,7 +17,6 @@ namespace Cat
         ConstraintList mConstraints = new ConstraintList();
         UnifierList mUnifiers = new UnifierList();
         CatTypeVarList mVars = new CatTypeVarList();
-        CatVarScopes mScopes = new CatVarScopes();
         #endregion 
 
         #region constructor
@@ -30,9 +29,9 @@ namespace Cat
         #region static functions
         public static void OutputInferredType(CatFxnType ft)
         {
-            MainClass.WriteLine("After rewriting");
-            MainClass.WriteLine(ft.ToPrettyString());
-            MainClass.WriteLine("");
+            Output.WriteLine("After rewriting");
+            Output.WriteLine(ft.ToPrettyString());
+            Output.WriteLine("");
         }
 
         public static CatFxnType Infer(List<Function> f)
@@ -101,12 +100,12 @@ namespace Cat
 
         public static void WriteLine(string s)
         {
-            MainClass.WriteLine(s);
+            Output.WriteLine(s);
         }
 
         public static void Write(string s)
         {
-            MainClass.Write(s);
+            Output.Write(s);
         }
         #endregion 
 
@@ -125,7 +124,6 @@ namespace Cat
             mConstraints.Clear();
             mUnifiers.Clear();
             mVars.Clear();
-            mScopes.Clear();
 
             // Make sure that the variables on the left function and the variables
             // on the right function are different
@@ -133,6 +131,9 @@ namespace Cat
             left = renamer.Rename(left.AddImplicitRhoVariables());
             renamer.ResetNames();
             right = renamer.Rename(right.AddImplicitRhoVariables());
+
+            TypeSolver ts = new TypeSolver();
+            ts.ComposeTypes(left, right);
 
             CatFxnType tmp = new CatFxnType(left.GetCons(), right.GetProd(), left.HasSideEffects() || right.HasSideEffects());
 
@@ -168,24 +169,6 @@ namespace Cat
                 Write(mConstraints.ToString());
             }
 
-            mConstraints.RemoveUnusedConstraints(tmp);
-
-            /*
-            if (Config.gbVerboseInference)
-            {
-                WriteLine("used constraints");
-                Write(mConstraints.ToString());
-            }
-             */
-
-            mConstraints.ComputeScopes(tmp, mScopes);
-
-            if (Config.gbVerboseInference)
-            {
-                WriteLine("variable scopes");
-                Write(mScopes.ToString());
-            }
-
             ComputeUnifiers();
 
             if (Config.gbVerboseInference)
@@ -208,15 +191,6 @@ namespace Cat
             {
                 WriteLine("resolved unifiers");
                 Write(mUnifiers.ToString());
-            }
-
-            mScopes.Clear();
-            mConstraints.ComputeScopes(tmp, mScopes);
-
-            if (Config.gbVerboseInference)
-            {
-                WriteLine("resolved variable scopes");
-                Write(mScopes.ToString());
             }
 
             CatFxnType ret = CreateNewType(left, right);
@@ -383,7 +357,7 @@ namespace Cat
                     {
                         CatKind j = GenerateVar(k, gen);
                         if (Config.gbVerboseInference)
-                            MainClass.WriteLine("renamed free variable " + k + " to " + j); 
+                            Output.WriteLine("renamed free variable " + k + " to " + j); 
                         ret.Add(j);
                     }
                     else
@@ -786,38 +760,6 @@ namespace Cat
                         Remove(s);
             }
 
-            public void AssignVarsToScope(CatFxnType context, CatVarScopes scopes, CatKind k, Stack<CatKind> visited)
-            {
-                if (visited.Contains(k))
-                    return;
-                visited.Push(k);
-
-                if (k.IsKindVar())
-                {
-                    string s = k.ToString();
-                    scopes.Add(s, context);
-                    if (ContainsKey(s))
-                    {
-                        List<CatKind> tmp = this[s];
-                        foreach (CatKind j in tmp)
-                            AssignVarsToScope(context, scopes, j, visited);
-                    }
-                }
-                else if (k is CatFxnType)
-                {
-                    CatFxnType ft = k as CatFxnType;
-                    foreach (CatKind j in ft.GetChildKinds())
-                        AssignVarsToScope(ft, scopes, j, visited);
-                }
-                else if (k is CatTypeVector)
-                {
-                    foreach (CatKind j in (k as CatTypeVector).GetKinds())
-                        AssignVarsToScope(context, scopes, j, visited);
-                }
-
-                visited.Pop();
-            }
-
             /// <summary>
             /// Provides a list of lists of kinds without repetition. 
             /// </summary>
@@ -839,19 +781,6 @@ namespace Cat
                         yield return k;
             }
 
-            public void ComputeScopes(CatFxnType ft, CatVarScopes scopes)
-            {
-                foreach (CatKind k in GetKinds())
-                    AssignVarsToScope(ft, scopes, k, new Stack<CatKind>());
-                
-                // NOTE: this might not work, I might have to instead 
-                // add everything that is in the function as a new "constraint".
-                // even if unused? I am not sure. 
-                // My big concern is that the sub-functions in "tmp" are not the 
-                // same as in constraints.
-                foreach (CatKind k in ft.GetDescendantKinds())
-                    AssignVarsToScope(ft, scopes, k, new Stack<CatKind>());
-            }
         }
         
         class UnifierList : Dictionary<string, CatKind>
@@ -999,7 +928,7 @@ namespace Cat
                     string tmp = "";
                     for (int i = 0; i < list.Count; ++i)
                         tmp += list[i].ToString();
-                    MainClass.WriteLine("Merging constraints for " + s + " : " + tmp);
+                    Output.WriteLine("Merging constraints for " + s + " : " + tmp);
                 }
 
                 Add(s, null);

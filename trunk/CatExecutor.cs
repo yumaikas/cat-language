@@ -158,7 +158,7 @@ namespace Cat
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("Failed to load \"" + s + "\" with message: " + e.Message);
+                Output.WriteLine("Failed to load \"" + s + "\" with message: " + e.Message);
             }
             Config.gbVerboseInference = b;
         }
@@ -173,7 +173,7 @@ namespace Cat
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("error: " + e.Message);
+                Output.WriteLine("error: " + e.Message);
             }
         }
         public void ExecuteFunction(Function f)
@@ -202,7 +202,7 @@ namespace Cat
         }
         public void OutputStack()
         {
-            MainClass.WriteLine("stack: " + StackToString(stack));
+            Output.WriteLine("stack: " + StackToString(stack));
         }
         #endregion
     }

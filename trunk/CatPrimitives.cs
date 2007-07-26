@@ -116,7 +116,7 @@ namespace Cat
                 {
                     CatFxnType ft = CatTypeReconstructor.Infer(f.GetChildren());
                     if (ft == null)
-                        MainClass.WriteLine("type could not be inferred");
+                        Output.WriteLine("type could not be inferred");
                 }
                 finally
                 {
@@ -134,23 +134,23 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                MainClass.WriteLine("The following are some useful commands:");
-                MainClass.WriteLine("  #clr - clears the stack");
-                MainClass.WriteLine("  #defs - lists all defined functions");
-                MainClass.WriteLine("  #exit - exits the interpreter");
-                MainClass.WriteLine("  \"filename\" #load - loads and executes a Cat file");
-                MainClass.WriteLine("  \"filename\" #save - saves a transcript of session");
-                MainClass.WriteLine("  [...] #h - provides documentation on an instruction");
-                MainClass.WriteLine("  [...] #t - infers the type of a quotation");
-                MainClass.WriteLine("  [...] #i - performs inline expansion within a quotation");
-                MainClass.WriteLine("  [...] #p - partially evaluates a quotation");
-                MainClass.WriteLine("  [...] #m - applies macros to a quotation");
-                MainClass.WriteLine("  [...] #o - optimizes a quotation");
-                MainClass.WriteLine("  [...] #c - compiles a quotation into an assembly");
-                MainClass.WriteLine("  #run - runs a compiled assembly");
-                MainClass.WriteLine("  [...] #test - tests all instruction in a quotation");
-                MainClass.WriteLine("  #ta - tests all defined instruction");
-                MainClass.WriteLine("  [...] #e - shows the instruction editor");
+                Output.WriteLine("The following are some useful commands:");
+                Output.WriteLine("  #clr - clears the stack");
+                Output.WriteLine("  #defs - lists all defined functions");
+                Output.WriteLine("  #exit - exits the interpreter");
+                Output.WriteLine("  \"filename\" #load - loads and executes a Cat file");
+                Output.WriteLine("  \"filename\" #save - saves a transcript of session");
+                Output.WriteLine("  [...] #h - provides documentation on an instruction");
+                Output.WriteLine("  [...] #t - infers the type of a quotation");
+                Output.WriteLine("  [...] #i - performs inline expansion within a quotation");
+                Output.WriteLine("  [...] #p - partially evaluates a quotation");
+                Output.WriteLine("  [...] #m - applies macros to a quotation");
+                Output.WriteLine("  [...] #o - optimizes a quotation");
+                Output.WriteLine("  [...] #c - compiles a quotation into an assembly");
+                Output.WriteLine("  #run - runs a compiled assembly");
+                Output.WriteLine("  [...] #test - tests all instruction in a quotation");
+                Output.WriteLine("  #ta - tests all defined instruction");
+                Output.WriteLine("  [...] #e - shows the instruction editor");
             }
         }
 
@@ -343,11 +343,11 @@ namespace Cat
                 DefinedFunction f = EditDefForm.EditFunction(qf.GetChildren()[0] as DefinedFunction);
                 if (f == null)
                 {
-                    MainClass.WriteLine("no function was defined");
+                    Output.WriteLine("no function was defined");
                 }
                 else
                 {
-                    MainClass.WriteLine(f.GetName() + " was redefined");
+                    Output.WriteLine(f.GetName() + " was redefined");
                     Executor.Main.GetGlobalContext().AddFunction(f);
                 }
             }
@@ -364,11 +364,11 @@ namespace Cat
                 Function f = EditDefForm.DefineNewFunction();
                 if (f == null)
                 {
-                    MainClass.WriteLine("no function was defined");
+                    Output.WriteLine("no function was defined");
                 }
                 else
                 {
-                    MainClass.WriteLine(f.GetName() + " was defined");
+                    Output.WriteLine(f.GetName() + " was defined");
                     Executor.Main.GetGlobalContext().AddFunction(f);
                 }
             }
@@ -794,7 +794,7 @@ namespace Cat
                     exec.GetStack().RemoveRange(stkCopy.Length, stkCopy.Length);
                     exec.GetStack().SetRange(0, stkCopy);
 
-                    MainClass.WriteLine("exception caught");
+                    Output.WriteLine("exception caught");
 
                     exec.Push(e.GetObject());
                     c.Eval(exec);
@@ -1183,7 +1183,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                MainClass.Write(exec.Pop());
+                Output.Write(exec.Pop());
             }
         }
 
@@ -1195,7 +1195,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                MainClass.WriteLine(exec.Pop());
+                Output.WriteLine(exec.Pop());
             }
         }
 

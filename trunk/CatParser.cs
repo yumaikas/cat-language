@@ -93,9 +93,9 @@ namespace Cat
 
                 if (!CatFxnType.CompareFxnTypes(def.mpFxnType, declaredType))
                 {
-                    MainClass.WriteLine("type error in function " + def.GetName());
-                    MainClass.WriteLine("inferred type " + def.GetFxnType().ToPrettyString());
-                    MainClass.WriteLine("declared type " + declaredType.ToPrettyString());
+                    Output.WriteLine("type error in function " + def.GetName());
+                    Output.WriteLine("inferred type " + def.GetFxnType().ToPrettyString());
+                    Output.WriteLine("declared type " + declaredType.ToPrettyString());
                     bool bTmp = CatFxnType.CompareFxnTypes(def.mpFxnType, declaredType);
                     def.SetTypeError();
                 }
