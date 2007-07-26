@@ -255,13 +255,13 @@ namespace Cat
                 // The following line doesn't work on XP.
                 // sFileName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "/" + sFileName;                
                 mAssembly.Save(sFileName);
-                MainClass.WriteLine("Saved compiled target to " + sFileName);
+                Output.WriteLine("Saved compiled target to " + sFileName);
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("Unable to save output to " + sFileName);
-                MainClass.WriteLine("This is a known issue on Vista");
-                MainClass.WriteLine("The error message is " + e.Message);
+                Output.WriteLine("Unable to save output to " + sFileName);
+                Output.WriteLine("This is a known issue on Vista");
+                Output.WriteLine("The error message is " + e.Message);
             }
 
             return mType;

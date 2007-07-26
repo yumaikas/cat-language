@@ -118,6 +118,7 @@
     <Compile Include="CodeViewForm.Designer.cs">
       <DependentUpon>CodeViewForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ConstraintSolver.cs" />
     <Compile Include="EditDefForm.cs">
       <SubType>Form</SubType>
     </Compile>

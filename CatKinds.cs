@@ -264,9 +264,18 @@ namespace Cat
             mList = new List<CatKind>(list);
         }
 
+        /// <summary>
+        /// This is a reversed stack, position [0] is the bottom.
+        /// </summary>
         public List<CatKind> GetKinds()
         {
             return mList;
+        }
+
+        public IEnumerable<CatKind> GetRevKinds()
+        {
+            for (int i = mList.Count - 1; i >= 0; --i)
+                yield return mList[i];
         }
 
         public void Add(CatKind k)

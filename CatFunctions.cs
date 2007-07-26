@@ -112,8 +112,8 @@ namespace Cat
             {
                 if (Config.gbVerboseTests)
                 {
-                    MainClass.WriteLine("");
-                    MainClass.WriteLine("Testing " + msName);
+                    Output.WriteLine("");
+                    Output.WriteLine("Testing " + msName);
                 }
 
                 if (test.Find("in") == null)
@@ -125,8 +125,8 @@ namespace Cat
 
                 if (Config.gbVerboseTests)
                 {
-                    MainClass.WriteLine("input: " + sIn);
-                    MainClass.WriteLine("expected: " + sOut);
+                    Output.WriteLine("input: " + sIn);
+                    Output.WriteLine("expected: " + sOut);
                     exec.Execute("[" + sIn + "] @ dup writeln");
                     exec.Execute("[" + sOut + "] @ dup writeln");
                 }
@@ -138,11 +138,11 @@ namespace Cat
                 exec.Execute("eq");
                 if (exec.PopBool())
                 {
-                    MainClass.WriteLine("testing " + msName + " SUCCEEDED");
+                    Output.WriteLine("testing " + msName + " SUCCEEDED");
                 }
                 else
                 {
-                    MainClass.WriteLine("testing " + msName + " FAILED");
+                    Output.WriteLine("testing " + msName + " FAILED");
                 }
 
 
@@ -152,12 +152,12 @@ namespace Cat
 
         public void OutputDetails()
         {
-            MainClass.WriteLine("Name: ");
-            MainClass.WriteLine("  " + msName);
-            MainClass.WriteLine("Type: ");
-            MainClass.WriteLine("  " + GetFxnTypeString());
-            MainClass.WriteLine("Description:");
-            MainClass.WriteLine("  " + msDesc);
+            Output.WriteLine("Name: ");
+            Output.WriteLine("  " + msName);
+            Output.WriteLine("Type: ");
+            Output.WriteLine("  " + GetFxnTypeString());
+            Output.WriteLine("Description:");
+            Output.WriteLine("  " + msDesc);
 
             if (mpMetaData != null)
             {
@@ -168,15 +168,15 @@ namespace Cat
                     {
                         string sIn = test.Find("in").GetContent();
                         string sOut = test.Find("out").GetContent();
-                        MainClass.WriteLine("Test: ");
-                        MainClass.WriteLine("  input    : " + sIn);
-                        MainClass.WriteLine("  expected : " + sOut);
+                        Output.WriteLine("Test: ");
+                        Output.WriteLine("  input    : " + sIn);
+                        Output.WriteLine("  expected : " + sOut);
                     }
                 }
             }
 
-            MainClass.WriteLine("Implementation:");
-            MainClass.WriteLine("  " + GetImplString());
+            Output.WriteLine("Implementation:");
+            Output.WriteLine("  " + GetImplString());
         }
 
         public void WriteTo(StreamWriter sw)
@@ -387,7 +387,7 @@ namespace Cat
             if (Config.gbTypeChecking)
             {
                 if (Config.gbVerboseInference)
-                    MainClass.WriteLine("inferring type of quoted function " + msName);
+                    Output.WriteLine("inferring type of quoted function " + msName);
 
                 try
                 {
@@ -403,8 +403,8 @@ namespace Cat
                 }
                 catch (Exception e)
                 {
-                    MainClass.WriteLine("Could not type quotation: " + msName);
-                    MainClass.WriteLine("Type error: " + e.Message);
+                    Output.WriteLine("Could not type quotation: " + msName);
+                    Output.WriteLine("Type error: " + e.Message);
                     mpFxnType = null;
                 }
             }
@@ -484,8 +484,8 @@ namespace Cat
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("unable to type quotation: " + ToString());
-                MainClass.WriteLine("type error: " + e.Message);
+                Output.WriteLine("unable to type quotation: " + ToString());
+                Output.WriteLine("type error: " + e.Message);
                 mpFxnType = null;
             }
         }
@@ -576,9 +576,9 @@ namespace Cat
 
             if (Config.gbVerboseInference && Config.gbTypeChecking)
             {
-                MainClass.WriteLine("");
-                MainClass.WriteLine("inferring type of " + msName);
-                MainClass.WriteLine("===");
+                Output.WriteLine("");
+                Output.WriteLine("inferring type of " + msName);
+                Output.WriteLine("===");
             }
 
             try
@@ -587,8 +587,8 @@ namespace Cat
             }
             catch (Exception e)
             {
-                MainClass.WriteLine("type error in function " + msName);
-                MainClass.WriteLine(e.Message);
+                Output.WriteLine("type error in function " + msName);
+                Output.WriteLine(e.Message);
                 mpFxnType = null;
             }
         }
