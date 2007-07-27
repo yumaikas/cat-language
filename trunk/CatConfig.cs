@@ -74,13 +74,13 @@ namespace Cat
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
-        public static bool gbVerboseInference = false;
+        public static bool gbVerboseInference = true;
 
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// while loading a module.
         /// </summary>
-        public static bool gbVerboseInferenceOnLoad = false;
+        public static bool gbVerboseInferenceOnLoad = true;
 
         /// <summary>
         /// Tells the compiler to output details of each test
