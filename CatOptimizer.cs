@@ -181,7 +181,7 @@ namespace Cat
 
         static void Expand(List<Function> fxns, Quotation q, int nMaxDepth)
         {
-            Trace.Assert(nMaxDepth > 0);
+            if (nMaxDepth == 0) return;
             List<Function> tmp = new List<Function>();
             foreach (Function f in q.GetChildren())
                 Expand(tmp, f, nMaxDepth - 1);

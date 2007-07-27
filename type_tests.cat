@@ -1,3 +1,4 @@
+
 define test_noop : ( -> ) { }
 define test_appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C) { apply apply }
 define inc_int : (int -> int) { 1 add_int }
@@ -18,15 +19,24 @@ define test_quote_dip : ('a 'b -> ( -> 'a) 'b) { [quote] dip }
 define app_1 : ('A ('A -> 'B) -> 'B)  { apply }
 define app_2 : ('A ('A -> 'B) -> 'B)  { true swap dup if }
 define app_3 : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
+define quote_test : ('a -> 'a) { quote apply }
+define quote_compose_test : ('a -> 'a 'a) { quote dup compose apply }
+define compose_test : ( -> ('a -> 'a 'a 'a)) { [dup] [dup] compose }
 define test_bind : ('a ('B 'a -> 'C) -> ('B -> 'C)) { [quote] dip compose }
-define test_app : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
 
 // recursive tests
 define dolittle : ( -> self) { [dolittle] }
 define test_dolittle : ( -> self) { dolittle }
+
+/*
+// This is an interesting bug.
+//define bind_self : (('A ('A 'b -> 'C) -> 'C) -> ('A -> 'C)) { dup bind }
 define bind_self : (('A self -> 'B) -> ('A -> 'B)) { dup bind }
+
 define test_dolittle2 : ( -> self) { dolittle apply }
-define binary_dolittle { [binary_dolittle] [binary_dolittle] }
+
+//define binary_dolittle { [binary_dolittle] [binary_dolittle] }
+
 define m : ('A self -> 'B) { dup apply }
 define y { [dup bind] swap compose dup apply }
 define dec { 1 sub_int }
@@ -36,3 +46,5 @@ define fix_test { 10 [fix_step] y }
 
 // The following is expected to generate a type error
 //define omega { [dup apply] dup apply }
+
+// */

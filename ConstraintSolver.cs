@@ -1,3 +1,10 @@
+// Public domain by Christopher Diggins
+// See: http://research.microsoft.com/Users/luca/Papers/BasicTypechecking.pdf
+// for information on the algorithms used.
+
+// Luca Cardelli says: In unifying a non-generic variable to a
+// term, all the type variables contained in that term become non-generic
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -75,27 +82,22 @@ namespace Cat
         }
     }
 
+    public class RecursiveRelation : Constraint
+    {
+        public RecursiveRelation()
+        {
+        }
+    }
+
     public class Relation : Constraint
     {
         Vector mLeft;
         Vector mRight;
 
-        List<Var> mVars = new List<Var>();
-
         public Relation(Vector left, Vector right)
         {
             mLeft = left;
             mRight = right;
-
-            foreach (Constraint c in GetSubConstraints())
-            {
-                if (c is Var)
-                {
-                    Var v = c as Var;
-                    if (!mVars.Contains(v))
-                        mVars.Add(v);
-                }
-            }
         }
 
         public Vector GetLeft()
@@ -113,7 +115,14 @@ namespace Cat
             return mLeft.ToString() + "->" + mRight.ToString();
         }
 
-        public override IEnumerable<Constraint> GetSubConstraints()
+        public IEnumerable<Relation> GetChildRelations()
+        {
+            foreach (Constraint c in GetChildConstraints())
+                if (c is Relation)
+                    yield return c as Relation;
+        }
+
+        public IEnumerable<Constraint> GetChildConstraints()
         {
             foreach (Constraint c in mLeft)
                 yield return c;
@@ -121,9 +130,47 @@ namespace Cat
                 yield return c;
         }
 
-        public List<Var> GetVars()
+        public override IEnumerable<Constraint> GetSubConstraints()
         {
-            return mVars;
+            foreach (Constraint c in mLeft.GetSubConstraints())
+                yield return c;
+            foreach (Constraint c in mRight.GetSubConstraints())
+                yield return c;
+        }
+
+        public List<Var> GetAllVars()
+        {
+            List<Var> vars = new List<Var>();
+            foreach (Constraint c in GetSubConstraints())
+            {
+                if (c is Var)
+                {
+                    Var v = c as Var;
+                    if (!vars.Contains(v))
+                        vars.Add(v);
+                }
+            }
+            return vars;
+        }
+
+        public List<Var> GetGenericVars(List<Var> nongenerics)
+        {
+            List<Var> list = GetAllVars();
+            List<Var> ret = new List<Var>();
+            foreach (Var v in list)
+            {
+                if (!nongenerics.Contains(v))
+                    ret.Add(v);
+            }
+            return ret;
+        }
+
+        public bool IsSubRelation(Relation r)
+        {
+            foreach (Constraint c in GetSubConstraints())
+                if (c == r)
+                    return true;
+            return false;
         }
     }
 
@@ -260,7 +307,11 @@ namespace Cat
             Trace.Assert(c2 != null);
             Trace.Assert(c1 != c2);
 
-            if (c1 is Var)
+            if (c1 is RecursiveRelation || c2 is RecursiveRelation)
+            {
+                return new RecursiveRelation();
+            }
+            else if (c1 is Var)
             {
                 return c2;
             }
@@ -321,6 +372,9 @@ namespace Cat
 
         public Var CreateUniqueVar(string s)
         {
+            int n = s.IndexOf("$");
+            if (n > 0)
+                s = s.Substring(0, n);
             return CreateVar(s + "$" + mnId++.ToString());
         }
 
@@ -339,6 +393,11 @@ namespace Cat
             {
                 return mVarPool[s];
             }
+        }
+
+        public void CheckConstraintQueueEmpty()
+        {
+            Check(mConstraintQueue.Count == 0, "constraint queue is not empty");
         }
 
         ConstraintList GetConstraints(string s)
@@ -388,6 +447,12 @@ namespace Cat
             AddConstraintToList(c, GetConstraints(v.ToString()));
         }
 
+        public void AddRelConstraint(Relation r1, Relation r2)
+        {
+            AddVecConstraint(r1.GetLeft(), r2.GetLeft());
+            AddVecConstraint(r1.GetRight(), r2.GetRight());
+        }
+
         public void AddVecConstraint(Vector v1, Vector v2)
         {
             if (v1 == v2) 
@@ -422,10 +487,12 @@ namespace Cat
             }
             else 
             {
-                AddConstraints(v1.GetFirst(), v2.GetFirst());
+                AddConstraint(v1.GetFirst(), v2.GetFirst());
 
-                // Recursive tail call
+                // Recursive call
                 AddVecConstraint(v1.GetRest(), v2.GetRest());
+
+                ResolveQueuedItems();
             }
         }
 
@@ -459,6 +526,18 @@ namespace Cat
             ConstrainVars(v1.ToString(), v2.ToString());
         }
 
+        public void ResolveQueuedItems()
+        {
+            // While we have items left in the queue to merge, we merge them
+            while (mConstraintQueue.Count > 0)
+            {
+                Pair<Vector> p = mConstraintQueue[0];
+                mConstraintQueue.RemoveAt(0);
+                Log("Constraining queue item");
+                AddVecConstraint(p.First, p.Second);
+            }
+        }
+
         public void ConstrainVars(string s1, string s2)
         {
             if (s1.Equals(s2))
@@ -475,15 +554,8 @@ namespace Cat
             
             foreach (Constraint c in a2)
                 AddConstraintToList(c, a1);
-            
-            // While we have items left in the queue to merge, we merge them
-            while (mConstraintQueue.Count > 0)
-            {
-                Pair<Vector> p = mConstraintQueue[0];
-                mConstraintQueue.RemoveAt(0);
-                Log("Constraining queue item");
-                AddVecConstraint(p.First, p.Second);
-            }
+
+            ResolveQueuedItems();
         }
 
         public static void Err(string s)
@@ -509,7 +581,7 @@ namespace Cat
             Log(c.ToString() + " = " + x.ToString());
         }
 
-        public void AddConstraints(Constraint c1, Constraint c2)
+        public void AddConstraint(Constraint c1, Constraint c2)
         {
             if (c1 == c2)
                 return;
@@ -522,6 +594,8 @@ namespace Cat
                 AddVarConstraint(c2 as Var, c1);
             else if ((c1 is Vector) && (c2 is Vector))
                 AddVecConstraint(c1 as Vector, c2 as Vector);
+            else if ((c1 is Relation) && (c2 is Relation))
+                AddRelConstraint(c1 as Relation, c2 as Relation);
 
             if (c1 is Constant)
                 AddDeduction(c1 as Constant, c2);
@@ -557,24 +631,115 @@ namespace Cat
             return mVarPool.Keys;
         }
 
+        /*
+        public bool IsRecursiveRelation(string s, Constraint c)
+        {
+            Relation rel = c as Relation;
+            if (rel == null)
+                return false;
+            foreach (Constraint tmp in rel.GetLeft())
+                if (tmp.EqualsVar(s))
+                    return true;
+            foreach (Constraint tmp in rel.GetRight())
+                if (tmp.EqualsVar(s))
+                    return true;
+            return false;
+        }
+        */
+
         public void ComputeUnifiers()
         {
             foreach (ConstraintList list in GetConstraintLists())
             {
                 Trace.Assert(list.Count > 0);
                 list.ComputeUnifier();
+            }        
+        }
+
+        /// <summary>
+        /// Gets the types variables for this relation's binding
+        /// </summary>
+        public void GetBoundVars(Relation r, List<Var> vars)
+        {
+            GetBoundVars(r.GetLeft(), vars);
+            GetBoundVars(r.GetRight(), vars);
+        }
+
+        public void GetAllVarsAndUnifiers(Constraint c, List<Var> vars, Stack<Constraint> visited)
+        {
+            if (c == null) 
+                return;
+            if (visited.Contains(c))
+                return;
+
+            visited.Push(c);
+            if (c is Var)
+            {
+                Var v = c as Var;
+                if (!vars.Contains(v))
+                    vars.Add(v);
+                GetAllVarsAndUnifiers(GetUnifierFor(v), vars, visited);
+            }
+            else if (c is Vector)
+            {
+                Vector vec = c as Vector;
+                foreach (Constraint tmp in vec)
+                    GetAllVarsAndUnifiers(tmp, vars, visited);
+            }
+            else if (c is Relation)
+            {
+                Relation rel = c as Relation;
+                GetAllVarsAndUnifiers(rel.GetLeft(), vars, visited);
+                GetAllVarsAndUnifiers(rel.GetRight(), vars, visited);
+            }
+            visited.Pop();
+        }
+
+        public void GetBoundVars(Vector vec, List<Var> vars)
+        {
+            foreach (Constraint c in vec)
+            {
+                if (c is Var)
+                {
+                    Var v = c as Var;
+
+                    if (!vars.Contains(v))
+                        vars.Add(v);
+                    Constraint u = GetUnifierFor(v);
+                    if (u is Var)
+                    {
+                        if (!vars.Contains(u as Var))
+                            vars.Add(u as Var);
+                    }
+                    else if (u is Vector)
+                    {
+                        GetBoundVars(u as Vector, vars);
+                    }
+                }
+                else if (c is Vector)
+                {
+                    GetBoundVars(c as Vector, vars);
+                }
+                else if (c is Relation)
+                {
+                    Relation rel = c as Relation;
+                    GetBoundVars(rel.GetLeft(), vars);
+                    GetBoundVars(rel.GetRight(), vars);
+                }
             }
         }
 
         /// <summary>
         /// This takes a unifier and replaces all variables with their unifiers.
-        /// The visited parameter is used to detect recursive unifiers
         /// </summary>
-        public Constraint Resolve(Constraint c, Stack<Constraint> visited)
+        public Constraint Resolve(Constraint c, Stack<Constraint> visited, List<Var> nonGenerics)
         {
-            if (visited.Contains(c))
+            // TODO: I think I need a context: who are we resolving for.
+            // Aren't we always resolving variables for a particular function.
+
+            if (visited.Contains(c)) 
             {
-                throw new Exception("recursion not yet handled");
+                return c;
             }
 
             visited.Push(c);
@@ -587,25 +752,88 @@ namespace Cat
                 {
                     ret = c;
                 }
+                else if (ret == c)
+                {
+                    // do nothing
+                }
+                else if (ret is Var)
+                {
+                    Trace.Assert(GetUnifierFor(ret as Var) == ret);
+                }
+                else if (ret is Vector)
+                {
+                    ret = Resolve(ret, visited, nonGenerics);
+                }
+                else if (ret is Relation)
+                {
+                    Relation rel = ret as Relation;
+
+                    // Resolve the relation
+                    List<Var> newNonGenerics = new List<Var>(nonGenerics);
+                    if (nonGenerics.Contains(v))
+                    {
+                        foreach (Var tmp in rel.GetAllVars())
+                        {
+                            if (!newNonGenerics.Contains(tmp))
+                                newNonGenerics.Add(tmp);
+                        }
+                    }
+                    rel = Resolve(rel, visited, newNonGenerics) as Relation;
+
+                    // Rename variables in the relation
+                    Dictionary<Var, Var> newNames = new Dictionary<Var, Var>();
+                    List<Var> generics = rel.GetGenericVars(nonGenerics);
+                    if (Config.gbVerboseInference)
+                    {
+                        Log("Non-generic variables");
+                        foreach (Var tmp in nonGenerics)
+                            Log(tmp.ToString());
+                        Log("Generic variables");
+                        foreach (Var tmp in generics)
+                            Log(tmp.ToString());
+                    }
+                    foreach (Var tmp in generics)
+                        newNames.Add(tmp, CreateUniqueVar(tmp.ToString()));
+                    rel = RenameVars(rel, newNames) as Relation;
+                    Log("Renamed relation");
+                    Log(ret.ToString() + " to " + rel.ToString());
+                    ret = rel;
+                }
+                else if (ret is Constant)
+                {
+                    // do nothing
+                }
+                else if (ret is RecursiveRelation)
+                {
+                    // do nothing
+                }
                 else
                 {
-                    if (ret != c)
-                        ret = Resolve(ret, visited);
+                    Err("Unhandled constraint " + ret.ToString());
                 }
+                //Log("Resolved var");
+                //Log(c.ToString() + " to " + ret.ToString());
             }
             else if (c is Vector)
             {
+                Log(c.ToString());
                 Vector vec = new Vector();
                 foreach (Constraint tmp in (c as Vector))
-                    vec.Add(Resolve(tmp, visited));
+                    vec.Add(Resolve(tmp, visited, nonGenerics));
                 ret = vec;
+                //Log("Resolved vector");
+                //Log(c.ToString() + " to " + ret.ToString());
             }
             else if (c is Relation)
             {
                 Relation rel = c as Relation;
-                Vector vLeft = Resolve(rel.GetLeft(), visited) as Vector;
-                Vector vRight = Resolve(rel.GetRight(), visited) as Vector;
+                List<Var> newNonGenerics = new List<Var>(nonGenerics);
+                GetBoundVars(rel, newNonGenerics);
+                Vector vLeft = Resolve(rel.GetLeft(), visited, newNonGenerics) as Vector;
+                Vector vRight = Resolve(rel.GetRight(), visited, newNonGenerics) as Vector;
                 ret = new Relation(vLeft, vRight);
+                //Log("Resolved relation");
+                //Log(rel.ToString() + " to " + ret.ToString());
             }
             else
             {
@@ -638,9 +866,8 @@ namespace Cat
         public Constraint GetResolvedUnifierFor(string s)
         {
             Constraint ret = GetUnifierFor(s);
-            if (ret == null)
-                return ret;
-            return Resolve(ret, new Stack<Constraint>());
+            Check(ret != null, "internal error, no unifier found for " + s);
+            return Resolve(ret, new Stack<Constraint>(), new List<Var>());
         }
 
         public void LogConstraints()
@@ -651,25 +878,28 @@ namespace Cat
 
         public Constraint RenameVars(Constraint c, Dictionary<Var, Var> vars)
         {
+            if (vars.Count == 0)
+                return c;
+
             if (c is Vector)
             {
                 return RenameVars(c as Vector, vars);
             }
             else if (c is Relation)
             {
-                Relation rel = RenameVars(c as Relation, vars);
-                rel = RenameVars(rel, new Dictionary<Var, Var>());
-                return rel;
+                return RenameVars(c as Relation, vars);
             }
             else if (c is Var)
             {
-                Var oldVar = c as Var;
-                if (vars.ContainsKey(oldVar))
-                    return vars[oldVar];
-                Var newVar = CreateUniqueVar(oldVar.ToString());
-                vars.Add(oldVar, newVar);
-                ConstrainVars(newVar, oldVar);
-                return newVar;
+                Var v = c as Var;
+                if (vars.ContainsKey(v))
+                {
+                    return vars[v];
+                }
+                else
+                {
+                    return v;
+                }
             }
             else
             {
@@ -694,194 +924,43 @@ namespace Cat
 
         public void AddTopLevelConstraints(Vector vLeft, Vector vRight)
         {
-            Log("Before lambda lifting");
-            Log("left  : " + vLeft.ToString());
-            Log("right : " + vRight.ToString());
-            
-            // convert all free variables to bound variables
-            vLeft = RenameVars(vLeft, new Dictionary<Var, Var>());
-            vRight = RenameVars(vRight, new Dictionary<Var, Var>());
-
-            Log("After lambda lifting");
-            Log("left  : " + vLeft.ToString());
-            Log("right : " + vRight.ToString());
-
-            Log("Constraints generated from lambda lifting");
-            ComputeConstraintLists();
-            LogConstraints();       
-
             AddVecConstraint(vLeft, vRight);
         }
-    }
-    
-    class TypeSolver : ConstraintSolver
-    {
-        public Constraint KindVarToConstraintVar(CatKind k)
+
+        public IEnumerable<Constraint> GetUnifiers()
         {
-            Trace.Assert(k.IsKindVar());
-            return CreateVar(k.ToString().Substring(1));
+            foreach (ConstraintList list in GetConstraintLists())
+                yield return list.GetUnifier();
         }
 
-        public Vector TypeVectorToConstraintVector(CatTypeVector x)
+        public IEnumerable<Relation> GetRelationUnifiers()
         {
-            Vector vec = new Vector();
-            foreach (CatKind k in x.GetKinds())
-                vec.GetList().Insert(0, CatKindToConstraint(k));
-            return vec;
+            foreach (Constraint c in GetUnifiers())
+                if (c is Relation)
+                    yield return c as Relation;
         }
 
-        public Relation FxnTypeToRelation(CatFxnType ft)
+        public List<Var> GetVars(Constraint c)
         {
-            Vector cons = TypeVectorToConstraintVector(ft.GetCons());
-            Vector prod = TypeVectorToConstraintVector(ft.GetProd());
-            return new Relation(cons, prod);
+            List<Var> list = new List<Var>();
+            foreach (Constraint tmp in c.GetSubConstraints())
+            {
+                if (tmp is Var)
+                {
+                    Var v = tmp as Var;
+                    if (!list.Contains(v))
+                        list.Add(v);
+                }
+            }
+            return list;
         }
 
-        public Constraint CatKindToConstraint(CatKind k)
+        public void OutputFreeVars()
         {
-            if (k is CatTypeVector)
-            {
-                return TypeVectorToConstraintVector(k as CatTypeVector);
-            }
-            else if (k is CatSelfType)
-            {
-                return new Constant((k as CatSelfType).ToIdString());
-            }
-            else if (k is CatFxnType)
-            {
-                return FxnTypeToRelation(k as CatFxnType);
-            }
-            else if (k.IsKindVar())
-            {
-                return KindVarToConstraintVar(k);
-            }
-            else
-            {
-                return new Constant(k.ToIdString());
-            }
-        }
+            Dictionary<Relation, List<Var>> dict = new Dictionary<Relation,List<Var>>();
+            foreach (Relation r in GetRelationUnifiers())
+                dict.Add(r, GetVars(r));
 
-        public CatTypeVector CatTypeVectorFromVec(Vector vec)
-        {
-            CatTypeVector ret = new CatTypeVector();
-            foreach (Constraint c in vec)
-                ret.PushKindBottom(ConstraintToCatKind(c));
-            return ret;
-        }
-
-        public CatFxnType CatFxnTypeFromRelation(Relation rel)
-        {
-            CatTypeVector cons = CatTypeVectorFromVec(rel.GetLeft());
-            CatTypeVector prod = CatTypeVectorFromVec(rel.GetRight());
-
-            // TODO: add the boolean as a third value in the vector.
-            // it becomes a variable when unknown, and is resolved otherwise.
-            return new CatFxnType(cons, prod, false);
-        }
-
-        public CatKind ConstraintToCatKind(Constraint c)
-        {
-            if (c is ScalarVar)
-            {
-                return new CatTypeVar(c.ToString());
-            }
-            else if (c is VectorVar)
-            {
-                return new CatStackVar(c.ToString());
-            }
-            else if (c is Vector)
-            {
-                return CatTypeVectorFromVec(c as Vector);
-            }
-            else if (c is Relation)
-            {
-                return CatFxnTypeFromRelation(c as Relation);
-            }
-            else if (c is Constant)
-            {
-                // TODO: deal with CatCustomKinds
-                return new CatSimpleTypeKind(c.ToString());
-            }
-            else
-            {
-                throw new Exception("unhandled constraint " + c.ToString());
-            }
-        }
-
-        public CatKind ReconstructKind(CatKind k)
-        {
-            if (k.IsKindVar())
-            {
-                string s = k.ToString().Substring(1);
-                Constraint u = GetResolvedUnifierFor(s);
-                if (u == null)
-                    return k;
-                return ConstraintToCatKind(u);
-            }
-            else if (k is CatSelfType)
-            {
-                return k;
-            }
-            else if (k is CatFxnType)
-            {
-                CatFxnType ft = k as CatFxnType;
-                CatTypeVector cons = ReconstructKind(ft.GetCons()) as CatTypeVector;
-                CatTypeVector prod = ReconstructKind(ft.GetProd()) as CatTypeVector;
-                return new CatFxnType(cons, prod, ft.HasSideEffects());
-            }
-            else if (k is CatTypeVector)
-            {
-                CatTypeVector vec = k as CatTypeVector;
-                CatTypeVector ret = new CatTypeVector();
-                foreach (CatKind tmp in vec.GetKinds())
-                    ret.Add(ReconstructKind(tmp));
-                return ret;
-            }
-            else
-            {
-                return k;
-            }
-        }
-
-        public CatFxnType ComposeTypes(CatFxnType left, CatFxnType right)
-        {
-            Log("==");
-            Log("Composing : " + left.ToString());
-            Log("with      : " + right.ToString());
-
-            Log("Adding constraints");
-            Vector vLeft = TypeVectorToConstraintVector(left.GetProd());
-            Vector vRight = TypeVectorToConstraintVector(right.GetCons());
-            AddTopLevelConstraints(vLeft, vRight);
-
-            Log("Constraints");
-            ComputeConstraintLists();
-            LogConstraints();
-
-            Log("Unifiers");
-            ComputeUnifiers();
-            foreach (string sVar in GetConstrainedVars())
-            {
-                Constraint u = GetUnifierFor(sVar);
-                Constraint v = Resolve(u, new Stack<Constraint>());
-                Log("var = " + sVar + ", unresolved = " + u + ", resolved = " + v);
-            }
-
-            /*
-            Log("Resolved Unifiers");
-            ResolveUnifiers();
-            foreach (string sVar in GetConstrainedVars())
-                Log(sVar + " = " + GetResolvedUnifier(sVar));
-             */
-
-            Log("Composed Type");
-            CatTypeVector newCons = ReconstructKind(left.GetCons()) as CatTypeVector;
-            CatTypeVector newProd = ReconstructKind(right.GetProd()) as CatTypeVector;
-            CatFxnType ft = new CatFxnType(newCons, newProd, left.HasSideEffects() || right.HasSideEffects());
-            Log("raw type    : " + ft.ToString());
-            Log("pretty type : " + ft.ToPrettyString());
-            Log("==");
-            return ft;
         }
     }
 }

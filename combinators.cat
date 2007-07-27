@@ -5,7 +5,7 @@
 
 // Starling
 // \abc.ac(bc)
-define S
+define S : ( -> (('a -> ('b -> 'c)) -> (('a -> 'b) -> ('a -> 'c))))
 { \a.[\b.[\c.[c b A c a A A]]] }
 
 // Kestrel
@@ -25,13 +25,6 @@ define I : ( -> ('a -> 'a))
 define KI : ( -> ('a -> ('b -> 'b)))
 { I K A }
 
-// Mockingbird
-// \a.aa
-// S(I)(I)
-// TODO: add type annotation
-define M
-{ I I S A A }
-
 // Owl
 // \ab.b(ab)
 // S(I)
@@ -41,6 +34,13 @@ define O : ( -> ((('a -> 'b) -> 'a) -> (('a -> 'b) -> 'b)))
 { I S A }
 
 /*
+// Mockingbird
+// \a.aa
+// S(I)(I)
+// TODO: add type annotation
+define M
+{ I I S A A }
+
 // Bluebird
 // \abc.a(bc)
 // S(K(S))(K)
