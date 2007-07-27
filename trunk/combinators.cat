@@ -33,7 +33,6 @@ define KI : ( -> ('a -> ('b -> 'b)))
 define O : ( -> ((('a -> 'b) -> 'a) -> (('a -> 'b) -> 'b)))
 { I S A }
 
-/*
 // Mockingbird
 // \a.aa
 // S(I)(I)
@@ -114,4 +113,3 @@ define V : ( -> ('a -> ('b -> (('a -> ('b -> 'c)) -> 'c))))
 // Bug, expected: ( -> (('a -> ('a -> 'b)) -> ('a -> 'b)))
 define W : ( -> (self -> (self -> 'c)))
 { R M B A A C A }
-*/

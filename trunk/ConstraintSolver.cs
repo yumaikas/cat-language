@@ -436,10 +436,18 @@ namespace Cat
 
         public void AddSubConstraints(Constraint c1, Constraint c2)
         {
-            if (!(c1 is Vector)) return;
-            if (!(c2 is Vector)) return;
             if (c1 == c2) return;
-            AddToConstraintQueue(c1 as Vector, c2 as Vector);
+            if ((c1 is Vector) && (c2 is Vector))
+            {
+                AddToConstraintQueue(c1 as Vector, c2 as Vector);
+            }
+            else if ((c1 is Relation) && (c2 is Relation))
+            {
+                Relation r1 = c1 as Relation;
+                Relation r2 = c2 as Relation;
+                AddToConstraintQueue(r1.GetLeft(), r2.GetLeft());
+                AddToConstraintQueue(r1.GetRight(), r2.GetRight());
+            }
         }
 
         public void AddVarConstraint(Var v, Constraint c)
@@ -498,8 +506,6 @@ namespace Cat
 
         public void AddConstraintToList(Constraint c, ConstraintList a)
         {
-            if (a.Contains(c))
-                return;
             if (c is Var)
             {
                 // Update the constraint list associated with this particular variable
@@ -511,6 +517,8 @@ namespace Cat
                     Err("Internal error, expected constraint list to contain constraint " + c.ToString());
                 mLookup[sVar] = a;
             }
+            if (a.Contains(c))
+                return;
             foreach (Constraint k in a)
                 AddSubConstraints(k, c);
             a.Add(c);
@@ -770,6 +778,9 @@ namespace Cat
 
                     // Resolve the relation
                     List<Var> newNonGenerics = new List<Var>(nonGenerics);
+                    
+                    // NOTE: In unifying a non-generic variable to a
+                    // term, all the type variables contained in that term become non-generic
                     if (nonGenerics.Contains(v))
                     {
                         foreach (Var tmp in rel.GetAllVars())
@@ -782,7 +793,10 @@ namespace Cat
 
                     // Rename variables in the relation
                     Dictionary<Var, Var> newNames = new Dictionary<Var, Var>();
-                    List<Var> generics = rel.GetGenericVars(nonGenerics);
+
+                    List<Var> generics = rel.GetGenericVars(nonGenerics);                    
+                    //List<Var> generics = rel.GetGenericVars(newNonGenerics);
+
                     if (Config.gbVerboseInference)
                     {
                         Log("Non-generic variables");
@@ -792,6 +806,7 @@ namespace Cat
                         foreach (Var tmp in generics)
                             Log(tmp.ToString());
                     }
+
                     foreach (Var tmp in generics)
                         newNames.Add(tmp, CreateUniqueVar(tmp.ToString()));
                     rel = RenameVars(rel, newNames) as Relation;
