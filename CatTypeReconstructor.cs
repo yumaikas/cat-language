@@ -17,7 +17,7 @@ namespace Cat
         {
             Vector vec = new Vector();
             foreach (CatKind k in x.GetKinds())
-                vec.GetList().Insert(0, CatKindToConstraint(k));
+                vec.Insert(0, CatKindToConstraint(k));
             return vec;
         }
 
