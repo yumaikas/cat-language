@@ -1,9 +1,5 @@
 // Public domain by Christopher Diggins
 // See: http://research.microsoft.com/Users/luca/Papers/BasicTypechecking.pdf
-// for information on the algorithms used.
-
-// Luca Cardelli says: In unifying a non-generic variable to a
-// term, all the type variables contained in that term become non-generic
 
 using System;
 using System.Collections.Generic;
@@ -23,6 +19,32 @@ namespace Cat
         }
     }
 
+    public class VarList : List<Var>
+    {
+        public VarList(VarList x)
+            : base(x)
+        { }
+
+        public VarList(IEnumerable<Var> x)
+            : base(x)
+        { }
+
+        public VarList()
+        { }
+
+        public new void Add(Var v)
+        {
+            if (!Contains(v))
+                base.Add(v);
+        }
+
+        public new void AddRange(IEnumerable<Var> list)
+        {
+            foreach (Var v in list)
+                this.Add(v);
+        }
+    }
+
     public class Constraint
     {
         public virtual IEnumerable<Constraint> GetSubConstraints()
@@ -36,6 +58,16 @@ namespace Cat
                 return false;
             return ToString().Equals(s);
         }
+
+        public VarList GetAllVars()
+        {
+            VarList vars = new VarList();
+            foreach (Constraint c in GetSubConstraints())
+                if (c is Var)
+                    vars.Add(c as Var);
+            return vars;
+        }
+
     }
 
     public class Var : Constraint
@@ -125,9 +157,15 @@ namespace Cat
         public IEnumerable<Constraint> GetChildConstraints()
         {
             foreach (Constraint c in mLeft)
+            {
+                Trace.Assert(!(c is Vector));
                 yield return c;
+            }
             foreach (Constraint c in mRight)
+            {
+                Trace.Assert(!(c is Vector));
                 yield return c;
+            }
         }
 
         public override IEnumerable<Constraint> GetSubConstraints()
@@ -138,25 +176,10 @@ namespace Cat
                 yield return c;
         }
 
-        public List<Var> GetAllVars()
+        public VarList GetGenericVars(VarList nongenerics)
         {
-            List<Var> vars = new List<Var>();
-            foreach (Constraint c in GetSubConstraints())
-            {
-                if (c is Var)
-                {
-                    Var v = c as Var;
-                    if (!vars.Contains(v))
-                        vars.Add(v);
-                }
-            }
-            return vars;
-        }
-
-        public List<Var> GetGenericVars(List<Var> nongenerics)
-        {
-            List<Var> list = GetAllVars();
-            List<Var> ret = new List<Var>();
+            VarList list = GetAllVars();
+            VarList ret = new VarList();
             foreach (Var v in list)
             {
                 if (!nongenerics.Contains(v))
@@ -171,6 +194,17 @@ namespace Cat
                 if (c == r)
                     return true;
             return false;
+        }
+
+        public VarList GetChildVars()
+        {
+            VarList list = new VarList();
+            foreach (Constraint c in GetChildConstraints())
+            {
+                if (c is Var)
+                    list.Add(c as Var);
+            }
+            return list;
         }
     }
 
@@ -215,11 +249,6 @@ namespace Cat
             return ret;
         }
 
-        public List<Constraint> GetList()
-        {
-            return mList;
-        }
-
         public bool IsEmpty()
         {
             return mList.Count == 0;
@@ -247,12 +276,26 @@ namespace Cat
 
         public void Add(Constraint c)
         {
-            mList.Add(c);
+            if (c is Vector)
+            {
+                Vector vec = c as Vector;
+                foreach (Constraint child in vec)
+                    mList.Add(child);
+            }
+            else
+            {
+                mList.Add(c);
+            }
         }
 
         public IEnumerator<Constraint> GetEnumerator()
         {
             return mList.GetEnumerator();
+        }
+
+        public void Insert(int n, Constraint constraint)
+        {
+            mList.Insert(n, constraint);
         }
     }
 
@@ -490,7 +533,6 @@ namespace Cat
             else if (v2.GetFirst() is VectorVar)
             {
                 Trace.Assert(!(v1.GetFirst() is VectorVar));
-                Check(v2.GetCount() == 1, "Vector variables can only occur in the last position of a vector");
                 AddVarConstraint(v2.GetFirst() as VectorVar, v1);
             }
             else 
@@ -664,16 +706,58 @@ namespace Cat
             }        
         }
 
-        /// <summary>
-        /// Gets the types variables for this relation's binding
-        /// </summary>
-        public void GetBoundVars(Relation r, List<Var> vars)
+        public void GetNonGenerics(Relation r, VarList nonGenerics, VarList result)
         {
-            GetBoundVars(r.GetLeft(), vars);
-            GetBoundVars(r.GetRight(), vars);
+            VarList all = new VarList();
+
+            foreach (Constraint c in r.GetChildConstraints())
+            {                
+                if (c is Var)
+                {
+                    Var v = c as Var;
+                    result.Add(v);
+                }
+                else if (c is Vector)
+                {
+                    throw new Exception("illegal vector in variable");
+                }
+                else if (c is Relation)
+                {
+                    VarList tmp = new VarList();
+                    Relation childRel = c as Relation;
+                    foreach (Var v in childRel.GetAllVars())
+                    {
+                        if (all.Contains(v))
+                            result.Add(v);
+                        tmp.Add(v);
+                    }
+                    foreach (Var v in tmp)
+                        all.Add(v);
+                }
+            }
         }
 
-        public void GetAllVarsAndUnifiers(Constraint c, List<Var> vars, Stack<Constraint> visited)
+        /*
+        public void GetNonGenerics(Relation r, VarList nonGenerics, VarList result)
+        {
+            VarList allVars = new VarList();
+            VarList tmpVars = new VarList();
+            r.GetNonGenerics(allVars, tmpVars);
+            nonGenerics.AddRange(tmpVars);
+            
+            // TODO: This will probably fail, but should work better than previous attempts
+            foreach (Var v in tmpVars)
+            {
+                Constraint u = GetUnifierFor(v);
+
+                if (u is Var)
+                    nonGenerics.Add(u as Var);
+
+                // nonGenerics.AddRange(u.GetAllVars());
+            }
+        }*/
+
+        public void GetAllVarsAndUnifiers(Constraint c, VarList vars, Stack<Constraint> visited)
         {
             if (c == null) 
                 return;
@@ -684,8 +768,7 @@ namespace Cat
             if (c is Var)
             {
                 Var v = c as Var;
-                if (!vars.Contains(v))
-                    vars.Add(v);
+                vars.Add(v);
                 GetAllVarsAndUnifiers(GetUnifierFor(v), vars, visited);
             }
             else if (c is Vector)
@@ -703,131 +786,99 @@ namespace Cat
             visited.Pop();
         }
 
-        public void GetBoundVars(Vector vec, List<Var> vars)
+        public Relation RenameGenericVars(Relation rel, VarList nonGenerics)
         {
-            foreach (Constraint c in vec)
-            {
-                if (c is Var)
-                {
-                    Var v = c as Var;
+            Dictionary<Var, Var> newNames = new Dictionary<Var, Var>();
+            VarList generics = rel.GetGenericVars(nonGenerics);
+            //VarList generics = rel.GetGenericVars(newNonGenerics);
 
-                    if (!vars.Contains(v))
-                        vars.Add(v);
-                    Constraint u = GetUnifierFor(v);
-                    if (u is Var)
-                    {
-                        if (!vars.Contains(u as Var))
-                            vars.Add(u as Var);
-                    }
-                    else if (u is Vector)
-                    {
-                        GetBoundVars(u as Vector, vars);
-                    }
-                }
-                else if (c is Vector)
-                {
-                    GetBoundVars(c as Vector, vars);
-                }
-                else if (c is Relation)
-                {
-                    Relation rel = c as Relation;
-                    GetBoundVars(rel.GetLeft(), vars);
-                    GetBoundVars(rel.GetRight(), vars);
-                }
+            if (Config.gbVerboseInference)
+            {
+                Log("Non-generic variables for " + rel.ToString());
+                foreach (Var tmp in nonGenerics)
+                    Log(tmp.ToString());
+                Log("Generic variables " + rel.ToString());
+                foreach (Var tmp in generics)
+                    Log(tmp.ToString());
             }
+
+            foreach (Var tmp in generics)
+                newNames.Add(tmp, CreateUniqueVar(tmp.ToString()));
+
+            return RenameVars(rel, newNames) as Relation;
+        }
+
+        public Constraint ResolveVar(Var v, Stack<Constraint> visited, VarList nonGenerics)
+        {
+            Constraint ret = GetUnifierFor(v);
+            if (ret == null)
+            {
+                ret = v;
+            }
+            else if (ret == v)
+            {
+                // do nothing
+            }
+            else if (ret is Var)
+            {
+                Trace.Assert(GetUnifierFor(ret as Var) == ret);
+            }
+            else if (ret is Vector)
+            {
+                ret = Resolve(ret, visited, nonGenerics);
+            }
+            else if (ret is Relation)
+            {
+                Relation rel = ret as Relation;
+                rel = Resolve(rel, visited, nonGenerics) as Relation;
+                
+                VarList newNonGenerics = new VarList(nonGenerics);
+
+                // Problem: computing non-generics is more complicated than that. 
+                // I have to make sure that anything that the same variable is not considered
+                // a generic. 
+
+                // I could get all the constraints, resolve each one separately, making sure 
+                // none of them are resolved, incorrectly.
+
+                GetNonGenerics(rel, nonGenerics, newNonGenerics);
+
+                rel = RenameGenericVars(rel, newNonGenerics);
+
+                Log("Renamed relation");
+                Log(ret.ToString() + " to " + rel.ToString());
+                ret = rel;
+            }
+            else if (ret is Constant)
+            {
+                // do nothing
+            }
+            else if (ret is RecursiveRelation)
+            {
+                // do nothing
+            }
+            else
+            {
+                Err("Unhandled constraint " + ret.ToString());
+            }
+            //Log("Resolved var");
+            //Log(c.ToString() + " to " + ret.ToString());
+            return ret;
         }
 
         /// <summary>
         /// This takes a unifier and replaces all variables with their unifiers.
         /// </summary>
-        public Constraint Resolve(Constraint c, Stack<Constraint> visited, List<Var> nonGenerics)
+        public Constraint Resolve(Constraint c, Stack<Constraint> visited, VarList nonGenerics)
         {
-            // TODO: I think I need a context: who are we resolving for.
-            // Aren't we always resolving variables for a particular function.
-
             if (visited.Contains(c)) 
-            {
                 return c;
-            }
 
             visited.Push(c);
             Constraint ret;
             if (c is Var)
             {
-                Var v = c as Var;
-                ret = GetUnifierFor(v);
-                if (ret == null)
-                {
-                    ret = c;
-                }
-                else if (ret == c)
-                {
-                    // do nothing
-                }
-                else if (ret is Var)
-                {
-                    Trace.Assert(GetUnifierFor(ret as Var) == ret);
-                }
-                else if (ret is Vector)
-                {
-                    ret = Resolve(ret, visited, nonGenerics);
-                }
-                else if (ret is Relation)
-                {
-                    Relation rel = ret as Relation;
-
-                    // Resolve the relation
-                    List<Var> newNonGenerics = new List<Var>(nonGenerics);
-                    
-                    // NOTE: In unifying a non-generic variable to a
-                    // term, all the type variables contained in that term become non-generic
-                    if (nonGenerics.Contains(v))
-                    {
-                        foreach (Var tmp in rel.GetAllVars())
-                        {
-                            if (!newNonGenerics.Contains(tmp))
-                                newNonGenerics.Add(tmp);
-                        }
-                    }
-                    rel = Resolve(rel, visited, newNonGenerics) as Relation;
-
-                    // Rename variables in the relation
-                    Dictionary<Var, Var> newNames = new Dictionary<Var, Var>();
-
-                    List<Var> generics = rel.GetGenericVars(nonGenerics);                    
-                    //List<Var> generics = rel.GetGenericVars(newNonGenerics);
-
-                    if (Config.gbVerboseInference)
-                    {
-                        Log("Non-generic variables");
-                        foreach (Var tmp in nonGenerics)
-                            Log(tmp.ToString());
-                        Log("Generic variables");
-                        foreach (Var tmp in generics)
-                            Log(tmp.ToString());
-                    }
-
-                    foreach (Var tmp in generics)
-                        newNames.Add(tmp, CreateUniqueVar(tmp.ToString()));
-                    rel = RenameVars(rel, newNames) as Relation;
-                    Log("Renamed relation");
-                    Log(ret.ToString() + " to " + rel.ToString());
-                    ret = rel;
-                }
-                else if (ret is Constant)
-                {
-                    // do nothing
-                }
-                else if (ret is RecursiveRelation)
-                {
-                    // do nothing
-                }
-                else
-                {
-                    Err("Unhandled constraint " + ret.ToString());
-                }
-                //Log("Resolved var");
-                //Log(c.ToString() + " to " + ret.ToString());
+                ret = ResolveVar(c as Var, visited, nonGenerics);
             }
             else if (c is Vector)
             {
@@ -842,13 +893,15 @@ namespace Cat
             else if (c is Relation)
             {
                 Relation rel = c as Relation;
-                List<Var> newNonGenerics = new List<Var>(nonGenerics);
-                GetBoundVars(rel, newNonGenerics);
+                VarList newNonGenerics = new VarList(nonGenerics);
+                GetNonGenerics(rel, nonGenerics, newNonGenerics);
+                
                 Vector vLeft = Resolve(rel.GetLeft(), visited, newNonGenerics) as Vector;
                 Vector vRight = Resolve(rel.GetRight(), visited, newNonGenerics) as Vector;
                 ret = new Relation(vLeft, vRight);
-                //Log("Resolved relation");
-                //Log(rel.ToString() + " to " + ret.ToString());
+                
+                Log("Resolved relation");
+                Log(rel.ToString() + " to " + ret.ToString());
             }
             else
             {
@@ -882,7 +935,7 @@ namespace Cat
         {
             Constraint ret = GetUnifierFor(s);
             Check(ret != null, "internal error, no unifier found for " + s);
-            return Resolve(ret, new Stack<Constraint>(), new List<Var>());
+            return Resolve(ret, new Stack<Constraint>(), new VarList());
         }
 
         public void LogConstraints()
@@ -908,13 +961,8 @@ namespace Cat
             {
                 Var v = c as Var;
                 if (vars.ContainsKey(v))
-                {
-                    return vars[v];
-                }
-                else
-                {
+                    return vars[v]; else
                     return v;
-                }
             }
             else
             {
@@ -955,24 +1003,18 @@ namespace Cat
                     yield return c as Relation;
         }
 
-        public List<Var> GetVars(Constraint c)
+        public VarList GetVars(Constraint c)
         {
-            List<Var> list = new List<Var>();
+            VarList list = new VarList();
             foreach (Constraint tmp in c.GetSubConstraints())
-            {
                 if (tmp is Var)
-                {
-                    Var v = tmp as Var;
-                    if (!list.Contains(v))
-                        list.Add(v);
-                }
-            }
+                    list.Add(tmp as Var);
             return list;
         }
 
         public void OutputFreeVars()
         {
-            Dictionary<Relation, List<Var>> dict = new Dictionary<Relation,List<Var>>();
+            Dictionary<Relation, VarList> dict = new Dictionary<Relation,VarList>();
             foreach (Relation r in GetRelationUnifiers())
                 dict.Add(r, GetVars(r));
 
