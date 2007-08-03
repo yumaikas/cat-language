@@ -706,16 +706,45 @@ namespace Cat
             }        
         }
 
+        private void GetNonGenericsFromChildRelation(Relation r, VarList allVars, VarList result)
+        {
+            VarList tmpVars = r.GetAllVars();
+
+            foreach (Var v in tmpVars)
+                if (allVars.Contains(v))
+                    result.Add(v);
+                else
+                    allVars.Add(v);
+
+            // This has to be done as a second step,
+            // to avoid prematurely declaring things as non-generics
+            foreach (Var v in tmpVars)
+                allVars.Add(v);
+        }
+
         public void GetNonGenerics(Relation r, VarList nonGenerics, VarList result)
         {
-            VarList all = new VarList();
+            VarList allVars = new VarList();
+            VarList topVars = new VarList();
 
             foreach (Constraint c in r.GetChildConstraints())
             {                
                 if (c is Var)
                 {
                     Var v = c as Var;
-                    result.Add(v);
+
+                    // This is an important check, otherwise variables will be considered 
+                    // non-generic which are indeed generic.
+                    if (!topVars.Contains(v))
+                    {
+                        result.Add(v);
+                        topVars.Add(v);
+
+                        Constraint u = GetUnifierFor(v);
+                                               
+                        if (u is Relation)
+                            GetNonGenericsFromChildRelation(u as Relation, allVars, result);
+                    }
                 }
                 else if (c is Vector)
                 {
@@ -723,39 +752,10 @@ namespace Cat
                 }
                 else if (c is Relation)
                 {
-                    VarList tmp = new VarList();
-                    Relation childRel = c as Relation;
-                    foreach (Var v in childRel.GetAllVars())
-                    {
-                        if (all.Contains(v))
-                            result.Add(v);
-                        tmp.Add(v);
-                    }
-                    foreach (Var v in tmp)
-                        all.Add(v);
+                    GetNonGenericsFromChildRelation(c as Relation, allVars, result);
                 }
             }
         }
-
-        /*
-        public void GetNonGenerics(Relation r, VarList nonGenerics, VarList result)
-        {
-            VarList allVars = new VarList();
-            VarList tmpVars = new VarList();
-            r.GetNonGenerics(allVars, tmpVars);
-            nonGenerics.AddRange(tmpVars);
-            
-            // TODO: This will probably fail, but should work better than previous attempts
-            foreach (Var v in tmpVars)
-            {
-                Constraint u = GetUnifierFor(v);
-
-                if (u is Var)
-                    nonGenerics.Add(u as Var);
-
-                // nonGenerics.AddRange(u.GetAllVars());
-            }
-        }*/
 
         public void GetAllVarsAndUnifiers(Constraint c, VarList vars, Stack<Constraint> visited)
         {
@@ -790,7 +790,6 @@ namespace Cat
         {
             Dictionary<Var, Var> newNames = new Dictionary<Var, Var>();
             VarList generics = rel.GetGenericVars(nonGenerics);
-            //VarList generics = rel.GetGenericVars(newNonGenerics);
 
             if (Config.gbVerboseInference)
             {
@@ -808,6 +807,39 @@ namespace Cat
             return RenameVars(rel, newNames) as Relation;
         }
 
+        public Relation ResolveRelation(Relation r, Stack<Constraint> visited, VarList nonGenerics)
+        {
+            
+            VarList newNonGenerics = new VarList(nonGenerics);
+            
+            // Commented for 0.16.1
+            // GetNonGenerics(r, nonGenerics, newNonGenerics);
+           
+            Vector vLeft = Resolve(r.GetLeft(), visited, newNonGenerics) as Vector;
+            Vector vRight = Resolve(r.GetRight(), visited, newNonGenerics) as Vector;
+            Relation ret = new Relation(vLeft, vRight);
+
+            /*
+             * Commented for 0.16.1
+             * 
+            //??
+            GetNonGenerics(r, nonGenerics, newNonGenerics);
+            
+            ret = RenameGenericVars(ret, newNonGenerics);
+            
+            Log("Resolved relation");
+            Log(r.ToString() + " to " + ret.ToString());
+
+            // TODO: update the nonGenerics list. 
+            // NOTE: don't include "duplicated" vars.
+            // that is easy if I only update after renaming.
+
+            nonGenerics.AddRange(ret.GetAllVars()); 
+            */
+
+            return ret; 
+        }
+
         public Constraint ResolveVar(Var v, Stack<Constraint> visited, VarList nonGenerics)
         {
             Constraint ret = GetUnifierFor(v);
@@ -822,6 +854,8 @@ namespace Cat
             else if (ret is Var)
             {
                 Trace.Assert(GetUnifierFor(ret as Var) == ret);
+                if (nonGenerics.Contains(v))
+                    nonGenerics.Add(ret as Var);
             }
             else if (ret is Vector)
             {
@@ -829,25 +863,7 @@ namespace Cat
             }
             else if (ret is Relation)
             {
-                Relation rel = ret as Relation;
-                rel = Resolve(rel, visited, nonGenerics) as Relation;
-                
-                VarList newNonGenerics = new VarList(nonGenerics);
-
-                // Problem: computing non-generics is more complicated than that. 
-                // I have to make sure that anything that the same variable is not considered
-                // a generic. 
-
-                // I could get all the constraints, resolve each one separately, making sure 
-                // none of them are resolved, incorrectly.
-
-                GetNonGenerics(rel, nonGenerics, newNonGenerics);
-
-                rel = RenameGenericVars(rel, newNonGenerics);
-
-                Log("Renamed relation");
-                Log(ret.ToString() + " to " + rel.ToString());
-                ret = rel;
+                ret = ResolveRelation(ret as Relation, visited, nonGenerics);
             }
             else if (ret is Constant)
             {
@@ -892,16 +908,7 @@ namespace Cat
             }
             else if (c is Relation)
             {
-                Relation rel = c as Relation;
-                VarList newNonGenerics = new VarList(nonGenerics);
-                GetNonGenerics(rel, nonGenerics, newNonGenerics);
-                
-                Vector vLeft = Resolve(rel.GetLeft(), visited, newNonGenerics) as Vector;
-                Vector vRight = Resolve(rel.GetRight(), visited, newNonGenerics) as Vector;
-                ret = new Relation(vLeft, vRight);
-                
-                Log("Resolved relation");
-                Log(rel.ToString() + " to " + ret.ToString());
+                ret = ResolveRelation(c as Relation, visited, nonGenerics);
             }
             else
             {
@@ -1010,14 +1017,6 @@ namespace Cat
                 if (tmp is Var)
                     list.Add(tmp as Var);
             return list;
-        }
-
-        public void OutputFreeVars()
-        {
-            Dictionary<Relation, VarList> dict = new Dictionary<Relation,VarList>();
-            foreach (Relation r in GetRelationUnifiers())
-                dict.Add(r, GetVars(r));
-
         }
     }
 }

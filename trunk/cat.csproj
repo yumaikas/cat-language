@@ -104,19 +104,14 @@
     <Compile Include="CatParser.cs" />
     <Compile Include="CatPrimitives.cs" />
     <Compile Include="CatContext.cs" />
-    <Compile Include="CatRtfWriter.cs" />
     <Compile Include="CatSession.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
     <Compile Include="CatVarScopes.cs" />
-    <Compile Include="CatWriter.cs" />
-    <Compile Include="CodeViewForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CodeViewForm.Designer.cs">
-      <DependentUpon>CodeViewForm.cs</DependentUpon>
+    <Compile Include="CatWriter.cs">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="ConstraintSolver.cs" />
     <Compile Include="EditDefForm.cs">
@@ -139,9 +134,9 @@
     </Compile>
     <Compile Include="CatTypeReconstructor.cs" />
     <Compile Include="CatTypeVarList.cs" />
-    <Compile Include="RtfBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Accessibility" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -159,10 +154,6 @@
     <EmbeddedResource Include="CatGraphWindow.resx">
       <DependentUpon>CatGraphWindow.cs</DependentUpon>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="CodeViewForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>CodeViewForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="EditDefForm.resx">
       <SubType>Designer</SubType>

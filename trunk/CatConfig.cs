@@ -17,7 +17,7 @@ namespace Cat
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = false;
+        public static bool gbReleaseVersion = true;
 
         /// <summary>
         /// Controls whether or not to display the welcome text.
@@ -29,11 +29,6 @@ namespace Cat
         /// after each line entry into the interpreter.
         /// </summary>
         public static bool gbOutputStack = true;
-
-        /// <summary>
-        /// If false causes imports to echo each line to the console
-        /// </summary>
-        public static bool gbQuietImport = false;
 
         /// <summary>
         /// Output the amount of time elapsed after each entry in the interpreter.
@@ -74,7 +69,7 @@ namespace Cat
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// </summary>
-        public static bool gbVerboseInference = true;
+        public static bool gbVerboseInference = false;
 
         /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
@@ -90,6 +85,11 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.17.0 alpha 1";
+        public static string gsVersion = "0.16.1";
+
+        /// <summary>
+        /// Displays a turtle representing the current pen when drawing. 
+        /// </summary>
+        public static bool gbShowTurtle = true;
     }
 }

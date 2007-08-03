@@ -78,7 +78,7 @@ namespace Cat
         }
         public Object Pop()
         {
-            return stack.Pop();
+            return TypedPop<Object>();
         }
         public int PopInt()
         {
@@ -98,7 +98,7 @@ namespace Cat
         }
         public Object Peek()
         {
-            return stack.Peek();
+            return TypedPeek<Object>();
         }
         public T TypedPop<T>()
         {

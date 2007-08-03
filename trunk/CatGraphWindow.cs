@@ -49,10 +49,6 @@ namespace Cat
             {
                 mMutex.ReleaseMutex();
             }
-
-            // Tell the parent thread to invalidate
-            //MethodInvoker p = Invalidate;  
-            //Invoke(p);
         }
 
         public void SaveToFile(string s)
@@ -93,13 +89,21 @@ namespace Cat
         {
             mMutex.WaitOne();
 
-            WindowGDI.Initialize(e.Graphics);
-            foreach (GraphicCommand c in mCmds)
-                WindowGDI.Draw(c);
-            
-            WindowGDI.DrawTurtle();
-
-            mMutex.ReleaseMutex();
+            try
+            {
+                Bitmap b = new Bitmap(Width, Height, CreateGraphics());
+                WindowGDI.Initialize(Graphics.FromImage(b));
+                foreach (GraphicCommand c in mCmds)
+                    WindowGDI.Draw(c);
+                if (Config.gbShowTurtle)
+                    WindowGDI.DrawTurtle();
+                // TODO: replace this call with a bit block transfer API call
+                e.Graphics.DrawImageUnscaled(b, 0, 0);
+            }
+            finally
+            {
+                mMutex.ReleaseMutex();
+            }           
         }
 
         private void GraphWindow_Resize(object sender, EventArgs e)
@@ -122,7 +126,7 @@ namespace Cat
         static Pen turtlePen = new Pen(Color.Blue);
         static Brush turtleBrush = new SolidBrush(Color.DarkSeaGreen);
         static bool mbShowTurtle = true;
-        static Graphics mg;       
+        static Graphics mg;
 
         public static void Initialize(Graphics g)
         {
@@ -149,7 +153,12 @@ namespace Cat
             if (mWindow == null)
                 OpenWindow();
             mWindow.AddCmd(c);
-            mWindow.Invalidate();
+        }
+
+        public static void Invalidate()
+        {
+            if (mWindow != null)
+                mWindow.Invalidate();
         }
 
         public static void Rotate(double x)

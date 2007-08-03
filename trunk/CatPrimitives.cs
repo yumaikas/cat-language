@@ -382,7 +382,8 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                CodeViewForm.Show("");
+                //TODO: for 0.17.0: restore
+                //CodeViewForm.Show("");
             }
         }
     }
