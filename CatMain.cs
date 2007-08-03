@@ -86,6 +86,8 @@ namespace Cat
                             WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
                         if (Config.gbOutputStack)
                             Executor.Main.OutputStack();
+                        // Tell the graphics window to invalidate itself.
+                        WindowGDI.Invalidate();
                         Session.SaveToFile(gsSessionFile);
                     }
                 }

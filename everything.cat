@@ -1,11 +1,13 @@
 // Public domain
-// Christopher Diggins
-// http://www.cdiggins.com
+// Cat standard library
+// http://www.cat-language.com
 
-//"interpreter_flags.cat" #load
-"type_tests.cat" #load
+//"type_tests.cat" #load
+// "combinators.cat" #load
+
+
+"interpreter_flags.cat" #load
 "standard.cat" #load
-"combinators.cat" #load
-//"macros.cat" #load
-//"graphics.cat" #load
-//"demo.cat" #load
+"macros.cat" #load
+"graphics.cat" #load
+"demo.cat" #load

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 
-namespace Cat
+namespace Cat                        
 {
     class CatTypeReconstructor : ConstraintSolver
     {
