@@ -37,7 +37,8 @@ namespace Cat
             }
             else if (k is CatSelfType)
             {
-                return new Constant((k as CatSelfType).ToIdString());
+                CatSelfType self = k as CatSelfType;
+                return new RecursiveRelation();
             }
             else if (k is CatFxnType)
             {
@@ -50,7 +51,7 @@ namespace Cat
             else
             {
                 return new Constant(k.ToIdString());
-            }
+            }   
         }
 
         public CatTypeVector CatTypeVectorFromVec(Vector vec)
@@ -118,12 +119,14 @@ namespace Cat
             Log("with      : " + right.ToString());
 
             Log("Adding constraints");
-            Vector vLeftProd = TypeVectorToConstraintVector(left.GetProd());
-            Vector vRightCons = TypeVectorToConstraintVector(right.GetCons());
-            AddTopLevelConstraints(vLeftProd, vRightCons);
-            Vector vLeftCons = TypeVectorToConstraintVector(left.GetCons());
-            Vector vRightProd = TypeVectorToConstraintVector(right.GetProd());
-            Relation result = new Relation(vLeftCons, vRightProd);
+            
+            Relation rLeft = FxnTypeToRelation(left); 
+            Relation rRight = FxnTypeToRelation(right);
+            rLeft.UnrollRecursiveRelations();
+            rRight.UnrollRecursiveRelations();
+            Relation result = new Relation(rLeft.GetLeft(), rRight.GetRight());
+            
+            AddTopLevelConstraints(rLeft.GetRight(), rRight.GetLeft());
             AddConstraint(CreateVar("result$"), result);            
 
             Log("Constraints");
@@ -140,6 +143,13 @@ namespace Cat
 
             Log("Composed Type");
             Constraint c = GetResolvedUnifierFor("result$");
+
+            if (!(c is Relation))
+                throw new Exception("Resolved type is not a relation");
+
+            Relation r = c as Relation;
+            r.RollupRecursiveRelations();
+
             CatKind k = ConstraintToCatKind(c);
             CatFxnType ft = k as CatFxnType;
             Log("raw type    : " + ft.ToString());

@@ -1,7 +1,5 @@
 //========================================================================================
 // Classical Logic Combinators
-//
-// Unlike other combinators these return quotations
 
 // Starling
 // \abc.ac(bc)
@@ -28,16 +26,13 @@ define KI : ( -> ('a -> ('b -> 'b)))
 // Owl
 // \ab.b(ab)
 // S(I)
-// Bug, 'C needed as a workaround
-//define O : ( -> ((('C 'a -> 'C 'b) -> 'a) -> (('C 'a -> 'C 'b) -> 'b)))
 define O : ( -> ((('a -> 'b) -> 'a) -> (('a -> 'b) -> 'b)))
 { I S A }
 
 // Mockingbird
 // \a.aa
 // S(I)(I)
-// TODO: add type annotation
-define M
+define M : ( -> (self -> 'a))
 { I I S A A }
 
 // Bluebird
@@ -84,7 +79,7 @@ define F : ( -> ('a -> ('b -> (('b -> ('a -> 'c)) -> 'c))))
 // Lark
 // \ab.a(bb)
 // C(B)(M)
-define L : ( -> (('a -> 'b) -> ((self -> 'a) -> 'b)))
+define L : ( -> (('a -> 'b) -> (self -> 'b)))
 { M B C A A }
 
 // Robin
@@ -96,9 +91,7 @@ define R : ( -> ('a -> (('b -> ('a -> 'c)) -> ('b -> 'c))))
 // Turing
 // \ab.b(aab)
 // L(O)
-// bug, 'C is needed as a workaround
-//define U : ( -> ((self -> (('a -> 'b) -> 'a)) -> (('a -> 'b) -> 'b)))
-define U : ( -> ((self -> (('C 'a -> 'C 'b) -> 'a)) -> (('C 'a -> 'C 'b) -> 'b)))
+define U : ( -> (self -> (('a -> 'b) -> 'b)))
 { O L A }
 
 // Vireo
@@ -110,6 +103,5 @@ define V : ( -> ('a -> ('b -> (('a -> ('b -> 'c)) -> 'c))))
 // Warbler
 // \ab.abb
 // C(B(M)(R))
-// Bug, expected: ( -> (('a -> ('a -> 'b)) -> ('a -> 'b)))
-define W : ( -> (self -> (self -> 'c)))
+define W : ( -> ('a -> ('a -> 'b)))
 { R M B A A C A }

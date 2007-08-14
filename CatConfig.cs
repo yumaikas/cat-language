@@ -17,7 +17,7 @@ namespace Cat
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = true;
+        public static bool gbReleaseVersion = false;
 
         /// <summary>
         /// Controls whether or not to display the welcome text.
@@ -85,7 +85,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.16.1";
+        public static string gsVersion = "0.16.2";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 

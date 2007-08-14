@@ -16,35 +16,31 @@ define pop3_2 : ('adam 'bob 'carl -> ) { pop pop2 }
 define swapswap : ('a 'b -> 'a 'b) { swap swap }
 define test_bool : ( -> bool) { true [true] [false] if }
 define test_quote_dip : ('a 'b -> ( -> 'a) 'b) { [quote] dip }
-define app_1 : ('A ('A -> 'B) -> 'B)  { apply }
-define app_2 : ('A ('A -> 'B) -> 'B)  { true swap dup if }
+define app_1 : ('A ('A -> 'B) -> 'B) { apply }
+define app_2 : ('A ('A -> 'B) -> 'B) { true swap dup if }
 define app_3 : ('A ('A -> 'B) -> 'B) { 42 swap dip pop }
 define quote_test : ('a -> 'a) { quote apply }
+define quote_dup_test : ('a -> ( -> 'a) ( -> 'a)) { quote dup }
 define quote_compose_test : ('a -> 'a 'a) { quote dup compose apply }
 define compose_test : ( -> ('a -> 'a 'a 'a)) { [dup] [dup] compose }
 define test_bind : ('a ('B 'a -> 'C) -> ('B -> 'C)) { [quote] dip compose }
+define rcompose : (('A -> 'B) ('C -> 'A) -> ('C -> 'B)) { swap compose }
 
 // recursive tests
 define dolittle : ( -> self) { [dolittle] }
 define test_dolittle : ( -> self) { dolittle }
-
-/*
-// This is an interesting bug.
-//define bind_self : (('A ('A 'b -> 'C) -> 'C) -> ('A -> 'C)) { dup bind }
 define bind_self : (('A self -> 'B) -> ('A -> 'B)) { dup bind }
-
 define test_dolittle2 : ( -> self) { dolittle apply }
-
-//define binary_dolittle { [binary_dolittle] [binary_dolittle] }
-
+define binary_dolittle { [binary_dolittle] [binary_dolittle] }
 define m : ('A self -> 'B) { dup apply }
 define y { [dup bind] swap compose dup apply }
+define y2 { [bind_self] rcompose m }
 define dec { 1 sub_int }
 define eqz { dup 0 eq }
 define fix_step { [eqz] dip swap [pop] [[dec dup writeln] dip apply] if }
 define fix_test { 10 [fix_step] y }
 
 // The following is expected to generate a type error
-//define omega { [dup apply] dup apply }
+define omega { [dup apply] dup apply }
 
 // */
