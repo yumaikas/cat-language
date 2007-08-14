@@ -114,6 +114,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ConstraintSolver.cs" />
+    <Compile Include="ConstraintSolverUtil.cs" />
     <Compile Include="EditDefForm.cs">
       <SubType>Form</SubType>
     </Compile>
