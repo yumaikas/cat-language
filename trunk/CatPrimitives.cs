@@ -134,10 +134,10 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Output.WriteLine("The following are some useful commands:");
+                Output.WriteLine("The following are the meta-commands for the Cat:");
+                Output.WriteLine("  #exit - exits the interpreter");
                 Output.WriteLine("  #clr - clears the stack");
                 Output.WriteLine("  #defs - lists all defined functions");
-                Output.WriteLine("  #exit - exits the interpreter");
                 Output.WriteLine("  \"filename\" #load - loads and executes a Cat file");
                 Output.WriteLine("  \"filename\" #save - saves a transcript of session");
                 Output.WriteLine("  [...] #h - provides documentation on an instruction");
@@ -150,7 +150,7 @@ namespace Cat
                 Output.WriteLine("  #run - runs a compiled assembly");
                 Output.WriteLine("  [...] #test - tests all instruction in a quotation");
                 Output.WriteLine("  #ta - tests all defined instruction");
-                Output.WriteLine("  [...] #e - shows the instruction editor");
+                Output.WriteLine("  #v - shows the session viewer");
             }
         }
 
@@ -388,8 +388,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                //TODO: for 0.17.0: restore
-                //CodeViewForm.Show("");
+                CodeViewForm.Show("");
             }
         }
     }

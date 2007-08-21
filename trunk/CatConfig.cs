@@ -85,7 +85,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.16.2";
+        public static string gsVersion = "0.17.0";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 
