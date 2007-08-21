@@ -1,0 +1,23 @@
+// Brent Kerby's concatenative applicative combinators
+
+define S
+{{
+  semantics
+  {
+    [C] [B] [A] S == [[C] B] [C] A
+  }
+}}
+{
+  [[dup] dip swap [bind] dip] dip apply
+}
+
+define K
+{{
+  semantics
+  {
+    [B] [A] K == A
+  }
+}}
+{
+  swap pop apply
+}
