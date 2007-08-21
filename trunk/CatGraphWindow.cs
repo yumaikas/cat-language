@@ -85,6 +85,19 @@ namespace Cat
             }
         }
 
+        public void SafeShow()
+        {
+            if (InvokeRequired)
+            {
+                Proc p = SafeShow;
+                Invoke(p, null);
+            }
+            else
+            {
+                Show();
+            }
+        }
+
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
         {
             mMutex.WaitOne();
@@ -113,6 +126,7 @@ namespace Cat
 
         private void GraphWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
+            WindowGDI.NullifyWindow();
         }
     }
 
@@ -152,6 +166,7 @@ namespace Cat
         {
             if (mWindow == null)
                 OpenWindow();
+
             mWindow.AddCmd(c);
         }
 
@@ -332,11 +347,15 @@ namespace Cat
             mWait.WaitOne();   
         }
 
+        static public void NullifyWindow()
+        {
+            mWindow = null;
+        }
+
         static public void CloseWindow()
         {
             if (mWindow == null) return;
             mWindow.SafeClose();
-            mWindow = null;
         }
 
         static public void ClearWindow()

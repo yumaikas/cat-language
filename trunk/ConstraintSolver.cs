@@ -13,22 +13,29 @@ namespace Cat
         #region fields
         List<ConstraintList> mConstraintList; // left null, because it is created upon request
         Dictionary<string, ConstraintList> mLookup = new Dictionary<string, ConstraintList>();
-        List<Pair<Vector>> mConstraintQueue = new List<Pair<Vector>>();
+         List<Pair<Vector>> mConstraintQueue = new List<Pair<Vector>>();
         List<Relation> mGenericRenamingQueue = new List<Relation>();
         Dictionary<string, Var> mVarPool = new Dictionary<string, Var>();
         int mnId = 0;
+        List<Pair<Constant>> mDeductions = new List<Pair<Constant>>();
         Dictionary<Relation, List<Relation>> mConstrainedRelations
             = new Dictionary<Relation, List<Relation>>();
         #endregion
 
-        #region utility functions
-        public void AddDeduction(Constant c, Constraint x)
+        #region deduction functions
+        public void AddDeduction(Constant c, Constant d)
         {
-            // TODO: manage some kind of deduction list
-            // This will be used to do real type-checking 
-            Log(c.ToString() + " = " + x.ToString());
+            Log("deduction " + c.ToString() + " = " + d.ToString());
+            mDeductions.Add(new Pair<Constant>(c, d));
         }
 
+        public List<Pair<Constant>> GetDeductions()
+        {
+            return mDeductions;
+        }
+        #endregion 
+
+        #region utility functions
         public static T Last<T>(List<T> a)
         {
             return a[a.Count - 1];
@@ -160,16 +167,21 @@ namespace Cat
             if (v1.IsEmpty() && v2.IsEmpty())
                 return;
 
-            if (v1.IsEmpty() || v2.IsEmpty())
-                Err("Incompatible length vectors");
+            if (v1.IsEmpty())
+                if (!(v2.GetFirst() is VectorVar))
+                    Err("Only vector variables can be equal to empty vectors");
 
+            if (v2.IsEmpty())
+                if (!(v1.GetFirst() is VectorVar))
+                    Err("Only vector variables can be equal to empty vectors");
+            
             Log("Constraining vector: " + v1.ToString() + " = " + v2.ToString());
 
             if (v1.GetFirst() is VectorVar)
             {
                 Check(v1.GetCount() == 1, 
                     "Vector variables can only occur in the last position of a vector");
-                if (v2.GetFirst() is VectorVar)
+                if ((v2.GetCount() > 0) && v2.GetFirst() is VectorVar)
                 {
                     Check(v2.GetCount() == 1, 
                         "Vector variables can only occur in the last position of a vector");
@@ -182,7 +194,6 @@ namespace Cat
             }
             else if (v2.GetFirst() is VectorVar)
             {
-                Trace.Assert(!(v1.GetFirst() is VectorVar));
                 AddVarConstraint(v2.GetFirst() as VectorVar, v1);
             }
             else 
@@ -288,10 +299,8 @@ namespace Cat
             else if ((c1 is Relation) && (c2 is Relation))
                 AddRelConstraint(c1 as Relation, c2 as Relation);
 
-            if (c1 is Constant)
-                AddDeduction(c1 as Constant, c2);
-            if (c2 is Constant)
-                AddDeduction(c2 as Constant, c1);
+            if (c1 is Constant && c2 is Constant)
+                AddDeduction(c2 as Constant, c2 as Constant);
         }
 
         /// <summary>
@@ -591,7 +600,7 @@ namespace Cat
             return ret;
         }
 
-        public RecursiveRelation GetRecursiveVar(Constraint c, Stack<Constraint> visited)
+        public Constraint GetRecursiveVar(Constraint c, Stack<Constraint> visited)
         {
             if (!(c is Var)) 
                 return null;
@@ -607,7 +616,11 @@ namespace Cat
                     if (v2.ToString().Equals(v.ToString()))
                     {
                         if (prevRelation == null)
-                            throw new Exception("error: recursive variable that is not a relation");
+                        {
+                            // Recursive variable
+                            Trace.Assert(c is VectorVar);
+                            return c;
+                        }
                         return new RecursiveRelation();
                     }
                 }
@@ -624,9 +637,9 @@ namespace Cat
         /// </summary>
         public Constraint Resolve(Constraint c, Stack<Constraint> visited, Relation parent)
         {
-            RecursiveRelation rr = GetRecursiveVar(c, visited);
-            if (rr != null)
-                return rr;
+            Constraint rec = GetRecursiveVar(c, visited);
+            if (rec != null)
+                return rec;
 
             visited.Push(c);
             Constraint ret;

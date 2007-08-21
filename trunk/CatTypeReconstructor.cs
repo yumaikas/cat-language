@@ -158,6 +158,10 @@ namespace Cat
 
             CheckConstraintQueueEmpty();
 
+            // Check if the relation was valid, and thus the function type
+            if (!ft.IsValid())
+                throw new Exception("invalid function type: " + ft.ToString());
+
             return ft;
         }
 

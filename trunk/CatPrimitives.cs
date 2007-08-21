@@ -324,11 +324,17 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
+                int nPassed = 0;
+                int nFailed = 0;
                 foreach (Function f in exec.GetGlobalContext().GetAllFunctions())
-                    f.RunTests();
+                    f.RunTests(ref nPassed, ref nFailed);
+
+                Output.WriteLine("Test summary:");
+                Output.WriteLine("passed : " + nPassed);
+                Output.WriteLine("failed : " + nFailed);
             }
         }
-
+        
         public class Edit : PrimitiveFunction
         {
             public Edit()
@@ -871,6 +877,19 @@ namespace Cat
         #endregion
 
         #region type functions
+        public class TypeName : PrimitiveFunction
+        {
+            public TypeName()
+                : base("type_name", "(any -> string)", "returns the name of the type of an object")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Pop();
+                exec.Push(CatKind.TypeNameFromObject(o));
+            }
+        }
+        /*
         public class TypeId : PrimitiveFunction
         {
             public TypeId()
@@ -896,6 +915,7 @@ namespace Cat
                 }
             }
         }
+         */
         public class TypeType : PrimitiveFunction
         {
             public TypeType()

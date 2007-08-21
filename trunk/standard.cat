@@ -1080,8 +1080,6 @@ define map_reduce
 //========================================================================================
 // Quick sort algorithm
 
-/*
-TODO: fix type bug
 define qsort : (list -> list)
 {{
   desc:
@@ -1103,4 +1101,3 @@ define qsort : (list -> list)
   [[swap cons] dip cat]
   bin_rec
 }
-*/
