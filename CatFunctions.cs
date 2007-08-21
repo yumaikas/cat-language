@@ -102,6 +102,13 @@ namespace Cat
 
         public void RunTests()
         {
+            int nPassed = 0;
+            int nFailed = 0;
+            RunTests(ref nPassed, ref nFailed);
+        }
+
+        public void RunTests(ref int nPassed, ref int nFailed)
+        {
             Executor exec = new Executor();
 
             if (mpMetaData == null)
@@ -117,10 +124,10 @@ namespace Cat
                 }
 
                 if (test.Find("in") == null)
-                    throw new Exception("invalid test");
+                    throw new Exception("badly formatted test");
                 string sIn = test.Find("in").GetContent();
                 if (test.Find("out") == null)
-                    throw new Exception("invalid test");
+                    throw new Exception("badly formatted test");
                 string sOut = test.Find("out").GetContent();
 
                 if (Config.gbVerboseTests)
@@ -139,12 +146,13 @@ namespace Cat
                 if (exec.PopBool())
                 {
                     Output.WriteLine("testing " + msName + " SUCCEEDED");
+                    nPassed++;
                 }
                 else
                 {
                     Output.WriteLine("testing " + msName + " FAILED");
+                    nFailed++;
                 }
-
 
                 exec.Execute("#clr");
             }
@@ -336,12 +344,14 @@ namespace Cat
     public class PushValue<T> : Function
     {
         CatMetaValue<T> mValue;
+        string msValueType;
         
         public PushValue(T x)
         {
             mValue = new CatMetaValue<T>(x);
-            msName = mValue.GetData().ToString(); 
-            mpFxnType = CatFxnType.Create("( -> " + mValue.ToString() + ")");
+            msName = mValue.GetData().ToString();
+            msValueType = CatKind.TypeNameFromObject(x);
+            mpFxnType = CatFxnType.Create("( -> " + msValueType + ")");
         }
         public T GetValue()
         {
@@ -398,7 +408,7 @@ namespace Cat
                     if (childType == null)
                         throw new Exception("unknown type error");
 
-                    mpFxnType = new CatQuotedFxnType(childType);
+                    mpFxnType = new CatQuotedType(childType);
                     mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
                 }
                 catch (Exception e)
@@ -450,7 +460,7 @@ namespace Cat
                 if (i > 0) msName += " ";
                 msName += mChildren[i].GetName();
             }
-            mpFxnType = pFxnType;
+            mpFxnType = new CatQuotedType(pFxnType);
         }
 
         public QuotedFunction(List<Function> children)
@@ -462,7 +472,25 @@ namespace Cat
         {
             mChildren = new List<Function>();
             mChildren.Add(f);
-            mpFxnType = f.GetFxnType();
+            mpFxnType = new CatQuotedType(f.GetFxnType());
+        }
+
+        public CatFxnType GetUnquotedFxnType()
+        {
+            CatKind k = GetUnquotedKind();
+            if (!(k is CatFxnType))
+                throw new Exception("illegal type for a quoted function, should produce a single function : " + mpFxnType.ToString());
+            return k as CatFxnType;
+        }
+
+        public CatKind GetUnquotedKind()
+        {
+            if (mpFxnType.GetCons().GetKinds().Count != 0)
+                throw new Exception("illegal type for a quoted function, should have no consumption : " + mpFxnType.ToString());
+            if (mpFxnType.GetProd().GetKinds().Count != 1)
+                throw new Exception("illegal type for a quoted function, should have a single production : " + mpFxnType.ToString());
+            CatKind k = mpFxnType.GetProd().GetKinds()[0];
+            return k;
         }
 
         public QuotedFunction(QuotedFunction first, QuotedFunction second)
@@ -480,7 +508,9 @@ namespace Cat
 
             try
             {
-                mpFxnType = CatTypeReconstructor.ComposeTypes(first.GetFxnType(), second.GetFxnType());
+                mpFxnType = new CatQuotedType(
+                    CatTypeReconstructor.ComposeTypes(first.GetUnquotedFxnType(), 
+                        second.GetUnquotedFxnType()));
             }
             catch (Exception e)
             {
@@ -716,7 +746,14 @@ namespace Cat
         {
             mpFxn = f;
 
-            mpFxnType = new CatSelfType();
+            // TODO: 
+            // This is a problem:
+            // What I need is to have a nesting level, or rewrite everything. 
+            // I could rewrite: f { [a [f] b] } as 
+            // f { [a] self quote compose [b] compose } 
+            //mpFxnType = new CatSelfType();
+            //mpFxnType = CatFxnType.Create("(this_consumption -> this_production)");
+            mpFxnType = CatFxnType.Create("(consumption -> production)");
         }
 
         public override void Eval(Executor exec)

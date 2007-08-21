@@ -17,7 +17,7 @@ namespace Cat
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = false;
+        public static bool gbReleaseVersion = true;
 
         /// <summary>
         /// Controls whether or not to display the welcome text.

@@ -10,7 +10,7 @@ define fractal0
   pu dup fd pd           // move forward
   dup 5 <                // how small are we drawing?
     [pop]                // base-case
-    [3 4 frac [fractal0] apply]  // recursive call (draw fractal again, but smaller)
+    [3 4 frac fractal0]  // recursive call (draw fractal again, but smaller)
   if
 }
 
@@ -22,7 +22,7 @@ define fractal1
     [
       dup fd
       dup 4 5 frac
-      45 tl [fractal1] apply
+      45 tl fractal1
       45 tr
       bk
     ]
@@ -49,4 +49,3 @@ define demo
 {
   demo2
 }
-

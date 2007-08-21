@@ -42,16 +42,6 @@ namespace Cat
             return ret;
         }
 
-        // Used so we don't have to create apply types over and over again
-        // There used to be a cache of allocated function type objects but I abandoned it 
-        // because of the ambiguity of "self" types.
-        static CatFxnType gApplyType = CatFxnType.Create("('A ('A -> 'B) -> 'B)");
-        
-        public static CatFxnType GetApplyType()
-        {
-            return gApplyType;
-        }
-
         public static CatFxnType ComposeFxnTypes(CatFxnType f, CatFxnType g)
         {
             CatFxnType ft = CatTypeReconstructor.ComposeTypes(f, g);
@@ -511,31 +501,81 @@ namespace Cat
         #endregion
 
         #region verifications
-        public bool DoChildFxnsPointToParent()
+        public bool IsValidChildFxn(List<string> varNames, CatFxnType ft)
         {
-            foreach (CatKind k in GetChildKinds())
+            foreach (CatKind k in ft.GetCons().GetKinds())
             {
-                if (k is CatFxnType)
-                {
-                    CatFxnType ft = k as CatFxnType;
-                    if (!ft.DoChildFxnsPointToParent())
-                        return false;
-                    if (ft.GetParent() == this)
-                        return false;
-                }
+                if (k.IsKindVar())
+                    varNames.Add(k.ToString());
+                if (k is CatSelfType)
+                    return true;
             }
+            return IsValidProduction(varNames, ft.GetProd());                    
+        }
+
+        public void GetConsVarNames(List<string> varNames, CatFxnType ft)
+        {
+            foreach (CatKind k in ft.GetCons().GetKinds())
+            {
+                if (k.IsKindVar())
+                    varNames.Add(k.ToString());
+                if (k is CatFxnType)
+                    GetConsVarNames(varNames, k as CatFxnType); 
+            }
+        }
+
+        public bool IsValidProduction(List<string> varNames, CatTypeVector prod)
+        {
+            foreach (CatKind k in prod.GetKinds())
+                if (k is CatSelfType)
+                    return true;
+
+            foreach (CatKind k in prod.GetKinds())
+                if (k is CatFxnType)
+                    GetConsVarNames(varNames, k as CatFxnType);
+
+            foreach (CatKind k in prod.GetKinds())
+                if (k.IsKindVar())
+                    if (!varNames.Contains(k.ToString()))
+                        return false;
+
             return true;
         }
 
         public bool IsValid()
         {
             // TODO: check that if pure, none of the child functions are impure. 
+            if (this is CatSelfType)
+                return true;
             if (!GetCons().IsValid()) 
                 return false;
             if (!GetProd().IsValid()) 
                 return false;
-            if (!DoChildFxnsPointToParent()) 
+
+            foreach (CatKind k in GetCons().GetKinds())
+            {
+                // All variables in the production are implicitly declared 
+                // because there is a self type at the top-level of cons.
+                // In other words: ('A self -> 'B) is valid, while ('A -> 'B) 
+                // is not
+                if (k is CatSelfType)
+                    return true;
+            }
+
+            List<string> varNames = new List<string>();
+            foreach (CatKind k in GetCons().GetDescendantKinds())
+            {
+                if (k.IsKindVar())
+                {
+                    string s = k.ToString();
+                    if (!varNames.Contains(s))
+                        varNames.Add(s);
+                }
+            }
+
+            if (!IsValidProduction(varNames, GetProd()))
                 return false;
+          
             return true;
         }
         #endregion  
@@ -672,11 +712,11 @@ namespace Cat
         }
     }
 
-    public class CatQuotedFxnType : CatFxnType
+    public class CatQuotedType : CatFxnType
     {
-        public CatQuotedFxnType(CatFxnType f)
+        public CatQuotedType(CatKind k)
         {
-            GetProd().Add(f);
+            GetProd().Add(k);
         }
     }
 }

@@ -852,7 +852,7 @@ namespace Cat
         {
             if (n >= mFirstCount)
             {
-                return Concat(mFirst, mSecond.TakeN(mFirstCount));
+                return Concat(mFirst, mSecond.TakeN(n - mFirstCount));
             }
             else
             {
