@@ -78,7 +78,7 @@ namespace Cat
             this.EditDefMenuItem,
             this.NewDefMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(178, 136);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(215, 158);
             this.contextMenuStrip1.Closed += new System.Windows.Forms.ToolStripDropDownClosedEventHandler(this.contextMenuStrip1_Closed);
             // 
             // ShowCommentsMenuItem
@@ -122,15 +122,15 @@ namespace Cat
             // EditDefMenuItem
             // 
             this.EditDefMenuItem.Name = "EditDefMenuItem";
-            this.EditDefMenuItem.Size = new System.Drawing.Size(177, 22);
-            this.EditDefMenuItem.Text = "Edit Definition";
+            this.EditDefMenuItem.Size = new System.Drawing.Size(214, 22);
+            this.EditDefMenuItem.Text = "Edit Definition (Experimental)";
             this.EditDefMenuItem.Click += new System.EventHandler(this.EditDefMenuItem_Click);
             // 
             // NewDefMenuItem
             // 
             this.NewDefMenuItem.Name = "NewDefMenuItem";
-            this.NewDefMenuItem.Size = new System.Drawing.Size(177, 22);
-            this.NewDefMenuItem.Text = "New Defintion";
+            this.NewDefMenuItem.Size = new System.Drawing.Size(214, 22);
+            this.NewDefMenuItem.Text = "New Defintion (Experimental)";
             // 
             // CodeViewForm
             // 
