@@ -134,7 +134,6 @@
     <Compile Include="PegBaseGrammar.cs" />
     <Compile Include="PegParser.cs" />
     <Compile Include="CatBase.cs" />
-    <Compile Include="CatStack.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

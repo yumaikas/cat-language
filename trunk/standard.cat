@@ -1053,7 +1053,7 @@ define throw_if : (bool any -> )
 define assert : (bool -> )
 { "assertion failed" throw_if }
 
-define try : ('A ('A -> 'A) -> 'A)
+define try : (( -> 'A) -> 'A)
 {{
   desc
     provides a simple default exception handler

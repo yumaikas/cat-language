@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using System.Text;
 
 namespace Cat
@@ -175,7 +176,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 QuotedFunction qf = exec.PopFunction();
-                exec.Push(Optimizer.Expand(qf, 5));
+                exec.Push(Optimizer.ExpandInline(qf, 5));
             }
         }
 
@@ -188,7 +189,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 QuotedFunction qf = exec.PopFunction();
-                exec.Push(Optimizer.Expand(qf, 1));
+                exec.Push(Optimizer.ExpandInline(qf, 1));
             }
         }
 
@@ -298,7 +299,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.GetStack().Clear();
+                exec.Clear();
             }
         }
 
@@ -445,7 +446,7 @@ namespace Cat
                     }
                     n /= 2;
                 }
-                exec.Push(n.ToString(s));
+                exec.PushString(n.ToString(s));
             }
         }
 
@@ -458,7 +459,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 int n = exec.PopInt();
-                exec.Push(n.ToString("x"));
+                exec.PushString(n.ToString("x"));
             }
         }
 
@@ -515,7 +516,7 @@ namespace Cat
             {
                 Object x = exec.Pop();
                 Object y = exec.Pop();
-                exec.Push(x.Equals(y));
+                exec.PushBool(x.Equals(y));
             }
         }
 
@@ -527,14 +528,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                if (exec.Peek() is FMutableList)
-                {
-                    exec.Push((exec.Peek() as FMutableList).Clone());
-                }
-                else
-                {
-                    exec.Push(exec.Peek());
-                }
+                exec.Dup();
             }
         }
 
@@ -558,10 +552,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Object o1 = exec.Pop();
-                Object o2 = exec.Pop();
-                exec.Push(o1);
-                exec.Push(o2);
+                exec.Swap();
             }           
         }
         #endregion
@@ -632,7 +623,7 @@ namespace Cat
                 QuotedFunction right = exec.TypedPop<QuotedFunction>();
                 QuotedFunction left = exec.TypedPop<QuotedFunction>();
                 QuotedFunction f = new QuotedFunction(left, right);
-                exec.Push(f);
+                exec.PushFxn(f);
             }
         }
 
@@ -647,7 +638,7 @@ namespace Cat
             {
                 Object o = exec.Pop();
                 QuotedValue q = new QuotedValue(o);
-                exec.Push(q);
+                exec.PushFxn(q);
             }
         }
 
@@ -738,31 +729,125 @@ namespace Cat
             // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
             // I may ignore it later on.
             public BinRec()
-                : base("bin_rec", "('a ('a -> 'a bool) ('a -> 'b) ('a -> 'C 'a 'a) ('C 'b 'b -> 'b) -> 'b)",
+                : base("bin_rec", "('a ('a -> bool) ('a -> 'b) ('a -> 'C 'a 'a) ('C 'b 'b -> 'b) -> 'b)",
                     "execute a binary recursion process")
             { }
 
-            public void Helper(Executor exec, Function fResultRelation, Function fArgRelation, Function fBaseCase, Function fCondition)
+            public class BinRecHelper
             {
-                fCondition.Eval(exec);
-                if (exec.PopBool())
+                Executor mExec;
+                Function mResultRelation;
+                Function mArgRelation;
+                Function mBaseCase;
+                Function mCondition;
+
+                public BinRecHelper(Executor exec, Function fResultRelation, Function fArgRelation, Function fBaseCase, Function fCondition)
                 {
-                    fBaseCase.Eval(exec);
+                    mExec = exec;
+                    mResultRelation = fResultRelation;
+                    mArgRelation = fArgRelation;
+                    mBaseCase = fBaseCase;
+                    mCondition = fCondition;
                 }
-                else
+
+                public void LocalExec()
                 {
-                    fArgRelation.Eval(exec);
-                    Helper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
-                    Object o = exec.Pop();
-                    Helper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
-                    exec.Push(o);
-                    fResultRelation.Eval(exec);
+                    mExec.Dup();
+                    mCondition.Eval(mExec);
+                    if (mExec.PopBool())
+                    {
+                        mBaseCase.Eval(mExec);
+                    }
+                    else
+                    {
+                        mArgRelation.Eval(mExec);                        
+                        Object o = mExec.Pop();
+                        LocalExec();
+                        mExec.Push(o);
+                        LocalExec();
+                        mResultRelation.Eval(mExec);
+                    }                    
+                }
+
+                static public void LaunchThread(Object o)
+                {
+                    BinRecHelper h = o as BinRecHelper;
+                    try
+                    {
+                        h.LocalExec();
+                    }
+                    finally
+                    {
+                        mWait.Set();
+                    }
+                }
+
+                static EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
+
+                public void Exec()
+                {
+                    if (!Config.gbMultiThreadBinRec)
+                    {
+                        LocalExec();
+                        return;
+                    }
+
+                    mExec.Dup();
+                    mCondition.Eval(mExec);
+
+                    if (mExec.PopBool())
+                    {
+                        mBaseCase.Eval(mExec);
+                    }
+                    else
+                    {
+                        mArgRelation.Eval(mExec);
+
+                        Executor e2;
+                        if (mExec is IntExecutor)
+                            e2 = new IntExecutor();
+                        else
+                            e2 = new DefaultExecutor();
+                        e2.Push(mExec.Pop());
+                        BinRecHelper h2 = new BinRecHelper(e2, mResultRelation, mArgRelation, mBaseCase, mCondition);
+                        Thread t = new Thread(new ParameterizedThreadStart(LaunchThread));
+                        t.Start(h2);
+
+                        LocalExec();
+                        mWait.WaitOne();
+                        mExec.Push(e2.Pop());
+                        mResultRelation.Eval(mExec);
+                    }
                 }
             }
 
             public override void Eval(Executor exec)
             {
-                Helper(exec, exec.PopFunction(), exec.PopFunction(), exec.PopFunction(), exec.PopFunction());
+                Function fResultRelation = exec.PopFunction();
+                Function fArgRelation = exec.PopFunction();
+                Function fBaseCase = exec.PopFunction();
+                Function fCondition = exec.PopFunction();
+
+                CatFxnType ftResultRelationType = CatFxnType.Unquote(fResultRelation.GetFxnType());
+                CatFxnType ftArgRelationType = CatFxnType.Unquote(fArgRelation.GetFxnType());
+                CatFxnType ftIntResultRelationType = CatFxnType.Create("(int int -> int)");
+                CatFxnType ftIntArgRelationType = CatFxnType.Create("(int -> int int)");
+
+                if (CatFxnType.CompareFxnTypes(ftResultRelationType, ftIntResultRelationType)
+                    && CatFxnType.CompareFxnTypes(ftArgRelationType, ftIntArgRelationType))
+                {
+                    IntExecutor ie = new IntExecutor();                    
+                    ie.PushInt(exec.PopInt());
+                    BinRecHelper h = new BinRecHelper(ie, fResultRelation, fArgRelation, fBaseCase, fCondition);
+                    h.Exec();
+                    exec.Push(ie.Pop());
+                }
+                else
+                {
+                    BinRecHelper h = new BinRecHelper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
+                    h.Exec();
+                }
+
             }
         }
 
@@ -782,24 +867,21 @@ namespace Cat
         public class TryCatch : PrimitiveFunction
         {
             public TryCatch()
-                : base("try_catch", "('A ('A -> 'B) ('A any -> 'B) -> 'B)", "evaluates a function, and catches any exceptions")
+                : base("try_catch", "(( -> 'A) (exception -> 'A) -> 'A)", "evaluates a function, and catches any exceptions")
             { }
 
             public override void Eval(Executor exec)
             {
                 Function c = exec.TypedPop<Function>();
                 Function t = exec.TypedPop<Function>();
-                object[] stkCopy = new object[exec.GetStack().Count];
-                exec.GetStack().CopyTo(stkCopy);
+                int n = exec.GetStackSize();
                 try
                 {
                     t.Eval(exec);
                 }
                 catch (CatException e)
                 {
-                    exec.GetStack().RemoveRange(stkCopy.Length, stkCopy.Length);
-                    exec.GetStack().SetRange(0, stkCopy);
-
+                    exec.ClearTo(n);
                     Output.WriteLine("exception caught");
 
                     exec.Push(e.GetObject());
@@ -818,7 +900,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(true);
+                exec.PushBool(true);
             }
         }
 
@@ -830,7 +912,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(false);
+                exec.PushBool(false);
             }
         }
 
@@ -844,7 +926,7 @@ namespace Cat
             {
                 bool x = (bool)exec.Pop();
                 bool y = (bool)exec.Pop();
-                exec.Push(x && y);
+                exec.PushBool(x && y);
             }
         }
 
@@ -858,7 +940,7 @@ namespace Cat
             {
                 bool x = (bool)exec.Pop();
                 bool y = (bool)exec.Pop();
-                exec.Push(x || y);
+                exec.PushBool(x || y);
             }
         }
 
@@ -870,7 +952,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(!(bool)exec.Pop());
+                exec.PushBool(!(bool)exec.Pop());
             }
         }
         #endregion
@@ -885,7 +967,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Object o = exec.Pop();
-                exec.Push(CatKind.TypeNameFromObject(o));
+                exec.PushString(CatKind.TypeNameFromObject(o));
             }
         }
         /*
@@ -1002,8 +1084,31 @@ namespace Cat
             {
                 Type t = exec.TypedPop<Type>();
                 Type u = exec.TypedPop<Type>();
-                exec.Push(t.Equals(u) || u.Equals(t));
+                exec.PushBool(t.Equals(u) || u.Equals(t));
             }
+        }
+        #endregion 
+
+        #region date-time functions
+        public class Now : PrimitiveFunction
+        {
+            public Now() : base("now", "( ~> date_time)", "") { }
+            public override void Eval(Executor exec) { exec.Push(DateTime.Now); }
+        }
+        public class SubTime : PrimitiveFunction
+        {
+            public SubTime() : base("sub_time", "(date_time date_time -> time_span)", "") { }
+            public override void Eval(Executor exec) { DateTime x = exec.TypedPop<DateTime>(); DateTime y = exec.TypedPop<DateTime>(); exec.Push(y - x); }
+        }
+        public class AddTime : PrimitiveFunction
+        {
+            public AddTime() : base("add_time", "(date_time time_span -> date_time)", "") { }
+            public override void Eval(Executor exec) { TimeSpan x = exec.TypedPop<TimeSpan>(); DateTime y = exec.TypedPop<DateTime>(); exec.Push(y + x); }
+        }
+        public class ToMsec : PrimitiveFunction
+        {
+            public ToMsec() : base("to_msec", "(time_span -> int)", "") { }
+            public override void Eval(Executor exec) { exec.Push(exec.TypedPop<TimeSpan>().TotalMilliseconds); }
         }
         #endregion 
 
@@ -1011,67 +1116,67 @@ namespace Cat
         public class AddInt : PrimitiveFunction
         {
             public AddInt() : base("add_int", "(int int -> int)", "") { }            
-            public override void Eval(Executor exec) { exec.Push(exec.PopInt() + exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.PushInt(exec.PopInt() + exec.PopInt()); }
         }
         public class MulInt : PrimitiveFunction
         {
             public MulInt() : base("mul_int", "(int int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Push(exec.PopInt() * exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.PushInt(exec.PopInt() * exec.PopInt()); }
         }
         public class DivInt : PrimitiveFunction
         {
             public DivInt() : base("div_int", "(int int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() / exec.PopInt()); }
+            public override void Eval(Executor exec) { int x = exec.PopInt(); int y = exec.PopInt(); exec.PushInt(y / x); }
         }
         public class SubInt : PrimitiveFunction
         {
             public SubInt() : base("sub_int", "(int int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Swap();  exec.Push(exec.PopInt() - exec.PopInt()); }
+            public override void Eval(Executor exec) { int x = exec.PopInt(); int y = exec.PopInt(); exec.PushInt(y - x);  }
         }
         public class ModInt : PrimitiveFunction
         {
             public ModInt() : base("mod_int", "(int int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Swap();  exec.Push(exec.PopInt() % exec.PopInt()); }
+            public override void Eval(Executor exec) { int x = exec.PopInt(); int y = exec.PopInt(); exec.PushInt(y % x); }
         }
         public class NegInt : PrimitiveFunction
         {
             public NegInt() : base("neg_int", "(int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Push(-exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.PushInt(-exec.PopInt()); }
         }
         public class ComplInt : PrimitiveFunction
         {
             public ComplInt() : base("compl_int", "(int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Push(~exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.PushInt(~exec.PopInt()); }
         }
         public class ShlInt : PrimitiveFunction
         {
             public ShlInt() : base("shl_int", "(int int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() << exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.PushInt(exec.PopInt() << exec.PopInt()); }
         }
         public class ShrInt : PrimitiveFunction
         {
             public ShrInt() : base("shr_int", "(int int -> int)", "") { }
-            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() >> exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.PushInt(exec.PopInt() >> exec.PopInt()); }
         }
         public class GtInt : PrimitiveFunction
         {
             public GtInt() : base("gt_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() > exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.PushBool(exec.PopInt() > exec.PopInt()); }
         }
         public class LtInt : PrimitiveFunction
         {
             public LtInt() : base("lt_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() < exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.PushBool(exec.PopInt() < exec.PopInt()); }
         }
         public class GtEqInt : PrimitiveFunction
         {
             public GtEqInt() : base("gteq_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Swap(); exec.Push(exec.PopInt() >= exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap(); exec.PushBool(exec.PopInt() >= exec.PopInt()); }
         }
         public class LtEqInt : PrimitiveFunction
         {
             public LtEqInt() : base("lteq_int", "(int int -> bool)", "") { }
-            public override void Eval(Executor exec) { exec.Swap();  exec.Push(exec.PopInt() <= exec.PopInt()); }
+            public override void Eval(Executor exec) { exec.Swap();  exec.PushBool(exec.PopInt() <= exec.PopInt()); }
         }
         #endregion
 
@@ -1227,7 +1332,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(Console.ReadLine());
+                exec.PushString(Console.ReadLine());
             }
         }
 
@@ -1427,7 +1532,7 @@ namespace Cat
             {
                 Object key = exec.Pop();
                 HashList hash = exec.TypedPeek<HashList>();
-                exec.Push(hash.ContainsKey(key));
+                exec.PushBool(hash.ContainsKey(key));
             }
         }
 
@@ -1455,12 +1560,10 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.TypedPop<Function>();
-                CatStack stk = exec.GetStack();
-                exec.SetStack(new CatStack());
-                f.Eval(exec);
-                FList list = exec.GetStack().ToList();
-                exec.SetStack(stk);
-                exec.Push(list);
+                Executor e2 = new DefaultExecutor();
+                f.Eval(e2);
+                FList list = e2.GetStackAsList();
+               exec.Push(list);
             }
         }
 
@@ -1473,7 +1576,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 FList list = exec.TypedPeek<FList>();
-                exec.Push(list.IsEmpty());
+                exec.PushBool(list.IsEmpty());
             }
         }
 
@@ -1486,7 +1589,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 FList list = exec.TypedPeek<FList>();
-                exec.Push(list.Count());
+                exec.PushInt(list.Count());
             }
         }
 
@@ -1892,7 +1995,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(mGen.Next(exec.PopInt()));
+                exec.PushInt(mGen.Next(exec.PopInt()));
             }
         }
 
@@ -1944,7 +2047,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(exec.TypedPop<bool>());
+                exec.PushBool(exec.PopBool());
             }
         }
 
@@ -1956,7 +2059,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(exec.TypedPop<int>());
+                exec.PushInt(exec.PopInt());
             }
         }
 
@@ -1980,7 +2083,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(exec.TypedPop<string>());
+                exec.PushString(exec.PopString());
             }
         }
 
@@ -2094,7 +2197,6 @@ namespace Cat
         #endregion
 
         #region .NET (CLR) reflection API
-
         public class Invoke : PrimitiveFunction
         {
             public Invoke()

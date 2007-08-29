@@ -17,7 +17,7 @@ namespace Cat
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = true;
+        public static bool gbReleaseVersion = false;
 
         /// <summary>
         /// Controls whether or not to display the welcome text.
@@ -33,12 +33,7 @@ namespace Cat
         /// <summary>
         /// Output the amount of time elapsed after each entry in the interpreter.
         /// </summary>
-        public static bool gbOutputTimeElapsed = false;
-
-        /// <summary>
-        /// The number of worker threads that the interpreter can spawn at one time. 
-        /// </summary>
-        public static int gnMaxWorkerThreads = 1;
+        public static bool gbOutputTimeElapsed = true;
 
         /// <summary>
         /// The number of completion port threads (?) that the interpreter can spawn at one time. 
@@ -85,11 +80,16 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.17.0";
+        public static string gsVersion = "0.17.1";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 
         /// </summary>
         public static bool gbShowTurtle = true;
+
+        /// <summary>
+        /// Cause bin_rec to use a second thread.
+        /// </summary>
+        public static bool gbMultiThreadBinRec = false;
     }
 }

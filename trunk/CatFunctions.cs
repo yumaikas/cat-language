@@ -67,7 +67,7 @@ namespace Cat
         public Executor GetExecutor()
         {
             if (mExec == null)
-                mExec = new Executor();
+                mExec = new DefaultExecutor();
             return mExec;
         }
         public void SetMetaData(CatMetaDataBlock meta)
@@ -109,7 +109,7 @@ namespace Cat
 
         public void RunTests(ref int nPassed, ref int nFailed)
         {
-            Executor exec = new Executor();
+            Executor exec = new DefaultExecutor();
 
             if (mpMetaData == null)
                 return;
@@ -375,6 +375,34 @@ namespace Cat
         #endregion
     }
 
+    public class PushInt : PushValue<int>
+    {
+        public PushInt(int x)
+            : base(x)
+        { }
+
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.PushInt(GetValue());
+        }
+        #endregion
+    }
+
+    public class PushBool : PushValue<bool>
+    {
+        public PushBool(bool x)
+            : base(x)
+        { }
+
+        #region overrides
+        public override void Eval(Executor exec)
+        {
+            exec.PushBool(GetValue());
+        }
+        #endregion
+    }
+
     /// <summary>
     /// Represents a a function literal. In other words a function that pushes an anonymous function onto a stack.
     /// </summary>
@@ -468,11 +496,9 @@ namespace Cat
         {
         }
 
-        public QuotedFunction(Function f)
+        public QuotedFunction()
         {
             mChildren = new List<Function>();
-            mChildren.Add(f);
-            mpFxnType = new CatQuotedType(f.GetFxnType());
         }
 
         public CatFxnType GetUnquotedFxnType()
@@ -553,10 +579,31 @@ namespace Cat
     }
 
     /// <summary>
+    /// Represents a function that is on the stack.
+    /// </summary>
+    public class SimpleQuotedFunction : QuotedFunction
+    {
+        Function mFxn;
+
+        public SimpleQuotedFunction(Function f)
+        {
+            mFxn = f;
+            if (mFxn.GetFxnType() != null)
+                mpFxnType = new CatQuotedType(mFxn.GetFxnType());
+            GetChildren().Add(f);
+        }
+
+        public override void Eval(Executor exec)
+        {
+            mFxn.Eval(exec);
+        }
+    }
+
+    /// <summary>
     /// This class represents a dynamically created function, 
     /// e.g. the result of calling the quote function.
     /// </summary>
-    public class QuotedValue : QuotedFunction
+    public class QuotedValue : SimpleQuotedFunction
     {
         public QuotedValue(Object x)
             : base(new PushValue<Object>(x))
@@ -663,7 +710,7 @@ namespace Cat
         }
     }
 
-   public class Method : Function, ITypeArray
+    public class Method : Function
     {
         MethodInfo mMethod;
         Object mObject;
@@ -707,8 +754,6 @@ namespace Cat
            return "primitive";
        }
 
-        #region ITypeArray Members
-
         public int Count
         {
             get { return GetMethodInfo().GetParameters().Length; }
@@ -718,8 +763,6 @@ namespace Cat
         {
             return GetMethodInfo().GetParameters()[n].ParameterType;
         }
-
-        #endregion
     }
 
     public abstract class PrimitiveFunction : Function
@@ -734,6 +777,17 @@ namespace Cat
         public override string GetImplString()
         {
             return "primitive";
+        }
+    }
+
+    public abstract class OptimizedFunction : Function
+    {
+        public OptimizedFunction() : base("_optimized_instruction_", "optimized instruction")
+        { }
+
+        public override string GetImplString()
+        {
+            return "optimized isntruction";
         }
     }
 
@@ -822,8 +876,8 @@ namespace Cat
             if (!IsInitialized())
             {
                 // Compute the type now
-                Object o1 = exec.GetStack()[0];
-                Object o2 = exec.GetStack()[1];
+                Object o1 = exec.Peek();
+                Object o2 = exec.PeekBelow(1);
                 ComputeType((o2 as CatObject).GetClass(), (string)o1);
             }
             string s = exec.TypedPop<string>();
@@ -882,9 +936,9 @@ namespace Cat
             if (!IsInitialized())
             {
                 // Compute the type now 
-                Object o1 = exec.GetStack()[0];
-                Object o2 = exec.GetStack()[1];
-                Object o3 = exec.GetStack()[2];
+                Object o1 = exec.PeekBelow(0);
+                Object o2 = exec.PeekBelow(1);
+                Object o3 = exec.PeekBelow(2);
                 ComputeType((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
             }
 
@@ -948,9 +1002,9 @@ namespace Cat
             if (!IsInitialized())
             {
                 // Compute the type now
-                Object o1 = exec.GetStack()[0];
-                Object o2 = exec.GetStack()[1];
-                Object o3 = exec.GetStack()[2];
+                Object o1 = exec.PeekBelow(0);
+                Object o2 = exec.PeekBelow(1);
+                Object o3 = exec.PeekBelow(2);
                 ComputeType((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
             }
 

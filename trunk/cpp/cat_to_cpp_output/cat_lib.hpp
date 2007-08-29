@@ -216,7 +216,7 @@ void _eval(object& o)
 	{
 		// Not a function. Note that you could simply do nothing thus 
 		// echoing the value on the stack. 
-		// This would give you semantics like Joy or Scheme.
+		// This would give you different langauge semantics.
 		cat_assert(false);
 	}
 	o.release_nodestroy();
@@ -249,7 +249,7 @@ void push_literal(const T& x)
 // primitive functions 
 
 // Could be bootstrapped, but it would be very slow and complicated. It would require
-// using the Y or M combinator, and would be of only mild theoretical interested
+// using the Y or M combinator, and would be of only mild theoretical interest
 void _while()
 {
 	object cond;

@@ -34,9 +34,17 @@ namespace Cat
         {
             return Seq(Opt(MetaDataLabel()), Star(CharSet(" \t")), MetaDataContent());
         }
+        public static Rule StartMetaDataBlock()
+        {
+            return Seq(WS(), CharSeq("{{"), UntilEndOfLine());
+        }
+        public static Rule EndMetaDataBlock()
+        {
+            return Seq(WS(), CharSeq("}}"), UntilEndOfLine());
+        }
         public static Rule MetaDataBlock() 
         {
-            return Seq(AstNode("meta_data_block", Seq(CharSeq("{{"), UntilEndOfLine(), WhileNot(MetaDataLine(), CharSeq("}}")))), WS()); 
+            return Seq(AstNode("meta_data_block", Seq(StartMetaDataBlock(), WhileNot(MetaDataLine(), EndMetaDataBlock()))), WS()); 
         }
         public static Rule Comment() 
         { 
