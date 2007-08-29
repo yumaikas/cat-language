@@ -21,11 +21,11 @@ namespace Cat
             //qf = ApplyMacros(qf);
             //qf = PartialEval(qf);
             //qf = Expand(qf);
-            //qf = ApplyMacros(qf);
-
-            qf = ExpandInline(qf, 4);
-            qf = EmbedConstants(qf);
             //qf = ReplaceSimpleQuotations(qf);
+            qf = ApplyMacros(qf);
+            qf = ExpandInline(qf, 4);
+            qf = ApplyMacros(qf);
+            qf = EmbedConstants(qf);
             return qf;
         }
 
