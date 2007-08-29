@@ -1101,3 +1101,13 @@ define qsort : (list -> list)
   [[swap cons] dip cat]
   bin_rec
 }
+
+define fib
+{
+  [2 lt_int]
+  []
+  [dec dup dec]
+  [add_int]
+  bin_rec
+}
+

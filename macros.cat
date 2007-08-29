@@ -47,8 +47,8 @@ macro { [$A] apply } => { $A }
 macro { $a quote } => { [$a] }
 macro { [$B] [$A] compose } => { [$B $A] }
 macro { [$B] [$A] rcompose } => { [$A $B] }
-macro { $b [$A] curry } => { [$b $A] }
-macro { [$B] $a rcurry } => { [$a $B] }
+macro { $b [$A] bind } => { [$b $A] }
+macro { [$B] $a rbind } => { [$a $B] }
 macro { $b [$A] app2 } => { $A $b $A }
 
 // Loop unrolling
@@ -216,4 +216,3 @@ macro { quote dip } => { swap }
 // Tail-Call Recursion elimination
 // not implemented yet
 // macro { [$E:('a -> 'a bool) [$D:('a -> 'a)] [$C:('a -> 'a) $B:self $A:('a -> 'a)] if] } => { [$E] [$D] [$C] [$A] tail_rec }
-
