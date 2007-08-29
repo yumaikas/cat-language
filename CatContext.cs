@@ -35,16 +35,6 @@ namespace Cat
             return mpFunctions.ContainsKey(s);
         }
 
-        public Function Lookup(ITypeArray piTypes, string s)
-        {
-            if (s.Length < 1)
-                throw new Exception("trying to lookup a function with no name");
-            if (mpFunctions.ContainsKey(s))
-                return mpFunctions[s];
-            else
-                return null;
-        }
-
         public Function Lookup(string s)
         {
             if (s.Length < 1)

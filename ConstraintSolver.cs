@@ -183,8 +183,8 @@ namespace Cat
                     "Vector variables can only occur in the last position of a vector");
                 if ((v2.GetCount() > 0) && v2.GetFirst() is VectorVar)
                 {
-                    Check(v2.GetCount() == 1, 
-                        "Vector variables can only occur in the last position of a vector");
+                    // TODO: assure myself I can remove this line.
+                    // Check(v2.GetCount() == 1, "Vector variables can only occur in the last position of a vector");
                     ConstrainVars(v1.GetFirst() as Var, v2.GetFirst() as Var);
                 }
                 else

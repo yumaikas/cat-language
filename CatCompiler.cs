@@ -105,7 +105,9 @@ namespace Cat
 
         public static Function FunctionFromMethodHandle(RuntimeMethodHandle mh)
         {
-            return new CompiledFunction(MethodBase.GetMethodFromHandle(mh));   
+            CompiledFunction cf = new CompiledFunction(MethodBase.GetMethodFromHandle(mh));
+            QuotedFunction qf = new SimpleQuotedFunction(cf);
+            return qf;
         }
 
         public void EmitCatCall(ILGenerator ilg, Function f)

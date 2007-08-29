@@ -38,11 +38,11 @@ namespace Cat
         private static Function ExprToFunction(AstExprNode node, DefinedFunction def)
         {
             if (node is AstIntNode)
-                return new PushValue<int>((node as AstIntNode).GetValue());
+                return new PushInt((node as AstIntNode).GetValue());
             else if (node is AstBinNode)
-                return new PushValue<int>((node as AstBinNode).GetValue());
+                return new PushInt((node as AstBinNode).GetValue());
             else if (node is AstHexNode)
-                return new PushValue<int>((node as AstHexNode).GetValue());
+                return new PushInt((node as AstHexNode).GetValue());
             else if (node is AstFloatNode)
                 return new PushValue<double>((node as AstFloatNode).GetValue());
             else if (node is AstStringNode)
@@ -112,7 +112,7 @@ namespace Cat
             if (node is AstExprNode)
             {
                 Function f = ExprToFunction(node as AstExprNode, null);
-                exec.ExecuteFunction(f);
+                f.Eval(exec);
             }
             else if (node is AstDefNode)
             {
