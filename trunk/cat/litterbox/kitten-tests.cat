@@ -1,0 +1,14 @@
+define _dup(a) { a a }
+define _pop(a) { }
+define _m(a) { a a apply }
+define _s3(c b a) { [[c] b] [c] a }
+define _s2 { [_s3] bind }
+define _s { [_s2] bind }
+define _k2(b a) { a }
+define _k { [_k2] bind }
+define _k(a) { lambda(b) { a } }
+
+define _k(a) { lambda(b) [a] apply }
+define _k(a) { \b.[a] apply }
+define _k(a) { \(b)[a] apply }
+define _k(a) { \b [a] apply }

@@ -1,6 +1,7 @@
-// MetaCat optimization macros
-// Public domain
-// by Christopher Diggins
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
 
 // Simple optimizations
 macro { noop } => { }
@@ -73,6 +74,14 @@ macro { swap add_byte } => { add_byte }
 macro { swap mul_byte } => { add_byte }
 macro { swap add_dbl } => { add_dbl }
 macro { swap mul_dbl } => { add_dbl }
+macro { dip and } => { apply and }
+macro { dip or } => { apply or }
+macro { dip add_int } => { apply add_int }
+macro { dip mul_int } => { apply add_int }
+macro { dip add_byte } => { apply add_byte }
+macro { dip mul_byte } => { apply add_byte }
+macro { dip add_dbl } => { apply add_dbl }
+macro { dip mul_dbl } => { apply add_dbl }
 
 // short-circuit boolean evaluation
 macro { $a and } => { [$a] [false] if }
@@ -197,15 +206,13 @@ macro { empty pop } => { }
 macro { count pop } => { }
 macro { uncons pop } => { tail }
 
-// Here are some standard library shuffling functions
+// Here are the definitions of some of the standard library shuffling functions
 macro { $b $a nip } => { $a }
 macro { $b $a popd } => { $a }
 macro { $b $a dupd } => { $b $b $a }
 macro { $c $b $a swapd } => { $b $c $a }
 macro { $c $b $a dig } => { $b $a $c }
 macro { $c $b $a bury } => { $a $c $b }
-macro { $c $b $a poke } => { $a $b $a }
-macro { $c $b $a peek } => { $c $b $a $c }
 
 // Oscillation patterns
 // Every macro pass will cause these patterns to shift back and forth

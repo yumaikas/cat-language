@@ -1,12 +1,7 @@
-{{
-  filename trees.cat
-  license public domain
-  author Christopher Diggins
-  url http://www.cat-language.com
-  description
-    this file contains functions for dealing with trees.
-    each tree node is a pair (children, data)
-}}
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
 
 define second
 { 1 nth }
@@ -49,7 +44,6 @@ define treeify_function : (('a -> 'b) -> (list -> list))
 }}
 { [uncons] rcompose [cons] apply  }
 
-
 define tree_apply_data : (list ('a -> 'b) -> list)
 {{
   desc:
@@ -65,5 +59,3 @@ define tree_map : (list ('a -> 'b) -> list)
     applies a function to each data node
 }}
 { tree_children swap map }
-
-

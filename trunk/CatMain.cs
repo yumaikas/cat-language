@@ -39,9 +39,16 @@ namespace Cat
                 }
             }
 
-            gpHelp = CatHelpMaker.CreateHelp("help.txt");
-            if (gpHelp == null)
-                WriteLine("failed to load help file");                
+            if (File.Exists("help.txt"))
+            {
+                gpHelp = CatHelpMaker.CreateHelp("help.txt");
+                if (gpHelp == null)
+                    WriteLine("failed to load help file");
+            }
+            else
+            {
+                WriteLine("failed to load help file");
+            }
 
             try
             {

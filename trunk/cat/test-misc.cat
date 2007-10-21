@@ -1,14 +1,11 @@
-// Cat Standard Tests
-// by Christopher Diggins
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
 // http://www.cdiggins.com
-// this file is public domain
-//
-// These tests are ordered in terms of increasing sophistiction of a Cat implementation
-// simpler implementations would not be expected to support the whole range.
 
-define test : (( -> bool) -> )
+define test : ('A ('A -> 'B bool) -> 'B)
 {
-  dup apply [pop] [throw] if
+  dup [apply] dip swap [pop] [throw] if
 }
 
 // This is designed to test a minimalist Cat implementation
@@ -76,10 +73,10 @@ define _3210
 { 0 4 [id] range_gen }
 
 define _234
-{ [2 3 4] to_list }
+{ [2 3 4] list }
 
 define _01234
-{ [0 1 2 3 4] to_list }
+{ [0 1 2 3 4] list }
 
 define _23
 { 2 3 pair }
@@ -121,11 +118,11 @@ define test1
   [_012 _012 eq] test
   [_0123 _0123 eq] test
 
-  // to_list generator
-  [[0] to_list _0 eq] test
-  [[0 1] to_list _01 eq] test
-  [[0 1 2] to_list _012 eq] test
-  [[0 1 2 3] to_list _0123 eq] test
+  // list generator
+  [[0] list _0 eq] test
+  [[0 1] list _01 eq] test
+  [[0 1 2] list _012 eq] test
+  [[0 1 2 3] list _0123 eq] test
 
   // cons
   [nil 1 cons 1 unit eq] test
@@ -163,7 +160,7 @@ define test1
   [_234 last swap pop 2 eq] test
   [_23 last swap pop 2 eq] test
 
-  // to_list to non-list comparison
+  // list to non-list comparison
   [nil 0 neq] test
   [0 nil neq] test
 
@@ -198,20 +195,20 @@ define test1
   [_0 0 nth swap pop 0 eq] test
 
   // map test
-  [_0123 [2 *] map [0 2 4 6] to_list eq] test
-  [_012 [2 *] map [0 2 4] to_list eq] test
-  [_01 [2 *] map [0 2] to_list eq] test
-  [_0 [2 *] map [0] to_list eq] test
+  [_0123 [2 *] map [0 2 4 6] list eq] test
+  [_012 [2 *] map [0 2 4] list eq] test
+  [_01 [2 *] map [0 2] list eq] test
+  [_0 [2 *] map [0] list eq] test
   [nil [2 *] map nil eq] test
-  [_0123 [1 +] map [1 2 3 4] to_list eq] test
-  [_012 [1 +] map [1 2 3] to_list eq] test
-  [_01 [1 +] map [1 2] to_list eq] test
-  [_0 [1 +] map [1] to_list eq] test
+  [_0123 [1 +] map [1 2 3 4] list eq] test
+  [_012 [1 +] map [1 2 3] list eq] test
+  [_01 [1 +] map [1 2] list eq] test
+  [_0 [1 +] map [1] list eq] test
   [nil [1 +] map nil eq] test
 
   // filter
-  [_0123 [1 gt] filter [2 3] to_list eq] test
-  [_012 [1 gt] filter [2] to_list eq] test
+  [_0123 [1 gt] filter [2 3] list eq] test
+  [_012 [1 gt] filter [2] list eq] test
   [_01 [1 gt] filter nil eq] test
   [_0 [1 gt] filter nil eq] test
   [nil [1 gt] filter nil eq] test
@@ -220,8 +217,8 @@ define test1
   [_01 [2 lt] filter _01 eq] test
   [_0 [2 lt] filter _0 eq] test
   [nil [2 lt] filter nil eq] test
-  [_0123 [2 mod 0 eq] filter [0 2] to_list eq] test
-  [_012 [2 mod 0 eq] filter [0 2] to_list eq] test
+  [_0123 [2 mod 0 eq] filter [0 2] list eq] test
+  [_012 [2 mod 0 eq] filter [0 2] list eq] test
   [_01 [2 mod 0 eq] filter _0 eq] test
   [_0 [2 mod 0 eq] filter _0 eq] test
   [nil [2 mod 0 eq] filter nil eq] test
@@ -232,7 +229,7 @@ define test1
   [_01 0 [+] fold 1 eq] test
   [_0 0 [+] fold 0 eq] test
   [nil 0 [+] fold 0 eq] test
-  [_0123 nil [cons] fold [3 2 1 0] to_list eq] test
+  [_0123 nil [cons] fold [3 2 1 0] list eq] test
 
   // take
   [_01234 0 take nil eq] test
@@ -283,20 +280,10 @@ define test1
   [nil tail nil eq] test
 
   // take while
-  [[1 0 3 2 1 0] to_list [2 lt] take_while [1 0] to_list eq] test
+  [[1 0 3 2 1 0] list [2 lt] take_while [1 0] list eq] test
 
   // drop while
-  [[1 0 3 2 1 0] to_list [2 lt] drop_while [1 0 3 2] to_list eq] test
-}
-
-define test_strings
-{
-  (
-    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1),
-    (("I", "am", "very", "lazy"), 2),
-    (("I", "hope", "this", "is", "over", "quick"), 3),
-    (("I", "have", "high", "hopes", "for", "the", "lazy", "dog"), 4)
-  )
+  [[1 0 3 2 1 0] list [2 lt] drop_while [1 0 3 2] list eq] test
 }
 
 define test_pair_list : ( -> list)
@@ -313,15 +300,6 @@ define test_joined_list : ( -> list)
   )
 }
 
-define test_m
-{ unpair pop [1 swap pair] map }
-
-define test_r
-{ unpair [sum] dip pair }
-
-define test_map_reduce
-{ test_strings [test_m] [test_r] map_reduce print_list }
-
 define test2
 {
   [() nil eq] test
@@ -334,15 +312,15 @@ define test2
   [((0,1),(2,3),(4),nil,(5,6,7)) flatten (0,1,2,3,4,5,6,7) eq] test
 
   // pair tests
-  [1 2 pair [1 2] to_list eq] test
+  [1 2 pair [1 2] list eq] test
   [1 2 pair (1, 2) eq] test
-  [[1 2] to_list (1, 2) eq] test
+  [[1 2] list (1, 2) eq] test
   [(1, 2) unpair pair (1, 2) eq] test
   [(1, (2,3)) unpair swap pop (2, 3) eq] test
 
-  // Hash to_list tests
-  [hash_list hash_to_list nil eq] test
-  [hash_list "a" 1 hash_add hash_to_list ((1, "a")) eq] test
+  // Hash list tests
+  [hash_list hash_list nil eq] test
+  [hash_list "a" 1 hash_add hash_list ((1, "a")) eq] test
   [hash_list 1 hash_contains swap pop not] test
   [hash_list "hello" hash_contains swap pop not] test
   [hash_list "a" 1 hash_add "a" hash_contains swap pop] test
@@ -351,7 +329,7 @@ define test2
   [hash_list "a" 42 hash_add "a" hash_get swap pop 42 eq] test
   [test_pair_list self_join test_joined_list eq] test
 
-  // pair to_list tests
+  // pair list tests
   [nil nil pair ((),()) eq] test
   [nil nil pair 1 cons_first (nil,(1)) eq] test
   [nil nil pair 1 cons_second ((1),nil) eq] test
@@ -368,9 +346,9 @@ define test2
   [() [true] split pair ((),()) eq] test
 
   // small tests
-  [() small nip] test
-  [(0) small nip] test
-  [(0,1) small nip not] test
+  [() small popd] test
+  [(0) small popd] test
+  [(0,1) small popd not] test
 }
 
 define test3
@@ -401,7 +379,7 @@ define test4
   [5 n [pop true] count_while swap pop 5 eq] test
   [5 n empty swap pop not] test
   [5 n (4, 3, 2, 1, 0) eq] test
-  [5 n [4 3 2 1 0] to_list eq] test
+  [5 n [4 3 2 1 0] list eq] test
   [5 n 0 5 range eq] test
   [5 n 0 5 [inc dec] range_gen eq] test
   [5 n 0 [inc] [5 <] gen eq] test
@@ -409,7 +387,6 @@ define test4
   [5 n naturals [5 <] take_while eq] test
   [5 n [3 <] take_while 3 n eq] test
   [5 n 3 take 3 n eq] test
-  [5 n naturals [5 <] [] lc eq] test
 }
 
 // floating point comparisons
@@ -440,27 +417,20 @@ define test6
   [0x234 to_byte 0x34 to_byte eq] test
 }
 
+// Test byte-blocks and bin_rec
 define test7
 {
   [4 [eqz] [pop 1] [dec dup] [+] bin_rec 16 eq] test
 
-  // test qsort
-  [() qsort () eq] test
-  [(1) qsort (1) eq] test
-  [(4,2,3,1) qsort (1,2,3,4) eq] test
-  [(1,2,3,4) qsort (1,2,3,4) eq] test
-  [(4,3,2,1) qsort (1,2,3,4) eq] test
-  [(1,1,1,1) qsort (1,1,1,1) eq] test
-  [(2,4,3,2,1,1,3,4) qsort (1,1,2,2,3,3,4,4) eq] test
-
   // test byte blocks
-  [0 byte_block count nip 0 eq] test
-  [1 byte_block count nip 1 eq] test
-  [99 byte_block count nip 99 eq] test
-  [42 byte_block 13 nth nip 0 to_byte eq] test
-  [42 byte_block 25 to_byte 13 set_at 13 nth nip 25 to_byte eq] test
+  [0 byte_block count popd 0 eq] test
+  [1 byte_block count popd 1 eq] test
+  [99 byte_block count popd 99 eq] test
+  [42 byte_block 13 nth popd 0 to_byte eq] test
+  [42 byte_block 25 to_byte 13 set_at 13 nth popd 25 to_byte eq] test
 }
 
+// Test file reading and writing
 define test_io
 {
   temp_file dup
@@ -475,40 +445,6 @@ define test_io
   [close_stream] dip
 }
 
-define test_types
-{
-  [] #t
-  [id] #t
-  [id id] #t
-  [id id id] #t
-  [dup] #t
-  [dup dup] #t
-  [dup dup dup] #t
-  [pop] #t
-  [pop pop] #t
-  [pop pop pop] #t
-  [swap] #t
-  [swap swap] #t
-  [swap swap swap] #t
-  [swap pop] #t
-  [pop swap] #t
-  [swap dup] #t
-  [dup swap] #t
-  [swap pop dup] #t
-  [swap dup pop] #t
-  [dup swap pop] #t
-  [pop swap dup] #t
-  [pop dup swap] #t
-  [dup pop swap] #t
-  [apply] #t
-  [apply apply] #t
-  [apply apply apply] #t
-  [dup dip] #t
-  [dup apply] #t
-  [dip dip] #t
-  [dip dup] #t
-}
-
 define run_tests
 {
   test0
@@ -521,159 +457,3 @@ define run_tests
   test7
   "tests completed successfully" writeln
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// Fix-point combinator tests
-
-define y_fact_step
-{ over 0 eq [pop2 1] [[dup dec] dip apply *] if }
-
-define y_fact
-{ [y_fact_step] y }
-
-define y_test
-{
-  "expect 120 " writeln
-  5 y_fact writeln
-}
-
-define m_fact_step
-{ over 0 eq [pop2 1] [[dup dec] dip m *] if }
-
-define m_fact
-{ [m_fact_step] m }
-
-define m_test
-{
-  "expect 120 " writeln
-  5 m_fact writeln
-}
-
-define m_while : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
-{
-  [dip swap] curry swap // [[$B] dip swap] $A
-  [dip m] curry         // [[$B] dip swap] [[$A] dip Y]
-  quote compose            // [[$B] dip swap [[$A] dip Y]]
-  [[pop] if] compose    // [[$B] dip swap [[$A] dip Y] [pop] if]
-  m
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-define incf { [i 1 +] compose }
-define x2f { [i 2 *] compose }
-define sqrf { [i dup *] compose }
-define halvef { [i 2 /] compose }
-
-define test_combinator
-{
-  write dup write ", " write to_list writeln
-}
-
-define cl_tests
-{
-  [[1] i]         "1 " test_combinator
-  [[2] [1] k]     "1 " test_combinator
-  [[2] [1] ki]    "2 " test_combinator
-  [[1] m]         "[1] 1 " test_combinator
-  [[2] [1] o]     "[[2] 1] 2 " test_combinator
-  [[2] [1] t]     "[2] 1 " test_combinator
-  [[2] [1] w]     "[[2] 2] 1 " test_combinator
-  [[3] [2] [1] b] "[[3] 2] 1 " test_combinator
-  [[3] [2] [1] c] "[[2] 3] 1 " test_combinator
-  [[3] [2] [1] r] "[[1] 3] 2 " test_combinator
-  [[3] [2] [1] v] "[[2] 1] 3 " test_combinator
-  [[3] [2] [1] f] "[[1] 2] 3 " test_combinator
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// Type tests
-
-define type_test
-{
-  swap writeln
-  "expected : " write
-  [writeln] dip
-  "actual   : " write
-  type_of
-  writeln
-}
-
-define test_types
-{
-  "( -> int int)" [42 dup] type_test
-  "(a -> a a)" [dup dup] type_test
-  "(a b -> b a)" [swap] type_test
-  "(a b -> b a)" [quote dip] type_test
-  "(int -> int)" [[1 add_int] apply] type_test
-  "(a (a B -> C) -> (B -> C)" [curry] type_test
-  "(a (a B -> C) -> (B -> C)" [[quote] dip compose] type_test
-  "((A -> B) (C -> A) -> (C -> B)" [swap compose] type_test
-  "(int -> int)" [true [] [1 +] if] type_test
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// Macro Tests
-
-define macro_test
-{
-  "expected " write
-  [write] dip
-  dup
-  ", source " write
-  write
-  #m
-  ", result " write
-  writeln
-}
-
-define test_macros
-{
-  [] [noop]  macro_test
-  [] [id]  macro_test
-  [[]] [[id]] macro_test
-  [] [swap swap]  macro_test
-  [] [dup pop]  macro_test
-  [] [not not]  macro_test
-  [] [pair unpair]  macro_test
-  [] [cons uncons]  macro_test
-  [dup] [dup swap]  macro_test
-  [] [swap quote dip] macro_test
-  [] [dup swap pop]  macro_test
-  [2 1] [1 2 swap]  macro_test
-  [2 1] [1 2 swap swap swap] macro_test
-  [true] [false true and not]  macro_test
-  [[42]] [42 quote] macro_test
-  [42] [[42] apply] macro_test
-  [42] [42 quote apply] macro_test
-  [[1 2]] [[1] [2] compose] macro_test
-  [2] [1 2 nip] macro_test
-  [2] [1 2 popd] macro_test
-  [nil] [nil [2 mul_int] map] macro_test
-  [nil] [nil [3 lt_int] filter] macro_test
-  [42] [nil 42 [add_int] fold] macro_test
-  [1 1 2] [1 2 dupd] macro_test
-  [2 1 3] [1 2 3 swapd] macro_test
-  [2 3 1] [1 2 3 dig] macro_test
-  [3 1 2] [1 2 3 bury] macro_test
-  [3 2 3] [1 2 3 poke] macro_test
-  [1 2 3 1] [1 2 3 peek] macro_test
-  [swap] [swap and] macro_test
-  [[1 2 3 4] to_list] [[1 2] to_list [3 4] to_list cat] macro_test
-  [[1 +] [2 *] compose map] [[1 +] map [2 *] map] macro_test
-  [[1 + 2 *] compose map] [[1 +] [2 *] compose map] macro_test
-  [[1 2] dip] [[1] dip [2] dip] macro_test
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// Partial Evaluation Tests
-
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// More Optimziation Tests
-
-define test_o
-{
-  [i] #i #m #m #m #m #m #m #m #m [42] swap apply
-}
-

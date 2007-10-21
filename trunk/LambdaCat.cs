@@ -172,7 +172,7 @@ namespace Cat
                 {
                     throw new Exception("internal error: expected either a quotation or lambda term");
                 }
-                terms.Insert(i + 1, new AstNameNode("bind"));
+                terms.Insert(i + 1, new AstNameNode("papply"));
                 return;
             }
             else

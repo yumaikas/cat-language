@@ -1,0 +1,22 @@
+
+define string_to_function : (string -> fxn)
+{
+  [
+    ["apply" [apply]] @
+    ["quote" [quote]] @
+    ["compose" [compose] @
+    ["add" [add]] @
+    ["dup" [dup]] @
+    ["swap" [swap]] @
+    ["pop" [pop]] @
+    ["if" [if]] @
+  ]
+  dispatch_on_string
+}
+
+define eval
+{
+  tokenize    // string -> list of strings
+  create_ast  // list of strings -> lists of functions
+  eval_ast    // execute functions 
+}

@@ -170,7 +170,7 @@ namespace Cat
         public class Expand : PrimitiveFunction
         {
             public Expand()
-                : base("#i", "('A -> 'B) ~> ('A -> 'B)", "performs inline expansion")
+                : base("#i", "(('A -> 'B) ~> ('A -> 'B))", "performs inline expansion")
             { }
 
             public override void Eval(Executor exec)
@@ -183,7 +183,7 @@ namespace Cat
         public class Expand1 : PrimitiveFunction
         {
             public Expand1()
-                : base("#i0", "('A -> 'B) ~> ('A -> 'B)", "performs inline expansion")
+                : base("#i0", "(('A -> 'B) -> ('A -> 'B))", "performs inline expansion")
             { }
 
             public override void Eval(Executor exec)
@@ -196,7 +196,7 @@ namespace Cat
         public class ApplyMacros : PrimitiveFunction
         {
             public ApplyMacros()
-                : base("#m", "('A -> 'B) ~> ('A -> 'B)", "applies macros to a function")
+                : base("#m", "(('A -> 'B) -> ('A -> 'B))", "applies macros to a function")
             { }
 
             public override void Eval(Executor exec)
@@ -240,7 +240,7 @@ namespace Cat
         public class PartialEval : PrimitiveFunction
         {
             public PartialEval()
-                : base("#p", "('A -> 'B) -> ('A -> 'B)", "reduces a function through partial evaluation")
+                : base("#p", "(('A -> 'B) -> ('A -> 'B))", "reduces a function through partial evaluation")
             {
             }
 
@@ -254,7 +254,7 @@ namespace Cat
         public class Optimize : PrimitiveFunction
         {
             public Optimize()
-                : base("#o", "('A -> 'B) -> ('A -> 'B)", "optimizes a function using a combination of techniques")
+                : base("#o", "(('A -> 'B) -> ('A -> 'B))", "optimizes a function using a combination of techniques")
             {
             }
 
@@ -587,7 +587,7 @@ namespace Cat
         public class PartialEvalFxn : PrimitiveFunction
         {
             public PartialEvalFxn()
-                : base("bind", "('a ('A 'a -> 'B) -> ('A -> 'B))", "binds the top argument to the top value in the stack, also know as partial-application")
+                : base("papply", "('a ('A 'a -> 'B) -> ('A -> 'B))", "binds the top argument to the top value in the stack, also know as partial-application")
             { }
 
             public override void Eval(Executor exec)
@@ -970,7 +970,6 @@ namespace Cat
                 exec.PushString(CatKind.TypeNameFromObject(o));
             }
         }
-        /*
         public class TypeId : PrimitiveFunction
         {
             public TypeId()
@@ -987,20 +986,20 @@ namespace Cat
                 }
                 else if (o is Function)
                 {
+                    // HACK: this is not the correct type! 
                     exec.Push((o as Function).GetFxnType());
                 }
-                else
+                else 
                 {
                     // HACK: this is not the correct type! 
                     exec.Push(o.GetType());
                 }
             }
         }
-         */
         public class TypeType : PrimitiveFunction
         {
             public TypeType()
-                : base("type", "( -> type)", "")
+                : base("type_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1011,7 +1010,7 @@ namespace Cat
         public class IntType : PrimitiveFunction
         {
             public IntType()
-                : base("int", "( -> type)", "")
+                : base("int_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1022,7 +1021,7 @@ namespace Cat
         public class StrType : PrimitiveFunction
         {
             public StrType()
-                : base("string", "( -> type)", "")
+                : base("string_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1033,7 +1032,7 @@ namespace Cat
         public class DblType : PrimitiveFunction
         {
             public DblType()
-                : base("double", "( -> type)", "")
+                : base("double_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1044,7 +1043,7 @@ namespace Cat
         public class ByteType : PrimitiveFunction
         {
             public ByteType()
-                : base("byte", "( -> type)", "")
+                : base("byte_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1055,7 +1054,7 @@ namespace Cat
         public class BitType : PrimitiveFunction
         {
             public BitType()
-                : base("bit", "( -> type)", "")
+                : base("bit_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1066,7 +1065,7 @@ namespace Cat
         public class BoolType : PrimitiveFunction
         {
             public BoolType()
-                : base("bool", "( -> type)", "")
+                : base("bool_type", "( -> type)", "")
             { }
 
             public override void Eval(Executor exec)
@@ -1087,6 +1086,7 @@ namespace Cat
                 exec.PushBool(t.Equals(u) || u.Equals(t));
             }
         }
+        // TODO: complete the type functions
         #endregion 
 
         #region date-time functions
@@ -1554,7 +1554,7 @@ namespace Cat
         public class List : PrimitiveFunction
         {
             public List()
-                : base("@", "(( -> 'A) -> list)", "creates a list from a function")
+                : base("list", "(( -> 'A) -> list)", "creates a list from a function")
             { }
 
             public override void Eval(Executor exec)

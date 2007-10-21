@@ -1,0 +1,22 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+define constantly
+{ "deprecated" throw }
+
+define qv
+{ "deprecated" throw }
+
+define @
+{ "deprecated" throw }
+
+define bind
+{ "deprecated" throw }
+
+define curry
+{ "deprecated" throw }
+
+define nip
+{ "deprecated" throw }

@@ -2,7 +2,7 @@
 /// http://creativecommons.org/licenses/publicdomain/
 
 // Comment this line to enable all safety checks
-#define FAST
+//#define FAST
 
 using System;
 using System.Reflection;
@@ -90,7 +90,8 @@ namespace Cat
         public Object[] ToArray()
         {
             Object[] ret = new Object[mCount];
-            mBase.CopyTo(ret, mCount);
+            for (int i = 0; i < mCount; ++i)
+                ret[i] = mBase[i];
             return ret;
         }
 
@@ -286,7 +287,7 @@ namespace Cat
         public T TypedPeek<T>()
         {
 #if (!FAST)
-            if (stack.Count == 0) throw new Exception("Trying to peek into an empty stack ");
+            if (Count() == 0) throw new Exception("Trying to peek into an empty stack ");
 #endif
 
             Object o = Peek();
@@ -379,8 +380,10 @@ namespace Cat
         }
         public void LoadModule(string s)
         {
-            bool b = Config.gbVerboseInference;
+            bool b1 = Config.gbVerboseInference;
+            bool b2 = Config.gbShowInferredType;
             Config.gbVerboseInference = Config.gbVerboseInferenceOnLoad;
+            Config.gbShowInferredType = false;
             try
             {
                 Execute(Util.FileToString(s));
@@ -389,7 +392,8 @@ namespace Cat
             {
                 Output.WriteLine("Failed to load \"" + s + "\" with message: " + e.Message);
             }
-            Config.gbVerboseInference = b;
+            Config.gbVerboseInference = b1;
+            Config.gbShowInferredType = b2;
         }
         #endregion
 

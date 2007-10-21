@@ -1,0 +1,33 @@
+
+define swapd : ('a 'b 'c -> 'b 'a 'c)
+{ [swap] dip }
+
+define nip : ('a 'b -> 'b)
+{ [pop] dip }
+
+define dupd : ('a 'b -> 'a 'a 'b)
+{ [dup] dip }
+
+define bury : ('a 'b 'c -> 'c 'a 'b)
+{ swap [swap] dip }
+
+define dig : ('a 'b 'c -> 'b 'c 'a)
+{ [swap] dip swap }
+
+define like_mondays
+{
+  "do you like Mondays (y or n)?" write readkey
+  'y' eq
+  ["Your silicon chip must be malfunctioning."]
+  ["Me neither."]
+  writeln if
+}
+
+define compare_lists
+{
+}
+
+define test
+{
+  nil 1 cons 2 cons 3 cons (1, 2, 3) eq
+}

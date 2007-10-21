@@ -30,7 +30,7 @@ namespace Cat
         {            
             return AstNode("meta_data_label", Seq(Star(CharSet(" \t")), Ident(), SingleChar(':')));
         }
-        public static Rule MetaDataLine()
+        public static Rule MetaDataEntry()
         {
             return Seq(Opt(MetaDataLabel()), Star(CharSet(" \t")), MetaDataContent());
         }
@@ -44,7 +44,7 @@ namespace Cat
         }
         public static Rule MetaDataBlock() 
         {
-            return Seq(AstNode("meta_data_block", Seq(StartMetaDataBlock(), WhileNot(MetaDataLine(), EndMetaDataBlock()))), WS()); 
+            return Seq(AstNode("meta_data_block", Seq(StartMetaDataBlock(), WhileNot(MetaDataEntry(), EndMetaDataBlock()))), WS()); 
         }
         public static Rule Comment() 
         { 

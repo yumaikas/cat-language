@@ -1,0 +1,55 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+// Fix-point combinator tests
+
+define y_fact : (int -> int)
+{{
+  desc:
+    A factorial written using the y combinator
+  test:
+    in: 5 y_fact
+    out: 120
+}}
+{
+  [
+    over 0 eq
+    [pop2 1]
+    [[dup dec] dip apply mul_int]
+    if
+  ]
+  y
+}
+
+define m_fact : (int -> int)
+{{
+  desc:
+    A factorial written using the m (a.k.a. U) combinator
+  test:
+    in: 5 m_fact
+    out: 120
+}}
+{
+  [
+    over 0 eq
+    [pop2 1]
+    [[dup dec] dip m mul_int]
+    if
+  ]
+  m
+}
+
+define m_while : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
+{{
+  desc:
+    A while function written using the m (a.k.a. U) combinator
+}}
+{
+  [dip swap] curry swap // [[$B] dip swap] $A
+  [dip m] papply        // [[$B] dip swap] [[$A] dip m]
+  quote compose         // [[$B] dip swap [[$A] dip m]]
+  [[pop] if] compose    // [[$B] dip swap [[$A] dip m] [pop] if]
+  m
+}

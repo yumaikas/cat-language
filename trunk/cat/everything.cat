@@ -1,0 +1,18 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+"interpreter-flags.cat" #load
+"standard.cat" #load
+"test-types.cat" #load
+"test-misc.cat" #load
+"test-metacat.cat" #load
+"deprecated.cat" #load
+
+/*
+"clr-graphics.cat" #load
+"demo-misc.cat" #load
+"demo-graphics.cat" #load
+"demo-fixpoint.cat" #load
+*/
