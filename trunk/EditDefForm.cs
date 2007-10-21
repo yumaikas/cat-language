@@ -144,7 +144,7 @@ namespace Cat
             {
                 string s = textBoxImpl.Text.Trim();
                 List<AstExprNode> impl = CatParser.ParseExpr(s);
-                List<Function> ret = CatParser.TermsToFxns(impl);
+                List<Function> ret = CatParser.TermsToFxns(impl, def);
                 ClearWarningState(textBoxImpl);
                 return ret;
             }
