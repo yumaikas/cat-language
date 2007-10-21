@@ -795,24 +795,20 @@ namespace Cat
     {
         Function mpFxn;
 
-        public SelfFunction(Function f)
-            : base(f.msName)
+        public SelfFunction()
+            : base("self")
+        {
+            mpFxnType = CatFxnType.Create("(PRODUCTION -> CONSUMPTION)");
+        }
+
+        public void SetFxn(Function f)
         {
             mpFxn = f;
-
-            // TODO: 
-            // This is a problem:
-            // What I need is to have a nesting level, or rewrite everything. 
-            // I could rewrite: f { [a [f] b] } as 
-            // f { [a] self quote compose [b] compose } 
-            //mpFxnType = new CatSelfType();
-            //mpFxnType = CatFxnType.Create("(this_consumption -> this_production)");
-            mpFxnType = CatFxnType.Create("(consumption -> production)");
         }
 
         public override void Eval(Executor exec)
         {
-            mpFxn.Eval(exec);
+            exec.PushFxn(mpFxn);
         }
 
         public override string GetImplString()

@@ -5,12 +5,12 @@
 
 "interpreter-flags.cat" #load
 "standard.cat" #load
+
+/*
 "test-types.cat" #load
 "test-misc.cat" #load
 "test-metacat.cat" #load
 "deprecated.cat" #load
-
-/*
 "clr-graphics.cat" #load
 "demo-misc.cat" #load
 "demo-graphics.cat" #load

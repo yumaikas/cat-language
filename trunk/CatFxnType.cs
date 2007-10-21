@@ -8,8 +8,8 @@ namespace Cat
     public class CatFxnType : CatTypeKind
     {
         #region fields
-        CatTypeVector mProd;
-        CatTypeVector mCons;
+        protected CatTypeVector mProd;
+        protected CatTypeVector mCons;
         bool mbSideEffects;
         CatFxnType mpParent;
         CatTypeVarList mpFreeVars = new CatTypeVarList();
@@ -575,7 +575,6 @@ namespace Cat
 
             if (!IsValidProduction(varNames, GetProd()))
                 return false;
-          
             return true;
         }
         #endregion  
