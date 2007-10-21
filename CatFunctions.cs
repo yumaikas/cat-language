@@ -795,20 +795,16 @@ namespace Cat
     {
         Function mpFxn;
 
-        public SelfFunction()
+        public SelfFunction(Function f)
             : base("self")
         {
             mpFxnType = CatFxnType.Create("(PRODUCTION -> CONSUMPTION)");
-        }
-
-        public void SetFxn(Function f)
-        {
             mpFxn = f;
         }
 
         public override void Eval(Executor exec)
         {
-            exec.PushFxn(mpFxn);
+            mpFxn.Eval(exec);
         }
 
         public override string GetImplString()

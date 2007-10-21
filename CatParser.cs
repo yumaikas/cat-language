@@ -13,17 +13,20 @@ namespace Cat
     class CatParser
     {
         #region parsing functions
-        public static List<Function> TermsToFxns(List<AstExprNode> terms)
+        public static List<Function> TermsToFxns(List<AstExprNode> terms, DefinedFunction def)
         {
             List<Function> fxns = new List<Function>();
             foreach (AstExprNode child in terms)
             {
-                Function f = ExprToFunction(child);
+                Function f = ExprToFunction(child, def);
                 fxns.Add(f);                
             }
             return fxns;
         }
 
+        // The following is old-code that I no longer use. 
+        // TODO: remove
+        /*
         private static int IndexOfNamedTerm(List<AstExprNode> terms, string sName)
         {
             for (int i = 0; i < terms.Count; ++i)
@@ -88,19 +91,20 @@ namespace Cat
                     if (node.ToString().Equals(def.GetName()))
                         node.SetText("self");
         }
+         */
 
-        private static Quotation MakeQuoteFunction(AstQuoteNode node)
+        private static Quotation MakeQuoteFunction(AstQuoteNode node, DefinedFunction def)
         {
-            return new Quotation(TermsToFxns(node.mTerms));
+            return new Quotation(TermsToFxns(node.mTerms, def));
         }
 
-        private static Quotation MakeQuoteFunction(AstLambdaNode node)
+        private static Quotation MakeQuoteFunction(AstLambdaNode node, DefinedFunction def)
         {
             CatPointFreeForm.Convert(node);
-            return new Quotation(TermsToFxns(node.mTerms));
+            return new Quotation(TermsToFxns(node.mTerms, def));
         }
 
-        private static Function ExprToFunction(AstExprNode node)
+        private static Function ExprToFunction(AstExprNode node, DefinedFunction def)
         {
             if (node is AstIntNode)
                 return new PushInt((node as AstIntNode).GetValue());
@@ -118,16 +122,16 @@ namespace Cat
             {
                 string s = node.ToString();
                 Function f = Executor.Main.GetGlobalContext().Lookup(s);
-                if (s.Equals("self"))
-                    return new SelfFunction();
+                if (s.Equals("self") || (def != null && s.Equals(def.GetName())))
+                    return new SelfFunction(def);
                 if (f == null)
                     throw new Exception("could not find function " + s);
                 return f;
             }
             else if (node is AstQuoteNode)
-                return MakeQuoteFunction(node as AstQuoteNode);
+                return MakeQuoteFunction(node as AstQuoteNode,def );
             else if (node is AstLambdaNode)
-                return MakeQuoteFunction(node as AstLambdaNode);
+                return MakeQuoteFunction(node as AstLambdaNode, def);
             else
                 throw new Exception("node " + node.ToString() + " does not have associated function");
         }
@@ -143,14 +147,11 @@ namespace Cat
             DefinedFunction def = new DefinedFunction(node.mName);
             Executor.Main.GetGlobalContext().AddFunction(def);
 
-            RewriteRecursiveCalls(node.mTerms, def);
-            def.AddFunctions(TermsToFxns(node.mTerms));
-            
-            // Make sure all self-functions contain a pointer to the function
-            // Note: self calls should only occur at the top-level.
-            foreach (Function f in def.GetChildren())
-                if (f is SelfFunction)
-                    (f as SelfFunction).SetFxn(def);
+            // NOTE: this is a broken algorithm. I'm leaving it here for reference
+            // in case I want to do something similar later on.
+            //RewriteRecursiveCalls(node.mTerms, def);
+
+            def.AddFunctions(TermsToFxns(node.mTerms, def));            
             
             // Construct a representation of the meta data if neccessary
             if (node.mpMetaData != null)
@@ -191,7 +192,7 @@ namespace Cat
         {
             if (node is AstExprNode)
             {
-                Function f = ExprToFunction(node as AstExprNode);
+                Function f = ExprToFunction(node as AstExprNode, null);
                 f.Eval(exec);
             }
             else if (node is AstDefNode)
