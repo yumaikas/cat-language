@@ -1,0 +1,154 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+//=============================================================================
+// Function manipulation operators
+
+define papply : ('a ('B 'a -> 'C) -> ('B -> 'C))
+{{
+  desc:
+    Partial application function, binds the top-most argument
+    of a function to the second value on the stack creating a new function.
+  test:
+    in: 3 5 [+] papply apply
+    out: 8
+}}
+{ [quote] dip compose }
+
+define papply2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
+{{
+  desc:
+    Partial application function, binds the top two arguments
+    of a function to the second and third values on the stack
+    to create a new function.
+  test:
+    in: 3 5 7 [+ +] papply2 apply
+    out: 15
+}}
+{ papply papply }
+
+define papply3 : ('a 'b 'c ('D 'a 'b 'c -> 'E) -> ('D -> 'E))
+{{
+  desc:
+    Binds three arguments of a function to values on the stack.
+}}
+{ papply papply papply }
+
+define rpapply : (('B 'a -> 'C) 'a -> ('B -> 'C))
+{{
+  desc:
+    Binds the top argument of the function in the second position on the stack
+    to the value on the top of the stack.
+  test:
+    in: 5 [+] 3 rpapply apply
+    out: 8
+}}
+{ quote swap compose }
+
+
+//==============================================================================
+// DipN
+
+define dip2 : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
+{{
+  desc:
+    Applies a function to the stack, temporarily removing the next two items.
+}}
+{ swap [dip] dip }
+
+define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
+{{
+  desc:
+    Applies a function to the stack, temporarily removing the next three items.
+}}
+{ swap [dip2] dip }
+
+define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
+{{
+  desc:
+    Applies a function to the stack, temporarily removing the next four items.
+}}
+{ swap [dip3] dip }
+
+//=============================================================================
+// Additional combinators
+
+define rcompose : (('B -> 'C) ('A -> 'B) -> ('A -> 'C))
+{{
+  desc:
+    swap then compose (or reverse compose)
+  semantics:
+    [$A] [$B] rcompose == [$B $A]
+}}
+{ swap compose }
+
+define slip : ('A ('A -> 'B) 'c -> 'B 'c)
+{{
+  desc:
+    Applies a function below the top item on the stack to the stack below it.
+  semantics:
+    $A [$B] $c slip == $A $B $c
+  test:
+    in: 4 [inc] 2 slip
+    out: 5 2
+}}
+{ swap dip }
+
+define keep : ('A 'b ('A 'b -> 'C) -> 'C 'b)
+{{
+  desc:
+    Applies a function to the stack, but pushes a copy of the top item of the stack
+    afterwards.
+  semantics:
+    $A $b [$C] keep == $A $b $C $b
+  test:
+    in: 1 2 [+] keep
+    out: 3 2
+}}
+{ dupd dip }
+
+define sweep : ('A ('A 'b -> 'C) 'b -> 'C 'b)
+{{
+  desc:
+    Swaps the top of the stack, with a function below it. Applies the function to
+    the stack, and pushes the original top value back on to the stack at the end.
+  semantics:
+    $A [$B] $c == $A $c $B $c
+  test:
+    in: 1 [+] 3 sweep
+    out: 4 3
+}}
+{ swap keep }
+
+define kapply : ('A ('A -> 'B) -> 'B ('A -> 'B))
+{{
+  desc:
+    Applies a function to the stack, and afterwards replaces the function.
+  semantics:
+    [$A] kapply == $A [$A]
+  test:
+    in: 1 [inc] kapply apply
+    out: 3
+}}
+{ dup dip }
+
+define apply2 : ('A ('A -> 'A) -> 'A)
+{{
+  desc:
+    Applies a function to a stack twice.
+  semantics:
+    $A [$B] apply2 == $A $B $B
+  test:
+}}
+{ kapply apply }
+
+define apply3 : ('A ('A -> 'A) -> 'A)
+{{
+  desc:
+    Applies a function to a stack three times.
+  semantics:
+    $A [$B] apply3 == $A $B $B $B
+}}
+{ kapply apply2 }

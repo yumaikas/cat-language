@@ -1,0 +1,61 @@
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Type tests
+
+define type_test
+{
+  swap writeln
+  "expected : " write
+  [writeln] dip
+  "actual   : " write
+  type_of
+  writeln
+}
+
+define test_types
+{
+  "( -> int int)" [42 dup] type_test
+  "(a -> a a)" [dup dup] type_test
+  "(a b -> b a)" [swap] type_test
+  "(a b -> b a)" [quote dip] type_test
+  "(int -> int)" [[1 add_int] apply] type_test
+  "(a (a B -> C) -> (B -> C)" [curry] type_test
+  "(a (a B -> C) -> (B -> C)" [[quote] dip compose] type_test
+  "((A -> B) (C -> A) -> (C -> B)" [swap compose] type_test
+  "(int -> int)" [true [] [1 +] if] type_test
+}
+
+define test_types
+{
+  [] #t
+  [id] #t
+  [id id] #t
+  [id id id] #t
+  [dup] #t
+  [dup dup] #t
+  [dup dup dup] #t
+  [pop] #t
+  [pop pop] #t
+  [pop pop pop] #t
+  [swap] #t
+  [swap swap] #t
+  [swap swap swap] #t
+  [swap pop] #t
+  [pop swap] #t
+  [swap dup] #t
+  [dup swap] #t
+  [swap pop dup] #t
+  [swap dup pop] #t
+  [dup swap pop] #t
+  [pop swap dup] #t
+  [pop dup swap] #t
+  [dup pop swap] #t
+  [apply] #t
+  [apply apply] #t
+  [apply apply apply] #t
+  [dup dip] #t
+  [dup apply] #t
+  [dip dip] #t
+  [dip dup] #t
+}
+

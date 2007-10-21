@@ -2,10 +2,8 @@
 
 define S
 {{
-  semantics
-  {
+  semantics:
     [C] [B] [A] S == [[C] B] [C] A
-  }
 }}
 {
   [[dup] dip swap [bind] dip] dip apply
@@ -13,10 +11,8 @@ define S
 
 define K
 {{
-  semantics
-  {
+  semantics:
     [B] [A] K == A
-  }
 }}
 {
   swap pop apply

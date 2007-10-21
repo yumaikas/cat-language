@@ -92,12 +92,54 @@ void unit_tests()
 	call(_pop);
 }
 
+/// Some custom stuff.
+void _fib();
+
+void _anon3000()
+{
+	call(_pop);
+	push_literal(1);
+}
+
+void _anon3001()
+{
+	call(_dec);
+	object tmp = stk.top();
+	call(_fib);
+	stk.push(tmp);
+	call(_dec);
+	call(_fib);
+	call(_add__int);
+}
+
+void _fib()
+{
+	call(_dup);
+	push_literal(1);
+	call(_lteq__int);
+	bool b = stk.pull().to<bool>();
+	if (b)
+		call(_anon3000) 
+	else
+		call(_anon3001);
+}
+
+void _fib_test()
+{
+	scoped_timer timer;
+	push_literal(26); // 3.92, 3.29
+	call(_fib);
+}
+
 int main(int argc, char* argv[])
 {
-    unit_tests();
+	_fib_test();
+	print_stack();
+
+    //unit_tests();
 	try
 	{
-		_run__tests();
+		//_run__tests();
 	}
 	catch (object::bad_object_cast e)
 	{

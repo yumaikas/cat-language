@@ -1,3 +1,7 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
 
 define test_noop : ( -> ) { }
 define test_appapp : ('A ('A -> 'B ('B -> 'C)) -> 'C) { apply apply }
@@ -29,14 +33,14 @@ define rcompose : (('A -> 'B) ('C -> 'A) -> ('C -> 'B)) { swap compose }
 // recursive tests
 define dolittle : ( -> self) { [dolittle] }
 define test_dolittle : ( -> self) { dolittle }
-define bind_self : (('A self -> 'B) -> ('A -> 'B)) { dup bind }
+define bind_self : (('A self -> 'B) -> ('A -> 'B)) { dup papply }
 
 // BUG: test fails
 //define test_dolittle2 : ( -> self) { dolittle apply }
 
 define binary_dolittle { [binary_dolittle] [binary_dolittle] }
 define m : ('A self -> 'B) { dup apply }
-define y { [dup bind] swap compose dup apply }
+define y { [dup papply] swap compose dup apply }
 define y2 { [bind_self] rcompose m }
 define dec { 1 sub_int }
 define eqz { dup 0 eq }

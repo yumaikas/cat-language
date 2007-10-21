@@ -1,0 +1,482 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+// ==================================
+// Stack shuffling mnemonic operators
+
+// 1 to 2
+define aa { dup }
+
+// 2 to 2
+define ab { }
+define bb { pop dup }
+define ba { swap }
+
+// 3 to 3
+define abc { }
+define acb { swap }
+define bac { [swap] dip }
+define bca { [swap] dip swap }
+define cab { swap [swap] dip }
+define cba { cab swap }
+
+// 4 to 4
+define abcd { }
+define abdc { swap }
+define acdb { bca }
+define acbd { bac }
+define adbc { cab }
+define adcb { cba }
+define bacd { [bac] dip }
+define badc { bacd swap }
+define bcad { bacd bac }
+define bcda { bacd bca }
+define bdac { bacd cab }
+define bdca { bacd cba }
+define cabd { [cab] dip }
+define cadb { cabd swap }
+define cbad { cabd bac }
+define cbda { cabd bca }
+define cdab { cabd cab }
+define cdba { cabd cba }
+define dabc { swap [cab] dip }
+define dacb { dabc swap }
+define dbac { dabc bac }
+define dbca { dabc bca }
+define dcab { dabc cab }
+define dcba { dabc cba }
+
+// 1 to 3
+define aaa { dup dup }
+
+// 1 to 4
+define aaaa { dup dup dup }
+
+// 2 to 3
+define aab { [dup] dip }
+define aba { [dup] dip swap }
+define baa { swap dup }
+define bba { swap [dup] dip }
+define bab { dup cab }
+define abb { dup }
+define bbb { [pop] dip dup dup }
+
+// 2 to 4
+define aaab { [aaa] dip }
+define aaba { aaab swap }
+define abaa { aba dup }
+define baaa { swap aaa }
+define aabb { aab dup }
+define abab { aba aba }
+define abba { abab swap }
+define baab { bab aab }
+define bbba { swap aaab }
+define bbab { bbba swap }
+define babb { bab dup }
+define abbb { abb dup }
+define bbbb { [pop] dip aaaa }
+
+// 3 to 4
+define aabc { [aab] dip }
+define aacb { acb aabc }
+define bbac { bac aabc }
+define bbca { bca aabc }
+define ccab { cab aabc }
+define ccba { cba aabc }
+define abac { [aba] dip }
+define acab { acb abac }
+define babc { bac abac }
+define bcba { bca abac }
+define cacb { cab abac }
+define cbca { cba abac }
+define abcc { dup }
+define acbb { acb dup}
+define bcaa { bca dup }
+define bacc { bac dup }
+define cabb { cab dup }
+define cbaa { cba dup }
+define abca { aabc bca }
+define cabc { cab abca }
+define bacb { bac abca }
+define cbac { cba abca }
+define bcab { bca abca }
+define acba { acb abca}
+define abbc { aab }
+define bcca { bca abbc }
+define cbba { cba abbc }
+define caab { cab abbc }
+define accb { acb abbc }
+define baac { bac abbc }
+
+// Copying operators
+define dup_ab { abab }
+define dup_ba { abba }
+define dup_abc { abca abca abca }
+define dup_acb { dup_abc acb }
+define dup_bac { dup_abc bac }
+define dup_bca { dup_abc bca }
+define dup_cab { dup_abc cab }
+define dup_cba { dup_abc cba }
+
+//=============================================================================
+// Basic shuffling operators
+
+define swapd : ('a 'b 'c -> 'b 'a 'c)
+{{
+  desc:
+    Swaps the second and third items on the stack.
+  test:
+    in: 1 2 3 swapd
+    out: 2 1 3
+  semantics:
+    $a $b $c swapd == $b $a $c
+}}
+{ [swap] dip }
+
+define swapdd : ('a 'b 'c 'd -> 'b 'a 'c 'd)
+{{
+  desc:
+    Swaps the third and fourth items on the stack.
+  test:
+    in: 1 2 3 4 swapdd
+    out: 2 1 3 4
+  semantics:
+    $a $b $c $d swapd == $b $a $c $d
+}}
+{ [swapd] dip }
+
+define dupd : ('a 'b -> 'a 'a 'b)
+{{
+  desc:
+    Duplicate the second item on the stack.
+  test:
+    in: 1 2 dupd
+    out: 1 1 2
+  semantics:
+    $a $b swapd == $a $a $b
+}}
+{ [dup] dip }
+
+define dupdd : ('a 'b 'c -> 'a 'a 'b 'c)
+{{
+  desc:
+    Duplicate the third item on the stack.
+  test:
+    in: 1 2 3 dupdd
+    out: 1 1 2 3
+  semantics:
+    $a $b $c dupdd == $a $a $b $c
+}}
+{ [dupd] dip }
+
+define popd : ('a 'b -> 'b)
+{{
+  desc:
+    Removes the second item from the stack.
+  test:
+    in: 1 2 popd
+    out: 2
+  semantics:
+    $a $b popd == $b
+}}
+{ [pop] dip }
+
+define popdd : ('a 'b 'c -> 'b 'c)
+{{
+  desc:
+    Removes the third item from the stack.
+  test:
+    in: 1 2 3 popdd
+    out: 2 3
+  semantics:
+    $a $b $c popd == $b $c
+}}
+{ [popd] dip }
+
+define over : ('a 'b -> 'a 'b 'a)
+{{
+  desc:
+    Places a copy of the second item on the top of the stack.
+  semantics:
+    $a $b over == $b $a
+}}
+{ dupd swap }
+
+define under : ('a 'b -> 'b 'a 'b)
+{{
+  desc:
+    Places a copy of the top item on the stack under the second.
+  test:
+    in: 1 2 under
+    out: 2 1 2
+}}
+{ dup swapd }
+
+define bury : ('a 'b 'c -> 'c 'a 'b)
+{{
+  desc:
+    Place the top item on the stack under the second item.
+  test:
+    in: 1 2 3 bury
+    out: 3 1 2
+}}
+{ swap swapd }
+
+define dig : ('a 'b 'c -> 'b 'c 'a)
+{{
+  desc:
+    Place the third item on the stack on the top.
+  test:
+    in: 1 2 3 dig
+    out: 2 3 1
+}}
+{ swapd swap }
+
+//==============================================================================
+// PopN functions
+
+define pop2 : ('a 'b -> )
+{{
+  desc:
+    Removes two item from the top of the stack.
+  test:
+    in: 1 2 pop2
+    out:
+  semantics:
+    $a $b pop2 == noop
+}}
+{ pop pop }
+
+define pop3 : ('a 'b 'c -> )
+{{
+  desc:
+    Removes three item from the top of the stack.
+  test:
+    in: 1 2 3 pop3
+    out:
+  semantics:
+    $a $b $c pop2 == noop
+}}
+{ pop pop pop }
+
+define pop4 : ('a 'b 'c 'd -> )
+{{
+  desc:
+    Removes four items from the top of the stack.
+  test:
+    in: 1 2 3 4 pop4
+    out:
+  semantics:
+    $a $b $c $d pop4 == noop
+}}
+{ pop pop pop pop }
+
+//==============================================================================
+// SetN
+
+define set1 : ('a 'b  -> 'b)
+{ popd }
+
+define set2 : ('a 'b 'c -> 'c 'b)
+{ swap [set1] dip }
+
+define set3 : ('a 'b 'c 'd -> 'd 'b 'c)
+{ swap [set2] dip }
+
+define set4 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd)
+{ swap [set3] dip }
+
+//==============================================================================
+// GetN
+
+define get1 : ('a -> 'a 'a)
+{ dup }
+
+define get2 : ('a 'b -> 'a 'b 'a)
+{ [get1] dip swap }
+
+define get3 : ('a 'b 'c -> 'a 'b 'c 'a)
+{ [get2] dip swap }
+
+define get4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
+{ [get3] dip swap }
+
+//==============================================================================
+// UnderN
+
+define under1 : ('a 'b -> 'b 'a 'b)
+{ under }
+
+define under2 : ('a 'b 'c -> 'c 'a 'b 'c)
+{ swap [under] dip swap }
+
+define under3 : ('a 'b 'c 'd -> 'd 'a 'b 'c 'd)
+{ swap [under2] dip swap }
+
+define under4 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd 'e)
+{ swap [under3] dip swap }
+
+//==============================================================================
+// OverN
+
+define over2 : ('a 'b 'c -> 'a 'b 'c 'a)
+{{
+  test:
+    in: 1 2 3 over2
+    out: 1 2 3 1
+}}
+{ [over] dip swap }
+
+define over3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
+{{
+  test:
+    in: 1 2 3 4 over3
+    out: 1 2 3 1
+}}
+{ [over2] dip swap }
+
+define over4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
+{{
+  test:
+    in: 1 2 3 4 5 over4
+    out: 1 2 3 5 5 1
+}}
+{ [over3] dip swap }
+
+//==============================================================================
+// DigN
+
+define dig2 : ('a 'b 'c -> 'b 'c 'a)
+{{
+  test:
+    in: 1 2 3 dig2
+    out: 2 3 1
+  semantics:
+    $a $b $c dig2 == $b $c $a
+}}
+{ dig }
+
+define dig3 : ('a 'b 'c 'd -> 'b 'c 'd 'a)
+{{
+  test:
+    in: 1 2 3 4 dig3
+    out: 2 3 4 1
+  semantics:
+    $a $b $c $d dig3 == $b $c $d $a
+}}
+{ [dig2] dip swap }
+
+define dig4 : ('a 'b 'c 'd 'e -> 'b 'c 'd 'e 'a)
+{{
+  test:
+    in: 1 2 3 4 5 dig4
+    out: 2 3 4 5 1
+  semantics:
+    $a $b $c $d $e dig3 == $b $c $d $e $a
+}}
+{ [dig3] dip swap }
+
+//==============================================================================
+// BuryN
+
+define bury2 : ('a 'b 'c -> 'c 'a 'b)
+{{
+  test:
+    in: 1 2 3 bury2
+    out: 3 1 2
+  semantics:
+    $a $b $c bury2 == $c $a $b
+}}
+{ bury }
+
+define bury3 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
+{{
+  test:
+    in: 1 2 3 4 bury3
+    out: 5 1 2 3
+  semantics:
+    $a $b $c $d bury3 == $d $a $b $c
+}}
+{ swap [bury2] dip }
+
+define bury4 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd)
+{{
+  test:
+    in: 1 2 3 4 5 bury4
+    out: 5 1 2 3 4
+  semantics:
+    $a $b $c $d $e bury4 == $e $a $b $c $d
+}}
+{ swap [bury3] dip }
+
+//==============================================================================
+// DupN
+
+define dup2 : ('a 'b -> 'a 'b 'a 'b)
+{{
+  test:
+    in: 1 2 dup2
+    out: 1 2 1 2
+  semantics:
+    $a $b dup2 == $a $b $a $b
+}}
+{ over over }
+
+define dup3 : ('a 'b 'c -> 'a 'b 'c 'a 'b 'c)
+{{
+  test:
+    in: 1 2 3 dup3
+    out: 1 2 3 1 2 3
+  semantics:
+    $a $b $c dup3 == $a $b $c $a $b $c
+}}
+{ over2 over2 over2 }
+
+define dup4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a 'b 'c 'd)
+{{
+  test:
+    in: 1 2 3 4 dup4
+    out: 1 2 3 4 1 2 3 4
+  semantics:
+    $a $b $c $d dup4 == $a $b $c $d $a $b $c $d
+}}
+{ over3 over3 over3 over3 }
+
+//==============================================================================
+// FlipN
+
+define flip : ('a 'b 'c -> 'c 'b 'a)
+{{
+  desc:
+    Swaps the top and third item on the stack.
+  test:
+    in: 1 2 3 flip
+    out: 3 2 1
+}}
+{ swapd swap swapd }
+
+define flip2 : ('a 'b 'c 'd -> 'd 'b 'c 'a)
+{{
+  desc:
+    Swaps the top and fourth item on the stack.
+  test:
+    in: 1 2 3 4 flip2
+    out: 4 2 3 1
+  semantics:
+    $a $b $c $d flip2 == $d $b $c $a
+}}
+{ swap [flip] dip swap }
+
+define flip3 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd 'a)
+{{
+  desc:
+    Swaps the top and fifth item on the stack.
+  test:
+    in: 1 2 3 4 5 flip3
+    out: 5 2 3 4 1
+  semantics:
+    $a $b $c $d flip2 == $d $b $c $a
+}}
+{ swap [flip2] dip swap }

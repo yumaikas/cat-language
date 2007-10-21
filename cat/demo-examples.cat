@@ -1,0 +1,104 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+define fib
+{{
+  desc:
+    A simple implementation of the fibonacci function
+  test:
+    in: 0
+    out: 1
+  test:
+    in: 1
+    out: 1
+  test:
+    in: 5
+    out: 8
+}}
+{
+  [2 lt_int]    // termination condition
+  []            // termination action
+  [dec dup dec] // argument relation
+  [add_int]     // result relation
+  bin_rec       // binary recursion operation
+}
+
+define fact : (int -> int)
+{{
+  desc:
+    A simple factorial function
+  precondition:
+    dup 0 gteq
+}}
+{
+  eqz [1] [dup dec fact mul_int] if
+}
+
+define qsort : (list -> list)
+{{
+  desc:
+    This is a naive but simple implementation of a quick sort algorithm.
+  test:
+    in: [5 4 2 1 3 2 4] list qsort
+    out: [1 2 2 3 4 4 5] list
+  test:
+    in: [3 2 1] list qsort
+    out: [1 2 3] list
+  test:
+    in: [1 2 3] list qsort
+    out: [1 2 3] list
+  test:
+    in: [] list qsort
+    out: [] list
+}}
+{
+  // Does list have 0 or 1 elements?
+  [small]
+  // Base case do nothing
+  []
+  // Split the list using the head as a pivot
+  // storing the pivot under for later use
+  [uncons under [lt] papply split]
+  // Append the pivot to the first list
+  // then concatenate the two lists.
+  [[swap cons] dip cat]
+  bin_rec
+}
+
+//=============================================================================
+// A simple implementation of the google MapReduce algorithm
+//
+// In pseduo-code:
+//
+//   map_reduce(input fmap freduce) == input fmap flatten self_join freduce map
+//
+// where:
+//
+//     input = list(pair('input_value, 'input_key))
+//     fmap = pair('input_value, 'input_key)) -> list(pair('output_value, 'output_key))
+//     freduce = pair(list('output_value), 'output_key) -> pair('output_value, 'output_key)
+//
+
+define map_reduce
+{ [map flatten self_join] dip map }
+
+define test_strings
+{
+  (
+    (("The", "quick", "brown", "fox", "jumped", "over", "the", "lazy", "dog"), 1),
+    (("I", "am", "very", "lazy"), 2),
+    (("I", "hope", "this", "is", "over", "quick"), 3),
+    (("I", "have", "high", "hopes", "for", "the", "lazy", "dog"), 4)
+  )
+}
+
+define test_m
+{ unpair pop [1 swap pair] map }
+
+define test_r
+{ unpair [vec_sum] dip pair }
+
+define test_map_reduce
+{ test_strings [test_m] [test_r] map_reduce print_list }

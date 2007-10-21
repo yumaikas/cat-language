@@ -1,0 +1,57 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+//==============================================================================
+// Hash helper functions
+
+define hash_safe_get : (hash_list any any -> hash_list any)
+{{
+  desc:
+    Gets a value from a hash_list. If it doesn't exist then uses the default
+}}
+{
+  [[hash_contains] keep] dip // => hash_list bool key default
+  quote                      // => hash_list bool key [default]
+  [[hash_get] papply] dip    // => hash_list bool [key hash_get] [default]
+  if                         // => hash_list result
+}
+
+define hash_add_chain : (hash_list any 'a -> hash_list)
+{{
+  desc:
+    Adds an element as unit list to a hash_list if it doesn't exist,
+    otherwise chain it to the current list item.
+}}
+{
+  [[nil hash_safe_get] keep] dip // => hash_list curr key value
+  swapd cons                     // => hash_list key list(curr, value)
+  hash_set                       // => hash_list
+}
+
+define list_to_hash : (list -> hash_list)
+{{
+  desc:
+    Converts a list of pairs into a hash list
+}}
+{  hash_list [unpair swap hash_add_chain] fold }
+
+define self_join : (list -> list)
+{{
+  desc:
+    Performs an inner self-join on a list of pairs based the first item.
+    In other words all unique first items in pairs are treated as keys,
+    and all second values are concatenated together in a list.
+  test:
+    in: [[1 'a'] list [2 'b'] list [1 'c'] list] list self_join
+    out: [[[1 ['a' 'c'] list] list [2 ['b'] list] list
+}}
+{ list_to_hash hash_to_list }
+
+define join : (list list -> list)
+{{
+  desc:
+    Performs an inner join on two lists of pairs
+}}
+{ cat self_join }

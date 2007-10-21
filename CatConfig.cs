@@ -67,6 +67,11 @@ namespace Cat
         public static bool gbVerboseInference = false;
 
         /// <summary>
+        /// When a function is defined in interpreter, shows the inferred type.
+        /// </summary>
+        public static bool gbShowInferredType = true;
+
+        /// <summary>
         /// Outputs detailed information of each of the inference mechanism works
         /// while loading a module.
         /// </summary>
@@ -80,7 +85,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.17.1";
+        public static string gsVersion = "0.18.0";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 

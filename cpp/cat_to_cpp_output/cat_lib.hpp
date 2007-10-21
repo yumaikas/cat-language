@@ -2,7 +2,7 @@
 // by Christopher Diggins
 // http://www.cat-language.com
 
-#include <algorithm>
+//#include <algorithm>
 #include <assert.h>
 
 #include "..\ootl\ootl_object.hpp"
@@ -40,11 +40,15 @@ void _eval(object& o);
 #define call(FXN) FXN(); /* */
 #endif
 
+#ifdef DEBUG
 void cat_assert(bool b)
 {
 	if (!b)
 		throw std::exception("failed assertion");
 }
+#else
+#define cat_assert(T) ;
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // function types
@@ -424,9 +428,15 @@ void _if()
 	bool bCond = stk.top().to<bool>();
 	stk.pop_nodestroy();
 	if (bCond)
+	{
+		onfalse.release();
 		_eval(ontrue);
+	}
 	else 
+	{
+		ontrue.release();
 		_eval(onfalse);
+	}
 }
 
 void _compose()

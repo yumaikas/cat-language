@@ -7,10 +7,15 @@
 #include <cstdlib>
 #include <memory>
 
+#ifdef DEBUG
 void ootl_assert(bool b) {
 	if (!b) 
 		throw 1;
 }
+#else
+#define ootl_assert(TOKEN) ;
+#endif
+
 
 namespace ootl 
 {

@@ -1,0 +1,39 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation or warantee.
+// http://www.cdiggins.com
+
+//=============================================================================
+
+define noop : ( -> )
+{{
+  desc:
+    Does nothing
+}}
+{ }
+
+//=============================================================================
+// Exception throwing and handling
+
+define throw_if : (bool any -> )
+{{
+  desc:
+    A utilty for throwing exceptions
+}}
+{ [throw] [quote] dip compose [] if }
+
+define assert : (bool -> )
+{{
+  desc:
+    Used to check that preconditions or postconditions are true
+}}
+{ "assertion failed" throw_if }
+
+define try : (( -> 'A) -> 'A)
+{{
+  desc:
+    Provides a simple default exception handler
+}}
+{ ["exception data: " write writeln] try_catch }
+
+

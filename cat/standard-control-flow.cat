@@ -1,0 +1,81 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation, or warantee.
+// http://www.cdiggins.com
+
+//==============================================================================
+// Looping constructions
+
+define repeat : ('A ('A -> 'A) int -> 'A)
+{{
+  desc:
+    Executes a loop a fixed number of times
+  semantics:
+    $A [$B] $c repeat == $A $c eqz [] [$B $c dec] if
+}}
+{
+  swap            // 'A int [body]
+  [dip dec] papply  // 'A int [[body] dip dec]
+  [neqz] while pop
+}
+
+define whilen : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
+{{
+  desc:
+    Executes a while loop, while a condition is not true
+  semantics:
+    $A [$B] [$C] whilen == $A $C not [$B [$B][$C] whilen] [] if
+}}
+{ [not] compose while }
+
+define whilene : ('A list ('A list -> 'A list) -> 'A)
+{{
+  desc:
+    Executes a function while the list on the top of the stack is not empty
+  semantics:
+    $A $b [$C] whilene == $A $b empty not [$C [$C] whilene] [pop] if
+}}
+{ [empty] whilen pop }
+
+define whilenz : ('A int ('A int -> 'A int) -> 'A)
+{{
+  desc:
+    Executes a function while the value on the top of the stack is not equal to zero.
+  semantics:
+    $A $b [$C] whilenz == $A $b neqz [$C [$C] whilenz] [pop] if
+}}
+{ [neqz] while pop }
+
+define for_each : ('A list ('A any -> 'A) -> 'A)
+{{
+  desc:
+    Executes a function with each item in the list, and consumes the list.
+  semantics:
+    $A $b [$C] for_each == $A $b empty not [uncons pop [$C] for_each] [pop] if }
+}}
+{ [dip] papply [uncons swap] rcompose whilene }
+
+define for : ('A ('A int -> 'A) int -> 'A)
+{{
+  desc:
+    A for loop. Behaves like repeat but an montonically increasing index value is
+    passed to the loop body on each iteration, starting at 0.
+}}
+{ swap [dip inc] papply [dup] rcompose swap neqf 0 bury while pop }
+
+define rfor : ('A ('A int -> 'A) int -> 'A)
+{{
+  desc:
+    Reverse for loop. Behaves like a for loop but the index decreases from
+    n down to 1.
+}}
+{ swap [dip dec] papply [dup] rcompose whilenz }
+
+define print_list : ('A list ~> 'A list)
+{{
+  desc:
+    Outputs a list to the console window
+  bugs:
+    The type checker requires variabe 'A to be written explicitly
+}}
+{ dup [writeln] for_each }

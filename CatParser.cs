@@ -98,7 +98,14 @@ namespace Cat
                     Output.WriteLine("declared type " + declaredType.ToPrettyString());
                     bool bTmp = CatFxnType.CompareFxnTypes(def.mpFxnType, declaredType);
                     def.SetTypeError();
+                    
+                    // avoid an extra output of the type
+                    return;
                 }
+            }
+            if (Config.gbShowInferredType)
+            {
+                Output.WriteLine(def.GetName() + " : " + def.GetFxnType().ToPrettyString());
             }
         }
 

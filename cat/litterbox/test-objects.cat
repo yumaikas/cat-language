@@ -1,0 +1,21 @@
+define new_point
+{
+  null
+  swap "y" _def_
+  swap "x" _def_
+}
+
+define add_point_x
+{ ["x" _get_] dip "y" _get_ swap add_int }
+
+define add_point_y
+{ ["y" _get_] dip "y" _get_ swap add_int }
+
+define add_point
+{
+  add_x
+  [add_y] dip
+  new_point
+  popd
+  popd
+}
