@@ -13,29 +13,94 @@ namespace Cat
     class CatParser
     {
         #region parsing functions
-        public static List<Function> TermsToFxns(List<AstExprNode> terms, DefinedFunction def)
+        public static List<Function> TermsToFxns(List<AstExprNode> terms)
         {
             List<Function> fxns = new List<Function>();
             foreach (AstExprNode child in terms)
             {
-                Function f = ExprToFunction(child, def);
+                Function f = ExprToFunction(child);
                 fxns.Add(f);                
             }
             return fxns;
         }
 
-        private static Quotation MakeQuoteFunction(AstQuoteNode node, DefinedFunction def)
+        private static int IndexOfNamedTerm(List<AstExprNode> terms, string sName)
         {
-            return new Quotation(TermsToFxns(node.mTerms, def));
+            for (int i = 0; i < terms.Count; ++i)
+            {
+                if (terms[i] is AstNameNode)
+                    if (terms[i].ToString().Equals(sName))
+                        return i;
+            }
+            return -1;
         }
 
-        private static Quotation MakeQuoteFunction(AstLambdaNode node, DefinedFunction def)
+        private static void LiftRecursiveCalls(List<AstExprNode> terms, string sName)
+        {
+            int i = terms.Count - 1;
+            while (i >= 0)
+            {
+                if (terms[i] is AstQuoteNode)
+                {
+                    AstQuoteNode q = terms[i] as AstQuoteNode;
+                    
+                    // Recursively lift recursive calls
+                    LiftRecursiveCalls(q.mTerms, sName);
+                    
+                    int n = IndexOfNamedTerm(q.mTerms, sName);
+                    if (n >= 0)
+                    {
+                        AstNameNode name = q.mTerms[n] as AstNameNode;
+                        if (name == null)
+                            throw new Exception("internall error: expected name node");
+
+                        List<AstExprNode> left = new List<AstExprNode>(q.mTerms.GetRange(0, n));
+                        List<AstExprNode> right = new List<AstExprNode>(q.mTerms.GetRange(n + 1, q.mTerms.Count - n - 1));
+                        terms.RemoveAt(i);
+
+                        // [... self ...] => [...] self compose [...] compose
+                        terms.Insert(i, new AstNameNode("compose"));
+                        terms.Insert(i, new AstQuoteNode(right));
+                        terms.Insert(i, new AstNameNode("compose"));
+                        terms.Insert(i, name);
+                        terms.Insert(i, new AstQuoteNode(left));
+
+                        i += 5;
+                    }
+                }
+
+                --i;
+            }
+        }
+
+        private static void RewriteRecursiveCalls(List<AstExprNode> terms, DefinedFunction def)
+        {
+            foreach (AstExprNode node in terms)
+                if (node is AstNameNode)
+                    if (node.ToString().Equals(def.GetName()))
+                        throw new Exception("you can not make a recursive call at the top-level of a function");
+
+            LiftRecursiveCalls(terms, def.GetName());
+
+            // "self" will only occur at top level now.
+            foreach (AstExprNode node in terms)
+                if (node is AstNameNode)
+                    if (node.ToString().Equals(def.GetName()))
+                        node.SetText("self");
+        }
+
+        private static Quotation MakeQuoteFunction(AstQuoteNode node)
+        {
+            return new Quotation(TermsToFxns(node.mTerms));
+        }
+
+        private static Quotation MakeQuoteFunction(AstLambdaNode node)
         {
             CatPointFreeForm.Convert(node);
-            return new Quotation(TermsToFxns(node.mTerms, def));
+            return new Quotation(TermsToFxns(node.mTerms));
         }
 
-        private static Function ExprToFunction(AstExprNode node, DefinedFunction def)
+        private static Function ExprToFunction(AstExprNode node)
         {
             if (node is AstIntNode)
                 return new PushInt((node as AstIntNode).GetValue());
@@ -53,17 +118,16 @@ namespace Cat
             {
                 string s = node.ToString();
                 Function f = Executor.Main.GetGlobalContext().Lookup(s);
-                if (def != null)
-                    if (s.Equals(def.GetName()))
-                        return new SelfFunction(f);
+                if (s.Equals("self"))
+                    return new SelfFunction();
                 if (f == null)
                     throw new Exception("could not find function " + s);
                 return f;
             }
             else if (node is AstQuoteNode)
-                return MakeQuoteFunction(node as AstQuoteNode, def);
+                return MakeQuoteFunction(node as AstQuoteNode);
             else if (node is AstLambdaNode)
-                return MakeQuoteFunction(node as AstLambdaNode, def);
+                return MakeQuoteFunction(node as AstLambdaNode);
             else
                 throw new Exception("node " + node.ToString() + " does not have associated function");
         }
@@ -78,7 +142,15 @@ namespace Cat
 
             DefinedFunction def = new DefinedFunction(node.mName);
             Executor.Main.GetGlobalContext().AddFunction(def);
-            def.AddFunctions(TermsToFxns(node.mTerms, def));
+
+            RewriteRecursiveCalls(node.mTerms, def);
+            def.AddFunctions(TermsToFxns(node.mTerms));
+            
+            // Make sure all self-functions contain a pointer to the function
+            // Note: self calls should only occur at the top-level.
+            foreach (Function f in def.GetChildren())
+                if (f is SelfFunction)
+                    (f as SelfFunction).SetFxn(def);
             
             // Construct a representation of the meta data if neccessary
             if (node.mpMetaData != null)
@@ -105,7 +177,8 @@ namespace Cat
             }
             if (Config.gbShowInferredType)
             {
-                Output.WriteLine(def.GetName() + " : " + def.GetFxnType().ToPrettyString());
+                if (def != null)
+                    Output.WriteLine(def.GetName() + " : " + def.GetFxnType().ToPrettyString());
             }
         }
 
@@ -118,7 +191,7 @@ namespace Cat
         {
             if (node is AstExprNode)
             {
-                Function f = ExprToFunction(node as AstExprNode, null);
+                Function f = ExprToFunction(node as AstExprNode);
                 f.Eval(exec);
             }
             else if (node is AstDefNode)

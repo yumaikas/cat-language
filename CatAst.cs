@@ -137,6 +137,12 @@ namespace Cat
                 return msText;
         }
 
+        public void SetText(string s)
+        {
+            mpPegNode = null;
+            msText = s;
+        }
+
         public string GetComment()
         {
             return msComment;
