@@ -7,7 +7,7 @@ define (
 {{
   desc:
     List initializer.
-  test:
+  tests:
     in: nil
     out: [] list
 }}
@@ -37,39 +37,60 @@ define ()
 define consd
 {{
   desc:
-    Cons the second item on stack to a list in the third position.
+    Append the second item on stack to a list in the third position.
+  tests:
+    in: [1 2] list 3 4 consd
+    out: [1 2 3] list 4
 }}
 { [cons] dip }
 
 define swons : ('a list -> list)
+{{
+  desc:
+    Appends the second item on the stack, to a list in the first item
+  tests:
+    in: 3 [1 2] list swons
+    out: [1 2 3] list
+}}
 { swap cons }
 
 define uncons2 : (list -> list any any)
-{ uncons [uncons] dip }
-
-define uncons3 : (list -> list any any any)
-{ uncons [uncons2] dip }
-
-define uncons4 : (list -> list any any any any)
-{ uncons [uncons3] dip }
-
-define unpair : (list -> any any)
-{ uncons [head] dip }
-
-define fold : ('A list 'b ('A 'b 'c -> 'A 'b) -> 'A 'b)
-{ swapd gfold }
-
-define unfold : ('A 'b ('A list 'b -> 'A list 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
 {{
   desc:
-    generates a function
+    Extracts the first and second item from a list
+  tests:
+    in: [1 2 3] list uncons2
+    out: [1] list 2 3
+}}
+{ uncons [uncons] dip }
+
+define unpair : (list -> any any)
+{{
+  desc:
+    Extracts the first and second item from a list
+  tests:
+    in: [1 2] list unpair
+    out: 1 2
+}}
+{ uncons [head] dip }
+
+define gunfold : ('A 'b ('A list 'b -> 'A list 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
+{{
+  desc:
+    Generates a list by applying a successor functions, until the predicate is true.
+    This is a generalized version of the unfold function.
+  tests:
+    in: 1 [dup inc swap] [dup 5 lteq]
 }}
 { [nil bury [consd] compose] dip whilen pop }
 
 define rev : (list -> list)
 {{
   desc:
-    reverses a list
+    Reverses a list
+  tests:
+    in: [1 2 3] list rev
+    out: [1 2 3]
 }}
 { nil [cons] fold }
 
@@ -77,26 +98,30 @@ define small : (list -> list bool)
 {{
   desc:
     Returns true if a list contains one element or is empty
+  tests:
+    in: 1 unit small popd
+    out: true
 }}
 { empty [true] [rest empty popd] if }
 
-define split : ('A list ('A list list 'b 'b -> 'A list list 'c bool) -> 'A list list)
+define split : ('A list ('b -> bool) -> 'A list list)
 {{
   desc:
     Splits a list into two new lists
+  tests:
+    in: [0 1 2 3 4] list [even] split
+    out: [1 3] list [0 2 4] list
 }}
 {
-  nil bury nil bury
-  [dup] rcompose
-  [[swap [cons] dip] [cons] if] compose
-  gfold
+  dup2 filter
+  [negate filter] dip
 }
 
 define cons_first : (list 'a -> list)
 {{
   desc:
     Appends item to first list in a pair of lists
-  test:
+  tests:
     in: [1 2] list [3 4] list pair 5 cons_first
     out: [1 2 5] list [3 4] list pair
 }}
@@ -106,7 +131,7 @@ define cons_second : (list 'a -> list)
 {{
   desc
     Appends item to second list in a pair of lists
-  test:
+  tests:
     in: [1 2] list [3 4] list pair 5 cons_second
     out: [1 2] list [3 4 5] list pair
 }}
@@ -116,7 +141,7 @@ define move_head : (list list -> list list)
 {{
   desc:
     Copies the head from one list to another.
-  test:
+  tests:
     in: [1 2] list [3 4] list move_head
     out: [1 2 3] list [3] list
 }}
@@ -126,14 +151,23 @@ define index_of : (list 'a -> list int)
 {{
   desc:
     Returns the index of a value in a list or the size of the list
-    if not found
+    if not found.
+  tests:
+    in: [1 2 3 4] list 1 index_of popd
+    out: 3
+  tests:
+    in: ['a' 'b' 'c'] list 'c' index_of popd
+    out: 0
+  tests:
+    in: ['a' 'b' 'c'] list 'd' index_of popd
+    out: 3
 }}
 { [neq] papply count_while }
 
 define split_at : (list int -> list list)
 {{
   desc:
-    splits a list in two at an index, the top result contains the second half
+    Splits a list in two at an index, the top result contains the second half
     sand the second result contains the first half of the original list
 }}
 { nil bury [move_head] swap repeat }
@@ -142,7 +176,7 @@ define dhead : (list -> list any)
 {{
   desc:
     Returns the head of a list, leaving the original list on the stack.
-  test:
+  tests:
     in: [1 2] list dhead
     out: [1 2] list 2
 }}
@@ -152,7 +186,7 @@ define dtail : (list -> list list)
 {{
   desc:
     Returns the tail of a list, leaving the original list on the stack.
-  test:
+  tests:
     in: [1 2 3] list dtail
     out: [1 2 3] list [1 2] list
 }}
@@ -160,40 +194,80 @@ define dtail : (list -> list list)
 
 define head_eq : (list any -> list bool)
 {{
-  test:
+  tests:
     in: [1 2] list 2 head_eq popd
     out: true
 
-  test:
+  tests:
     in: [1 2] list 1 head_eq popd
     out: false
 }}
 { [dhead] dip eq }
 
-
 //=============================================================================
 // Infinite list generators
 
 define range : (int int -> list)
+{{
+  desc:
+    Returns a list of x non-negative integers from n.
+  test:
+    in: 3 5 range
+    out: [7 6 5 4 3] list
+}}
 { [] range_gen }
 
 define n : (int -> list)
+{{
+  desc:
+    Returns a list of the first n non-negative integers.
+  test:
+    in: 4 n
+    out: [3 2 1 0] list
+  test:
+    in: 0 n
+    out: nil
+}}
 { 0 swap range }
 
 define naturals : ( -> list)
-{ 0 [inc] [pop true] gen }
+{{
+  desc:
+    Returns a lazy list of all the non-negative integers
+}}
+{ 0 [inc] [pop true] unfold }
 
 define odds : ( -> list)
-{ 1 [2 +] [pop true] gen  }
+{{
+  desc:
+    Returns a lazy list of all the odd numbers
+}}
+{ 1 [2 +] [pop true] unfold }
 
 define evens : ( -> list)
-{ 0 [2 +] [pop true] gen  }
+{{
+  desc:
+    Returns a lazy list of all the even numbers
+}}
+{ 0 [2 +] [pop true] unfold  }
 
 define negatives : ( -> list)
-{ 1 neg [dec] [pop true] gen }
+{{
+  desc:
+    Returns a lazy list of all the negative numbers starting at -1
+}}
+{ 1 neg [dec] [pop true] unfold }
 
 define zeros : ( -> list)
+{{
+  desc:
+    Returns an infinite lazy list of zeros
+}}
 { 0 repeater }
 
 define ones : ( -> list)
+{{
+  desc:
+    Returns an infinite lazy list of ones
+}}
 { 1 repeater }

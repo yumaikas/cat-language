@@ -1,16 +1,17 @@
 Cat Interpreter 
 Copyright 2007, by Christopher Diggins
 Licensed under the MIT License (see license.txt)
+all source files are public domain
 
 NOTE: 
-Don't forget to load the standard library by passing it as a command-line argument.
+Don't forget to load the standard library by passing "everything.cat" as a command-line argument.
 
 To compile the source code you can use the Microsoft Visual C# Express edition.
 You can download it for free at: 
 
 	http://msdn.microsoft.com/vstudio/express/visualcsharp/
 
-The open-source Mono compiler is not supported, but may work:
+Or the open-source Mono compiler version 1.2 or later:
 
 	http://www.mono-project.com/Downloads
 

@@ -333,7 +333,7 @@ define over3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
 {{
   test:
     in: 1 2 3 4 over3
-    out: 1 2 3 1
+    out: 1 2 3 4 1
 }}
 { [over2] dip swap }
 
@@ -341,7 +341,7 @@ define over4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
 {{
   test:
     in: 1 2 3 4 5 over4
-    out: 1 2 3 5 5 1
+    out: 1 2 3 4 5 1
 }}
 { [over3] dip swap }
 
@@ -395,7 +395,7 @@ define bury3 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
 {{
   test:
     in: 1 2 3 4 bury3
-    out: 5 1 2 3
+    out: 4 1 2 3
   semantics:
     $a $b $c $d bury3 == $d $a $b $c
 }}

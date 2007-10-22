@@ -35,11 +35,6 @@ namespace Cat
             {
                 return TypeVectorToConstraintVector(k as CatTypeVector);
             }
-            else if (k is CatSelfType)
-            {
-                CatSelfType self = k as CatSelfType;
-                return new RecursiveRelation();
-            }
             else if (k is CatFxnType)
             {
                 return FxnTypeToRelation(k as CatFxnType);
@@ -92,7 +87,7 @@ namespace Cat
             }
             else if (c is RecursiveRelation)
             {
-                return new CatSelfType();
+                throw new Exception("illegal recursive relation");
             }
             else if (c is Constant)
             {

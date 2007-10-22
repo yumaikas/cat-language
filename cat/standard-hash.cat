@@ -35,7 +35,7 @@ define list_to_hash : (list -> hash_list)
   desc:
     Converts a list of pairs into a hash list
 }}
-{  hash_list [unpair swap hash_add_chain] fold }
+{  hash_list swap [unpair swap hash_add_chain] gfold }
 
 define self_join : (list -> list)
 {{
@@ -43,9 +43,6 @@ define self_join : (list -> list)
     Performs an inner self-join on a list of pairs based the first item.
     In other words all unique first items in pairs are treated as keys,
     and all second values are concatenated together in a list.
-  test:
-    in: [[1 'a'] list [2 'b'] list [1 'c'] list] list self_join
-    out: [[[1 ['a' 'c'] list] list [2 ['b'] list] list
 }}
 { list_to_hash hash_to_list }
 

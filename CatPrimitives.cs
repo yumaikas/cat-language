@@ -265,6 +265,8 @@ namespace Cat
             }
         }
 
+        /* TODO: make new versions of these functions
+         * 
         public class MakeHtmlHelp : PrimitiveFunction
         {
             public MakeHtmlHelp()
@@ -290,6 +292,7 @@ namespace Cat
                 MainClass.MakeLibrary();
             }
         }
+         */
 
         public class Clr : PrimitiveFunction
         {
@@ -327,12 +330,16 @@ namespace Cat
             {
                 int nPassed = 0;
                 int nFailed = 0;
+
+                List<string> failures = new List<string>();
                 foreach (Function f in exec.GetGlobalContext().GetAllFunctions())
-                    f.RunTests(ref nPassed, ref nFailed);
+                    f.RunTests(ref nPassed, ref nFailed, failures);
 
                 Output.WriteLine("Test summary:");
-                Output.WriteLine("passed : " + nPassed);
-                Output.WriteLine("failed : " + nFailed);
+                Output.WriteLine("passed-count : " + nPassed);
+                Output.WriteLine("failed-count : " + nFailed);
+                foreach (string s in failures)
+                    Output.WriteLine("failed test: " + s);
             }
         }
         
@@ -752,7 +759,6 @@ namespace Cat
 
                 public void LocalExec()
                 {
-                    mExec.Dup();
                     mCondition.Eval(mExec);
                     if (mExec.PopBool())
                     {
@@ -791,8 +797,7 @@ namespace Cat
                         LocalExec();
                         return;
                     }
-
-                    mExec.Dup();
+                    
                     mCondition.Eval(mExec);
 
                     if (mExec.PopBool())
@@ -804,10 +809,7 @@ namespace Cat
                         mArgRelation.Eval(mExec);
 
                         Executor e2;
-                        if (mExec is IntExecutor)
-                            e2 = new IntExecutor();
-                        else
-                            e2 = new DefaultExecutor();
+                        e2 = new DefaultExecutor();
                         e2.Push(mExec.Pop());
                         BinRecHelper h2 = new BinRecHelper(e2, mResultRelation, mArgRelation, mBaseCase, mCondition);
                         Thread t = new Thread(new ParameterizedThreadStart(LaunchThread));
@@ -828,26 +830,8 @@ namespace Cat
                 Function fBaseCase = exec.PopFunction();
                 Function fCondition = exec.PopFunction();
 
-                CatFxnType ftResultRelationType = CatFxnType.Unquote(fResultRelation.GetFxnType());
-                CatFxnType ftArgRelationType = CatFxnType.Unquote(fArgRelation.GetFxnType());
-                CatFxnType ftIntResultRelationType = CatFxnType.Create("(int int -> int)");
-                CatFxnType ftIntArgRelationType = CatFxnType.Create("(int -> int int)");
-
-                if (CatFxnType.CompareFxnTypes(ftResultRelationType, ftIntResultRelationType)
-                    && CatFxnType.CompareFxnTypes(ftArgRelationType, ftIntArgRelationType))
-                {
-                    IntExecutor ie = new IntExecutor();                    
-                    ie.PushInt(exec.PopInt());
-                    BinRecHelper h = new BinRecHelper(ie, fResultRelation, fArgRelation, fBaseCase, fCondition);
-                    h.Exec();
-                    exec.Push(ie.Pop());
-                }
-                else
-                {
-                    BinRecHelper h = new BinRecHelper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
-                    h.Exec();
-                }
-
+                BinRecHelper h = new BinRecHelper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
+                h.Exec();
             }
         }
 
@@ -1607,10 +1591,10 @@ namespace Cat
             }
         }
 
-        public class Gen : PrimitiveFunction
+        public class Unfold : PrimitiveFunction
         {
-            public Gen()
-                : base("gen", "('a ('a -> 'a) ('a -> bool) -> list)",
+            public Unfold()
+                : base("unfold", "('a ('a -> 'a) ('a -> bool) -> list)",
                     "creates a lazily evaluated list")
             { }
 
@@ -1796,10 +1780,10 @@ namespace Cat
                 exec.Push(list.Filter(f.ToFilterFxn()));
             }
         }
-        public class Fold : PrimitiveFunction
+        public class GFold : PrimitiveFunction
         {
-            public Fold()
-                : base("gfold", "('A list ('A 'b -> 'A) -> 'A)", "recursively applies a function to each element in a list")
+            public GFold()
+                : base("gfold", "('A list ('A 'b -> 'A) -> 'A)", "recursively applies a n-ary function to each element in a list")
             { }
 
             public override void Eval(Executor exec)
@@ -1813,6 +1797,31 @@ namespace Cat
                     f.Eval(exec);
                     iter = iter.GotoNext();
                 }
+            }
+        }
+        public class Fold : PrimitiveFunction
+        {
+            public Fold()
+                : base("fold", "(list 'a ('a 'b -> 'a) -> 'a)", "recursively applies a binary function to each element in a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.TypedPop<Function>();
+                Object o = exec.TypedPop<Object>();
+                FList list = exec.TypedPop<FList>();
+                FList iter = list.GetIter();
+                
+                while (!iter.IsEmpty())
+                {
+                    exec.Push(o);
+                    exec.Push(iter.GetHead());
+                    f.Eval(exec);
+                    o = exec.TypedPop<Object>();
+                    iter = iter.GotoNext();
+                }
+
+                exec.Push(o);
             }
         }
 

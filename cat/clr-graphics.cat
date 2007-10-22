@@ -72,4 +72,4 @@ define sq
 {{
   desc{Draws a square with a given side}
 }}
-{ [fd 90 tr] bind 4 repeat }
+{ [fd 90 tr] papply 4 repeat }

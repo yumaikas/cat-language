@@ -21,9 +21,7 @@ namespace Cat
             {
                 string s = node.ToString();
                 Trace.Assert(s.Length > 0);
-                if (s.Equals("self"))
-                    return new CatSelfType();
-                else if (s.Length > 1 && s[0] == '_')
+                if (s.Length > 1 && s[0] == '_')
                     return CatCustomKind.GetCustomKind(s);
                 else 
                     return new CatSimpleTypeKind(s);

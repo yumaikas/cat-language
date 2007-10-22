@@ -91,7 +91,7 @@ namespace Cat
         {
             Object[] ret = new Object[mCount];
             for (int i = 0; i < mCount; ++i)
-                ret[i] = mBase[i];
+                ret[i] = mBase[mCount - i - 1];
             return ret;
         }
 
@@ -286,16 +286,16 @@ namespace Cat
         }
         public T TypedPeek<T>()
         {
-#if (!FAST)
+            #if (!FAST)
             if (Count() == 0) throw new Exception("Trying to peek into an empty stack ");
-#endif
+            #endif
 
             Object o = Peek();
 
-#if (!FAST)
+            #if (!FAST)
             if (!(o is T))
                 throw new Exception("Expected type " + typeof(T).Name + " but instead found " + o.GetType().Name);
-#endif
+            #endif
 
             return (T)o;
         }
@@ -505,151 +505,6 @@ namespace Cat
                 s = "...";
             if (GetStack().Count < nMax)
                 nMax = GetStack().Count;
-            for (int i = nMax - 1; i >= 0; --i)
-            {
-                Object o = PeekBelow(i);
-                s += Output.ObjectToString(o) + " ";
-            }
-            return s;
-        }
-    }
-
-    public class IntExecutor : Executor
-    {
-        CatIntStack mStack = new CatIntStack();
-
-        public IntExecutor()
-            : base(new Context())
-        {
-        }
-
-        public CatIntStack GetStack()
-        {
-            return mStack;
-        }
-
-        public override Object Peek()
-        {
-            return mStack.Peek();
-        }
-
-        public override Object PeekBelow(int n)
-        {
-            return mStack[n];
-        }
-
-        public override void Push(Object o)
-        {
-            if (o is Boolean)
-            {
-                mStack.Push((bool)o ? 1 : 0);
-            }
-            else
-            {
-                mStack.Push((int)o);
-            }
-        }
-
-        public override Object Pop()
-        {
-            return mStack.Pop();
-        }
-
-        public override int PopInt()
-        {
-            return mStack.Pop();
-        }
-
-        public override bool PopBool()
-        {
-            return mStack.Pop() != 0;
-        }
-
-        public override int PeekInt()
-        {
-            return mStack.Peek();
-        }
-
-        public override bool PeekBool()
-        {
-            return mStack.Peek() != 0;
-        }
-
-        public override void PushInt(int x)
-        {
-            mStack.Push(x);
-        }
-
-        public override void PushBool(bool x)
-        {
-            mStack.Push(x ? 1 : 0);
-        }
-
-        public override void AddInt(int n)
-        {
-            mStack.AddInt(n);
-        }
-        public override void SubInt(int n)
-        {
-            mStack.SubInt(n);
-        }
-        public override void LtInt(int n)
-        {
-            mStack.LtInt(n);
-        }
-        public override void DecInt()
-        {
-            mStack.DecInt();
-        }
-        public override void IncInt()
-        {
-            mStack.IncInt();
-        }
-        public override int GetStackSize()
-        {
-            return mStack.Count;
-        }
-        public override FList GetStackAsList()
-        {
-            return mStack.ToList();
-        }
-        public override Object[] GetStackAsArray()
-        {
-            return mStack.ToArray();
-        }
-        public override void ClearTo(int n)
-        {
-            mStack.ClearTo(n);
-        }
-        public override void Dup()
-        {
-            mStack.Dup();
-        }
-        public override void Swap()
-        {
-            mStack.Swap();
-        }
-        public override bool IsEmpty()
-        {
-            return (mStack.Count == 0);
-        }
-        public override int Count()
-        {
-            return (mStack.Count);
-        }
-        public override void Clear()
-        {
-            mStack.Clear();
-        }
-        public override string StackToString()
-        {
-            if (mStack.Count == 0) return "_empty_";
-            string s = "";
-            int nMax = 5;
-            if (mStack.Count > nMax)
-                s = "...";
-            if (mStack.Count < nMax)
-                nMax = mStack.Count;
             for (int i = nMax - 1; i >= 0; --i)
             {
                 Object o = PeekBelow(i);

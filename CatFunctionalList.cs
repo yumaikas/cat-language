@@ -94,9 +94,13 @@ namespace Cat
 
         public static void PairwiseForEach(PairAccessor f, FList x, FList y)
         {
-            if (x.IsEmpty() || y.IsEmpty()) return;
-            if (f(x.GetHead(), y.GetHead())) return;
-            PairwiseForEach(f, x.Tail(), y.Tail());
+            while (!x.IsEmpty() && !y.IsEmpty()) 
+            {
+                if (!f(x.GetHead(), y.GetHead())) 
+                    return;
+                x = x.GotoNext();
+                y = y.GotoNext();               
+            }
         }
 
         public static bool AreListsEqual(FList x, FList y)
@@ -112,7 +116,7 @@ namespace Cat
             if (x.IsEmpty()) 
                 return y.IsEmpty();
             if (y.IsEmpty())
-                return false; // since we know from the previous condition that both top and y aren't empty.
+                return false; // since we know from the previous condition that x isn't empty.
 
             // Compare the count if it is easy.
             if (x.IsKnownFinite() && y.IsKnownFinite())
@@ -126,7 +130,7 @@ namespace Cat
                     return ret = false;
                 return true;
             };
-            PairwiseForEach(f, x, y);
+            PairwiseForEach(f, x.GetIter(), y.GetIter());
             return ret;
         }
         #endregion
@@ -215,16 +219,6 @@ namespace Cat
 
         public virtual FList TakeN(int n)
         {
-            switch (n)
-            {
-                case (0):
-                    return Nil();
-                case (1):
-                    return MakeUnit(GetHead());
-                case (2):
-                    return MakePair(GetHead(), Tail().GetHead());
-            }
-
             object[] a = new object[n];
             int i = 0;
             FList iter = GetIter();

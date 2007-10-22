@@ -17,7 +17,7 @@ namespace Cat
     public class MainClass
     {
         static List<string> gsInputFiles = new List<string>();
-        static CatHelpMaker gpHelp;
+        //static CatHelpMaker gpHelp;
         
         public static string gsDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\cat";
         static string gsSessionFile = gsDataFolder + "\\session.cat";
@@ -39,16 +39,11 @@ namespace Cat
                 }
             }
 
+            /*
             if (File.Exists("help.txt"))
             {
                 gpHelp = CatHelpMaker.CreateHelp("help.txt");
-                if (gpHelp == null)
-                    WriteLine("failed to load help file");
-            }
-            else
-            {
-                WriteLine("failed to load help file");
-            }
+            }*/
 
             try
             {
@@ -129,70 +124,6 @@ namespace Cat
         {
             foreach (Function f in q.GetChildren())
                 f.OutputDetails();
-        }
-
-        public static void OutputHelp(string s)
-        {
-            if (gpHelp == null)
-            {
-                WriteLine("no help has been loaded");
-                return;
-            }
-
-            FxnDoc f = gpHelp.GetFxnDoc(s);
-            if (f == null)
-            {
-                WriteLine("no help available for " + s);
-            }
-            else
-            {
-                WriteLine("name      : " + f.msName);
-                WriteLine("category  : " + f.msCategory);
-                WriteLine("level     : " + f.mnLevel.ToString());
-                WriteLine("type      : " + f.msType);
-                WriteLine("semantics : " + f.msSemantics);
-                WriteLine("remarks   : " + f.msNotes);
-            }
-        }
-
-        public static void MakeHtmlHelp()
-        {
-            if (gpHelp == null)
-            {
-                WriteLine("no help has been loaded");
-                return;
-            }
-
-            try
-            {
-                string s = "help.html";
-                gpHelp.SaveHtmlFile(s);
-                WriteLine("help file has been saved to " + s);
-            }
-            catch
-            {
-                WriteLine("failed to create html help file");
-            }
-        }
-
-        public static void MakeLibrary()
-        {
-            if (gpHelp == null)
-            {
-                WriteLine("no help has been loaded");
-                return;
-            }
-
-            try
-            {
-                string s = "library.cat";
-                gpHelp.SaveLibrary(s);
-                WriteLine("library file has been saved to " + s);
-            }
-            catch
-            {
-                WriteLine("failed to create library");
-            }
         }
         #endregion
 

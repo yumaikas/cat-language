@@ -141,6 +141,8 @@ define apply2 : ('A ('A -> 'A) -> 'A)
   semantics:
     $A [$B] apply2 == $A $B $B
   test:
+    in: 40 [inc] apply2
+    out: 42
 }}
 { kapply apply }
 
@@ -150,5 +152,21 @@ define apply3 : ('A ('A -> 'A) -> 'A)
     Applies a function to a stack three times.
   semantics:
     $A [$B] apply3 == $A $B $B $B
+  test:
+    in: 40 [inc] apply3
+    out: 43
 }}
 { kapply apply2 }
+
+define negate : (('A -> 'B bool) -> ('A -> 'B bool))
+{{
+  desc:
+    Takes any function that returns a boolean, and returns the a new function that negates
+    result.
+  test:
+    in: 42 [42 eq] negate apply
+    out: false
+}}
+{
+  [not] compose
+}
