@@ -67,7 +67,7 @@ define test0
 }
 
 define _43210
-{ 0 [1 add] [5 lt] gen }
+{ 0 [1 add] [5 lt] unfold }
 
 define _3210
 { 0 4 [id] range_gen }
@@ -382,7 +382,7 @@ define test4
   [5 n [4 3 2 1 0] list eq] test
   [5 n 0 5 range eq] test
   [5 n 0 5 [inc dec] range_gen eq] test
-  [5 n 0 [inc] [5 <] gen eq] test
+  [5 n 0 [inc] [5 <] unfold eq] test
   [5 n naturals 5 take eq] test
   [5 n naturals [5 <] take_while eq] test
   [5 n [3 <] take_while 3 n eq] test

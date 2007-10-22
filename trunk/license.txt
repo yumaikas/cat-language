@@ -1,4 +1,18 @@
-==
+==============================================================================
+
+The Cat source files are public domain. 
+
+You can get eliminate the MIT license by simply re-compiling the source files 
+yourself. If you compile the source files yourself you have a new product which 
+is no longer bound to the MIT license.
+
+This protect me from liability, while still making everything free and without 
+restriction.
+
+- Christopher Diggins
+
+==============================================================================
+
 The Cat interpreter software is licensed under the MIT License: 
 
 Copyright (c) 2007 Christopher Diggins
@@ -20,10 +34,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-==
 
-The Cat source files are public domain. 
+==============================================================================
 
-You can get eliminate the MIT license by simply re-compiling the source files yourself. If you compile the source files yourself you have a new product which is no longer bound to the MIT license.
-
-This was neccessary to protect myself from liability, while still making everything free and without restriction.

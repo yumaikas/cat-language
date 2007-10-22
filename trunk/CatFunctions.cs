@@ -104,10 +104,10 @@ namespace Cat
         {
             int nPassed = 0;
             int nFailed = 0;
-            RunTests(ref nPassed, ref nFailed);
+            RunTests(ref nPassed, ref nFailed, new List<string>());
         }
 
-        public void RunTests(ref int nPassed, ref int nFailed)
+        public void RunTests(ref int nPassed, ref int nFailed, List<string> failures)
         {
             Executor exec = new DefaultExecutor();
 
@@ -117,41 +117,50 @@ namespace Cat
             List<CatMetaData> tests = mpMetaData.FindAll("test");
             foreach (CatMetaData test in tests)
             {
-                if (Config.gbVerboseTests)
+                try
                 {
-                    Output.WriteLine("");
-                    Output.WriteLine("Testing " + msName);
-                }
+                    if (Config.gbVerboseTests)
+                    {
+                        Output.WriteLine("");
+                        Output.WriteLine("Testing " + msName);
+                    }
 
-                if (test.Find("in") == null)
-                    throw new Exception("badly formatted test");
-                string sIn = test.Find("in").GetContent();
-                if (test.Find("out") == null)
-                    throw new Exception("badly formatted test");
-                string sOut = test.Find("out").GetContent();
+                    if (test.Find("in") == null)
+                        throw new Exception("badly formatted test");
+                    string sIn = test.Find("in").GetContent();
+                    if (test.Find("out") == null)
+                        throw new Exception("badly formatted test");
+                    string sOut = test.Find("out").GetContent();
 
-                if (Config.gbVerboseTests)
-                {
-                    Output.WriteLine("input: " + sIn);
-                    Output.WriteLine("expected: " + sOut);
-                    exec.Execute("[" + sIn + "] @ dup writeln");
-                    exec.Execute("[" + sOut + "] @ dup writeln");
+                    if (Config.gbVerboseTests)
+                    {
+                        Output.WriteLine("input: " + sIn);
+                        Output.WriteLine("expected: " + sOut);
+                        exec.Execute("[" + sIn + "] list dup writeln");
+                        exec.Execute("[" + sOut + "] list dup writeln");
+                    }
+                    else
+                    {
+                        exec.Execute("[" + sIn + "] list");
+                        exec.Execute("[" + sOut + "] list");
+                    }
+                    exec.Execute("eq");
+                    if (exec.PopBool())
+                    {
+                        Output.WriteLine("testing " + msName + " SUCCEEDED");
+                        nPassed++;
+                    }
+                    else
+                    {
+                        string s = msName + " FAILED";
+                        failures.Add(s);
+                        Output.WriteLine("testing " + s);
+                        nFailed++;
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    exec.Execute("[" + sIn + "] @");
-                    exec.Execute("[" + sOut + "] @");
-                }
-                exec.Execute("eq");
-                if (exec.PopBool())
-                {
-                    Output.WriteLine("testing " + msName + " SUCCEEDED");
-                    nPassed++;
-                }
-                else
-                {
-                    Output.WriteLine("testing " + msName + " FAILED");
-                    nFailed++;
+                    Output.WriteLine("error occured during test: " + e.Message);
                 }
 
                 exec.Execute("#clr");
@@ -798,7 +807,7 @@ namespace Cat
         public SelfFunction(Function f)
             : base("self")
         {
-            mpFxnType = CatFxnType.Create("(PRODUCTION -> CONSUMPTION)");
+            mpFxnType = CatFxnType.Create("('A -> 'B)");
             mpFxn = f;
         }
 

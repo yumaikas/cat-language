@@ -39,20 +39,12 @@ namespace Cat
                 return true;
         }
 
-        public string GenerateNewName(string s)
-        {
-            if (IsStackVarName(s))
-                return "S" + (mnId++).ToString();
-            else
-                return "t" + (mnId++).ToString();
-        }
-
         public CatKind GenerateNewVar(string s)
         {
             if (IsStackVarName(s))
-                return new CatStackVar(GenerateNewName(s));
+                return new CatStackVar("S" + (mnId++).ToString());
             else
-                return new CatTypeVar(GenerateNewName(s));
+                return new CatTypeVar("t" + (mnId++).ToString());
         }
         #endregion
 
@@ -89,8 +81,6 @@ namespace Cat
         {
             if (f == null)
                 throw new Exception("Invalid null parameter to rename function");
-            if (f is CatSelfType)
-                return f;
             return new CatFxnType(Rename(f.GetCons()), Rename(f.GetProd()), f.HasSideEffects());
         }
 
@@ -105,28 +95,16 @@ namespace Cat
         public CatStackKind Rename(CatStackVar s)
         {
             string sName = s.ToString();
+
             if (mNames.ContainsKey(sName))
             {
                 CatKind tmp = mNames[sName];
                 if (!(tmp is CatStackKind))
-                {
-                    // HACK: upon inspection I now have my doubts bout this code.
-                    // it needs to be examined
-                    if (tmp is CatSelfType)
-                    {
-                        CatTypeVector v = new CatTypeVector();
-                        v.Add(tmp);
-                        tmp = v;
-                    }
-                    else
-                    {
-                        throw new Exception(sName + " is not a stack kind");
-                    }
-                }
+                    throw new Exception(sName + " is not a stack kind");
                 return tmp as CatStackKind;
             }
 
-            CatStackVar var = new CatStackVar(GenerateNewName(sName));
+            CatStackVar var = GenerateNewVar(sName) as CatStackVar;
             mNames.Add(sName, var);
             return var;
         }
@@ -150,7 +128,7 @@ namespace Cat
                     return ret;
                 }
 
-                CatTypeVar var = new CatTypeVar(GenerateNewName(sName));
+                CatTypeVar var = GenerateNewVar(sName) as CatTypeVar;
                 mNames.Add(sName, var);
                 return var;
             }
@@ -209,8 +187,6 @@ namespace Cat
             {
                 if (k.IsKindVar() && vars.ContainsKey(k.ToString()))
                     ret.Add(vars[k.ToString()]);
-                else if (k is CatSelfType)
-                    ret.Add(k);
                 else if (k is CatFxnType)
                     ret.Add(RenameVars(ret, vars));
                 else if (k is CatTypeVector)

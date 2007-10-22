@@ -17,7 +17,7 @@ namespace Cat
         /// <summary>
         /// Tells us whether this is a release build or not.
         /// </summary>
-        public static bool gbReleaseVersion = false;
+        public static bool gbReleaseVersion = true;
 
         /// <summary>
         /// Controls whether or not to display the welcome text.
@@ -33,7 +33,7 @@ namespace Cat
         /// <summary>
         /// Output the amount of time elapsed after each entry in the interpreter.
         /// </summary>
-        public static bool gbOutputTimeElapsed = true;
+        public static bool gbOutputTimeElapsed = false;
 
         /// <summary>
         /// The number of completion port threads (?) that the interpreter can spawn at one time. 

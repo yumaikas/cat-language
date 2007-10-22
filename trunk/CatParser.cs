@@ -25,7 +25,7 @@ namespace Cat
         }
 
         // The following is old-code that I no longer use. 
-        // TODO: remove
+        // TODO: remove, once I am sure that I won't be using it anymore.
         /*
         private static int IndexOfNamedTerm(List<AstExprNode> terms, string sName)
         {
@@ -178,7 +178,7 @@ namespace Cat
             }
             if (Config.gbShowInferredType)
             {
-                if (def != null)
+                if (def != null && def.GetFxnType() != null)
                     Output.WriteLine(def.GetName() + " : " + def.GetFxnType().ToPrettyString());
             }
         }

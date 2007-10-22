@@ -4,19 +4,22 @@
 // http://www.cdiggins.com
 
 define constantly
-{ "deprecated" throw }
+{ "constantly is deprecated, use quote" throw }
 
 define qv
-{ "deprecated" throw }
+{ "qv is deprecated, use quote" throw }
 
 define @
-{ "deprecated" throw }
+{ "@ is deprecated, use list" throw }
 
 define bind
-{ "deprecated" throw }
+{ "bind is deprecated, use papply" throw }
 
 define curry
-{ "deprecated" throw }
+{ "curry is deprecated, use papply" throw }
 
 define nip
-{ "deprecated" throw }
+{ "nip is deprecated, use popd" throw }
+
+define gen
+{ "gen is deprecated, use unfold" throw }

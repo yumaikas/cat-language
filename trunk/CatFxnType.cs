@@ -69,11 +69,8 @@ namespace Cat
             mCons = new CatTypeVector(cons);
             mProd = new CatTypeVector(prod);
             mbSideEffects = bSideEffects;
-            if (!(this is CatSelfType))
-            {
-                SetChildFxnParents();
-                ComputeFreeVars();
-            }
+            SetChildFxnParents();
+            ComputeFreeVars();
         }
 
         public CatFxnType()
@@ -82,11 +79,8 @@ namespace Cat
             mbSideEffects = false;
             mCons = new CatTypeVector();
             mProd = new CatTypeVector();
-            if (!(this is CatSelfType))
-            {
-                SetChildFxnParents();
-                ComputeFreeVars();
-            }
+            SetChildFxnParents();
+            ComputeFreeVars();
         }
 
         public CatFxnType(AstFxnTypeNode node)
@@ -94,11 +88,8 @@ namespace Cat
             mbSideEffects = node.HasSideEffects();
             mCons = new CatTypeVector(node.mCons);
             mProd = new CatTypeVector(node.mProd);
-            if (!(this is CatSelfType))
-            {
-                SetChildFxnParents();
-                ComputeFreeVars();
-            }
+            SetChildFxnParents();
+            ComputeFreeVars();
         }
         #endregion
 
@@ -143,9 +134,6 @@ namespace Cat
         /// </summary>
         public void RemoveImplicitRhoVariables(CatFxnType ft)
         {
-            if (ft is CatSelfType)
-                return;
-
             foreach (CatKind k in ft.GetChildKinds())
                 if (k is CatFxnType)
                     RemoveImplicitRhoVariables(k as CatFxnType);
@@ -194,9 +182,6 @@ namespace Cat
 
         private void GetAllVars(CatTypeVarList vars)
         {
-            if (this is CatSelfType)
-                return;
-
             foreach (CatKind k in GetChildKinds())
             {
                 if (k is CatFxnType)
@@ -415,10 +400,6 @@ namespace Cat
 
                     s += dic[k.ToString()];                        
                 }
-                else if (k is CatSelfType)
-                {
-                    s += "self";
-                }
                 else if (k is CatFxnType)
                 {
                     s += "(" + ToPrettyString(k as CatFxnType, dic) + ")";
@@ -442,9 +423,6 @@ namespace Cat
 
         public static string ToPrettyString(CatFxnType ft, Dictionary<string, string> dic)
         {
-            if (ft is CatSelfType)
-                return "self";
-
             // remove rho variables
             ft = ft.Clone();
             ft.RemoveImplicitRhoVariables();
@@ -507,8 +485,6 @@ namespace Cat
             {
                 if (k.IsKindVar())
                     varNames.Add(k.ToString());
-                if (k is CatSelfType)
-                    return true;
             }
             return IsValidProduction(varNames, ft.GetProd());                    
         }
@@ -527,10 +503,6 @@ namespace Cat
         public bool IsValidProduction(List<string> varNames, CatTypeVector prod)
         {
             foreach (CatKind k in prod.GetKinds())
-                if (k is CatSelfType)
-                    return true;
-
-            foreach (CatKind k in prod.GetKinds())
                 if (k is CatFxnType)
                     GetConsVarNames(varNames, k as CatFxnType);
 
@@ -544,23 +516,15 @@ namespace Cat
 
         public bool IsValid()
         {
+            // TODO : rewrite this function
+            return true;
+
+            /*
             // TODO: check that if pure, none of the child functions are impure. 
-            if (this is CatSelfType)
-                return true;
             if (!GetCons().IsValid()) 
                 return false;
             if (!GetProd().IsValid()) 
                 return false;
-
-            foreach (CatKind k in GetCons().GetKinds())
-            {
-                // All variables in the production are implicitly declared 
-                // because there is a self type at the top-level of cons.
-                // In other words: ('A self -> 'B) is valid, while ('A -> 'B) 
-                // is not
-                if (k is CatSelfType)
-                    return true;
-            }
 
             List<string> varNames = new List<string>();
             foreach (CatKind k in GetCons().GetDescendantKinds())
@@ -576,6 +540,7 @@ namespace Cat
             if (!IsValidProduction(varNames, GetProd()))
                 return false;
             return true;
+             */
         }
         #endregion  
 
@@ -628,8 +593,6 @@ namespace Cat
 
         private void SetChildFxnParents()
         {
-            if (this is CatSelfType)
-                return;
             foreach (CatKind k in GetChildKinds())
             {
                 if (k is CatFxnType)
@@ -657,58 +620,6 @@ namespace Cat
                 yield return k;
         }
         #endregion
-    }
-
-    /// <summary>
-    /// A self type is a function that pushes itself onto the stack.
-    /// self : ('A -> 'A self)
-    /// TODO: make this not a fxn type.
-    /// </summary>
-    public class CatSelfType : CatFxnType
-    {
-        public CatSelfType()
-        {
-        }
-
-        public override CatFxnType AddImplicitRhoVariables()
-        {
-            return this;
-        }
-
-        public override string ToString()
-        {
-            return "self";
-        }
-
-        public override string ToIdString()
-        {
-            return "self_" + mnId.ToString();
-        }
-
-        public override string ToPrettyString()
-        {
-            return "self";
-        }
-
-        public override bool Equals(CatKind k)
-        {
-            return k is CatSelfType;
-        }
-
-        public override bool IsSubtypeOf(CatKind k)
-        {
-            return k is CatSelfType;
-        }
-
-        public override IEnumerable<CatKind> GetChildKinds()
-        {
-            yield return this;
-        }
-
-        public override IEnumerable<CatKind> GetDescendantKinds()
-        {
-            yield return this;
-        }
     }
 
     public class CatQuotedType : CatFxnType
