@@ -315,6 +315,8 @@ namespace Cat
         /// </summary>
         public void RollupRecursiveRelations()
         {
+            // TEMP: this might be the source of some bugs
+            /*
             foreach (Relation r in GetChildRelations())
                 r.RollupRecursiveRelations();
 
@@ -325,6 +327,7 @@ namespace Cat
             for (int i = 0; i < GetRight().GetCount(); ++i)
                 if (CanRollupRelation(GetRight().GetConstraint(i)))
                     GetRight().ReplaceConstraint(i, new RecursiveRelation());
+             */
         }
 
         public Vector GetLeft()

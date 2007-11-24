@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Christopher Diggins")]
 [assembly: AssemblyProduct("Cat")]
-[assembly: AssemblyCopyright("licensed under MIT License, Copyright 2007 Christopher Diggins,")]
+[assembly: AssemblyCopyright("Public domain")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.18.0.0")]
-[assembly: AssemblyFileVersion("0.18.0.0")]
+[assembly: AssemblyVersion("0.18.1.0")]
+[assembly: AssemblyFileVersion("0.18.1.0")]

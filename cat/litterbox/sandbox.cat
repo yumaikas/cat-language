@@ -44,3 +44,16 @@ define test_map_reduce
 define girard (n x) {
   x n pow 1 neg n pow *
 }
+
+define gunfold : ('A 'b ('A list 'b -> 'A list) ('A list 'b -> 'A list 'b bool) -> 'A list)
+{{
+  desc:
+    Generates a list by applying a successor functions, until the predicate is true.
+    This is a generalized version of the unfold function.
+  alt:
+    define gunfold(init, succ, term) { nil init [succ] [term not] while }
+  test:
+    in: 1 [dup inc swap] [dup 5 gt] gunfold
+    out: [1 2 3 4 5]
+}}
+{ [nil bury [consd compose] dip whilen pop }

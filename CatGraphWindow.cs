@@ -145,7 +145,7 @@ namespace Cat
         public static void Initialize(Graphics g)
         {
             mg = g;
-            Point mOrigin = new Point(0, 0);
+            //Point mOrigin = new Point(0, 0);
             mPen.LineJoin = LineJoin.Bevel;
             turtlePen.Width = 1;
             mg = g;
@@ -301,40 +301,7 @@ namespace Cat
             mPen.Brush = null;
         }
 
-        /*
-        public static void polygon(FList x)
-        {
-            mg.DrawPolygon(mPen, ListToPointArray(x));
-        }
-
-        public static void lines(FList x)
-        {
-            mg.DrawLines(mPen, ListToPointArray(x));
-        }
-        #region helper functions
-        private static Point ListToPoint(FList x)
-        {
-            return new Point((int)x.Nth(1), (int)x.Nth(0));
-        }
-
-        private static Point[] ListToPointArray(FList x)
-        {
-            Point[] result = new Point[x.Count()];
-            int i = 0;
-            x.ForEach(delegate(Object o)
-            {
-                FList tmp = o as FList;
-                result[i++] = ListToPoint(tmp);
-            });
-            return result;
-        }
-        #endregion
-         */
-
         #region color functions
-        static public Color Blue() { return Color.Blue; }
-        static public Color Red() { return Color.Red; }
-        static public Color Green() { return Color.Green; }
         static public Color Rgb(int r, int g, int b) { return Color.FromArgb(r, g, b); }
         #endregion
 

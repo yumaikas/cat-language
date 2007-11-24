@@ -11,6 +11,7 @@
 "standard-lists.cat" #load
 "standard-hash.cat" #load
 "standard-vectors.cat" #load
+"standard-geometry.cat" #load
 
 // Not finished.
 // "standard-trees.cat" #load

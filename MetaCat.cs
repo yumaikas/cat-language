@@ -195,10 +195,30 @@ namespace Cat
 
             public void Replace(List<Function> fxns, List<AstMacroTerm> pattern)
             {
+                List<Function> pNewFxns = PatternToFxns(pattern);
+
+                // For debugging purposes only
+                if (Config.gbShowRewritingRuleApplications) 
+                {
+                    string sFrom = "";
+                    for (int i=mnFxnIndex; i < mnFxnIndex + mnFxnCount; ++i)
+                    {
+                        if (i > mnFxnIndex) sFrom += " ";
+                        sFrom += fxns[i].msName;
+                    }
+                    string sTo = "";
+                    for (int i=0; i < pNewFxns.Count; ++i)
+                    {
+                        if (i > 0) sTo += " ";
+                        sTo += pNewFxns[i].msName;
+                    }
+                    MainClass.WriteLine("Rewriting { " + sFrom + " } to { " + sTo + " }");
+                }
+
                 if (mnFxnIndex < fxns.Count)
                     fxns.RemoveRange(mnFxnIndex, mnFxnCount);
 
-                fxns.InsertRange(mnFxnIndex, PatternToFxns(pattern));
+                fxns.InsertRange(mnFxnIndex, pNewFxns);
             }
 
             static public MacroMatch Create(AstMacroNode m, List<Function> fxns, int nPrevMatchPos, int nFxnIndex, int nSubExprSize)

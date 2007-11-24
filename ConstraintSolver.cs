@@ -13,7 +13,7 @@ namespace Cat
         #region fields
         List<ConstraintList> mConstraintList; // left null, because it is created upon request
         Dictionary<string, ConstraintList> mLookup = new Dictionary<string, ConstraintList>();
-         List<Pair<Vector>> mConstraintQueue = new List<Pair<Vector>>();
+        List<Pair<Vector>> mConstraintQueue = new List<Pair<Vector>>();
         List<Relation> mGenericRenamingQueue = new List<Relation>();
         Dictionary<string, Var> mVarPool = new Dictionary<string, Var>();
         int mnId = 0;
@@ -183,8 +183,6 @@ namespace Cat
                     "Vector variables can only occur in the last position of a vector");
                 if ((v2.GetCount() > 0) && v2.GetFirst() is VectorVar)
                 {
-                    // TODO: assure myself I can remove this line.
-                    // Check(v2.GetCount() == 1, "Vector variables can only occur in the last position of a vector");
                     ConstrainVars(v1.GetFirst() as Var, v2.GetFirst() as Var);
                 }
                 else
@@ -638,7 +636,7 @@ namespace Cat
         public Constraint Resolve(Constraint c, Stack<Constraint> visited, Relation parent)
         {
             Constraint rec = GetRecursiveVar(c, visited);
-            if (rec != null)
+            if (rec != null) 
                 return rec;
 
             visited.Push(c);

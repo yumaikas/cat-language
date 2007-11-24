@@ -160,7 +160,11 @@ namespace Cat
 
         static void ExpandInline(List<Function> list, Function f, int nMaxDepth)
         {
-            if (f is Quotation)
+            if (nMaxDepth == 0)
+            {
+                list.Add(f);
+            }
+            else if (f is Quotation)
             {
                 ExpandInline(list, f as Quotation, nMaxDepth);
             }
@@ -180,7 +184,6 @@ namespace Cat
 
         static void ExpandInline(List<Function> fxns, Quotation q, int nMaxDepth)
         {
-            if (nMaxDepth == 0) return;
             List<Function> tmp = new List<Function>();
             foreach (Function f in q.GetChildren())
                 ExpandInline(tmp, f, nMaxDepth - 1);

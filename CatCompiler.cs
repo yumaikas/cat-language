@@ -202,10 +202,10 @@ namespace Cat
             // Compute the various names
             string sFileName = "out.exe";
             string sAsmName = "generated_assembly";
-            string sNameSpace = "Cat";
+            //string sNameSpace = "Cat";
             string sTypeName = "generated_type";
             string sModuleName = "generated_module";
-            string sFullName = sNameSpace + "." + sTypeName;
+            //string sFullName = sNameSpace + "." + sTypeName;
 
             // Create a dynamic wrapper assembly around a module around a type.
             mAsmName.Name = sAsmName;
@@ -240,7 +240,7 @@ namespace Cat
             //
             mMainBldr = mTypeBldr.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), null);
             ilg = mMainBldr.GetILGenerator();
-            LocalBuilder exec = ilg.DeclareLocal(typeof(Executor));
+            //LocalBuilder exec = ilg.DeclareLocal(typeof(Executor));
             ilg.Emit(OpCodes.Newobj, typeof(Executor).GetConstructor(new Type[] { }));
             ilg.EmitCall(OpCodes.Call, mDefaultBldr, null);
             ilg.Emit(OpCodes.Ret);
