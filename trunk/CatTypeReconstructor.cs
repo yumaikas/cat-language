@@ -87,7 +87,9 @@ namespace Cat
             }
             else if (c is RecursiveRelation)
             {
-                throw new Exception("illegal recursive relation");
+                // TODO: TEMP:
+                return CatFxnType.Create("('A -> 'B)");
+                //throw new Exception("illegal recursive relation");
             }
             else if (c is Constant)
             {
@@ -117,8 +119,11 @@ namespace Cat
             
             Relation rLeft = FxnTypeToRelation(left); 
             Relation rRight = FxnTypeToRelation(right);
-            rLeft.UnrollRecursiveRelations();
-            rRight.UnrollRecursiveRelations();
+            
+            //TODO: remove
+            //rLeft.UnrollRecursiveRelations();
+            //rRight.UnrollRecursiveRelations();
+            
             Relation result = new Relation(rLeft.GetLeft(), rRight.GetRight());
             
             AddTopLevelConstraints(rLeft.GetRight(), rRight.GetLeft());
@@ -142,8 +147,9 @@ namespace Cat
             if (!(c is Relation))
                 throw new Exception("Resolved type is not a relation");
 
-            Relation r = c as Relation;
-            r.RollupRecursiveRelations();
+            // TODO: remove
+            // Relation r = c as Relation;
+            // r.RollupRecursiveRelations();
 
             CatKind k = ConstraintToCatKind(c);
             CatFxnType ft = k as CatFxnType;

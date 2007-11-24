@@ -3,11 +3,19 @@
 // without restriction, obligation or warantee.
 // http://www.cdiggins.com
 
+"metacat-macros.cat" #load
+"interpreter-cmds.cat" #load
 "interpreter-flags.cat" #load
 "standard.cat" #load
+
+
+define factk(n k) { n 1 lteq_int [1 k apply] [n dec [n mul_int k apply] factk] if }
+
+/*
 "test-misc.cat" #load
 "test-metacat.cat" #load
 "deprecated.cat" #load
 "clr-graphics.cat" #load
 "demo-examples.cat" #load
 "demo-graphics.cat" #load
+*/

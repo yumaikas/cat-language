@@ -7,7 +7,7 @@ define (
 {{
   desc:
     List initializer.
-  tests:
+  test:
     in: nil
     out: [] list
 }}
@@ -38,17 +38,27 @@ define consd
 {{
   desc:
     Append the second item on stack to a list in the third position.
-  tests:
+  test:
     in: [1 2] list 3 4 consd
     out: [1 2 3] list 4
 }}
 { [cons] dip }
 
+define triple : ('a 'b 'c -> list)
+{{
+  desc:
+    Creates a list of three items
+   test:
+    in: 1 2 3 triple
+    out: [1 2 3] list
+}}
+{ [pair] dip cons } 
+
 define swons : ('a list -> list)
 {{
   desc:
     Appends the second item on the stack, to a list in the first item
-  tests:
+  test:
     in: 3 [1 2] list swons
     out: [1 2 3] list
 }}
@@ -58,7 +68,7 @@ define uncons2 : (list -> list any any)
 {{
   desc:
     Extracts the first and second item from a list
-  tests:
+  test:
     in: [1 2 3] list uncons2
     out: [1] list 2 3
 }}
@@ -68,29 +78,19 @@ define unpair : (list -> any any)
 {{
   desc:
     Extracts the first and second item from a list
-  tests:
+  test:
     in: [1 2] list unpair
     out: 1 2
 }}
 { uncons [head] dip }
 
-define gunfold : ('A 'b ('A list 'b -> 'A list 'c 'b) ('A list 'b -> 'A list 'b bool) -> 'A list)
-{{
-  desc:
-    Generates a list by applying a successor functions, until the predicate is true.
-    This is a generalized version of the unfold function.
-  tests:
-    in: 1 [dup inc swap] [dup 5 lteq]
-}}
-{ [nil bury [consd] compose] dip whilen pop }
-
 define rev : (list -> list)
 {{
   desc:
     Reverses a list
-  tests:
+  test:
     in: [1 2 3] list rev
-    out: [1 2 3]
+    out: [3 2 1] list
 }}
 { nil [cons] fold }
 
@@ -98,7 +98,7 @@ define small : (list -> list bool)
 {{
   desc:
     Returns true if a list contains one element or is empty
-  tests:
+  test:
     in: 1 unit small popd
     out: true
 }}
@@ -108,8 +108,8 @@ define split : ('A list ('b -> bool) -> 'A list list)
 {{
   desc:
     Splits a list into two new lists
-  tests:
-    in: [0 1 2 3 4] list [even] split
+  test:
+    in: [0 1 2 3 4] list [even popd] split
     out: [1 3] list [0 2 4] list
 }}
 {
@@ -121,9 +121,9 @@ define cons_first : (list 'a -> list)
 {{
   desc:
     Appends item to first list in a pair of lists
-  tests:
+  test:
     in: [1 2] list [3 4] list pair 5 cons_first
-    out: [1 2 5] list [3 4] list pair
+    out: [1 2] list [3 4 5] list pair
 }}
 { [unpair] dip cons pair }
 
@@ -131,9 +131,9 @@ define cons_second : (list 'a -> list)
 {{
   desc
     Appends item to second list in a pair of lists
-  tests:
+  test:
     in: [1 2] list [3 4] list pair 5 cons_second
-    out: [1 2] list [3 4 5] list pair
+    out: [1 2 5] list [3 4] list pair
 }}
 { [unpair] dip swap [cons] dip pair }
 
@@ -141,9 +141,9 @@ define move_head : (list list -> list list)
 {{
   desc:
     Copies the head from one list to another.
-  tests:
+  test:
     in: [1 2] list [3 4] list move_head
-    out: [1 2 3] list [3] list
+    out: [1 2 4] list [3] list
 }}
 { uncons swap [cons] dip }
 
@@ -152,13 +152,13 @@ define index_of : (list 'a -> list int)
   desc:
     Returns the index of a value in a list or the size of the list
     if not found.
-  tests:
+  test:
     in: [1 2 3 4] list 1 index_of popd
     out: 3
-  tests:
+  test:
     in: ['a' 'b' 'c'] list 'c' index_of popd
     out: 0
-  tests:
+  test:
     in: ['a' 'b' 'c'] list 'd' index_of popd
     out: 3
 }}
@@ -176,7 +176,7 @@ define dhead : (list -> list any)
 {{
   desc:
     Returns the head of a list, leaving the original list on the stack.
-  tests:
+  test:
     in: [1 2] list dhead
     out: [1 2] list 2
 }}
@@ -186,7 +186,7 @@ define dtail : (list -> list list)
 {{
   desc:
     Returns the tail of a list, leaving the original list on the stack.
-  tests:
+  test:
     in: [1 2 3] list dtail
     out: [1 2 3] list [1 2] list
 }}
@@ -194,11 +194,11 @@ define dtail : (list -> list list)
 
 define head_eq : (list any -> list bool)
 {{
-  tests:
+  test:
     in: [1 2] list 2 head_eq popd
     out: true
 
-  tests:
+  test:
     in: [1 2] list 1 head_eq popd
     out: false
 }}

@@ -25,7 +25,7 @@ namespace Cat
                 WriteLine("WARNING: this is an unstable development build of Cat");
             
             WriteLine("");
-            WriteLine("Cat Interpreter =^,,^=");
+            WriteLine("Cat Interpreter =^_^=");
             WriteLine("version " + Config.gsVersion);
             WriteLine("by Christopher Diggins");
             WriteLine("this software is released under the MIT license");

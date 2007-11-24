@@ -75,7 +75,6 @@ namespace Cat
 
         public CatFxnType()
         {
-            CatStackVar rho = CatStackVar.CreateUnique();
             mbSideEffects = false;
             mCons = new CatTypeVector();
             mProd = new CatTypeVector();

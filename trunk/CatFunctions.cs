@@ -350,7 +350,41 @@ namespace Cat
         #endregion
     }
 
-    public class PushValue<T> : Function
+    /// <summary>
+    /// Used to push stacks of values on a stack.
+    /// Note: Not a PushValueBase subclass!
+    /// </summary>
+    public class PushStack : Function 
+    {
+        Executor stk;
+        
+        public PushStack(Executor x)
+        {
+            stk = x;
+        }
+
+        public override void Eval(Executor exec)
+        {
+            foreach (object o in stk.GetStackAsArray())
+                exec.Push(o);
+        }
+
+        public Executor GetStack()
+        {
+            return stk;
+        }
+
+        public override string GetImplString()
+        {
+            return "_stack_";
+        }
+    }
+
+    abstract public class PushValueBase : Function
+    {
+    }
+
+    public class PushValue<T> : PushValueBase
     {
         CatMetaValue<T> mValue;
         string msValueType;
@@ -948,7 +982,7 @@ namespace Cat
                 throw new Exception("internal error: incorrect field name");
 
             // TODO: dynamically check that arg is of the right type.
-            Object arg = exec.Pop();
+            //Object arg = exec.Pop();
             CatObject o = exec.TypedPeek<CatObject>();
             o.SetField(s, o, mpClass);
         }
@@ -1014,7 +1048,7 @@ namespace Cat
                 throw new Exception("internal error: incorrect field name");
             
             // TODO: dynamically check that arg is of the right type.
-            Object arg = exec.Pop();
+            //Object arg = exec.Pop();
             CatObject o = exec.TypedPeek<CatObject>();
             o.SetField(s, o, mpClass);
         }

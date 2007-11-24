@@ -237,7 +237,7 @@ namespace Cat
         }
         public static Rule MacroDef()
         {
-            return AstNode("macro", Seq(Word("macro"), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
+            return AstNode("macro", Seq(Choice(Word("macro"), Word("rule")), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
         }
         #endregion
         public static Rule CatProgram()

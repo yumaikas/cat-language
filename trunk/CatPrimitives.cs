@@ -103,7 +103,7 @@ namespace Cat
         public class TypeOf : PrimitiveFunction
         {
             public TypeOf()
-                : base("#t", "(function -> )", "experimental")
+                : base("#type", "(function -> )", "infers type of an expression")
             { }
 
             public override void Eval(Executor exec)
@@ -141,24 +141,24 @@ namespace Cat
                 Output.WriteLine("  #defs - lists all defined functions");
                 Output.WriteLine("  \"filename\" #load - loads and executes a Cat file");
                 Output.WriteLine("  \"filename\" #save - saves a transcript of session");
-                Output.WriteLine("  [...] #h - provides documentation on an instruction");
-                Output.WriteLine("  [...] #t - infers the type of a quotation");
-                Output.WriteLine("  [...] #i - performs inline expansion within a quotation");
-                Output.WriteLine("  [...] #p - partially evaluates a quotation");
-                Output.WriteLine("  [...] #m - applies macros to a quotation");
-                Output.WriteLine("  [...] #o - optimizes a quotation");
-                Output.WriteLine("  [...] #c - compiles a quotation into an assembly");
-                Output.WriteLine("  #run - runs a compiled assembly");
+                Output.WriteLine("  [...] #doc - provides documentation on an instruction");
+                Output.WriteLine("  [...] #type - infers the type of a quotation");
+                Output.WriteLine("  [...] #inline - performs inline expansion within a quotation");
+                Output.WriteLine("  [...] #partial - partially evaluates a quotation");
+                Output.WriteLine("  [...] #metacat - executes MetaCat rewriting rules");
                 Output.WriteLine("  [...] #test - tests all instruction in a quotation");
-                Output.WriteLine("  #ta - tests all defined instruction");
-                Output.WriteLine("  #v - shows the session viewer");
+                //Output.WriteLine("  [...] #o - optimizes a quotation");
+                //Output.WriteLine("  [...] #c - compiles a quotation into an assembly");
+                //Output.WriteLine("  #run - runs a compiled assembly");
+                Output.WriteLine("  #testall - tests all defined instruction");
+                //Output.WriteLine("  #v - shows the session viewer");
             }
         }
 
         public class CommandHelp : PrimitiveFunction
         {
             public CommandHelp()
-                : base("#h", "(function ~> )", "prints help about a command")
+                : base("#doc", "(function ~> )", "prints documentation about a specific commands")
             { }
 
             public override void Eval(Executor exec)
@@ -170,7 +170,7 @@ namespace Cat
         public class Expand : PrimitiveFunction
         {
             public Expand()
-                : base("#i", "(('A -> 'B) ~> ('A -> 'B))", "performs inline expansion")
+                : base("#inline", "(('A -> 'B) ~> ('A -> 'B))", "performs inline expansion")
             { }
 
             public override void Eval(Executor exec)
@@ -183,7 +183,7 @@ namespace Cat
         public class Expand1 : PrimitiveFunction
         {
             public Expand1()
-                : base("#i0", "(('A -> 'B) -> ('A -> 'B))", "performs inline expansion")
+                : base("#inline-step", "(('A -> 'B) -> ('A -> 'B))", "performs inline expansion")
             { }
 
             public override void Eval(Executor exec)
@@ -196,7 +196,7 @@ namespace Cat
         public class ApplyMacros : PrimitiveFunction
         {
             public ApplyMacros()
-                : base("#m", "(('A -> 'B) -> ('A -> 'B))", "applies macros to a function")
+                : base("#metacat", "(('A -> 'B) ~> ('A -> 'B))", "runs MetaCat rewriting rules")
             { }
 
             public override void Eval(Executor exec)
@@ -209,7 +209,7 @@ namespace Cat
         public class Compile : PrimitiveFunction
         {
             public Compile()
-                : base("#c", "(('A -> 'B) -> Compilation)", "compiles a function")
+                : base("#c", "(('A -> 'B) -> Compilation)", "*deprecated*")
             { 
             }
 
@@ -226,7 +226,7 @@ namespace Cat
         public class Execute : PrimitiveFunction
         {
             public Execute()
-                : base("#run", "(Compilation ~> 'B)", "executes a compiled function")
+                : base("#run", "(Compilation ~> 'B)", "*deprecated*")
             {
             }
 
@@ -240,7 +240,7 @@ namespace Cat
         public class PartialEval : PrimitiveFunction
         {
             public PartialEval()
-                : base("#p", "(('A -> 'B) -> ('A -> 'B))", "reduces a function through partial evaluation")
+                : base("#partial", "(('A -> 'B) -> ('A -> 'B))", "reduces a function through partial evaluation")
             {
             }
 
@@ -254,7 +254,7 @@ namespace Cat
         public class Optimize : PrimitiveFunction
         {
             public Optimize()
-                : base("#o", "(('A -> 'B) -> ('A -> 'B))", "optimizes a function using a combination of techniques")
+                : base("#o", "(('A -> 'B) -> ('A -> 'B))", "*deprecated*")
             {
             }
 
@@ -323,7 +323,7 @@ namespace Cat
         public class TestAll : PrimitiveFunction
         {
             public TestAll()
-                : base("#ta", "( ~> )", "runs tests associated with all loaded functions")
+                : base("#testall", "( ~> )", "runs all tests associated with all loaded functions")
             { }
 
             public override void Eval(Executor exec)
@@ -631,6 +631,42 @@ namespace Cat
                 QuotedFunction left = exec.TypedPop<QuotedFunction>();
                 QuotedFunction f = new QuotedFunction(left, right);
                 exec.PushFxn(f);
+            }
+        }
+
+        public class Unpush : PrimitiveFunction
+        {
+            public Unpush()
+                : base("unpush", "(( -> 'A 'b) -> ( -> 'A) 'b)",
+                    "experimental")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction f = exec.TypedPeek<QuotedFunction>();
+                
+                int n = f.GetChildren().Count;
+                Function g = f.GetChildren()[n - 1];
+                if (((g is Quotation) || (g is QuotedFunction) || (g is QuotedValue)) || (g is PushValueBase))
+                {
+                    f.GetChildren().RemoveAt(n - 1);
+                    g.Eval(exec);
+                }
+                else if (g is PushStack)
+                {
+                    Executor e2 = (g as PushStack).GetStack();
+                    exec.Push(e2.Pop());
+                }
+                else
+                {
+                    exec.Pop();
+                    Executor e2 = new DefaultExecutor();
+                    f.Eval(e2);
+                    Object o = e2.Pop();
+                    Function h = new PushStack(e2);
+                    exec.Push(h);
+                    exec.Push(o);
+                }
             }
         }
 
@@ -1262,8 +1298,8 @@ namespace Cat
         public static double log_dbl(double x, double y) { return Math.Log(x, y); }
         public static double log10_dbl(double x) { return Math.Log10(x); }
         public static double ln_dbl(double x) { return Math.Log(x); }
-        public static double e_dbl() { return Math.E; }
-        public static double pi_dbl() { return Math.PI; }
+        public static double e() { return Math.E; }
+        public static double pi() { return Math.PI; }
         public static string format_scientific(double x) { return x.ToString("E"); }
         public static string format_currency(double x) { return x.ToString("C"); }
         #endregion

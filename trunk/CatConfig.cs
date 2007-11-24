@@ -54,7 +54,7 @@ namespace Cat
         /// Outputs the result of performing a conversion from a function
         /// with named arguments to a point-free form.
         /// </summary>
-        public static bool gbShowPointFreeConversion = true;
+        public static bool gbShowPointFreeConversion = false;
 
         /// <summary>
         /// Turns on type checking and type reconstruction algorithms
@@ -85,7 +85,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.18.0";
+        public static string gsVersion = "0.18.1";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 
@@ -96,5 +96,10 @@ namespace Cat
         /// Cause bin_rec to use a second thread.
         /// </summary>
         public static bool gbMultiThreadBinRec = false;
+
+        /// <summary>
+        /// Shows a log of each rewriting rule applied
+        /// </summary>
+        public static bool gbShowRewritingRuleApplications = true;
     }
 }
