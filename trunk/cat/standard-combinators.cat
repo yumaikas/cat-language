@@ -55,6 +55,9 @@ define dip2 : ('A 'b 'c ('A -> 'D) -> 'D 'b 'c)
 {{
   desc:
     Applies a function to the stack, temporarily removing the next two items.
+  test:
+    in: 1 2 3 4 [+]
+    out: 3 3 4
 }}
 { swap [dip] dip }
 
@@ -62,6 +65,9 @@ define dip3 : ('A 'b 'c 'd ('A -> 'E) -> 'E 'b 'c 'd)
 {{
   desc:
     Applies a function to the stack, temporarily removing the next three items.
+  test:
+    in: 1 2 3 4 5 [+]
+    out: 3 3 4 5
 }}
 { swap [dip2] dip }
 
@@ -69,6 +75,9 @@ define dip4 : ('A 'b 'c 'd 'e ('A -> 'F) -> 'F 'b 'c 'd 'e)
 {{
   desc:
     Applies a function to the stack, temporarily removing the next four items.
+  test:
+    in: 1 2 3 4 5 6 [+]
+    out: 3 3 4 5 6
 }}
 { swap [dip3] dip }
 
@@ -81,6 +90,9 @@ define rcompose : (('B -> 'C) ('A -> 'B) -> ('A -> 'C))
     swap then compose (or reverse compose)
   semantics:
     [$A] [$B] rcompose == [$B $A]
+  test:
+    in: [1 2] [3 4] compose apply
+    out: 3 4 1 2
 }}
 { swap compose }
 
@@ -170,3 +182,33 @@ define negate : (('A -> 'B bool) -> ('A -> 'B bool))
 {
   [not] compose
 }
+
+define push : (('A -> 'B) 'c -> ('A -> 'B 'c))
+{{
+  desc:
+    Quotes the top value and composes it with a function below  it.
+  test:
+    in: [1] 2 push list
+    out: [1 2] list
+}}
+{
+  quote compose
+}
+
+/*
+This is not completely accurate. It really depends on what the type of the function is.
+I also doubt the usefulness of such a function. 
+
+define curry : (('A 'b -> 'C) -> ('b -> ('A -> 'C)))
+{{
+  desc:
+    Converts a function that takes one or more argument into
+    a function that given one argument produces a new function.
+  test:
+    in: [+] curry 1 swap apply 2 apply
+    out: 3
+}}
+{
+  [papply] papply
+}
+*/

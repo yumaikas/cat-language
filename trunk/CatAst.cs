@@ -671,20 +671,40 @@ namespace Cat
 
     public class AstMacroTypeVar : AstMacroTerm
     {
+        public string msName;
+
         public AstMacroTypeVar(PegAstNode node)
             : base(node)
         {
-            CheckChildCount(node, 0);
+            CheckChildCount(node, 1);
+            msName = node.GetChild(0).ToString();
             CheckLabel("macro_type_var");
         }
     }
 
     public class AstMacroStackVar : AstMacroTerm
     {
+        public CatFxnType mType = null;
+        public string msName;
+
         public AstMacroStackVar(PegAstNode node)
             : base(node)
         {
-            CheckChildCount(node, 0);
+            if (node.GetNumChildren() < 1)
+                throw new Exception("invalid macro stack variable");
+
+            if (node.GetNumChildren() > 2)
+                throw new Exception("invalid macro stack variable");
+
+            msName = node.GetChild(0).ToString();
+
+            if (node.GetNumChildren() == 2)
+            {
+                AstFxnTypeNode typeNode = new AstFxnTypeNode(node.GetChild(1));
+                mType = CatFxnType.Create(typeNode) as CatFxnType;
+                if (!(mType is CatFxnType)) throw new Exception("expected function type " + typeNode.ToString());
+            }
+            
             CheckLabel("macro_stack_var");
         }
     }

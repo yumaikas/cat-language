@@ -2,6 +2,7 @@
 /// http://creativecommons.org/licenses/publicdomain/
 
 using System;
+using System.Collections;
 using System.Diagnostics;
 
 namespace Cat
@@ -905,7 +906,19 @@ namespace Cat
         public FArray(T[] x)
         {
             m = x;
-        } 
+        }
+
+        // Ideally I would have a new list class to deal with the scenario
+        public FArray(IEnumerable e)
+        {
+            int n = 0;
+            foreach (Object o in e)
+                ++n;
+            m = new T[n];
+            n = 0;
+            foreach (Object o in e)
+                m[n++] = (T)o;
+        }
         #endregion
 
         #region abstract function overrides
@@ -1744,3 +1757,4 @@ namespace Cat
         #endregion
     }
 }
+

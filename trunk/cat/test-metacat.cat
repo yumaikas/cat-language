@@ -52,3 +52,4 @@ define test_macros
   [[1 + 2 *] compose map] [[1 +] [2 *] compose map] macro_test
   [[1 2] dip] [[1] dip [2] dip] macro_test
 }
+

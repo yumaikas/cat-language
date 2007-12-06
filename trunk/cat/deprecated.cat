@@ -23,3 +23,6 @@ define nip
 
 define gen
 { "gen is deprecated, use unfold" throw }
+
+define unpush
+{ "unpush is deprecated, use pull" throw }

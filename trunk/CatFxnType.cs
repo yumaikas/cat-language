@@ -17,6 +17,10 @@ namespace Cat
         #endregion
 
         #region static functions 
+        public static CatFxnType PushSomethingType = Create("( -> 'a)");
+        public static CatFxnType AnyFxnType = Create("('A -> 'B)");
+        public static CatFxnType PushAnythingType = Create("( -> 'A)");
+
         public static CatFxnType Create(string sType)
         {
             if (sType.Length == 0)
@@ -456,6 +460,8 @@ namespace Cat
         {
             if (k.IsAny() || k.IsDynFxn())
                 return IsRuntimePolymorphic();
+            if (k is CatTypeVar)
+                return true;
             if (!(k is CatFxnType)) 
                 return false;
             CatFxnType f = k as CatFxnType;
