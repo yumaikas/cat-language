@@ -3,10 +3,12 @@
 
 using System;
 using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Cat
 {
@@ -144,10 +146,10 @@ namespace Cat
                 Output.WriteLine("  [...] #doc - provides documentation on an instruction");
                 Output.WriteLine("  [...] #type - infers the type of a quotation");
                 Output.WriteLine("  [...] #inline - performs inline expansion within a quotation");
-                Output.WriteLine("  [...] #partial - partially evaluates a quotation");
                 Output.WriteLine("  [...] #metacat - executes MetaCat rewriting rules");
                 Output.WriteLine("  [...] #test - tests all instruction in a quotation");
                 //Output.WriteLine("  [...] #o - optimizes a quotation");
+                //Output.WriteLine("  [...] #partial - partially evaluates a quotation");
                 //Output.WriteLine("  [...] #c - compiles a quotation into an assembly");
                 //Output.WriteLine("  #run - runs a compiled assembly");
                 Output.WriteLine("  #testall - tests all defined instruction");
@@ -634,10 +636,10 @@ namespace Cat
             }
         }
 
-        public class Unpush : PrimitiveFunction
+        public class Pull : PrimitiveFunction
         {
-            public Unpush()
-                : base("unpush", "(( -> 'A 'b) -> ( -> 'A) 'b)",
+            public Pull()
+                : base("pull", "(( -> 'A 'b) -> ( -> 'A) 'b)",
                     "experimental")
             { }
 
@@ -993,12 +995,12 @@ namespace Cat
         public class TypeId : PrimitiveFunction
         {
             public TypeId()
-                : base("type_of", "(any -> type)", "returns a type tag for an object")
+                : base("type_of", "(any -> any type)", "returns a type tag for an object")
             { }
 
             public override void Eval(Executor exec)
             {
-                Object o = exec.Pop();
+                Object o = exec.Peek();
                 if (o is FList)
                 {
                     // HACK: this is not the correct type! 
@@ -2245,79 +2247,83 @@ namespace Cat
         public class Invoke : PrimitiveFunction
         {
             public Invoke()
-                : base("clr_invoke", "(any list string -> any any)", "calls a method on a .NET object")
+                : base("clr_invoke", "(list string any -> any any)", "calls a method on a .NET object")
             { }
 
             public override void Eval(Executor exec)
             {
+                Object self = exec.Pop();
                 string s = exec.TypedPop<string>();
                 FList a = exec.TypedPop<FList>();
-                Object self = exec.Peek();
                 MethodInfo m = self.GetType().GetMethod(s, a.GetTypeArray());
                 if (m == null)
                     throw new Exception("could not find method " + s + " on object of type " + self.GetType().ToString() + " with matching types");
                 Object o = m.Invoke(self, a.GetObjectArray());
                 exec.Push(o);
+                exec.Push(self);
             }
         }
 
         public class SetField : PrimitiveFunction
         {
             public SetField()
-                : base("clr_set_field", "(any any string -> any)", "assigns a value to a field of a .NET object")
+                : base("clr_set_field", "(any string any -> any)", "assigns a value to a field of a .NET object")
             { }
 
             public override void Eval(Executor exec)
             {
+                Object self = exec.Pop();
                 string s = exec.TypedPop<string>();
                 Object val = exec.Pop();
-                Object self = exec.Peek();
                 FieldInfo fi = self.GetType().GetField(s);
                 if (fi == null)
                     throw new Exception("could not find field " + s + " on object of type " + self.GetType().ToString());
                 fi.SetValue(self, val);
+                exec.Push(self);
             }
         }
 
         public class GetField : PrimitiveFunction
         {
             public GetField()
-                : base("clr_get_field", "(any string -> any any)", "retrieves the value of a field from a .NET object")
+                : base("clr_get_field", "(string any -> any any)", "retrieves the value of a field from a .NET object")
             { }
 
             public override void Eval(Executor exec)
             {
+                Object self = exec.Pop();
                 string s = exec.TypedPop<string>();
-                Object self = exec.Peek();
                 FieldInfo fi = self.GetType().GetField(s);
                 if (fi == null)
                     throw new Exception("could not find field " + s + " on object of type " + self.GetType().ToString());
                 exec.Push(fi.GetValue(self));
+                exec.Push(self);
             }
         }
 
         public class ListFields : PrimitiveFunction
         {
             public ListFields()
-                : base("clr_list_fields", "(any -> any list)", "retrieves a list of field names from a .NET object")
+                : base("clr_list_fields", "(any -> list any)", "retrieves a list of field names from a .NET object")
             { }
 
             public override void Eval(Executor exec)
             {
-                Object self = exec.Peek();
+                Object self = exec.Pop();
                 List<string> list = new List<string>();
                 FieldInfo[] fis = self.GetType().GetFields();
                 foreach (FieldInfo fi in fis)
                     list.Add(fi.Name);
                 string[] a = list.ToArray();
                 exec.Push(new FArray<string>(a));
+                exec.Push(self);
             }
         }
 
         public class ListMethods : PrimitiveFunction
         {
             public ListMethods()
-                : base("clr_list_methods", "(any -> any list)", "retrieves a list of field names from a .NET object")
+                : base("clr_list_methods", "(any -> list any)", "retrieves a list of field names from a .NET object")
             { }
 
             public override void Eval(Executor exec)
@@ -2352,6 +2358,69 @@ namespace Cat
                 if (o == null)
                     throw new Exception(s + " object could not be constructed");
                 exec.Push(o);
+            }
+        }
+
+        public class ClrEnumerableToList : PrimitiveFunction
+        {
+            public ClrEnumerableToList()
+                : base("clr_enumerable_to_list", "(any -> list)", "converts a .NET IEnumerable object into a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                IEnumerable e = exec.TypedPop<IEnumerable>();
+                exec.Push(new FArray<object>(e));
+            }
+        }
+        #endregion
+
+        #region regular expressions
+        public class MakeRegex : PrimitiveFunction
+        {
+            public MakeRegex()
+                : base("regex", "(string -> regex)", "constructs a regular expression matcher")
+            { }
+
+            public override void Eval(Executor exec)
+            {   
+                exec.Push(new Regex(exec.TypedPop<string>()));
+            }
+        }
+
+        public class ReMatch : PrimitiveFunction
+        {
+            public ReMatch()
+                : base("re_match", "(string regex -> list)", "matches the regular expression")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Regex re = exec.TypedPop<Regex>();
+                string s = exec.TypedPop<string>();
+                List<string> list = new List<string>();
+                foreach (Match m in re.Matches(s))
+                    list.Add(m.Value);
+                FList f = new FArray<Object>(list);
+                exec.Push(f);
+            }
+        }
+
+        public class ReFind : PrimitiveFunction
+        {
+            public ReFind()
+                : base("re_find", "(string regex -> string int)", "finds the regular expression")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Regex re = exec.TypedPop<Regex>();
+                string s = exec.TypedPeek<string>();
+                Match m = re.Match(s);
+                if (m == null)
+                    exec.Push(-1);
+                else
+                    exec.Push(m.Index);
             }
         }
         #endregion

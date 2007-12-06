@@ -97,15 +97,13 @@ namespace Cat
                 else if (tkn is AstMacroTypeVar)
                 {
                     if (x.GetFxnType() == null)
-                    {
                         return false;
-                    }
 
-                    if (x.HasNoConsumption() && x.HasSingleProduction())
-                    {
-                        mCapturedVars.Add(tkn.ToString(), x);
-                        return true;
-                    }
+                    if (!CatFxnType.CompareFxnTypes(x.GetFxnType(), CatFxnType.PushSomethingType))
+                        return false;
+
+                    mCapturedVars.Add(tkn.ToString(), x);
+                    return true;
                 }
                 else if (tkn is AstMacroQuote)
                 {
@@ -122,19 +120,29 @@ namespace Cat
                         return false; 
 
                     // Capture the quotation. 
-                    mCapturedVars.Add(v.ToString(), new CatExpr(quote.GetChildren()));
+                    mCapturedVars.Add(v.msName, new CatExpr(quote.GetChildren()));
                     return true;
                 }
                 else if (tkn is AstMacroStackVar)
                 {
-                    throw new Exception("illegal location for a stack variable " + tkn.ToString());
+                    AstMacroStackVar v = tkn as AstMacroStackVar;
+
+                    if (v.mType == null)
+                        return false;
+
+                    if (x.GetFxnType() == null)
+                        return false;
+
+                    if (!CatFxnType.CompareFxnTypes(x.GetFxnType(), v.mType))
+                        return false;
+
+                    mCapturedVars.Add(v.msName, x);
+                    return true;
                 }
                 else
                 {
                     throw new Exception("unrecognized macro term " + tkn.ToString());
                 }
-
-                return false;
             }
 
             public List<Function> PatternToFxns(List<AstMacroTerm> pattern)
@@ -152,7 +160,7 @@ namespace Cat
                     }
                     else if (t is AstMacroStackVar)
                     {
-                        string s = t.ToString();
+                        string s = (t as AstMacroStackVar).msName;
                         if (!mCapturedVars.ContainsKey(s))
                             throw new Exception("macro variable " + s + " was not captured");
                         CatExpr expr = mCapturedVars[s];
@@ -179,6 +187,7 @@ namespace Cat
                     }
                     else if (t is AstMacroQuote)
                     {
+                        // TODO: handle typed terms within a quotation.
                         AstMacroQuote macroQuote = t as AstMacroQuote;
                         List<Function> localFxns = new List<Function>();
                         List<AstMacroTerm> localPattern = macroQuote.mTerms;
@@ -270,7 +279,7 @@ namespace Cat
                     }
                     else
                     {
-                        // Some matches (such as identifier names) can not be recovered from.
+                        // Some failed matches (such as identifier names) can not be recovered from.
                         if (!bRecoverable)
                             return null;
 

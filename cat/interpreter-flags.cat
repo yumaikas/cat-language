@@ -8,9 +8,9 @@
 define get_config_class { nil "Cat.Config" clr_new }
 
 // Sets a flag which is unset, or unsets a flag which is set.
-define twiddle_config_field { get_config_class swap dup [clr_get_field not] dip clr_set_field pop }
+define twiddle_config_field { get_config_class clr_get_field [not] dip clr_set_field pop }
 
-// controls various interpreter options 
+// controls various interpreter options
 define ~verbose_inference { "gbVerboseInference" twiddle_config_field }
 define ~allow_redefines { "gbAllowRedefines" twiddle_config_field }
 define ~show_point_free_conversion { "gbShowPointFreeConversion" twiddle_config_field }

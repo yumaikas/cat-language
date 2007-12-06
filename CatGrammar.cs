@@ -207,13 +207,21 @@ namespace Cat
                 Opt(Params()), Opt(TypeDecl()), Opt(MetaDataBlock()), NoFail(CodeBlock(), "expected a code block")));
         }
         #region macros
+        public static Rule MacroTypeVarName()
+        {
+            return AstNode("type_var_name", Seq(LowerCaseLetter(), Star(IdentNextChar())));
+        }
         public static Rule MacroTypeVar()
         {
-            return AstNode("macro_type_var", Seq(LowerCaseLetter(), Star(IdentNextChar())));
+            return AstNode("macro_type_var", MacroTypeVarName());
+        }
+        public static Rule MacroStackVarName()
+        {
+            return AstNode("stack_var_name", Seq(UpperCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule MacroStackVar()
         {
-            return AstNode("macro_stack_var", Seq(UpperCaseLetter(), Star(IdentNextChar())));
+            return AstNode("macro_stack_var", Seq(MacroStackVarName(), WS(), Opt(TypeDecl())));
         }
         public static Rule MacroVar()
         {

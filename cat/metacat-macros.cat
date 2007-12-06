@@ -213,8 +213,7 @@ rule { $c $b $a dig } => { $b $a $c }
 rule { $c $b $a bury } => { $a $c $b }
 
 // Miscellaneous rules
-// The following rule is a pattern that I observed after inlining that would block further optimization
-rule { dip quote $b compose $a dip } => { $a compose dip quote $b compose }
+rule { dip $B:('a -> 'b) $a dip } => { $a compose dip $B }
 
 // Oscillation patterns
 // not implement yet
@@ -224,3 +223,4 @@ rule { dip quote $b compose $a dip } => { $a compose dip quote $b compose }
 // Tail-Call Recursion elimination
 // not implemented yet
 // rule { [$E:('a -> 'a bool) [$D:('a -> 'a)] [$C:('a -> 'a) $B:self $A:('a -> 'a)] if] } => { [$E] [$D] [$C] [$A] tail_rec }
+

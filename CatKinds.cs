@@ -362,6 +362,8 @@ namespace Cat
         {
             if (k.IsAny())
                 return true;
+            if (k is CatStackVar)
+                return true;
             if (!(k is CatTypeVector))
                 return false;
             CatTypeVector v1 = this;

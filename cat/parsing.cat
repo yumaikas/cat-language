@@ -1,0 +1,58 @@
+// Dedicated to the public domain by Christopher Diggins
+// This file is free to be used, modified or redistributed for any purpose,
+// without restriction, obligation, or warantee.
+// http://www.cdiggins.com
+
+//=============================================================================
+
+define p_match_tok(input ast tok)
+{{
+  test:
+    in: (0) () 0 p_match_tok
+    out: () (0) true
+  test:
+    in: (1) () 0 p_match_tok
+    out: (1) () false
+}}
+{
+  [ input head tok eq
+    [ input tail ast tok "token" pair cons true ]
+    [ input ast false ]
+    if ]
+}
+
+/*
+
+define p_star(input ast rule)
+{
+  [ input ast
+    [ rule apply ]
+    [ ]
+    while true ]
+}
+
+define p_plus(input ast rule)
+{
+  [ input ast rule apply
+    [ p_star apply ]
+    [ false ]
+    if ]
+}
+
+define p_and(input ast rule1 rules)
+{
+  [ input ast rule1 apply
+    [ [] rules pull swap p_and if ]
+    [ false ]
+    if ]
+}
+
+define p_seq(input ast rules)
+{
+  [ input ast rules pull swap p_and
+    [ true ]
+    [ input ast false ]
+    if ]
+}
+
+*/
