@@ -13,6 +13,9 @@ rule { quote apply } => { }
 rule { dup swap } => { dup }
 rule { dup eq } => { pop true }
 
+// TODO: allow [] to be recognized
+// rule { [] papply } => { quote }
+
 // dup ('a -> 'b) pop patterns
 rule { dup quote pop } => { }
 rule { dup swap pop } => { }
@@ -68,19 +71,15 @@ rule { false or } => { }
 rule { swap and } => { and }
 rule { swap or } => { or }
 rule { swap add_int } => { add_int }
-rule { swap mul_int } => { add_int }
+rule { swap mul_int } => { mul_int }
 rule { swap add_byte } => { add_byte }
-rule { swap mul_byte } => { add_byte }
-rule { swap add_dbl } => { add_dbl }
-rule { swap mul_dbl } => { add_dbl }
+rule { swap mul_byte } => { mul_byte }
 rule { dip and } => { apply and }
 rule { dip or } => { apply or }
 rule { dip add_int } => { apply add_int }
-rule { dip mul_int } => { apply add_int }
+rule { dip mul_int } => { apply mul_int }
 rule { dip add_byte } => { apply add_byte }
-rule { dip mul_byte } => { apply add_byte }
-rule { dip add_dbl } => { apply add_dbl }
-rule { dip mul_dbl } => { apply add_dbl }
+rule { dip mul_byte } => { apply mul_byte }
 
 // short-circuit boolean evaluation
 rule { $a and } => { [$a] [false] if }
@@ -223,4 +222,3 @@ rule { dip $B:('a -> 'b) $a dip } => { $a compose dip $B }
 // Tail-Call Recursion elimination
 // not implemented yet
 // rule { [$E:('a -> 'a bool) [$D:('a -> 'a)] [$C:('a -> 'a) $B:self $A:('a -> 'a)] if] } => { [$E] [$D] [$C] [$A] tail_rec }
-

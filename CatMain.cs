@@ -17,7 +17,7 @@ namespace Cat
     public class MainClass
     {
         static List<string> gsInputFiles = new List<string>();
-        //static CatHelpMaker gpHelp;
+        static Executor exec = new Executor();
         
         public static string gsDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\cat";
         static string gsSessionFile = gsDataFolder + "\\session.cat";
@@ -39,29 +39,14 @@ namespace Cat
                 }
             }
 
-            /*
-            if (File.Exists("help.txt"))
-            {
-                gpHelp = CatHelpMaker.CreateHelp("help.txt");
-            }*/
-
             try
             {
                 foreach (string s in a)
                     gsInputFiles.Add(s);
-
-                // Splash screen 
-                if (Config.gbShowLogo)
-                    Output.ShowLogo();
-
-                // Load primitive operations 
-                Context context  = Executor.Main.GetGlobalContext();
-                context.RegisterType(typeof(MetaCommands));
-                context.RegisterType(typeof(Primitives));
                  
                 // Load all files on the command line                
                 foreach (string sFile in gsInputFiles)
-                    Executor.Main.LoadModule(sFile);
+                    exec.LoadModule(sFile);
 
                 if (gsInputFiles.Count == 0)
                 {
@@ -76,21 +61,20 @@ namespace Cat
                 {
                     Prompt();
                     string s = Console.ReadLine();
-                    if (s.Equals("#exit"))
+                    if (s.Trim().Equals("#exit") || s.Trim().Equals("#x"))
                         break;
                     Output.LogLine(s);
                     if (s.Length > 0)
                     {
                         DateTime begin = DateTime.Now;
-                        Executor.Main.Execute(s + '\n');
+                        exec.Execute(s + '\n');
                         TimeSpan elapsed = DateTime.Now - begin;
                         if (Config.gbOutputTimeElapsed)
                             WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
                         if (Config.gbOutputStack)
-                            Executor.Main.OutputStack();
+                            exec.OutputStack();
                         // Tell the graphics window to invalidate itself.
-                        WindowGDI.Invalidate();
-                        Session.SaveToFile(gsSessionFile);
+                        WindowGDI.Invalidate();                        
                     }
                 }
             }
@@ -104,28 +88,6 @@ namespace Cat
             WriteLine("Press any key to exit ...");
             Console.ReadKey();
         }
-
-        #region meta-commands (commands intended for the interpreter)
-        public static void OutputDefs(Executor exec)
-        {
-            Function[] fxns = new Function[exec.GetGlobalContext().GetAllFunctions().Count];
-            exec.GetGlobalContext().GetAllFunctions().CopyTo(fxns, 0);
-            Comparison<Function> comp = delegate(Function x, Function y) { return x.GetName().CompareTo(y.GetName()); };
-            
-            Array.Sort(fxns, comp);                            
-
-            foreach (Function f in fxns)
-            {
-                Write(f.GetName() + " \t");
-            }
-        }
-
-        public static void OutputHelp(QuotedFunction q)
-        {
-            foreach (Function f in q.GetChildren())
-                f.OutputDetails();
-        }
-        #endregion
 
         // These functions were added after the fact. If I am bored some day I should 
         // remove them and redirect all calls directly to "Output"

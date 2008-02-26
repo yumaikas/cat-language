@@ -34,7 +34,6 @@ namespace Cat
         public string msName = "_unnamed_"; 
         public string msDesc = "";
         public CatFxnType mpFxnType;
-        private Executor mExec;
         CatMetaDataBlock mpMetaData;
         #endregion
 
@@ -64,12 +63,6 @@ namespace Cat
         {
             return mpFxnType;
         }
-        public Executor GetExecutor()
-        {
-            if (mExec == null)
-                mExec = new DefaultExecutor();
-            return mExec;
-        }
         public void SetMetaData(CatMetaDataBlock meta)
         {
             mpMetaData = meta;
@@ -79,17 +72,6 @@ namespace Cat
                 msDesc = desc.msContent;
             }
         }
-        public string GetInfoString()
-        {
-            string s = "";
-            s += "name:\n  " + GetName();
-            s += "\ntype:\n  " + GetFxnTypeString();
-            if (mpMetaData != null)
-                s += mpMetaData.ToString();
-            s += "\nimplementation:\n  " + GetImplString();
-            return s;
-        }
-
         public CatMetaDataBlock GetMetaData()
         {
             return mpMetaData;
@@ -99,103 +81,7 @@ namespace Cat
         {
             return ((mpMetaData != null) && (mpMetaData.Count > 0));
         }
-
-        public void RunTests()
-        {
-            int nPassed = 0;
-            int nFailed = 0;
-            RunTests(ref nPassed, ref nFailed, new List<string>());
-        }
-
-        public void RunTests(ref int nPassed, ref int nFailed, List<string> failures)
-        {
-            Executor exec = new DefaultExecutor();
-
-            if (mpMetaData == null)
-                return;
-
-            List<CatMetaData> tests = mpMetaData.FindAll("test");
-            foreach (CatMetaData test in tests)
-            {
-                try
-                {
-                    if (Config.gbVerboseTests)
-                    {
-                        Output.WriteLine("");
-                        Output.WriteLine("Testing " + msName);
-                    }
-
-                    if (test.Find("in") == null)
-                        throw new Exception("badly formatted test");
-                    string sIn = test.Find("in").GetContent();
-                    if (test.Find("out") == null)
-                        throw new Exception("badly formatted test");
-                    string sOut = test.Find("out").GetContent();
-
-                    if (Config.gbVerboseTests)
-                    {
-                        Output.WriteLine("input: " + sIn);
-                        Output.WriteLine("expected: " + sOut);
-                        exec.Execute("[" + sIn + "] list dup writeln");
-                        exec.Execute("[" + sOut + "] list dup writeln");
-                    }
-                    else
-                    {
-                        exec.Execute("[" + sIn + "] list");
-                        exec.Execute("[" + sOut + "] list");
-                    }
-                    exec.Execute("eq");
-                    if (exec.PopBool())
-                    {
-                        Output.WriteLine("testing " + msName + " SUCCEEDED");
-                        nPassed++;
-                    }
-                    else
-                    {
-                        string s = msName + " FAILED";
-                        failures.Add(s);
-                        Output.WriteLine("testing " + s);
-                        nFailed++;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Output.WriteLine("error occured during test: " + e.Message);
-                }
-
-                exec.Execute("#clr");
-            }
-        }
-
-        public void OutputDetails()
-        {
-            Output.WriteLine("Name: ");
-            Output.WriteLine("  " + msName);
-            Output.WriteLine("Type: ");
-            Output.WriteLine("  " + GetFxnTypeString());
-            Output.WriteLine("Description:");
-            Output.WriteLine("  " + msDesc);
-
-            if (mpMetaData != null)
-            {
-                List<CatMetaData> tests = mpMetaData.FindAll("test");
-                foreach (CatMetaData test in tests)
-                {
-                    if (test.Find("in") != null && test.Find("out") != null)
-                    {
-                        string sIn = test.Find("in").GetContent();
-                        string sOut = test.Find("out").GetContent();
-                        Output.WriteLine("Test: ");
-                        Output.WriteLine("  input    : " + sIn);
-                        Output.WriteLine("  expected : " + sOut);
-                    }
-                }
-            }
-
-            Output.WriteLine("Implementation:");
-            Output.WriteLine("  " + GetImplString());
-        }
-
+  
         public void WriteTo(StreamWriter sw)
         {
             sw.Write("define ");
@@ -219,75 +105,9 @@ namespace Cat
         }
 
         #region virtual functions
+        // TODO: rename to Execute
         public abstract void Eval(Executor exec);
         public abstract string GetImplString();
-        #endregion
-
-        #region invocation functions        
-        public virtual Object Invoke()
-        {
-            Eval(GetExecutor());
-            if (GetExecutor().Count() != 1)
-            {
-                GetExecutor().Clear();
-                throw new Exception("internal error: after invoking " + GetName() + " auxiliary stack should have exactly one value.");
-            }
-            return GetExecutor().Pop();
-        }
-
-        public virtual Object Invoke(Object o)
-        {
-            GetExecutor().Push(o);
-            return Invoke();
-        }
-
-        public virtual Object Invoke(Object o1, Object o2)
-        {
-            GetExecutor().Push(o1);
-            GetExecutor().Push(o2);
-            return Invoke();
-        }
-
-        public virtual Object Invoke(Object[] args)
-        {
-            foreach (Object arg in args)
-                GetExecutor().Push(arg);
-            return Invoke();
-        }
-        #endregion
-
-        #region conversion functions
-        public MapFxn ToMapFxn()
-        {
-            return delegate(object x) 
-            { 
-                return Invoke(x); 
-            };
-        }
-
-        public FilterFxn ToFilterFxn()
-        {
-            return delegate(object x) 
-            { 
-                return (bool)Invoke(x); 
-            };
-        }
-
-        public FoldFxn ToFoldFxn()
-        {
-            return delegate(object x, object y)
-            {
-                return Invoke(x, y);
-            };
-        }
-
-        public RangeGenFxn ToRangeGenFxn()
-        {
-            return delegate(int n) 
-            { 
-                return Invoke(n); 
-            };
-        }
         #endregion
 
         #region static functions
@@ -348,11 +168,17 @@ namespace Cat
         }
 
         #endregion
+
+        public virtual List<Function> GetSubFxns()
+        {
+            return null;
+        }
     }
 
     /// <summary>
     /// Used to push stacks of values on a stack.
     /// Note: Not a PushValueBase subclass!
+    /// This is used in the "pull" experimental function
     /// </summary>
     public class PushStack : Function 
     {
@@ -449,19 +275,19 @@ namespace Cat
     /// <summary>
     /// Represents a a function literal. In other words a function that pushes an anonymous function onto a stack.
     /// </summary>
-    public class Quotation : Function
+    public class PushFunction : Function
     {
-        List<Function> mChildren;
+        List<Function> mSubFxns;
         
-        public Quotation(List<Function> children)
+        public PushFunction(List<Function> children)
         {
-            mChildren = children.GetRange(0, children.Count);
+            mSubFxns = children.GetRange(0, children.Count);
             msDesc = "pushes an anonymous function onto the stack";
             msName = "[";
-            for (int i = 0; i < mChildren.Count; ++i)
+            for (int i = 0; i < mSubFxns.Count; ++i)
             {
                 if (i > 0) msName += " ";
-                msName += mChildren[i].GetName();
+                msName += mSubFxns[i].GetName();
             }
             msName += "]";
 
@@ -473,7 +299,7 @@ namespace Cat
                 try
                 {
                     // Quotations can be unclear?
-                    CatFxnType childType = CatTypeReconstructor.Infer(mChildren);
+                    CatFxnType childType = CatTypeReconstructor.Infer(mSubFxns);
 
                     // Honestly this should never be true.
                     if (childType == null)
@@ -497,18 +323,18 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
-            exec.Push(new QuotedFunction(mChildren, CatFxnType.Unquote(mpFxnType)));
+            exec.Push(new QuotedFunction(mSubFxns, CatFxnType.Unquote(mpFxnType)));
         }
 
         public List<Function> GetChildren()
         {
-            return mChildren;
+            return mSubFxns;
         }
 
         public override string GetImplString()
         {
             string ret = "";
-            foreach (Function f in mChildren)
+            foreach (Function f in mSubFxns)
                 ret += f.msName + " ";
             return ret;
         }
@@ -519,17 +345,17 @@ namespace Cat
     /// </summary>
     public class QuotedFunction : Function
     {
-        List<Function> mChildren;
+        List<Function> mSubFxns;
         
         public QuotedFunction(List<Function> children, CatFxnType pFxnType)
         {
-            mChildren = new List<Function>(children.ToArray());
+            mSubFxns = new List<Function>(children.ToArray());
             msDesc = "anonymous function";
             msName = "";
-            for (int i = 0; i < mChildren.Count; ++i)
+            for (int i = 0; i < mSubFxns.Count; ++i)
             {
                 if (i > 0) msName += " ";
-                msName += mChildren[i].GetName();
+                msName += mSubFxns[i].GetName();
             }
             mpFxnType = new CatQuotedType(pFxnType);
         }
@@ -541,7 +367,7 @@ namespace Cat
 
         public QuotedFunction()
         {
-            mChildren = new List<Function>();
+            mSubFxns = new List<Function>();
         }
 
         public CatFxnType GetUnquotedFxnType()
@@ -564,15 +390,15 @@ namespace Cat
 
         public QuotedFunction(QuotedFunction first, QuotedFunction second)
         {
-            mChildren = new List<Function>(first.GetChildren().ToArray());
-            mChildren.AddRange(second.GetChildren().ToArray());
+            mSubFxns = new List<Function>(first.GetSubFxns().ToArray());
+            mSubFxns.AddRange(second.GetSubFxns().ToArray());
 
             msDesc = "anonymous composed function";
             msName = "";
-            for (int i = 0; i < mChildren.Count; ++i)
+            for (int i = 0; i < mSubFxns.Count; ++i)
             {
                 if (i > 0) msName += " ";
-                msName += mChildren[i].GetName();
+                msName += mSubFxns[i].GetName();
             }
 
             try
@@ -591,22 +417,17 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
-            foreach (Function f in mChildren)
+            foreach (Function f in mSubFxns)
                 f.Eval(exec);
-        }
-
-        public List<Function> GetChildren()
-        {
-            return mChildren;
         }
 
         public override string ToString()
         {
             string ret = "[";
-            for (int i = 0; i < mChildren.Count; ++i)
+            for (int i = 0; i < mSubFxns.Count; ++i)
             {
                 if (i > 0) ret += " ";
-                ret += mChildren[i].GetName();
+                ret += mSubFxns[i].GetName();
             }
             ret += "]";
             return ret;
@@ -615,9 +436,14 @@ namespace Cat
         public override string GetImplString()
         {
             string ret = "[";
-            foreach (Function f in mChildren)
+            foreach (Function f in mSubFxns)
                 ret += f.msName + " ";
             return ret + "]";
+        }
+
+        public override List<Function> GetSubFxns()
+        {
+            return mSubFxns;
         }
     }
 
@@ -633,7 +459,7 @@ namespace Cat
             mFxn = f;
             if (mFxn.GetFxnType() != null)
                 mpFxnType = new CatQuotedType(mFxn.GetFxnType());
-            GetChildren().Add(f);
+            GetSubFxns().Add(f);
         }
 
         public override void Eval(Executor exec)
@@ -665,7 +491,7 @@ namespace Cat
     /// </summary>
     public class DefinedFunction : Function
     {
-        List<Function> mTerms;
+        List<Function> mFunctions = new List<Function>();
         bool mbExplicitType = false;
         bool mbTypeError = false;
 
@@ -674,25 +500,16 @@ namespace Cat
             msName = s;
         }
 
-        public void AddFunctions(List<Function> terms)
+        public DefinedFunction(string s, List<Function> fxns)
         {
-            // Make sure the functions are okay
-            foreach (Function f in terms)
-            {
-                // Detect self-references at the top level, 
-                // this indicates an infinite loop
-                if (f == this)
-                    throw new Exception("a function can't call itself directly, this will result in an infinite loop");
+            msName = s;
+            AddFunctions(fxns);
+        }
 
-                if (f.GetType() == null)
-                    throw new Exception("passing an untyped term to function " + msName);
-            }
-
-
-            mTerms = terms;
+        public void AddFunctions(List<Function> fxns)
+        {
+            mFunctions.AddRange(fxns);
             msDesc = "";
-            foreach (Function f in mTerms)
-                msDesc += f.GetName() + " ";
 
             if (Config.gbVerboseInference && Config.gbTypeChecking)
             {
@@ -703,7 +520,7 @@ namespace Cat
 
             try
             {
-                mpFxnType = CatTypeReconstructor.Infer(terms);
+                mpFxnType = CatTypeReconstructor.Infer(mFunctions);
             }
             catch (Exception e)
             {
@@ -715,19 +532,18 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
-            foreach (Function f in mTerms)
-                f.Eval(exec);
+            exec.Execute(mFunctions);
         }
 
-        public List<Function> GetChildren()
+        public override List<Function> GetSubFxns()
         {
-            return mTerms;
+            return mFunctions;
         }
 
         public override string GetImplString()
         {
             string ret = "";
-            foreach (Function f in mTerms)
+            foreach (Function f in mFunctions)
                 ret += f.msName + " ";
             return ret;
         }
@@ -823,17 +639,6 @@ namespace Cat
         }
     }
 
-    public abstract class OptimizedFunction : Function
-    {
-        public OptimizedFunction() : base("_optimized_instruction_", "optimized instruction")
-        { }
-
-        public override string GetImplString()
-        {
-            return "optimized isntruction";
-        }
-    }
-
     public class SelfFunction : Function
     {
         Function mpFxn;
@@ -853,209 +658,6 @@ namespace Cat
         public override string GetImplString()
         {
             return "self";
-        }
-    }
-
-    public abstract class ObjectFieldFxn : Function
-    {
-        protected CatKind mpFieldType;
-        protected CatClass mpClass;
-        protected string msFieldName;
-
-        public bool IsInitialized()
-        {
-            return mpFieldType != null && mpClass != null;
-        }
-
-        public abstract void ComputeType(CatFxnType ft);
-
-        protected void CheckInitialized()
-        {
-            if (!IsInitialized())
-                throw new Exception("field accessor is uninitialized");        
-        }
-    }
-
-    public class GetFieldFxn : ObjectFieldFxn
-    {
-        public override void ComputeType(CatFxnType ft)
-        {
-            List<CatKind> prod = ft.GetProd().GetKinds();
-            int n = prod.Count;
-            if (n < 2) 
-                throw new Exception("invalid usage of _get_, insufficient arguments");
-            CatKind kName = prod[n - 1];
-            CatKind kClass = prod[n - 2];
-            CatMetaValue<string> metaName = kName as CatMetaValue<string>;
-            if (metaName == null) 
-                throw new Exception("invalid usage of _get_, missing field identifier");
-            string sName = metaName.GetData();
-            CatClass cClass = kClass as CatClass;
-            if (cClass == null)
-                throw new Exception("invalid usage of _get_, missing object");
-            ComputeType(cClass, sName);
-        }
-
-        public void ComputeType(CatClass c, string sName)
-        {
-            mpClass = c;
-            msFieldName = sName;
-            if (!mpClass.HasField(msFieldName))
-                throw new Exception("object does not have field " + msFieldName);
-            mpFieldType = mpClass.GetFieldType(msFieldName);
-            mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " string -> " + mpClass.ToString() + " " + mpFieldType.ToString() + ")");
-        }
-
-        public override void Eval(Executor exec)
-        {
-            if (!IsInitialized())
-            {
-                // Compute the type now
-                Object o1 = exec.Peek();
-                Object o2 = exec.PeekBelow(1);
-                ComputeType((o2 as CatObject).GetClass(), (string)o1);
-            }
-            string s = exec.TypedPop<string>();
-            if (!s.Equals(msFieldName))
-                throw new Exception("internal error: incorrect field name");
-            CatObject o = exec.TypedPeek<CatObject>();
-            exec.Push(o.GetField(s));
-        }
-    
-        public override string GetImplString()
-        {
-            return "primitive";
-        }
-    }
-
-    public class SetFieldFxn : ObjectFieldFxn
-    {
-        public override void ComputeType(CatFxnType ft)
-        {
-            List<CatKind> prod = ft.GetProd().GetKinds();
-            int n = prod.Count;
-            if (n < 3)
-                throw new Exception("invalid usage of _set_, insufficient arguments");
-            CatKind kName = prod[n - 1];
-            CatKind kValue = prod[n - 2];
-            CatKind kClass = prod[n - 3];
-            CatMetaValue<string> metaName = kName as CatMetaValue<string>;
-            if (metaName == null)
-                throw new Exception("invalid usage of _set_, missing field identifier");
-            string sName = metaName.GetData();
-            CatClass cClass = kClass as CatClass;
-            if (cClass == null)
-                throw new Exception("invalid usage of _set_, missing object");
-            ComputeType(cClass, kValue, sName);
-        }
-
-        public void ComputeType(CatClass c, CatKind val, string sName)
-        {
-            mpClass = c;
-            msFieldName = sName;
-            if (!mpClass.HasField(msFieldName))
-            {
-                throw new Exception("the field " + msFieldName + " has not been defined");
-            }
-            else
-            {
-                CatKind pFieldType = mpClass.GetFieldType(msFieldName);
-                if (!pFieldType.IsSubtypeOf(mpFieldType))
-                    throw new Exception("invalid type, expected " + mpFieldType.ToString() + " but recieved " + pFieldType.ToString());
-            }
-            mpFxnType = CatFxnType.Create("(" + mpClass.ToString() + " 'a string -> " + mpClass.ToString() + ")");
-        }
-
-        public override void Eval(Executor exec)
-        {
-            if (!IsInitialized())
-            {
-                // Compute the type now 
-                Object o1 = exec.PeekBelow(0);
-                Object o2 = exec.PeekBelow(1);
-                Object o3 = exec.PeekBelow(2);
-                ComputeType((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
-            }
-
-            string s = exec.TypedPop<string>();
-            if (!s.Equals(msFieldName))
-                throw new Exception("internal error: incorrect field name");
-
-            // TODO: dynamically check that arg is of the right type.
-            //Object arg = exec.Pop();
-            CatObject o = exec.TypedPeek<CatObject>();
-            o.SetField(s, o, mpClass);
-        }
-
-        public override string GetImplString()
-        {
-            return "primitive";
-        }
-    }
-
-    public class DefFieldFxn : ObjectFieldFxn
-    {
-        /// <summary>
-        /// This implementation is almost precisely the same as SetFieldFxn
-        /// </summary>
-        public override void ComputeType(CatFxnType ft)
-        {
-            List<CatKind> prod = ft.GetProd().GetKinds();
-            int n = prod.Count;
-            if (n < 3)
-                throw new Exception("invalid usage of _def_, insufficient arguments");
-            CatKind kName = prod[n - 1];
-            CatKind kValue = prod[n - 2];
-            CatKind kClass = prod[n - 3];
-            CatMetaValue<string> metaName = kName as CatMetaValue<string>;
-            if (metaName == null)
-                throw new Exception("invalid usage of _def_, missing field identifier");
-            string sName = metaName.GetData();
-            CatClass cClass = kClass as CatClass;
-            if (cClass == null)
-                throw new Exception("invalid usage of _def_, missing object");
-            ComputeType(cClass, kValue, sName);
-        }
-
-        public void ComputeType(CatClass c, CatKind val, string sName)
-        {
-            msFieldName = sName;
-            if (!c.HasField(msFieldName))
-            {
-                mpClass = c.AddFieldType(msFieldName, val);
-                mpFieldType = val;
-            }
-            else
-            {
-                throw new Exception("the field " + msFieldName + " has already been defined");
-            }
-            mpFxnType = CatFxnType.Create("(" + c.ToString() + " 'a string -> " + mpClass.ToString() + ")");
-        }
-
-        public override void Eval(Executor exec)
-        {
-            if (!IsInitialized())
-            {
-                // Compute the type now
-                Object o1 = exec.PeekBelow(0);
-                Object o2 = exec.PeekBelow(1);
-                Object o3 = exec.PeekBelow(2);
-                ComputeType((o3 as CatObject).GetClass(), CatKind.GetKindFromObject(o2), (string)o1);
-            }
-
-            string s = exec.TypedPop<string>();
-            if (!s.Equals(msFieldName))
-                throw new Exception("internal error: incorrect field name");
-            
-            // TODO: dynamically check that arg is of the right type.
-            //Object arg = exec.Pop();
-            CatObject o = exec.TypedPeek<CatObject>();
-            o.SetField(s, o, mpClass);
-        }
-
-        public override string GetImplString()
-        {
-            return "primitive";
         }
     }
 }

@@ -15,9 +15,9 @@ namespace Cat
     {
         public static int gnId = 0;
 
-        public static CatKind Create(AstTypeNode node)
+        public static CatKind Create(AstType node)
         {
-            if (node is AstSimpleTypeNode)
+            if (node is AstSimpleType)
             {
                 string s = node.ToString();
                 Trace.Assert(s.Length > 0);
@@ -26,17 +26,17 @@ namespace Cat
                 else 
                     return new CatSimpleTypeKind(s);
             }
-            else if (node is AstTypeVarNode)
+            else if (node is AstTypeVar)
             {
                 return new CatTypeVar(node.ToString());
             }
-            else if (node is AstStackVarNode)
+            else if (node is AstStackVar)
             {
                 return new CatStackVar(node.ToString());
             }
-            else if (node is AstFxnTypeNode)
+            else if (node is AstFxnType)
             {
-                return new CatFxnType(node as AstFxnTypeNode);
+                return new CatFxnType(node as AstFxnType);
             }
             else
             {
@@ -75,8 +75,7 @@ namespace Cat
         public static string TypeNameFromObject(Object o)
         {
             if (o is HashList) return "hash_list";
-            if (o is ByteBlock) return "byte_block";
-            if (o is FList) return "list";
+            if (o is CatList) return "list";
             if (o is Boolean) return "bool";
             if (o is int) return "int";
             if (o is Double) return "double";
@@ -240,10 +239,10 @@ namespace Cat
     {
         List<CatKind> mList;
 
-        public CatTypeVector(AstStackNode node)
+        public CatTypeVector(AstStack node)
         {
             mList = new List<CatKind>();
-            foreach (AstTypeNode tn in node.mTypes)
+            foreach (AstType tn in node.mTypes)
                 mList.Add(Create(tn));
         }
 

@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{90A2BE38-0974-4B80-9CB1-1AC3B72A479C}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -17,6 +17,12 @@
     <IsWebBootstrapper>true</IsWebBootstrapper>
     <TargetZone>LocalIntranet</TargetZone>
     <SignAssembly>false</SignAssembly>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
     <PublishUrl>ftp://www.cat-language.com/</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
@@ -33,7 +39,9 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
+    <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -74,14 +82,8 @@
   -->
   <ItemGroup>
     <Compile Include="CatAssemblyInfo.cs" />
-    <Compile Include="CatAst.cs" />
-    <Compile Include="CatCompiler.cs" />
     <Compile Include="CatConfig.cs" />
-    <Compile Include="CatExceptions.cs" />
     <Compile Include="CatExecutor.cs" />
-    <Compile Include="CatFunctionalList.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="CatFunctions.cs" />
     <Compile Include="CatFxnType.cs" />
     <Compile Include="CatGrammar.cs" />
@@ -92,47 +94,22 @@
       <DependentUpon>CatGraphWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="CatHashList.cs" />
-    <Compile Include="CatHelp.cs" />
     <Compile Include="CatKinds.cs" />
+    <Compile Include="CatList.cs" />
     <Compile Include="CatMain.cs" />
     <Compile Include="CatMetaData.cs" />
-    <Compile Include="CatMutableList.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="CatClass.cs" />
     <Compile Include="CatOptimizer.cs" />
     <Compile Include="CatOutput.cs" />
     <Compile Include="CatParser.cs" />
     <Compile Include="CatPrimitives.cs" />
-    <Compile Include="CatContext.cs" />
-    <Compile Include="CatRtfWriter.cs" />
-    <Compile Include="CatSession.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
     <Compile Include="CatVarScopes.cs" />
-    <Compile Include="CatWriter.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeViewForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CodeViewForm.Designer.cs">
-      <DependentUpon>CodeViewForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="ConstraintSolver.cs" />
     <Compile Include="ConstraintSolverUtil.cs" />
-    <Compile Include="EditDefForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EditDefForm.Designer.cs">
-      <DependentUpon>EditDefForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="LambdaCat.cs" />
+    <Compile Include="CatLambda.cs" />
     <Compile Include="MetaCat.cs" />
-    <Compile Include="PegAst.cs" />
-    <Compile Include="PegBaseGrammar.cs" />
     <Compile Include="PegParser.cs" />
     <Compile Include="CatBase.cs" />
     <Compile Include="Resources.Designer.cs">
@@ -142,7 +119,6 @@
     </Compile>
     <Compile Include="CatTypeReconstructor.cs" />
     <Compile Include="CatTypeVarList.cs" />
-    <Compile Include="RtfBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Accessibility" />
@@ -155,22 +131,24 @@
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
       <Visible>False</Visible>
-      <ProductName>.NET Framework 2.0</ProductName>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
       <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="CatGraphWindow.resx">
       <DependentUpon>CatGraphWindow.cs</DependentUpon>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="CodeViewForm.resx">
-      <DependentUpon>CodeViewForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EditDefForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>EditDefForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
       <SubType>Designer</SubType>

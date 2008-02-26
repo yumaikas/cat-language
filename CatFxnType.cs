@@ -40,7 +40,7 @@ namespace Cat
             Peg.PegAstNode ast = p.GetAst();
             if (ast.GetNumChildren() != 1)
                 throw new Exception("invalid number of children in abstract syntax tree");
-            AstFxnTypeNode node = new AstFxnTypeNode(ast.GetChild(0));
+            AstFxnType node = new AstFxnType(ast.GetChild(0));
             CatFxnType ret = new CatFxnType(node);
             
             return ret;
@@ -86,7 +86,7 @@ namespace Cat
             ComputeFreeVars();
         }
 
-        public CatFxnType(AstFxnTypeNode node)
+        public CatFxnType(AstFxnType node)
         {
             mbSideEffects = node.HasSideEffects();
             mCons = new CatTypeVector(node.mCons);

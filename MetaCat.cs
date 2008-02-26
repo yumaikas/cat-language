@@ -54,29 +54,20 @@ namespace Cat
         }
     }
 
-    public class Macros
+    public static class Macros
     {
-        #region static functions and data 
-        static Macros gMacros = new Macros();
-
-        public static Macros GetGlobalMacros()
-        {
-            return gMacros;
-        }
-        #endregion 
-
         #region fields
-        Dictionary<string, List<AstMacroNode>> mMacros = new Dictionary<string, List<AstMacroNode>>();
+        static Dictionary<string, List<AstMacro>> mMacros = new Dictionary<string, List<AstMacro>>();
         #endregion
 
         class MacroMatch
         {
-            public AstMacroNode mMacro;
+            public AstMacro mMacro;
             public Dictionary<string, CatExpr> mCapturedVars = new Dictionary<string, CatExpr>();
             public int mnFxnIndex = -1;
             public int mnFxnCount = 0;
 
-            public MacroMatch(AstMacroNode m)
+            public MacroMatch(AstMacro m)
             {
                 mMacro = m;
             }
@@ -115,7 +106,7 @@ namespace Cat
                     // Currently we only match literal quotations 
                     if (x.GetFxns().Count != 1)
                         return false;
-                    Quotation quote = x.GetFxns()[0] as Quotation;
+                    PushFunction quote = x.GetFxns()[0] as PushFunction;
                     if (quote == null)
                         return false; 
 
@@ -171,7 +162,13 @@ namespace Cat
                         string s = t.ToString();
                         if (s.Length < 1) 
                             throw new Exception("internal error: macro name is empty string");
+                        
+                        // TODO: change all of this so that we don't actually replace with a function list,
+                        // but simply a string list. The caller can then replace strings with functions
+                        // IMPORTANT!
+                        /*
                         Function f = Executor.Main.GetGlobalContext().Lookup(s);
+                        
                         if (f == null)
                         {
                             if (Char.IsDigit(s[0]))
@@ -184,6 +181,7 @@ namespace Cat
                             }
                         }
                         ret.Add(f);
+                         */
                     }
                     else if (t is AstMacroQuote)
                     {
@@ -191,7 +189,7 @@ namespace Cat
                         AstMacroQuote macroQuote = t as AstMacroQuote;
                         List<Function> localFxns = new List<Function>();
                         List<AstMacroTerm> localPattern = macroQuote.mTerms;
-                        Quotation q = new Quotation(PatternToFxns(localPattern));
+                        PushFunction q = new PushFunction(PatternToFxns(localPattern));
                         ret.Add(q);
                     }
                     else
@@ -230,7 +228,7 @@ namespace Cat
                 fxns.InsertRange(mnFxnIndex, pNewFxns);
             }
 
-            static public MacroMatch Create(AstMacroNode m, List<Function> fxns, int nPrevMatchPos, int nFxnIndex, int nSubExprSize)
+            static public MacroMatch Create(AstMacro m, List<Function> fxns, int nPrevMatchPos, int nFxnIndex, int nSubExprSize)
             {
                 if (nFxnIndex < 0) 
                     return null;
@@ -298,7 +296,7 @@ namespace Cat
             }
         }
 
-        public void AddMacro(AstMacroNode node)
+        public static void AddMacro(AstMacro node)
         {
             int n = node.mSrc.mPattern.Count;
             if (n == 0) 
@@ -309,21 +307,21 @@ namespace Cat
             if (s[0] == '$')
                 throw new Exception("last token in pattern can not be a variable");
             if (!mMacros.ContainsKey(s))
-                mMacros.Add(s, new List<AstMacroNode>());
+                mMacros.Add(s, new List<AstMacro>());
             mMacros[s].Add(node);
         }
 
-        public void ApplyMacros(List<Function> fxns)
+        public static void ApplyMacros(List<Function> fxns)
         {
             // Recursively apply macros for all quotations.
             for (int i=0; i < fxns.Count; ++i)
             {
-                if (fxns[i] is Quotation)
+                if (fxns[i] is PushFunction)
                 {
-                    Quotation qf = fxns[i] as Quotation;
+                    PushFunction qf = fxns[i] as PushFunction;
                     List<Function> tmp = new List<Function>(qf.GetChildren());
                     ApplyMacros(tmp);
-                    fxns[i] = new Quotation(tmp);
+                    fxns[i] = new PushFunction(tmp);
                 }
             }
 
@@ -345,7 +343,7 @@ namespace Cat
 
                 if (mMacros.ContainsKey(s))
                 {
-                    foreach (AstMacroNode m in mMacros[s])
+                    foreach (AstMacro m in mMacros[s])
                     {
                         MacroMatch match = MacroMatch.Create(m, fxns, nLastMatchPos, nPos, nMaxSubExpr);
                         if (match != null)
