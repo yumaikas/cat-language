@@ -1,3 +1,4 @@
+
 /// Dedicated to the public domain by Christopher Diggins
 /// http://creativecommons.org/licenses/publicdomain/
 
@@ -27,43 +28,6 @@ namespace Cat
         }
     }
 
-    /// <summary>
-    /// This is used to as a base class for the various dynamic function dispatch functions
-    /// It can not be placed in with the Primitives class, due to some design flaw.
-    /// </summary>
-    public class Dispatch : PrimitiveFunction
-    {
-        public Dispatch(string sName, string sType)
-            : base(sName, sType, "dispatches a function based on the type of the top stack item")
-        { }
-
-        public override void Eval(Executor exec)
-        {
-            FList list = exec.TypedPop<FList>();
-            Type t = exec.Peek().GetType();
-            FList iter = list.GetIter();
-            while (!iter.IsEmpty())
-            {
-                Pair p = iter.GetHead() as Pair;
-                if (p == null)
-                    throw new Exception("dispatch requires a list of pairs; types and functions");
-                Type u = p.Second() as Type;
-                if (u == null)
-                    throw new Exception("dispatch requires a list of pairs; types and functions");
-                if (u.IsAssignableFrom(t))
-                {
-                    Function f = p.First() as Function;
-                    if (f == null)
-                        throw new Exception("dispatch requires a list of pairs; types and functiosn");
-                    f.Eval(exec);
-                    return;
-                }
-                iter = iter.GotoNext();
-            }
-            throw new Exception("could not find appropriate function to dispatch to");
-        }
-    }
-
     public class MetaCommands
     {
         public class Load : PrimitiveFunction
@@ -90,34 +54,22 @@ namespace Cat
             }
         }
 
-        public class Defs : PrimitiveFunction
-        {
-            public Defs()
-                : base("#defs", "( ~> )", "lists all documented definitions")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                MainClass.OutputDefs(exec);
-            }
-        }
-
         public class TypeOf : PrimitiveFunction
         {
             public TypeOf()
-                : base("#type", "(function -> )", "infers type of an expression")
+                : base("#type", "(function -> function type)", "displays the type of an expression")
             { }
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                QuotedFunction f = exec.TypedPeek<QuotedFunction>();
                 bool bVerbose = Config.gbVerboseInference;
                 bool bInfer = Config.gbTypeChecking;
                 Config.gbVerboseInference = true;
                 Config.gbTypeChecking = true;
                 try
                 {
-                    CatFxnType ft = CatTypeReconstructor.Infer(f.GetChildren());
+                    CatFxnType ft = CatTypeReconstructor.Infer(f.GetSubFxns());
                     if (ft == null)
                         Output.WriteLine("type could not be inferred");
                 }
@@ -126,46 +78,6 @@ namespace Cat
                     Config.gbVerboseInference = bVerbose;
                     Config.gbTypeChecking = bInfer;
                 }
-            }
-        }
-
-        public class Help : PrimitiveFunction
-        {
-            public Help()
-                : base("#help", "( ~> )", "prints some helpful tips")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Output.WriteLine("The following are the meta-commands for the Cat:");
-                Output.WriteLine("  #exit - exits the interpreter");
-                Output.WriteLine("  #clr - clears the stack");
-                Output.WriteLine("  #defs - lists all defined functions");
-                Output.WriteLine("  \"filename\" #load - loads and executes a Cat file");
-                Output.WriteLine("  \"filename\" #save - saves a transcript of session");
-                Output.WriteLine("  [...] #doc - provides documentation on an instruction");
-                Output.WriteLine("  [...] #type - infers the type of a quotation");
-                Output.WriteLine("  [...] #inline - performs inline expansion within a quotation");
-                Output.WriteLine("  [...] #metacat - executes MetaCat rewriting rules");
-                Output.WriteLine("  [...] #test - tests all instruction in a quotation");
-                //Output.WriteLine("  [...] #o - optimizes a quotation");
-                //Output.WriteLine("  [...] #partial - partially evaluates a quotation");
-                //Output.WriteLine("  [...] #c - compiles a quotation into an assembly");
-                //Output.WriteLine("  #run - runs a compiled assembly");
-                Output.WriteLine("  #testall - tests all defined instruction");
-                //Output.WriteLine("  #v - shows the session viewer");
-            }
-        }
-
-        public class CommandHelp : PrimitiveFunction
-        {
-            public CommandHelp()
-                : base("#doc", "(function ~> )", "prints documentation about a specific commands")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                MainClass.OutputHelp(exec.PopFunction());
             }
         }
 
@@ -208,94 +120,6 @@ namespace Cat
             }
         }
 
-        public class Compile : PrimitiveFunction
-        {
-            public Compile()
-                : base("#c", "(('A -> 'B) -> Compilation)", "*deprecated*")
-            { 
-            }
-
-            public override void Eval(Executor exec)
-            {
-                QuotedFunction f = exec.TypedPop<QuotedFunction>();
-                List<Function> list = new List<Function>(f.GetChildren().ToArray());
-                Compilation c = new Compilation();
-                c.Compile(list);
-                exec.Push(c);
-            }
-        }
-
-        public class Execute : PrimitiveFunction
-        {
-            public Execute()
-                : base("#run", "(Compilation ~> 'B)", "*deprecated*")
-            {
-            }
-
-            public override void Eval(Executor exec)
-            {
-                Compilation c = exec.TypedPop<Compilation>();
-                c.InvokeDefault(exec);
-            }
-        }
-
-        public class PartialEval : PrimitiveFunction
-        {
-            public PartialEval()
-                : base("#partial", "(('A -> 'B) -> ('A -> 'B))", "reduces a function through partial evaluation")
-            {
-            }
-
-            public override void Eval(Executor exec)
-            {
-                QuotedFunction qf = exec.TypedPop<QuotedFunction>();
-                exec.Push(Optimizer.PartialEval(qf));
-            }
-        }
-
-        public class Optimize : PrimitiveFunction
-        {
-            public Optimize()
-                : base("#o", "(('A -> 'B) -> ('A -> 'B))", "*deprecated*")
-            {
-            }
-
-            public override void Eval(Executor exec)
-            {
-                QuotedFunction qf = exec.TypedPop<QuotedFunction>();
-                exec.Push(Optimizer.Optimize(qf));
-            }
-        }
-
-        /* TODO: make new versions of these functions
-         * 
-        public class MakeHtmlHelp : PrimitiveFunction
-        {
-            public MakeHtmlHelp()
-                : base("#html", "( ~> )", "outputs html documentation (deprecated)")
-            {
-            }
-
-            public override void Eval(Executor exec)
-            {
-                MainClass.MakeHtmlHelp();
-            }
-        }
-
-        public class MakeLibrary : PrimitiveFunction
-        {
-            public MakeLibrary()
-                : base("#lib", "( ~> )", "outputs a kernel library with tests (deprecated)")
-            {
-            }
-
-            public override void Eval(Executor exec)
-            {
-                MainClass.MakeLibrary();
-            }
-        }
-         */
-
         public class Clr : PrimitiveFunction
         {
             public Clr()
@@ -308,97 +132,16 @@ namespace Cat
             }
         }
 
-        public class Test : PrimitiveFunction
+        public class Doc : PrimitiveFunction
         {
-            public Test()
-                : base("#test", "(function ~> )", "runs tests associated with the function")
+            public Doc()
+                : base("#doc", "(('A -> 'B) ~> ('A -> 'B) string)", "outputs the meta-data associated with a function")
             { }
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction q = exec.PopFunction();
-                foreach (Function f in q.GetChildren())
-                    f.RunTests();
-            }
-        }
-
-        public class TestAll : PrimitiveFunction
-        {
-            public TestAll()
-                : base("#testall", "( ~> )", "runs all tests associated with all loaded functions")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                int nPassed = 0;
-                int nFailed = 0;
-
-                List<string> failures = new List<string>();
-                foreach (Function f in exec.GetGlobalContext().GetAllFunctions())
-                    f.RunTests(ref nPassed, ref nFailed, failures);
-
-                Output.WriteLine("Test summary:");
-                Output.WriteLine("passed-count : " + nPassed);
-                Output.WriteLine("failed-count : " + nFailed);
-                foreach (string s in failures)
-                    Output.WriteLine("failed test: " + s);
-            }
-        }
-        
-        public class Edit : PrimitiveFunction
-        {
-            public Edit()
-                : base("#edit", "(function ~> )", "shows a function editor dialog box for a given function")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                QuotedFunction qf = exec.PopFunction();
-                if ((qf.GetChildren().Count != 1) || !(qf.GetChildren()[0] is DefinedFunction))
-                    throw new Exception("You can only edit single functions that have been defined");
-                DefinedFunction f = EditDefForm.EditFunction(qf.GetChildren()[0] as DefinedFunction);
-                if (f == null)
-                {
-                    Output.WriteLine("no function was defined");
-                }
-                else
-                {
-                    Output.WriteLine(f.GetName() + " was redefined");
-                    Executor.Main.GetGlobalContext().AddFunction(f);
-                }
-            }
-        }
-
-        public class Def : PrimitiveFunction
-        {
-            public Def()
-                : base("#def", "( ~> )", "shows a function editor dialog box for a given function")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = EditDefForm.DefineNewFunction();
-                if (f == null)
-                {
-                    Output.WriteLine("no function was defined");
-                }
-                else
-                {
-                    Output.WriteLine(f.GetName() + " was defined");
-                    Executor.Main.GetGlobalContext().AddFunction(f);
-                }
-            }
-        }
-
-        public class View : PrimitiveFunction
-        {
-            public View()
-                : base("#v", "( ~> )", "displays all of the loaded functions visually")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                CodeViewForm.Show("");
+                QuotedFunction f = exec.TypedPeek<QuotedFunction>();
+                exec.Push(f.GetMetaData().ToList());
             }
         }
     }
@@ -647,11 +390,11 @@ namespace Cat
             {
                 QuotedFunction f = exec.TypedPeek<QuotedFunction>();
                 
-                int n = f.GetChildren().Count;
-                Function g = f.GetChildren()[n - 1];
-                if (((g is Quotation) || (g is QuotedFunction) || (g is QuotedValue)) || (g is PushValueBase))
+                int n = f.GetSubFxns().Count;
+                Function g = f.GetSubFxns()[n - 1];
+                if (((g is PushFunction) || (g is QuotedFunction) || (g is QuotedValue)) || (g is PushValueBase))
                 {
-                    f.GetChildren().RemoveAt(n - 1);
+                    f.GetSubFxns().RemoveAt(n - 1);
                     g.Eval(exec);
                 }
                 else if (g is PushStack)
@@ -662,7 +405,7 @@ namespace Cat
                 else
                 {
                     exec.Pop();
-                    Executor e2 = new DefaultExecutor();
+                    Executor e2 = new Executor();
                     f.Eval(e2);
                     Object o = e2.Pop();
                     Function h = new PushStack(e2);
@@ -687,30 +430,47 @@ namespace Cat
             }
         }
 
-        public class Dispatch3 : Dispatch
-        {
-            public Dispatch3()
-                : base("dispatch3", "(any any any list -> any)")
-            { }
-        }
-
-        public class Dispatch2 : Dispatch
-        {
-            public Dispatch2()
-                : base("dispatch2", "(any any list -> any)")
-            { }
-        }
-
-        public class Dispatch1 : Dispatch
-        {
-            public Dispatch1()
-                : base("dispatch1", "(any list -> any)")
-            { }
-        }
-
         #endregion
 
-        #region control flow primitives 
+        #region reflection api
+        public class Explode : PrimitiveFunction
+        {
+            public Explode()
+                : base("explode", "('A -> 'B) -> list)",
+                    "breaks a function up into a list of instructions")
+            { }
+
+            public CatList FxnsToList(List<Function> fxns)
+            {
+                Object[] a = new Object[fxns.Count];
+                int i = 0;
+                foreach (Function f in fxns )
+                {
+                    if (f is QuotedFunction)
+                    {
+                        a[i++] = FxnsToList((f as QuotedFunction).GetSubFxns());
+                    }
+                    else if (f is PushFunction)
+                    {
+                        a[i++] = FxnsToList((f as PushFunction).GetChildren());
+                    }
+                    else 
+                    {
+                        a[i++] = f;
+                    }
+                }
+                return new CatList(a);
+            }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                exec.Push(FxnsToList(f.GetSubFxns()));
+            }
+        }
+        #endregion
+
+        #region control flow primitives
         public class CallCC : PrimitiveFunction
         {
             public CallCC()
@@ -847,7 +607,7 @@ namespace Cat
                         mArgRelation.Eval(mExec);
 
                         Executor e2;
-                        e2 = new DefaultExecutor();
+                        e2 = new Executor();
                         e2.Push(mExec.Pop());
                         BinRecHelper h2 = new BinRecHelper(e2, mResultRelation, mArgRelation, mBaseCase, mCondition);
                         Thread t = new Thread(new ParameterizedThreadStart(LaunchThread));
@@ -896,7 +656,7 @@ namespace Cat
             {
                 Function c = exec.TypedPop<Function>();
                 Function t = exec.TypedPop<Function>();
-                int n = exec.GetStackSize();
+                int n = exec.Count();
                 try
                 {
                     t.Eval(exec);
@@ -1000,11 +760,12 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
+                // TODO: fix this some day
                 Object o = exec.Peek();
-                if (o is FList)
+                if (o is CatList)
                 {
                     // HACK: this is not the correct type! 
-                    exec.Push(typeof(FList));
+                    exec.Push(typeof(CatList));
                 }
                 else if (o is Function)
                 {
@@ -1318,7 +1079,8 @@ namespace Cat
         public static string new_str(char c, int n) { return new string(c, n); }
         public static int index_of(string x, string y) { return x.IndexOf(y); }
         public static string replace_str(string x, string y, string z) { return x.Replace(y, z); }
-        public static FList str_to_array(string x) { return new FArray<char>(x.ToCharArray()); }
+        public static CatList str_to_list(string x) { return new CatList(x); }
+        public static string list_to_str(CatList x) { string result = ""; foreach (Object o in x) result += o.ToString(); return result; }
         #endregion
 
         #region console functions
@@ -1370,23 +1132,6 @@ namespace Cat
             }
         }
         #endregion
-
-        #region byte block functions
-        public class MakeByteBlock : PrimitiveFunction
-        {
-            public MakeByteBlock()
-                : base("byte_block", "(int -> byte_block)", "creates a mutable array of bytes")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                int n = exec.PopInt();
-                ByteBlock bb = new ByteBlock(n);
-                bb.ZeroMemory();
-                exec.Push(bb);
-            }
-        }
-        #endregion 
 
         #region i/o functions
         public class OpenFileReader : PrimitiveFunction
@@ -1440,6 +1185,8 @@ namespace Cat
             }
         }
 
+        /* TODO: reimplement these functions
+         * 
         public class ReadBytes : PrimitiveFunction
         {
             public ReadBytes()
@@ -1469,6 +1216,7 @@ namespace Cat
                 f.Write(mb.m, 0, mb.Count());
             }
         }
+        */
 
         public class CloseStream : PrimitiveFunction
         {
@@ -1582,10 +1330,10 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 Function f = exec.TypedPop<Function>();
-                Executor e2 = new DefaultExecutor();
+                Executor e2 = new Executor();
                 f.Eval(e2);
-                FList list = e2.GetStackAsList();
-               exec.Push(list);
+                CatList list = e2.GetStackAsList();
+                exec.Push(list);
             }
         }
 
@@ -1597,7 +1345,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.TypedPeek<FList>();
+                CatList list = exec.TypedPeek<CatList>();
                 exec.PushBool(list.IsEmpty());
             }
         }
@@ -1610,38 +1358,22 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.TypedPeek<FList>();
-                exec.PushInt(list.Count());
+                CatList list = exec.TypedPeek<CatList>();
+                exec.PushInt(list.Count);
             }
         }
 
         public class Nth : PrimitiveFunction
         {
             public Nth()
-                : base("nth", "(list int -> list any)", "returns the nth item in a list")
+                : base("get_at", "(list int -> list any)", "returns the nth item in a list")
             { }
 
             public override void Eval(Executor exec)
             {
                 int n = exec.PopInt();
-                FList list = exec.TypedPeek<FList>();
-                exec.Push(list.Nth(n));
-            }
-        }
-
-        public class Unfold : PrimitiveFunction
-        {
-            public Unfold()
-                : base("unfold", "('a ('a -> 'a) ('a -> bool) -> list)",
-                    "creates a lazily evaluated list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function term = exec.TypedPop<Function>();
-                Function next = exec.TypedPop<Function>();
-                Object init = exec.Pop();
-                exec.Push(new Generator(init, next.ToMapFxn(), term.ToFilterFxn()));
+                CatList list = exec.TypedPeek<CatList>();
+                exec.Push(list[n]);
             }
         }
 
@@ -1653,33 +1385,7 @@ namespace Cat
 
             public override void  Eval(Executor exec)
             {
- 	            exec.Push(FList.Nil());
-            }
-        }
-
-        public class Unit : PrimitiveFunction
-        {
-            public Unit()
-                : base("unit", "('a -> list)", "creates a list of one item")
-            { }
-
-            public override void  Eval(Executor exec)
-            {
- 	            exec.Push(FList.MakeUnit(exec.Pop()));
-            }
-        }
-
-        public class MakePair : PrimitiveFunction
-        {
-            public MakePair()
-                : base("pair", "('a 'b -> list)", "creates a list from two items")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Object x = exec.Pop();
-                Object y = exec.Pop();
- 	            exec.Push(FList.MakePair(x, y));
+ 	            exec.Push(new CatList());
             }
         }
 
@@ -1692,73 +1398,8 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 object x = exec.Pop();
-                FList list = exec.TypedPop<FList>();
- 	            exec.Push(FList.Cons(x, list));
-            }
-        }
-
-        public class Head : PrimitiveFunction
-        {
-            public Head()
-                : base("head", "(list -> any)", "replaces a list with the first item")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPop<FList>();
- 	            exec.Push(list.GetHead());
-            }
-        }
-
-        public class First : PrimitiveFunction
-        {
-            public First()
-                : base("first", "(list -> list any)", "gets the first item from a list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPeek<FList>();
-                exec.Push(list.GetHead());
-            }
-        }
-
-        public class Last : PrimitiveFunction
-        {
-            public Last()
-                : base("last", "(list -> list any)", "gets the last item from a list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPeek<FList>();
- 	            exec.Push(list.Last());
-            }
-        }
-
-        public class Tail : PrimitiveFunction
-        {
-            public Tail()
-                : base("tail", "(list -> list)", "removes first item from a list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.Tail());
-            }
-        }
-
-        public class Rest : PrimitiveFunction
-        {
-            public Rest()
-                : base("rest", "(list -> list list)", "gets a copy of the list with one item")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPeek<FList>();
-                exec.Push(list.Tail());
+                CatList list = exec.TypedPeek<CatList>();
+                list.Add(x);
             }
         }
 
@@ -1770,95 +1411,9 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.Tail());
-                exec.Push(list.GetHead());
-            }
-        }
-
-        public class Map : PrimitiveFunction
-        {
-            public Map()
-                : base("map", "(list ('a -> 'b) -> list)", "creates a new list by modifying an existing list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.Map(f.ToMapFxn()));
-            }
-        }
-
-        public class MapFilter : PrimitiveFunction
-        {
-            public MapFilter()
-                : base("map_filter", "(list ('a -> 'b) ('b -> bool) -> list)", "creates a new list by applying map then filter")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function fFilter = exec.TypedPop<Function>();
-                Function fMap = exec.TypedPop<Function>();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.Map(fMap.ToMapFxn()).Filter(fFilter.ToFilterFxn()));
-            }
-        }
-
-        public class Filter : PrimitiveFunction
-        {
-            public Filter()
-                : base("filter", "(list ('a -> bool) -> list)", "creates a new list containing elements that pass the condition")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.Filter(f.ToFilterFxn()));
-            }
-        }
-        public class GFold : PrimitiveFunction
-        {
-            public GFold()
-                : base("gfold", "('A list ('A 'b -> 'A) -> 'A)", "recursively applies a n-ary function to each element in a list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                FList list = exec.TypedPop<FList>();
-                FList iter = list.GetIter();
-                while (!iter.IsEmpty())
-                {
-                    exec.Push(iter.GetHead());
-                    f.Eval(exec);
-                    iter = iter.GotoNext();
-                }
-            }
-        }
-        public class Fold : PrimitiveFunction
-        {
-            public Fold()
-                : base("fold", "(list 'a ('a 'b -> 'a) -> 'a)", "recursively applies a binary function to each element in a list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                Object o = exec.TypedPop<Object>();
-                FList list = exec.TypedPop<FList>();
-                FList iter = list.GetIter();
-                
-                while (!iter.IsEmpty())
-                {
-                    exec.Push(o);
-                    exec.Push(iter.GetHead());
-                    f.Eval(exec);
-                    o = exec.TypedPop<Object>();
-                    iter = iter.GotoNext();
-                }
-
+                CatList list = exec.TypedPeek<CatList>();
+                Object o = list[list.Count - 1];
+                list.RemoveAt(list.Count - 1);
                 exec.Push(o);
             }
         }
@@ -1871,142 +1426,12 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                FList first = exec.TypedPop<FList>();
-                FList second = exec.TypedPop<FList>();
-                exec.Push(FList.Concat(first, second));
+                CatList second = exec.TypedPop<CatList>();
+                CatList first = exec.TypedPeek<CatList>();
+                first.AddRange(second);
             }
         }
 
-        public class TakeN : PrimitiveFunction
-        {
-            public TakeN()
-                : base("take", "(list int -> list)", "creates a new list from the first n items")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                int n = exec.PopInt();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.TakeN(n));
-            }
-        }
-
-        public class DropN : PrimitiveFunction
-        {
-            public DropN()
-                : base("drop", "(list int -> list)", "creates a new list without the first n items")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                int n = exec.PopInt();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.DropN(n));
-            }
-        }
-
-        public class TakeRange : PrimitiveFunction
-        {
-            public TakeRange()
-                : base("take_range", "(list int int -> list)", "creates a new list which is a sub-range of the original")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                int count = exec.PopInt();
-                int n = exec.PopInt();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.TakeRange(n, count));
-            }
-        }
-
-        public class TakeWhile : PrimitiveFunction
-        {
-            public TakeWhile()
-                : base("take_while", "(list ('a -> bool) -> list)", "creates a new list by taking items while the predicate is true")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.TakeWhile(f.ToFilterFxn()));
-            }
-        }
-
-        public class DropWhile : PrimitiveFunction
-        {
-            public DropWhile()
-                : base("drop_while", "(list ('a -> bool) -> list)", "creates a new list by dropping items while the predicate is true")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.DropWhile(f.ToFilterFxn()));
-            }
-        }
-
-        public class CountWhile : PrimitiveFunction
-        {
-            public CountWhile()
-                : base("count_while", "(list ('a -> bool) -> list int)", "creates a new list by dropping items while the predicate is true")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                FList list = exec.TypedPeek<FList>();
-                exec.Push(list.CountWhile(f.ToFilterFxn()));
-            }
-        }
-
-        public class RangeGen : PrimitiveFunction
-        {
-            public RangeGen()
-                : base("range_gen", "(int int (int -> 'a) -> list)", 
-                    "creates a lazy list from a range of numbers and a generating function")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Function f = exec.TypedPop<Function>();
-                int count = exec.PopInt();
-                int n = exec.PopInt();
-                exec.Push(FList.RangeGen(f.ToRangeGenFxn(), n, count));
-            }
-        }
-
-        public class Repeater : PrimitiveFunction
-        {
-            public Repeater()
-                : base("repeater", "('a -> list)", 
-                    "creates a lazy list by repeating a value over and over again")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                Object o = exec.Pop();
-                exec.Push(FList.MakeRepeater(o));
-            }
-        }
-
-        public class Flatten : PrimitiveFunction
-        {
-            public Flatten()
-                : base("flatten", "(list -> list)", "concatenates all sub-lists in a list of lists")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                FList list = exec.TypedPop<FList>();
-                exec.Push(list.Flatten());
-            }
-        }
-        #endregion
-
-        #region mutable list instructions
         public class SetAt : PrimitiveFunction
         {
             public SetAt()
@@ -2017,19 +1442,11 @@ namespace Cat
             {
                 int n = exec.PopInt();
                 Object o = exec.Pop();
-                if (exec.Peek() is FMutableList)
-                {
-                    FMutableList list = exec.TypedPeek<FMutableList>();
-                    list.Set(n, o);
-                }
-                else
-                {
-                    FList list = exec.TypedPop<FList>();
-                    FMutableList mut = new MArray<Object>(list);
-                }
+                CatList list = exec.TypedPeek<CatList>();
+                list[n] = o;
             }
         }
-        #endregion 
+        #endregion
 
         #region misc functions
         public class RandomInt : PrimitiveFunction
@@ -2118,7 +1535,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                exec.Push(exec.TypedPop<FList>());
+                exec.Push(exec.TypedPop<CatList>());
             }
         }
 
@@ -2207,23 +1624,6 @@ namespace Cat
                 WindowGDI.ClearWindow();
             }
         }
-        
-        /**
-         *  Not currently used. 
-         * 
-        public class GetGdi : PrimitiveFunction
-        {
-            public GetGdi()
-                : base("get_window", "( ~> gdi)", "gets the active graphics device interface")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                // Note: this is a placemark for later, when an actual gdi is supported
-                exec.Push("gdi");
-            }            
-        }
-         */
 
         public class Render : PrimitiveFunction
         {
@@ -2234,8 +1634,8 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 string s = exec.TypedPop<string>();
-                FList f = exec.TypedPop<FList>();
-                Object[] args = f.GetObjectArray();
+                CatList f = exec.TypedPop<CatList>();
+                Object[] args = f.ToArray();
                 GraphicCommand c = new GraphicCommand(s, args);
                 WindowGDI.Render(c);
             }
@@ -2254,11 +1654,11 @@ namespace Cat
             {
                 Object self = exec.Pop();
                 string s = exec.TypedPop<string>();
-                FList a = exec.TypedPop<FList>();
+                CatList a = exec.TypedPop<CatList>();
                 MethodInfo m = self.GetType().GetMethod(s, a.GetTypeArray());
                 if (m == null)
                     throw new Exception("could not find method " + s + " on object of type " + self.GetType().ToString() + " with matching types");
-                Object o = m.Invoke(self, a.GetObjectArray());
+                Object o = m.Invoke(self, a.ToArray());
                 exec.Push(o);
                 exec.Push(self);
             }
@@ -2315,7 +1715,7 @@ namespace Cat
                 foreach (FieldInfo fi in fis)
                     list.Add(fi.Name);
                 string[] a = list.ToArray();
-                exec.Push(new FArray<string>(a));
+                exec.Push(new CatList(a));
                 exec.Push(self);
             }
         }
@@ -2334,7 +1734,7 @@ namespace Cat
                 foreach (FieldInfo fi in fis)
                     list.Add(fi.Name);
                 string[] a = list.ToArray();
-                exec.Push(new FArray<string>(a));
+                exec.Push(new CatList(a));
             }
         }
 
@@ -2347,14 +1747,14 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 string s = exec.TypedPop<string>();
-                FList a = exec.TypedPop<FList>();
+                CatList a = exec.TypedPop<CatList>();
                 Type t = Type.GetType(s);
                 if (t == null)
                     throw new Exception("could not find type " + s);
                 ConstructorInfo c = t.GetConstructor(a.GetTypeArray());
                 if (c == null)
                     throw new Exception("could not find constructor for object of type " + t.ToString() + " with matching types");
-                Object o = c.Invoke(a.GetObjectArray());
+                Object o = c.Invoke(a.ToArray());
                 if (o == null)
                     throw new Exception(s + " object could not be constructed");
                 exec.Push(o);
@@ -2370,7 +1770,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 IEnumerable e = exec.TypedPop<IEnumerable>();
-                exec.Push(new FArray<object>(e));
+                exec.Push(new CatList(e));
             }
         }
         #endregion
@@ -2401,7 +1801,7 @@ namespace Cat
                 List<string> list = new List<string>();
                 foreach (Match m in re.Matches(s))
                     list.Add(m.Value);
-                FList f = new FArray<Object>(list);
+                CatList f = new CatList(list);
                 exec.Push(f);
             }
         }
@@ -2421,6 +1821,53 @@ namespace Cat
                     exec.Push(-1);
                 else
                     exec.Push(m.Index);
+            }
+        }
+        #endregion
+
+        #region references 
+        public class Ref
+        {
+            Object val;
+            public Ref(Object o) { val = o; }
+            public Object GetVal() { return val; }
+            public Ref SetVal(Object o) { val = o; return this; }            
+        }
+
+        public class MakeRef : PrimitiveFunction
+        {
+            public MakeRef()
+                : base("ref", "('a -> ref)", "creates a reference")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(new Ref(exec.Pop()));
+            }
+        }
+
+        public class GetVal : PrimitiveFunction
+        {
+            public GetVal()
+                : base("getval", "(ref ~> ref any)", "gets value associated with reference")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.Push(exec.TypedPop<Ref>().GetVal());
+            }
+        }
+        
+        public class SetVal : PrimitiveFunction
+        {
+            public SetVal()
+                : base("setval", "(ref any ~> ref)", "sets a reference to a new value")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Pop();
+                exec.TypedPeek<Ref>().SetVal(o);
             }
         }
         #endregion

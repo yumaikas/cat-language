@@ -20,11 +20,6 @@ namespace Cat
         public static bool gbReleaseVersion = true;
 
         /// <summary>
-        /// Controls whether or not to display the welcome text.
-        /// </summary>
-        public static bool gbShowLogo = true;
-        
-        /// <summary>
         /// Determines whether the contents of the stacks is reported 
         /// after each line entry into the interpreter.
         /// </summary>
@@ -85,7 +80,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.18.2";
+        public static string gsVersion = "0.19.0";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 

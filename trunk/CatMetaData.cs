@@ -50,6 +50,22 @@ namespace Cat
             return msContent.Trim();
         }
 
+        public CatList ToList()
+        {
+            CatList ret = new CatList();
+            ret.Add(GetLabel());
+            if (Count > 0)
+            {
+                foreach (CatMetaData child in this)
+                    ret.Add(child);
+            }
+            else
+            {
+                ret.Add(GetContent());
+            }
+            return ret;
+        }
+
         public override string ToString()
         {
             string ret = "";
@@ -118,7 +134,7 @@ namespace Cat
             
             for (int i=0; i < node.children.Count; ++i)
             {
-                AstMetaDataNode tmp = node.children[i];
+                AstMetaData tmp = node.children[i];
                 if (tmp is AstMetaDataLabel)
                 {
                     int nIndent;

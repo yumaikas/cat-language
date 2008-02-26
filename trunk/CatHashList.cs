@@ -70,15 +70,15 @@ namespace Cat
             return mDict.ContainsKey(key);
         }
 
-        public FArray<object> ToArray()
+        public CatList ToArray()
         {
-            Pair[] a = new Pair[mDict.Count];
+            CatList[] a = new CatList[mDict.Count];
             int i = 0;
             foreach (KeyValuePair<Object, Object> pair in mDict)
             {
-                a[i++] = FList.MakePair(pair.Key, pair.Value) as Pair;
+                a[i++] = CatList.MakePair(pair.Key, pair.Value);
             }
-            return new FArray<object>(a);
+            return new CatList(a);
         }
 
         public override string ToString()

@@ -134,7 +134,7 @@ namespace Cat
     {
         static GraphWindow mWindow;
         static EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
-        static Executor mExec = new DefaultExecutor();
+        static Executor mExec = new Executor();
         static Pen mPen = new Pen(Color.Black);
         static bool mbPenUp = false;
         static Pen turtlePen = new Pen(Color.Blue);

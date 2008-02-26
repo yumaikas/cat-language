@@ -19,23 +19,6 @@ namespace Cat
             gpCallBack = cb;
         }
 
-        public static void ShowLogo()
-        {
-            if (!Config.gbReleaseVersion)
-                WriteLine("WARNING: this is an unstable development build of Cat");
-            
-            WriteLine("");
-            WriteLine("Cat Interpreter =^_^=");
-            WriteLine("version " + Config.gsVersion);
-            WriteLine("by Christopher Diggins");
-            WriteLine("this software is released under the MIT license");
-            WriteLine("the source code is public domain and available at");
-            WriteLine("http://www.cat-language.com");
-            WriteLine("");
-            WriteLine("Type in #help for help and #exit to exit.");
-            WriteLine("");
-        }
-
         public static void LogLine(string s)
         {
             gpOutput.WriteLine(s);
@@ -86,9 +69,9 @@ namespace Cat
             {
                 return "'" + ((char)o) + "'";
             }
-            else if (o is FList)
+            else if (o is CatList)
             {
-                return (o as FList).ToShortString();
+                return (o as CatList).ToShortString();
             }
             else if (o is Byte)
             {

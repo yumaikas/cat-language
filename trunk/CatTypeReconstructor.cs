@@ -213,13 +213,6 @@ namespace Cat
                         Log("next term = " + y.GetName() + " : " + y.GetFxnTypeString());
                     }
 
-                    // Object field functions (_def_, _get_, _set_) have to be 
-                    // computed at the last minute, because their types are dependent on the previous types
-                    if (y is ObjectFieldFxn)
-                    {
-                        (y as ObjectFieldFxn).ComputeType(ft);
-                    }
-
                     ft = ComposeTypes(ft, y.GetFxnType());
 
                     if (ft == null)

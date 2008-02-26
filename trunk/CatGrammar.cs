@@ -4,12 +4,21 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+
 using Peg;
 
 namespace Cat
 {
-    public class CatGrammar : Grammar
+    /// <summary>
+    /// Contains grammar rules. Any circular references require the usage of a "Delay" function which prevents 
+    /// the parser construction to lead to a stack overflow.
+    /// </summary>
+    public class CatGrammar : Peg.Grammar
     {
+        public static Rule CatAstNode(AstLabel label, Rule x) 
+        { 
+            return new AstNodeRule(label, x); 
+        }
         public static Rule UntilEndOfLine()
         {
             return NoFail(WhileNot(AnyChar(), NL()), "expected a new line");
@@ -24,11 +33,11 @@ namespace Cat
         }
         public static Rule MetaDataContent()
         {
-            return AstNode("meta_data_content", UntilEndOfLine());
+            return CatAstNode(AstLabel.MetaDataContent, UntilEndOfLine());
         }
         public static Rule MetaDataLabel()
-        {            
-            return AstNode("meta_data_label", Seq(Star(CharSet(" \t")), Ident(), SingleChar(':')));
+        {
+            return CatAstNode(AstLabel.MetaDataLabel, Seq(Star(CharSet(" \t")), Ident(), SingleChar(':')));
         }
         public static Rule MetaDataEntry()
         {
@@ -44,7 +53,7 @@ namespace Cat
         }
         public static Rule MetaDataBlock() 
         {
-            return Seq(AstNode("meta_data_block", Seq(StartMetaDataBlock(), WhileNot(MetaDataEntry(), EndMetaDataBlock()))), WS()); 
+            return Seq(CatAstNode(AstLabel.MetaDataBlock, Seq(StartMetaDataBlock(), WhileNot(MetaDataEntry(), EndMetaDataBlock()))), WS()); 
         }
         public static Rule Comment() 
         { 
@@ -77,11 +86,11 @@ namespace Cat
         public static Rule Quote() 
         {
             // Note the usage of Delay which breaks circular references in the grammar
-            return AstNode("quote", Seq(Token("["), Star(Delay(Expr)), NoFail(Token("]"), "missing ']'"))); 
+            return CatAstNode(AstLabel.Quote, Seq(Token("["), Star(Delay(Expr)), NoFail(Token("]"), "missing ']'"))); 
         }
         public static Rule IntegerLiteral() 
         { 
-            return AstNode("int", Seq(Opt(SingleChar('-')), Plus(Digit()), Not(CharSet(".")))); 
+            return CatAstNode(AstLabel.Int, Seq(Opt(SingleChar('-')), Plus(Digit()), Not(CharSet(".")))); 
         }
         public static Rule EscapeChar() 
         { 
@@ -93,19 +102,19 @@ namespace Cat
         }
         public static Rule CharLiteral() 
         {
-            return AstNode("char", Seq(SingleChar('\''), StringCharLiteral(), SingleChar('\'')));
+            return CatAstNode(AstLabel.Char, Seq(SingleChar('\''), StringCharLiteral(), SingleChar('\'')));
         }
         public static Rule StringLiteral() 
         { 
-            return AstNode("string", Seq(SingleChar('\"'), Star(StringCharLiteral()), SingleChar('\"'))); 
+            return CatAstNode(AstLabel.String, Seq(SingleChar('\"'), Star(StringCharLiteral()), SingleChar('\"'))); 
         }
         public static Rule FloatLiteral() 
         {
-            return AstNode("float", Seq(Opt(SingleChar('-')), Plus(Digit()), SingleChar('.'), Plus(Digit()))); 
+            return CatAstNode(AstLabel.Float, Seq(Opt(SingleChar('-')), Plus(Digit()), SingleChar('.'), Plus(Digit()))); 
         }
         public static Rule HexValue()
         {
-            return AstNode("hex", Plus(HexDigit()));
+            return CatAstNode(AstLabel.Hex, Plus(HexDigit()));
         }
         public static Rule HexLiteral()
         {
@@ -113,7 +122,7 @@ namespace Cat
         }
         public static Rule BinaryValue()
         {
-            return AstNode("bin", Plus(BinaryDigit()));
+            return CatAstNode(AstLabel.Bin, Plus(BinaryDigit()));
         }
         public static Rule BinaryLiteral()
         {
@@ -134,40 +143,40 @@ namespace Cat
         }
         public static Rule Name() 
         {
-            return Token(AstNode("name", Choice(Symbol(), CatIdent()))); 
+            return Token(CatAstNode(AstLabel.Name, Choice(Symbol(), CatIdent()))); 
         }
         public static Rule Lambda()
         {
-            return AstNode("lambda", Seq(CharSeq("\\"), NoFail(Seq(Param(), CharSeq("."), Choice(Delay(Lambda), 
+            return CatAstNode(AstLabel.Lambda, Seq(CharSeq("\\"), NoFail(Seq(Param(), CharSeq("."), Choice(Delay(Lambda), 
                 NoFail(Quote(), "expected a quotation or lambda expression"))), "expected a lambda expression")));
         }
         public static Rule Expr()
         {
             return Token(Choice(Lambda(), Literal(), Quote(), Name()));
         }
+        public static Rule Statement()
+        {
+            return Delay(FxnDef);
+        }
         public static Rule CodeBlock()
         {
-            return Seq(Token("{"), Star(Expr()), NoFail(Token("}"), "missing '}'"));
+            return Seq(Token("{"), Star(Choice(Statement(), Expr())), NoFail(Token("}"), "missing '}'"));
         }
         public static Rule Param()
         {
-            return Token(AstNode("param", Ident()));
+            return Token(CatAstNode(AstLabel.Param, Ident()));
         }
         public static Rule Params()
         {
             return Seq(Token("("), Star(Param()), NoFail(Token(")"), "missing ')'"));
         }
-        public static Rule TypeModifier()
-        {
-            return AstNode("type_modifier", Opt(SingleChar('*')));
-        }
         public static Rule TypeVar()
         {
-            return AstNode("type_var", Seq(Opt(CharSeq("$")), LowerCaseLetter(), Star(IdentNextChar()), TypeModifier()));
+            return CatAstNode(AstLabel.TypeVar, Seq(Opt(CharSeq("$")), LowerCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule StackVar()
         {
-            return AstNode("stack_var", Seq(Opt(CharSeq("$")), UpperCaseLetter(), Star(IdentNextChar()), TypeModifier()));
+            return CatAstNode(AstLabel.StackVar, Seq(Opt(CharSeq("$")), UpperCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule TypeOrStackVar()
         {
@@ -175,7 +184,7 @@ namespace Cat
         }
         public static Rule TypeName()
         {
-            return Token(AstNode("type_name", Seq(Ident(), TypeModifier())));        
+            return Token(CatAstNode(AstLabel.TypeName, Ident()));    
         }
         public static Rule TypeComponent()
         {
@@ -183,19 +192,19 @@ namespace Cat
         }
         public static Rule Production()
         {
-            return AstNode("stack", Token(Star(TypeComponent())));
+            return CatAstNode(AstLabel.Stack, Token(Star(TypeComponent())));
         }
         public static Rule Consumption()
         {
-            return AstNode("stack", Token(Star(TypeComponent())));
+            return CatAstNode(AstLabel.Stack, Token(Star(TypeComponent())));
         }
         public static Rule Arrow()
         {
-            return AstNode("arrow", Choice(Token("->"), Token("~>")));
+            return CatAstNode(AstLabel.Arrow, Choice(Token("->"), Token("~>")));
         }
         public static Rule FxnType()
         {
-            return AstNode("type_fxn", Seq(Token("("), Production(), NoFail(Arrow(), "expected either -> or ~>"), Consumption(), NoFail(Token(")"), "expected closing paranthesis"), TypeModifier()));
+            return CatAstNode(AstLabel.FxnType, Seq(Token("("), Production(), NoFail(Arrow(), "expected either -> or ~>"), Consumption(), NoFail(Token(")"), "expected closing paranthesis")));
         }
         public static Rule TypeDecl()
         {
@@ -203,25 +212,30 @@ namespace Cat
         }
         public static Rule FxnDef()
         {
-            return AstNode("def", Seq(Word("define"), NoFail(Name(), "expected name"),
+            return CatAstNode(AstLabel.Def, Seq(Word("define"), NoFail(Name(), "expected name"),
                 Opt(Params()), Opt(TypeDecl()), Opt(MetaDataBlock()), NoFail(CodeBlock(), "expected a code block")));
+        }
+        public static Rule FxnDecl()
+        {
+            return CatAstNode(AstLabel.Decl, Seq(Word("declare"), NoFail(Name(), "expected name"),
+                Opt(Seq(TypeDecl(), Opt(MetaDataBlock())))));
         }
         #region macros
         public static Rule MacroTypeVarName()
         {
-            return AstNode("type_var_name", Seq(LowerCaseLetter(), Star(IdentNextChar())));
+            return CatAstNode(AstLabel.MacroTypeVarName, Seq(LowerCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule MacroTypeVar()
         {
-            return AstNode("macro_type_var", MacroTypeVarName());
+            return CatAstNode(AstLabel.MacroTypeVar, MacroTypeVarName());
         }
         public static Rule MacroStackVarName()
         {
-            return AstNode("stack_var_name", Seq(UpperCaseLetter(), Star(IdentNextChar())));
+            return CatAstNode(AstLabel.MacroStackVarName, Seq(UpperCaseLetter(), Star(IdentNextChar())));
         }
         public static Rule MacroStackVar()
         {
-            return AstNode("macro_stack_var", Seq(MacroStackVarName(), WS(), Opt(TypeDecl())));
+            return CatAstNode(AstLabel.MacroStackVar, Seq(MacroStackVarName(), WS(), Opt(TypeDecl())));
         }
         public static Rule MacroVar()
         {
@@ -229,7 +243,7 @@ namespace Cat
         }
         public static Rule MacroName()
         {
-            return AstNode("macro_name", Choice(Symbol(), CatIdent()));
+            return CatAstNode(AstLabel.MacroName, Choice(Symbol(), CatIdent()));
         }
         public static Rule MacroTerm()
         {
@@ -237,15 +251,15 @@ namespace Cat
         }
         public static Rule MacroQuote()
         {
-            return AstNode("macro_quote", Seq(Token("["), Star(Delay(MacroTerm)), NoFail(Token("]"), "missing ']'")));
+            return CatAstNode(AstLabel.MacroQuote, Seq(Token("["), Star(Delay(MacroTerm)), NoFail(Token("]"), "missing ']'")));
         }
         public static Rule MacroPattern()
         {
-            return AstNode("macro_pattern", Seq(Token("{"), Star(MacroTerm()), NoFail(Token("}"), "missing '}'")));
+            return CatAstNode(AstLabel.MacroPattern, Seq(Token("{"), Star(MacroTerm()), NoFail(Token("}"), "missing '}'")));
         }
         public static Rule MacroDef()
         {
-            return AstNode("macro", Seq(Choice(Word("macro"), Word("rule")), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
+            return CatAstNode(AstLabel.Macro, Seq(Choice(Word("macro"), Word("rule")), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
         }
         #endregion
         public static Rule CatProgram()
