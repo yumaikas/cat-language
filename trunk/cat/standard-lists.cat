@@ -34,6 +34,54 @@ define ()
 }}
 { nil }
 
+define head : (list -> any)
+{{
+  desc:
+    Replaces a list with the first item
+  test:
+    in: [1 2 3] list head
+    out: 3
+}}
+{
+  uncons popd
+}
+
+define tail : (list -> list)
+{{
+  desc:
+    Removes first item from the list
+  test:
+    in: [1 2 3] list tail
+    out: [1 2] list
+}}
+{
+  uncons pop
+}
+
+define first : (list -> list any)
+{{
+  desc:
+    Returns the first item in a list
+  test:
+    in: [1 2 3] list first
+    out: [1 2 3] list 3
+}}
+{
+  0 get_at
+}
+
+define rest : (list -> list list)
+{{
+  desc:
+    Returns a list with one less item
+  test:
+    in: [1 2 3] list rest
+    out: [1 2 3] list [1 2] list
+}}
+{
+  dup tail
+}
+
 define consd
 {{
   desc:
@@ -44,6 +92,18 @@ define consd
 }}
 { [cons] dip }
 
+define pair : ('a 'b -> list)
+{{
+  desc:
+    Creates a list of two items
+  test:
+    in: 1 2 pair
+    out: [1 2] list
+}}
+{
+  nil bury [cons] dip cons
+}
+
 define triple : ('a 'b 'c -> list)
 {{
   desc:
@@ -52,7 +112,7 @@ define triple : ('a 'b 'c -> list)
     in: 1 2 3 triple
     out: [1 2 3] list
 }}
-{ [pair] dip cons } 
+{ [pair] dip cons }
 
 define swons : ('a list -> list)
 {{

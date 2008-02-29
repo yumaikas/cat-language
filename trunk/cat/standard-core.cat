@@ -36,4 +36,3 @@ define try : (( -> 'A) -> 'A)
 }}
 { ["exception data: " write writeln] try_catch }
 
-

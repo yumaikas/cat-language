@@ -89,7 +89,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction qf = exec.PopFunction();
+                QuotedFunction qf = exec.PopFxn();
                 exec.Push(Optimizer.ExpandInline(qf, 5));
             }
         }
@@ -102,7 +102,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction qf = exec.PopFunction();
+                QuotedFunction qf = exec.PopFxn();
                 exec.Push(Optimizer.ExpandInline(qf, 1));
             }
         }
@@ -115,7 +115,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                QuotedFunction qf = exec.PopFunction();
+                QuotedFunction qf = exec.PopFxn();
                 exec.Push(Optimizer.ApplyMacros(qf));
             }
         }
@@ -529,6 +529,37 @@ namespace Cat
             }
         }
 
+        public class Switch : PrimitiveFunction
+        {
+            public Switch()
+                : base("switch", "(any list -> any)",
+                    "chooses the first item from a list of pairs, when the second item matches the switch value")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CatList choices = exec.PopList();
+                Object compare = exec.Pop();
+                for (int i=0; i < choices.Count; ++i)
+                {
+                    Object o = choices[i];
+                    if (!(o is CatList))
+                        throw new Exception("argument to switch must be a list of pairs");
+                    CatList pair = o as CatList;
+                    if (pair.Count != 2)
+                        throw new Exception("argument to switch must be a list of pairs");
+                    Object first = pair[0];
+                    Object second = pair[1];
+                    if (second.Equals(compare))
+                    {
+                        exec.Push(first);
+                        return;
+                    }
+                }
+                throw new Exception("failed to match switch statement");
+            }
+        }
+
         public class BinRec : PrimitiveFunction
         {
             // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
@@ -623,10 +654,10 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                Function fResultRelation = exec.PopFunction();
-                Function fArgRelation = exec.PopFunction();
-                Function fBaseCase = exec.PopFunction();
-                Function fCondition = exec.PopFunction();
+                Function fResultRelation = exec.PopFxn();
+                Function fArgRelation = exec.PopFxn();
+                Function fBaseCase = exec.PopFxn();
+                Function fCondition = exec.PopFxn();
 
                 BinRecHelper h = new BinRecHelper(exec, fResultRelation, fArgRelation, fBaseCase, fCondition);
                 h.Exec();
