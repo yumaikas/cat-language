@@ -8,7 +8,5 @@
 define #h { #doc }
 define #t { #type }
 define #m { #metacat }
-define #p { #partial }
 define #i { #inline }
 define #i0 { #inline-step }
-define #ta { #testall }

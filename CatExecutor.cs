@@ -145,7 +145,7 @@ namespace Cat
             return TypedPop<bool>();
         }
 
-        public QuotedFunction PopFunction()
+        public QuotedFunction PopFxn()
         {
             return TypedPop<QuotedFunction>();
         }
@@ -155,7 +155,12 @@ namespace Cat
             return TypedPop<String>();
         }
 
-        public Function PeekProgram()
+        public CatList PopList()
+        {
+            return TypedPop<CatList>();
+        }
+
+        public Function PeekFxn()
         {
             return TypedPeek<Function>();
         }
@@ -175,29 +180,9 @@ namespace Cat
             return TypedPeek<bool>();
         }
 
-        public void AddInt(int n)
+        public CatList PeekList()
         {
-            PushInt(PopInt() + n);
-        }
-
-        public void SubInt(int n)
-        {
-            PushInt(PopInt() + n);
-        }
-
-        public void IncInt()
-        {
-            PushInt(PopInt() + 1);
-        }
-
-        public void DecInt()
-        {
-            PushInt(PopInt() - 1);
-        }
-
-        public void LtInt(int n)
-        {
-            PushBool(PopInt() < n);
+            return TypedPeek<CatList>();
         }
 
         public void Import()
@@ -300,7 +285,8 @@ namespace Cat
                 {
                     fxns = f.GetSubFxns();
                 }
-                else
+                    // TODO: handle primitives "if", "apply", etc. 
+                else 
                 {
                     f.Eval(this);
                 }
@@ -325,7 +311,7 @@ namespace Cat
                 }
                 else if (node is AstDef)
                 {
-                    result.Add(MakeFunction(node as AstDef));
+                    MakeFunction(node as AstDef);
                 }
                 else if (node is AstMacro)
                 {
