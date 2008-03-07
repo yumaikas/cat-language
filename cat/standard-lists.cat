@@ -3,37 +3,6 @@
 // without restriction, obligation or warantee.
 // http://www.cdiggins.com
 
-define (
-{{
-  desc:
-    List initializer.
-  test:
-    in: nil
-    out: [] list
-}}
-{ nil }
-
-define ,
-{{
-  desc:
-    List separator.
-}}
-{ cons }
-
-define )
-{{
-  desc:
-    List terminator.
-}}
-{ cons }
-
-define ()
-{{
-  desc:
-    Empty list.
-}}
-{ nil }
-
 define head : (list -> any)
 {{
   desc:
@@ -143,6 +112,13 @@ define unpair : (list -> any any)
     out: 1 2
 }}
 { uncons [head] dip }
+
+define fold : (list ('a 'a -> 'a) 'a -> list)
+{{
+}}
+{
+  
+}
 
 define rev : (list -> list)
 {{
@@ -264,70 +240,3 @@ define head_eq : (list any -> list bool)
 }}
 { [dhead] dip eq }
 
-//=============================================================================
-// Infinite list generators
-
-define range : (int int -> list)
-{{
-  desc:
-    Returns a list of x non-negative integers from n.
-  test:
-    in: 3 5 range
-    out: [7 6 5 4 3] list
-}}
-{ [] range_gen }
-
-define n : (int -> list)
-{{
-  desc:
-    Returns a list of the first n non-negative integers.
-  test:
-    in: 4 n
-    out: [3 2 1 0] list
-  test:
-    in: 0 n
-    out: nil
-}}
-{ 0 swap range }
-
-define naturals : ( -> list)
-{{
-  desc:
-    Returns a lazy list of all the non-negative integers
-}}
-{ 0 [inc] [pop true] unfold }
-
-define odds : ( -> list)
-{{
-  desc:
-    Returns a lazy list of all the odd numbers
-}}
-{ 1 [2 +] [pop true] unfold }
-
-define evens : ( -> list)
-{{
-  desc:
-    Returns a lazy list of all the even numbers
-}}
-{ 0 [2 +] [pop true] unfold  }
-
-define negatives : ( -> list)
-{{
-  desc:
-    Returns a lazy list of all the negative numbers starting at -1
-}}
-{ 1 neg [dec] [pop true] unfold }
-
-define zeros : ( -> list)
-{{
-  desc:
-    Returns an infinite lazy list of zeros
-}}
-{ 0 repeater }
-
-define ones : ( -> list)
-{{
-  desc:
-    Returns an infinite lazy list of ones
-}}
-{ 1 repeater }
