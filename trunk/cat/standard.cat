@@ -7,12 +7,15 @@
 "standard-shuffle.cat" #load
 "standard-combinators.cat" #load
 "standard-lists.cat" #load
+
+/*
 "standard-functions.cat" #load
 "standard-math.cat" #load
 "standard-control-flow.cat" #load
 "standard-hash.cat" #load
 "standard-vectors.cat" #load
 "standard-geometry.cat" #load
+*/
 
 // Not finished.
 // "standard-trees.cat" #load

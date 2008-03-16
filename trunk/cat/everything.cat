@@ -7,6 +7,8 @@
 "interpreter-cmds.cat" #load
 "interpreter-flags.cat" #load
 "standard.cat" #load
+
+/*
 "parsing.cat" #load
 "test-misc.cat" #load
 "test-metacat.cat" #load
@@ -15,3 +17,4 @@
 "clr-regex.cat" #load
 "demo-examples.cat" #load
 "demo-graphics.cat" #load
+*/

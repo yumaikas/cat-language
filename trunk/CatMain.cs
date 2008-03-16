@@ -24,6 +24,15 @@ namespace Cat
 
         static void Main(string[] a)
         {
+            if (Config.gbShowWelcome)
+            {
+                WriteLine("Welcome to the Cat interpreter");
+                WriteLine("version " + Config.gsVersion);
+                WriteLine("by Christopher Diggins, 2008");
+                WriteLine("licensed under MIT License 1.0");
+                WriteLine("");
+            }
+
             if (!Directory.Exists(gsDataFolder))
             {
                 try

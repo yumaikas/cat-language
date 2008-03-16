@@ -7,24 +7,31 @@
 rule { noop } => { }
 rule { id } => { }
 rule { swap swap } => { }
+rule { swap pop pop } => { pop pop }
 rule { dup pop } => { }
 rule { not not } => { }
 rule { quote apply } => { }
 rule { dup swap } => { dup }
 rule { dup eq } => { pop true }
-
-// TODO: allow [] to be recognized
-// rule { [] papply } => { quote }
-
-// dup ('a -> 'b) pop patterns
+rule { papply apply } => { apply }
 rule { dup quote pop } => { }
-rule { dup swap pop } => { }
 rule { dup inc pop } => { }
 rule { dup unit pop } => { }
 rule { dup $a compose pop } => { }
 rule { dup $a pair pop } => { }
 rule { dup $a add pop } => { }
-// ... the list goes on and on.
+rule { papply pop } => { pop pop }
+rule { cons pop } => { pop pop }
+rule { $a dip pop } => { pop $a apply }
+
+// TODO: support [x] patterns
+// rule { [apply] papply } => { }
+// rule { [] papply } => { quote }
+// rule { [] papply dip } => { swap }
+// rule { [dup] dip swap pop } => { }
+// rule { [] dip } => { }
+// rule { [pop X] papply } => { pop [X] }
+// rule { swap [swap X] papply papply } => { [X] papply papply }
 
 // This potentially makes things bigger
 rule { $a dup } => { $a $a }
@@ -54,9 +61,14 @@ rule { [$B] [$A] rcompose } => { [$A $B] }
 rule { $b [$A] papply } => { [$b $A] }
 rule { $b [$A] app2 } => { $A $b $A }
 
+// More optimizations
+rule { dup $a papply swap pop } => { [x] papply }
+rule { dup $a papply papply } => { [dup x] papply }
+
 // Loop unrolling
 // Not currently performed because of the potential performance hit
 // This is a tricky optimization to apply properly.
+// It needs to be done in a limited context
 // rule { [$A] [$B] while } => { $B [$A [$A] [$B] while] [] if }
 
 // Boolean primitives
@@ -87,6 +99,7 @@ rule { $a or } => { [true] [$a] if }
 
 // List optimizations
 rule { cons uncons } => { }
+rule { uncons cons } => { }
 rule { cons head } => { [pop] dip }
 rule { cons tail } => { pop }
 rule { cons first } => { dup [cons first] dip }
@@ -211,11 +224,12 @@ rule { $c $b $a swapd } => { $b $c $a }
 rule { $c $b $a dig } => { $b $a $c }
 rule { $c $b $a bury } => { $a $c $b }
 
-// Miscellaneous rules
+// Typed rules (somewhat experimental)
 rule { dip $B:('a -> 'b) $a dip } => { $a compose dip $B }
+rule { $a swap $B:('a -> 'B) } => { $B $a }
 
 // Oscillation patterns
-// not implement yet
+// not implemented yet
 // rule { swap } <=> { quote dip }
 // rule { [$A] dip quote } <=> { quote [$A] dip }
 
