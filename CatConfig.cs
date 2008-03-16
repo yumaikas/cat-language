@@ -96,5 +96,11 @@ namespace Cat
         /// Shows a log of each rewriting rule applied
         /// </summary>
         public static bool gbShowRewritingRuleApplications = true;
+
+        /// <summary>
+        /// Show a welcome message when the interpreter starts up
+        /// </summary>
+        public static bool gbShowWelcome = true;
+
     }
 }

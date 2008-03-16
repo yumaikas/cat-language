@@ -277,18 +277,22 @@ namespace Cat
         
         public void Execute(List<Function> fxns)
         {
-            for (int i = 0; i < fxns.Count; ++i)
+            int i = 0;
+            while (i < fxns.Count)
             {
                 Function f = fxns[i];
-                // Is tail call? 
-                if (i == fxns.Count - 1 && !(f is PrimitiveFunction))
+                
+                // Check if this is a tail call
+                // if so then we are going to avoid creating a new stack frame
+                if (i == fxns.Count - 1 && !(f is PrimitiveFunction) && !(f is PushValueBase))
                 {
                     fxns = f.GetSubFxns();
+                    i = 0;
                 }
-                    // TODO: handle primitives "if", "apply", etc. 
                 else 
                 {
                     f.Eval(this);
+                    ++i;
                 }
             }
         }

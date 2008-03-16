@@ -113,11 +113,24 @@ define unpair : (list -> any any)
 }}
 { uncons [head] dip }
 
-define fold : (list ('a 'a -> 'a) 'a -> list)
+/*
+define fold : (list 'a ('a 'a -> 'a) -> list)
 {{
+  level:
+    1
+  category:
+    standard-lists
+  desc:
+    Also known as a reduce function, this combines adjacent values
+    in a list using an initial value and a binary function.
+  semantics:
+    define fold(xs x f) { xs empty [x] [xs uncons x f apply f fold] if }
+  test:
+    in: [1 2 3 4] list 0 [add_int] fold
+    out: 10
 }}
 {
-  
+  ...
 }
 
 define rev : (list -> list)
@@ -239,4 +252,4 @@ define head_eq : (list any -> list bool)
     out: false
 }}
 { [dhead] dip eq }
-
+*/
