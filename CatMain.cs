@@ -28,8 +28,9 @@ namespace Cat
             {
                 WriteLine("Welcome to the Cat interpreter");
                 WriteLine("version " + Config.gsVersion);
-                WriteLine("by Christopher Diggins, 2008");
+                WriteLine("by Christopher Diggins");
                 WriteLine("licensed under MIT License 1.0");
+                WriteLine("http://www.cat-language.com");
                 WriteLine("");
             }
 

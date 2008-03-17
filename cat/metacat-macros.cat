@@ -24,14 +24,15 @@ rule { papply pop } => { pop pop }
 rule { cons pop } => { pop pop }
 rule { $a dip pop } => { pop $a apply }
 
-// TODO: support [x] patterns
-// rule { [apply] papply } => { }
-// rule { [] papply } => { quote }
-// rule { [] papply dip } => { swap }
-// rule { [dup] dip swap pop } => { }
-// rule { [] dip } => { }
-// rule { [pop X] papply } => { pop [X] }
-// rule { swap [swap X] papply papply } => { [X] papply papply }
+rule { [apply] papply } => { }
+rule { [] papply } => { quote }
+rule { [] papply dip } => { swap }
+rule { [dup] dip swap pop } => { }
+rule { [] dip } => { }
+rule { [pop $A] papply } => { pop [$A] }
+rule { swap [swap $A] papply papply } => { [$A] papply papply }
+rule { swap $a dip } => { quote $a compose dip }
+rule { quote dip } => { swap }
 
 // This potentially makes things bigger
 rule { $a dup } => { $a $a }
@@ -40,13 +41,6 @@ rule { $a dup } => { $a $a }
 rule { apply $a apply } => { $a compose apply }
 rule { dip $a dip } => { $a compose dip }
 rule { apply $a $b dip } => { $b compose apply $a }
-
-// This is due to the identity
-// {$a swap} => {[$a] dip}
-rule { swap $a dip } => { quote $a compose dip }
-rule { swap quote dip } => { }
-rule { quote dip swap } => { }
-rule { dup quote dip } => { dup }
 
 // Identities
 rule { $b $a swap } => { $a $b }

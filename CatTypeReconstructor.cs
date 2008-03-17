@@ -173,7 +173,7 @@ namespace Cat
             Log("");
         }
 
-        public static CatFxnType Infer(List<Function> f)
+        public static CatFxnType Infer(CatExpr f)
         {
             if (!Config.gbTypeChecking)
                 return null;
