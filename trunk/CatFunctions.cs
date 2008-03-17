@@ -100,14 +100,13 @@ namespace Cat
             }
             sw.WriteLine("{");
             sw.Write("  ");
-            sw.WriteLine(GetImplString());
+            sw.WriteLine(ToString());
             sw.WriteLine("}");
         }
 
         #region virtual functions
         // TODO: rename to Execute
         public abstract void Eval(Executor exec);
-        public abstract string GetImplString();
         #endregion
 
         #region static functions
@@ -169,7 +168,7 @@ namespace Cat
 
         #endregion
 
-        public virtual List<Function> GetSubFxns()
+        public virtual CatExpr GetSubFxns()
         {
             return null;
         }
@@ -200,9 +199,19 @@ namespace Cat
             return stk;
         }
 
-        public override string GetImplString()
+        public override string ToString()
         {
             return "_stack_";
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 
@@ -227,7 +236,7 @@ namespace Cat
             return mValue.GetData();
         }
 
-        public override string GetImplString()
+        public override string ToString()
         {
             return mValue.ToString();
         }
@@ -237,9 +246,15 @@ namespace Cat
         {
             exec.Push(GetValue());
         }
-        public override string ToString()
+        public override bool Equals(object obj)
         {
-            return "[" + msName + "]";
+            if (!(obj is PushValue<T>))
+                return false;
+            return (obj as PushValue<T>).GetValue().Equals(GetValue());                
+        }
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
         #endregion
     }
@@ -277,9 +292,9 @@ namespace Cat
     /// </summary>
     public class PushFunction : Function
     {
-        List<Function> mSubFxns;
+        CatExpr mSubFxns;
         
-        public PushFunction(List<Function> children)
+        public PushFunction(CatExpr children)
         {
             mSubFxns = children.GetRange(0, children.Count);
             msDesc = "pushes an anonymous function onto the stack";
@@ -326,17 +341,29 @@ namespace Cat
             exec.Push(new QuotedFunction(mSubFxns, CatFxnType.Unquote(mpFxnType)));
         }
 
-        public List<Function> GetChildren()
+        public CatExpr GetChildren()
         {
             return mSubFxns;
         }
 
-        public override string GetImplString()
+        public override string ToString()
         {
             string ret = "";
             foreach (Function f in mSubFxns)
                 ret += f.msName + " ";
             return ret;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is PushFunction))
+                return false;
+            return (obj as PushFunction).GetChildren().Equals(mSubFxns);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 
@@ -345,11 +372,11 @@ namespace Cat
     /// </summary>
     public class QuotedFunction : Function
     {
-        List<Function> mSubFxns;
+        CatExpr mSubFxns;
         
-        public QuotedFunction(List<Function> children, CatFxnType pFxnType)
+        public QuotedFunction(CatExpr children, CatFxnType pFxnType)
         {
-            mSubFxns = new List<Function>(children.ToArray());
+            mSubFxns = new CatExpr(children.ToArray());
             msDesc = "anonymous function";
             msName = "";
             for (int i = 0; i < mSubFxns.Count; ++i)
@@ -360,14 +387,14 @@ namespace Cat
             mpFxnType = new CatQuotedType(pFxnType);
         }
 
-        public QuotedFunction(List<Function> children)
+        public QuotedFunction(CatExpr children)
             : this(children, CatTypeReconstructor.Infer(children))
         {
         }
 
         public QuotedFunction()
         {
-            mSubFxns = new List<Function>();
+            mSubFxns = new CatExpr();
         }
 
         public CatFxnType GetUnquotedFxnType()
@@ -390,7 +417,7 @@ namespace Cat
 
         public QuotedFunction(QuotedFunction first, QuotedFunction second)
         {
-            mSubFxns = new List<Function>(first.GetSubFxns().ToArray());
+            mSubFxns = new CatExpr(first.GetSubFxns().ToArray());
             mSubFxns.AddRange(second.GetSubFxns().ToArray());
 
             msDesc = "anonymous composed function";
@@ -432,57 +459,68 @@ namespace Cat
             ret += "]";
             return ret;
         }
-    
-        public override string GetImplString()
-        {
-            string ret = "[";
-            foreach (Function f in mSubFxns)
-                ret += f.msName + " ";
-            return ret + "]";
-        }
 
-        public override List<Function> GetSubFxns()
+        public override CatExpr GetSubFxns()
         {
             return mSubFxns;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is QuotedFunction))
+                return false;
+            return (obj as QuotedFunction).GetSubFxns().Equals(mSubFxns);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 
-    /// <summary>
-    /// Represents a function that is on the stack.
-    /// </summary>
-    public class SimpleQuotedFunction : QuotedFunction
-    {
-        Function mFxn;
 
-        public SimpleQuotedFunction(Function f)
+    /// <summary>
+    /// This class represents a dynamically created function, 
+    /// e.g. the result of calling the quote function.
+    /// </summary>
+    public class QuotedValue : QuotedFunction
+    {
+        Function mFxn; 
+        public QuotedValue(Object x)
         {
-            mFxn = f;
+            mFxn = new PushValue<Object>(x);
+            msName = x.ToString();
             if (mFxn.GetFxnType() != null)
                 mpFxnType = new CatQuotedType(mFxn.GetFxnType());
-            GetSubFxns().Add(f);
+            GetSubFxns().Add(mFxn);
+        }
+
+        public override string ToString()
+        {
+            return "[" + msName + "]";
+        }
+
+        public Function GetFxn()
+        {
+            return mFxn;
         }
 
         public override void Eval(Executor exec)
         {
             mFxn.Eval(exec);
         }
-    }
 
-    /// <summary>
-    /// This class represents a dynamically created function, 
-    /// e.g. the result of calling the quote function.
-    /// </summary>
-    public class QuotedValue : SimpleQuotedFunction
-    {
-        public QuotedValue(Object x)
-            : base(new PushValue<Object>(x))
+        public override bool Equals(object obj)
         {
-            msName = x.ToString();
+            if (!(obj is QuotedValue))
+                return false;
+            return (obj as QuotedValue).GetFxn().Equals(GetFxn());
+                
         }
 
-        public override string ToString()
+        public override int GetHashCode()
         {
-            return "[" + msName + "]";
+            return base.GetHashCode();
         }
     }
 
@@ -491,7 +529,7 @@ namespace Cat
     /// </summary>
     public class DefinedFunction : Function
     {
-        List<Function> mFunctions = new List<Function>();
+        CatExpr mFunctions = new CatExpr();
         bool mbExplicitType = false;
         bool mbTypeError = false;
 
@@ -500,13 +538,13 @@ namespace Cat
             msName = s;
         }
 
-        public DefinedFunction(string s, List<Function> fxns)
+        public DefinedFunction(string s, CatExpr fxns)
         {
             msName = s;
             AddFunctions(fxns);
         }
 
-        public void AddFunctions(List<Function> fxns)
+        public void AddFunctions(CatExpr fxns)
         {
             mFunctions.AddRange(fxns);
             msDesc = "";
@@ -535,17 +573,14 @@ namespace Cat
             exec.Execute(mFunctions);
         }
 
-        public override List<Function> GetSubFxns()
+        public override CatExpr GetSubFxns()
         {
             return mFunctions;
         }
 
-        public override string GetImplString()
+        public override string ToString()
         {
-            string ret = "";
-            foreach (Function f in mFunctions)
-                ret += f.msName + " ";
-            return ret;
+            return msName;
         }
 
         public bool IsTypeExplicit()
@@ -608,9 +643,9 @@ namespace Cat
             return mMethod;
         }
 
-       public override string GetImplString()
+       public override string ToString()
        {
-           return "primitive";
+           return msName;
        }
 
         public int Count
@@ -633,9 +668,9 @@ namespace Cat
             mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
         }
 
-        public override string GetImplString()
+        public override string ToString()
         {
-            return "primitive";
+            return msName;
         }
     }
 
@@ -655,9 +690,26 @@ namespace Cat
             mpFxn.Eval(exec);
         }
 
-        public override string GetImplString()
+        public override string ToString()
         {
             return "self";
+        }
+
+        public Function GetFxn()
+        {
+            return mpFxn;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is SelfFunction))
+                return false;
+            return (obj as SelfFunction).GetFxn().Equals(GetFxn());
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }

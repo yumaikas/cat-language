@@ -98,9 +98,23 @@ namespace Cat
         public static bool gbShowRewritingRuleApplications = true;
 
         /// <summary>
+        /// Shows the total result of all rewritings
+        /// </summary>
+        public static bool gbShowRewritingResults = true;
+
+        /// <summary>
         /// Show a welcome message when the interpreter starts up
         /// </summary>
         public static bool gbShowWelcome = true;
 
+        /// <summary>
+        /// Applies rewriting rules to improve lambda definitions
+        /// </summary>
+        public static bool gbOptimizeLambdas = false;
+
+        /// <summary>
+        /// Applies rewriting rules to all literal quotations
+        /// </summary>
+        public static bool gbOptimizeQuotations = false;
     }
 }

@@ -441,8 +441,6 @@ namespace Cat
                 // Take ownership of the terms from the quote
                 mTerms = q.mTerms;
             }
-
-            CatLambdaConverter.Convert(this);
         }
 
         public List<CatAstNode> GetTerms()

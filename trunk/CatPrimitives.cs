@@ -116,7 +116,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 QuotedFunction qf = exec.PopFxn();
-                exec.Push(Optimizer.ApplyMacros(qf));
+                exec.Push(Optimizer.ApplyMacros(exec, qf));
             }
         }
 
@@ -440,7 +440,7 @@ namespace Cat
                     "breaks a function up into a list of instructions")
             { }
 
-            public CatList FxnsToList(List<Function> fxns)
+            public CatList FxnsToList(CatExpr fxns)
             {
                 Object[] a = new Object[fxns.Count];
                 int i = 0;

@@ -13,7 +13,13 @@ using System.Text.RegularExpressions;
 
 namespace Cat
 {
-    public class Executor
+    public interface INameLookup
+    {
+        Function Lookup(string s);
+        Function ThrowingLookup(string s);
+    }
+
+    public class Executor : INameLookup
     {
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
@@ -263,19 +269,26 @@ namespace Cat
                 case AstLabel.Quote:
                     {
                         AstQuote tmp = literal as AstQuote;
-                        return new PushFunction(NodesToFxns(tmp.GetTerms()));
+                        CatExpr fxns = NodesToFxns(tmp.GetTerms());
+                        if (Config.gbOptimizeQuotations)
+                            Macros.ApplyMacros(this, fxns);
+                        return new PushFunction(fxns);
                     }
                 case AstLabel.Lambda:
                     {
                         AstLambda tmp = literal as AstLambda;
-                        return new PushFunction(NodesToFxns(tmp.GetTerms()));
+                        CatLambdaConverter.Convert(tmp);
+                        CatExpr fxns = NodesToFxns(tmp.GetTerms());
+                        if (Config.gbOptimizeLambdas) 
+                            Macros.ApplyMacros(this, fxns);
+                        return new PushFunction(fxns);
                     }
                 default:
                     throw new Exception("unhandled literal " + literal.ToString());
             }
         }
         
-        public void Execute(List<Function> fxns)
+        public void Execute(CatExpr fxns)
         {
             int i = 0;
             while (i < fxns.Count)
@@ -284,7 +297,7 @@ namespace Cat
                 
                 // Check if this is a tail call
                 // if so then we are going to avoid creating a new stack frame
-                if (i == fxns.Count - 1 && !(f is PrimitiveFunction) && !(f is PushValueBase))
+                if (i == fxns.Count - 1 && f.GetSubFxns() != null)
                 {
                     fxns = f.GetSubFxns();
                     i = 0;
@@ -297,9 +310,9 @@ namespace Cat
             }
         }
 
-        public List<Function> NodesToFxns(List<CatAstNode> nodes)
+        public CatExpr NodesToFxns(List<CatAstNode> nodes)
         {
-            List<Function> result = new List<Function>(); 
+            CatExpr result = new CatExpr(); 
             for (int i = 0; i < nodes.Count; ++i)
             {
                 CatAstNode node = nodes[i];
@@ -394,6 +407,7 @@ namespace Cat
             }
         }
 
+        #region INameLookup implementation
         public Function Lookup(string s)
         {
             if (s.Length < 1)
@@ -412,6 +426,8 @@ namespace Cat
                 throw new Exception("could not find function " + s);
             return f;
         }
+        #endregion
+
 
         /// <summary>
         /// Methods allow overloading of function definitions.
@@ -437,7 +453,7 @@ namespace Cat
 
         public Function MakeFunction(AstDef def) 
         {
-            List<Function> fxns = NodesToFxns(def.mTerms);
+            CatExpr fxns = NodesToFxns(def.mTerms);
             Function ret = new DefinedFunction(def.mName, fxns);
             return AddFunction(ret);
         }

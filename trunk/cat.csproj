@@ -84,6 +84,7 @@
     <Compile Include="CatAssemblyInfo.cs" />
     <Compile Include="CatConfig.cs" />
     <Compile Include="CatExecutor.cs" />
+    <Compile Include="CatExpr.cs" />
     <Compile Include="CatFunctions.cs" />
     <Compile Include="CatFxnType.cs" />
     <Compile Include="CatGrammar.cs" />

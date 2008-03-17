@@ -13,7 +13,7 @@ namespace Cat
         /// <summary>
         /// This is a simple yet effective combination of optimizations.
         /// </summary>
-        static public QuotedFunction Optimize(QuotedFunction qf)
+        static public QuotedFunction Optimize(INameLookup names, QuotedFunction qf)
         {
             //qf = ApplyMacros(qf);
             //qf = ApplyMacros(qf);
@@ -22,9 +22,9 @@ namespace Cat
             //qf = PartialEval(qf);
             //qf = Expand(qf);
             //qf = ReplaceSimpleQuotations(qf);
-            qf = ApplyMacros(qf);
+            qf = ApplyMacros(names, qf);
             qf = ExpandInline(qf, 4);
-            qf = ApplyMacros(qf);
+            qf = ApplyMacros(names, qf);
             return qf;
         }
 
@@ -58,7 +58,7 @@ namespace Cat
             else if (o is QuotedFunction)
             {
                 QuotedFunction qf = o as QuotedFunction;
-                List<Function> fxns = qf.GetSubFxns();
+                CatExpr fxns = qf.GetSubFxns();
                 PushFunction q = new PushFunction(fxns);
                 return q;
             }
@@ -82,7 +82,7 @@ namespace Cat
         /// When no exception is raised we know that the subexpression can be replaced with anything 
         /// that generates the values. 
         /// </summary>
-        static List<Function> PartialEval(Executor exec, List<Function> fxns)
+        static CatExpr PartialEval(Executor exec, CatExpr fxns)
         {
             // Recursively partially evaluate all quotations
             for (int i = 0; i < fxns.Count; ++i)
@@ -91,12 +91,12 @@ namespace Cat
                 if (f is PushFunction)
                 {
                     PushFunction q = f as PushFunction;
-                    List<Function> tmp = PartialEval(new Executor(), q.GetChildren());
+                    CatExpr tmp = PartialEval(new Executor(), q.GetChildren());
                     fxns[i] = new PushFunction(tmp);
                 }
             }
 
-            List<Function> ret = new List<Function>();
+            CatExpr ret = new CatExpr();
             object[] values = null;
 
             int j = 0;
@@ -152,12 +152,12 @@ namespace Cat
         #region inline expansion
         static public QuotedFunction ExpandInline(QuotedFunction f, int nMaxDepth)
         {
-            List<Function> ret = new List<Function>();
+            CatExpr ret = new CatExpr();
             ExpandInline(ret, f, nMaxDepth);
             return new QuotedFunction(ret);
         }
 
-        static void ExpandInline(List<Function> list, Function f, int nMaxDepth)
+        static void ExpandInline(CatExpr list, Function f, int nMaxDepth)
         {
             if (nMaxDepth == 0)
             {
@@ -181,21 +181,21 @@ namespace Cat
             }
         }
 
-        static void ExpandInline(List<Function> fxns, PushFunction q, int nMaxDepth)
+        static void ExpandInline(CatExpr fxns, PushFunction q, int nMaxDepth)
         {
-            List<Function> tmp = new List<Function>();
+            CatExpr tmp = new CatExpr();
             foreach (Function f in q.GetChildren())
                 ExpandInline(tmp, f, nMaxDepth - 1);
             fxns.Add(new PushFunction(tmp));
         }
 
-        static void ExpandInline(List<Function> fxns, QuotedFunction q, int nMaxDepth)
+        static void ExpandInline(CatExpr fxns, QuotedFunction q, int nMaxDepth)
         {
             foreach (Function f in q.GetSubFxns())
                 ExpandInline(fxns, f, nMaxDepth - 1);
         }
 
-        static void ExpandInline(List<Function> fxns, DefinedFunction d, int nMaxDepth)
+        static void ExpandInline(CatExpr fxns, DefinedFunction d, int nMaxDepth)
         {
             foreach (Function f in d.GetSubFxns())
                 ExpandInline(fxns, f, nMaxDepth - 1);
@@ -203,10 +203,10 @@ namespace Cat
         #endregion
 
         #region apply macros
-        static public QuotedFunction ApplyMacros(QuotedFunction f)
+        static public QuotedFunction ApplyMacros(INameLookup names, QuotedFunction f)
         {
-            List<Function> list = new List<Function>(f.GetSubFxns().ToArray());
-            Macros.ApplyMacros(list);
+            CatExpr list = new CatExpr(f.GetSubFxns().ToArray());
+            Macros.ApplyMacros(names, list);
             return new QuotedFunction(list);
         }
         #endregion

@@ -8,54 +8,8 @@ using System.Diagnostics;
 
 namespace Cat
 {
-    public class CatExpr
-    {
-        List<Function> mpFxns;
-        CatFxnType mpFxnType;
-
-        public CatExpr(List<Function> fxns, int nFirst, int nLast)
-        {
-            mpFxns = fxns.GetRange(nFirst, (nLast - nFirst) + 1);
-        }
-
-        public CatExpr(List<Function> fxns)
-        {
-            mpFxns = fxns;
-        }
-
-        public CatFxnType GetFxnType()
-        {
-            if (mpFxnType == null)
-                mpFxnType = CatTypeReconstructor.Infer(mpFxns);
-            Trace.Assert(mpFxnType != null);
-            return mpFxnType;
-        }
-
-        public List<Function> GetFxns()
-        {
-            return mpFxns;
-        }
-        
-        public bool IsSimpleNullaryFunction()
-        {
-            if (mpFxns.Count == 0)
-                return false;
-            return HasSingleProduction() && HasNoConsumption();
-        }
-
-        public bool HasSingleProduction()
-        {
-            return GetFxnType().GetMaxProduction() == 1;
-        }
-
-        public bool HasNoConsumption()
-        {
-            return GetFxnType().GetMaxConsumption() == 0;
-        }
-    }
-
     public static class Macros
-    {
+    {        
         #region fields
         static Dictionary<string, List<AstMacro>> mMacros = new Dictionary<string, List<AstMacro>>();
         #endregion
@@ -79,9 +33,9 @@ namespace Cat
                 if (tkn is AstMacroName)
                 {
                     bRecoverable = false;
-                    if (x.GetFxns().Count != 1)
+                    if (x.Count != 1)
                         return false;
-                    Function f = x.GetFxns()[0];
+                    Function f = x[0];
                     string sName = f.GetName();
                     return sName == tkn.ToString();
                 }
@@ -99,19 +53,48 @@ namespace Cat
                 else if (tkn is AstMacroQuote)
                 {
                     AstMacroQuote macroQuote = tkn as AstMacroQuote;
-                    if ((macroQuote.mTerms.Count != 1) || (! (macroQuote.mTerms[0] is AstMacroStackVar)))
-                        throw new Exception("currently only quotations containing a single stack variable are supported as macro patterns");
-                    AstMacroStackVar v = macroQuote.mTerms[0] as AstMacroStackVar;
-
-                    // Currently we only match literal quotations 
-                    if (x.GetFxns().Count != 1)
+                    if (x.Count != 1)
                         return false;
-                    PushFunction quote = x.GetFxns()[0] as PushFunction;
+                    PushFunction quote = x[0] as PushFunction;
                     if (quote == null)
                         return false; 
 
-                    // Capture the quotation. 
-                    mCapturedVars.Add(v.msName, new CatExpr(quote.GetChildren()));
+                    for (int i = 0; i < macroQuote.mTerms.Count; ++i)
+                    {
+                        // Are we are at a stack variable in the matching pattern 
+                        // if so it must be the last token in the pattern
+                        // e.g. [1 2 $A] is legal [1 $A 2] is not. 
+                        if (macroQuote.mTerms[i] is AstMacroStackVar)
+                        {
+                            if (i != macroQuote.mTerms.Count - 1)
+                                throw new Exception("within a quotation, expression variables can only be used in the right-most postition");
+                            AstMacroStackVar v = macroQuote.mTerms[0] as AstMacroStackVar;
+                            CatExpr expr = quote.GetChildren().GetRangeFrom(i);
+                            mCapturedVars.Add(v.msName, expr);
+                            return true;
+                        }
+                        else if (macroQuote.mTerms[i] is AstMacroName)
+                        {
+                            // Well this is just an ordinary name pattern 
+                            AstMacroName name = macroQuote.mTerms[i] as AstMacroName;
+                            if (quote.GetChildren().Count <= i)
+                                return false;
+                            Function f = quote.GetChildren()[i];
+                            if (!f.GetName().Equals(name.ToString()))
+                                return false;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+
+                    // No stack variable was encountered in the pattern
+                    // therefore the match must have been perfect, which means there are no
+                    // more terms in the input
+                    if (quote.GetChildren().Count != macroQuote.mTerms.Count)
+                        return false;
+
                     return true;
                 }
                 else if (tkn is AstMacroStackVar)
@@ -136,9 +119,9 @@ namespace Cat
                 }
             }
 
-            public List<Function> PatternToFxns(List<AstMacroTerm> pattern)
+            public CatExpr PatternToFxns(INameLookup names, List<AstMacroTerm> pattern)
             {
-                List<Function> ret = new List<Function>();
+                CatExpr ret = new CatExpr();
                 foreach (AstMacroTerm t in pattern)
                 {
                     if (t is AstMacroTypeVar)
@@ -147,7 +130,7 @@ namespace Cat
                         if (!mCapturedVars.ContainsKey(s))
                             throw new Exception("macro variable " + s + " was not captured");
                         CatExpr expr = mCapturedVars[s];
-                        ret.AddRange(expr.GetFxns());
+                        ret.AddRange(expr);
                     }
                     else if (t is AstMacroStackVar)
                     {
@@ -155,19 +138,15 @@ namespace Cat
                         if (!mCapturedVars.ContainsKey(s))
                             throw new Exception("macro variable " + s + " was not captured");
                         CatExpr expr = mCapturedVars[s];
-                        ret.AddRange(expr.GetFxns());
+                        ret.AddRange(expr);
                     }
                     else if (t is AstMacroName)
                     {
                         string s = t.ToString();
                         if (s.Length < 1) 
                             throw new Exception("internal error: macro name is empty string");
-                        
-                        // TODO: change all of this so that we don't actually replace with a function list,
-                        // but simply a string list. The caller can then replace strings with functions
-                        // IMPORTANT!
-                        /*
-                        Function f = Executor.Main.GetGlobalContext().Lookup(s);
+
+                        Function f = names.ThrowingLookup(s);
                         
                         if (f == null)
                         {
@@ -181,15 +160,14 @@ namespace Cat
                             }
                         }
                         ret.Add(f);
-                         */
                     }
                     else if (t is AstMacroQuote)
                     {
                         // TODO: handle typed terms within a quotation.
                         AstMacroQuote macroQuote = t as AstMacroQuote;
-                        List<Function> localFxns = new List<Function>();
+                        CatExpr localFxns = new CatExpr();
                         List<AstMacroTerm> localPattern = macroQuote.mTerms;
-                        PushFunction q = new PushFunction(PatternToFxns(localPattern));
+                        PushFunction q = new PushFunction(PatternToFxns(names, localPattern));
                         ret.Add(q);
                     }
                     else
@@ -200,9 +178,9 @@ namespace Cat
                 return ret;
             }
 
-            public void Replace(List<Function> fxns, List<AstMacroTerm> pattern)
+            public void Replace(INameLookup names, CatExpr fxns, List<AstMacroTerm> pattern)
             {
-                List<Function> pNewFxns = PatternToFxns(pattern);
+                CatExpr pNewFxns = PatternToFxns(names, pattern);
 
                 // For debugging purposes only
                 if (Config.gbShowRewritingRuleApplications) 
@@ -228,7 +206,7 @@ namespace Cat
                 fxns.InsertRange(mnFxnIndex, pNewFxns);
             }
 
-            static public MacroMatch Create(AstMacro m, List<Function> fxns, int nPrevMatchPos, int nFxnIndex, int nSubExprSize)
+            static public MacroMatch Create(AstMacro m, CatExpr fxns, int nPrevMatchPos, int nFxnIndex, int nSubExprSize)
             {
                 if (nFxnIndex < 0) 
                     return null;
@@ -253,7 +231,7 @@ namespace Cat
                     Trace.Assert(nTokenIndex < pattern.Count);
 
                     // get the current sub-expression that we are evaluating 
-                    CatExpr expr = new CatExpr(fxns, nFirst, nLast);
+                    CatExpr expr = fxns.GetRangeFromTo(nFirst, nLast);
                     
                     AstMacroTerm tkn = pattern[nTokenIndex];
 
@@ -311,16 +289,22 @@ namespace Cat
             mMacros[s].Add(node);
         }
 
-        public static void ApplyMacros(List<Function> fxns)
-        {
+        public static void ApplyMacros(INameLookup names, CatExpr fxns)
+        {            
+            if (Config.gbShowRewritingRuleApplications)
+            {
+                Output.Write("Before rewriting: ");
+                Output.WriteLine(fxns);
+            }
+
             // Recursively apply macros for all quotations.
             for (int i=0; i < fxns.Count; ++i)
             {
                 if (fxns[i] is PushFunction)
                 {
                     PushFunction qf = fxns[i] as PushFunction;
-                    List<Function> tmp = new List<Function>(qf.GetChildren());
-                    ApplyMacros(tmp);
+                    CatExpr tmp = new CatExpr(qf.GetChildren());
+                    ApplyMacros(names, tmp);
                     fxns[i] = new PushFunction(tmp);
                 }
             }
@@ -333,7 +317,7 @@ namespace Cat
             //int nPeephole = 20;
 
             // This is the maximum size of the sub-expression that will be considered for matching.
-            int nMaxSubExpr = 5;
+            int nMaxSubExpr = 10;
 
             // Find matches
             int nLastMatchPos = -1;
@@ -360,7 +344,13 @@ namespace Cat
             {
                 MacroMatch m = matches[i];
                 List<AstMacroTerm> pattern = m.mMacro.mDest.mPattern;
-                m.Replace(fxns, pattern);      
+                m.Replace(names, fxns, pattern);      
+            }
+
+            if (Config.gbShowRewritingRuleApplications)
+            {
+                Output.Write("After rewriting: ");
+                Output.WriteLine(fxns);
             }
         }
     }

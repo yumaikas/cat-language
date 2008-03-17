@@ -4,6 +4,7 @@
 using System;
 using System.Text;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Cat
 {
@@ -40,7 +41,15 @@ namespace Cat
             else
                 WriteLine(ObjectToString(o));
         }
-
+        public static void WriteLine(CatExpr fxns)
+        {
+            foreach (Function f in fxns)
+            {
+                Write(f.ToString());
+                Write(" ");
+            }
+            WriteLine("");
+        }
         public static void Write(string s)
         {
             Console.Write(s);
