@@ -77,20 +77,29 @@ namespace Cat
                     if (s.Length > 0)
                     {
                         DateTime begin = DateTime.Now;
-                        exec.Execute(s + '\n');
-                        TimeSpan elapsed = DateTime.Now - begin;
-                        if (Config.gbOutputTimeElapsed)
-                            WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
-                        if (Config.gbOutputStack)
-                            exec.OutputStack();
-                        // Tell the graphics window to invalidate itself.
+
+                        try
+                        {
+                            exec.Execute(s + '\n');
+                            TimeSpan elapsed = DateTime.Now - begin;
+                            if (Config.gbOutputTimeElapsed)
+                                WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
+                            if (Config.gbOutputStack)
+                                exec.OutputStack();
+                            // Politely ask graphics window to redraw if needed
+                        }
+                        catch (Exception e)
+                        {
+                            WriteLine("exception occurred: " + e.Message);
+                        }
+
                         WindowGDI.Invalidate();                        
                     }
                 }
             }
             catch (Exception e)
             {
-                WriteLine("uncaught exception: " + e.Message);
+                WriteLine("exception: " + e.Message);
             }
 
             SaveTranscript(Path.GetTempFileName());

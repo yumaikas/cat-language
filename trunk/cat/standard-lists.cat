@@ -123,13 +123,13 @@ define fold : (list 'a ('a 'a -> 'a) -> list)
     Also known as a reduce function, this combines adjacent values
     in a list using an initial value and a binary function.
   semantics:
-    define fold(xs x f) { xs empty [x] [xs uncons x f apply f fold] if }
+    define fold(xs x f) { xs empty dig [x] [uncons x f apply f fold] if }
   test:
     in: [1 2 3 4] list 0 [add_int] fold
     out: 10
 }}
 {
-  [empty] dip2 [pop popd] [[uncons] dip2 keep fold] if
+  [empty] dip2 dig [pop popd] [[uncons] dip2 keep fold] if
 }
 
 define rev : (list -> list)
@@ -140,9 +140,30 @@ define rev : (list -> list)
     in: [1 2 3] list rev
     out: [3 2 1] list
 }}
-{ nil [cons] fold }
+{
+  nil [swons] fold
+}
 
-/*
+define rfold
+{{
+  level:
+    1
+  category:
+    standard-lists
+  desc:
+    A reverse fold, it combines adjacent values
+    in a list using an initial value and a binary function, starting
+    with the last value in the list.
+  semantics:
+    define foldr(xs x f) { xs empty dig [x] [uncons x f apply f fold] if }
+  test:
+    in: [1 2 3 4] list 0 [add_int] fold
+    out: 10
+}}
+{
+  [rev] dip2 fold
+}
+
 define small : (list -> list bool)
 {{
   desc:
@@ -153,13 +174,34 @@ define small : (list -> list bool)
 }}
 { empty [true] [rest empty popd] if }
 
-define split : ('A list ('b -> bool) -> 'A list list)
+/*
+define do_while : ('A list ('A 'a -> 'A bool) -> 'A list)
+{{
+  desc:
+    Essentially an early-terminating fold.
+}}
+{
+}
+*/
+
+define filter : (list ('a -> bool) -> list)
+{{
+  desc:
+    Creates a list from another keeping only values for which the predicate is true
+}}
+{
+
+}
+
+define split : (list ('b -> bool) -> list list)
 {{
   desc:
     Splits a list into two new lists
   test:
     in: [0 1 2 3 4] list [even popd] split
     out: [1 3] list [0 2 4] list
+  semantics:
+    split(xs pred -> xs1 xs2)
 }}
 {
   dup2 filter
@@ -252,4 +294,3 @@ define head_eq : (list any -> list bool)
     out: false
 }}
 { [dhead] dip eq }
-*/
