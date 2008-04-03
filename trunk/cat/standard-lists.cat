@@ -91,7 +91,9 @@ define swons : ('a list -> list)
     in: 3 [1 2] list swons
     out: [1 2 3] list
 }}
-{ swap cons }
+{
+  swap cons
+}
 
 define uncons2 : (list -> list any any)
 {{
@@ -101,7 +103,9 @@ define uncons2 : (list -> list any any)
     in: [1 2 3] list uncons2
     out: [1] list 2 3
 }}
-{ uncons [uncons] dip }
+{
+  uncons [uncons] dip
+}
 
 define unpair : (list -> any any)
 {{
@@ -111,7 +115,9 @@ define unpair : (list -> any any)
     in: [1 2] list unpair
     out: 1 2
 }}
-{ uncons [head] dip }
+{
+  uncons [head] dip
+}
 
 define fold : (list 'a ('a 'a -> 'a) -> list)
 {{
@@ -155,7 +161,7 @@ define rfold
     in a list using an initial value and a binary function, starting
     with the last value in the list.
   semantics:
-    define foldr(xs x f) { xs empty dig [x] [uncons x f apply f fold] if }
+    define rfold(xs x f) { xs empty dig [x] [uncons f rfold x f apply] if }
   test:
     in: [1 2 3 4] list 0 [add_int] fold
     out: 10
@@ -175,10 +181,12 @@ define small : (list -> list bool)
 { empty [true] [rest empty popd] if }
 
 /*
+This will be useful for implementing a better split function, among other things
+
 define do_while : ('A list ('A 'a -> 'A bool) -> 'A list)
 {{
   desc:
-    Essentially an early-terminating fold.
+    An early-terminating fold.
 }}
 {
 }
@@ -188,20 +196,23 @@ define filter : (list ('a -> bool) -> list)
 {{
   desc:
     Creates a list from another keeping only values for which the predicate is true
+  semantics:
+    define filter(xs pred) { xs nil [dup pred [cons] [pop] if] foldr }
+  test:
+    in: [1 2 3 4] list [2 mod_int 0 eq] filter
+    out: [1 3] list
 }}
 {
-
+  [dupd apply [cons] [pop] if] papply nil swap foldr
 }
 
-define split : (list ('b -> bool) -> list list)
+define split : (list ('a -> bool) -> list list)
 {{
   desc:
     Splits a list into two new lists
   test:
     in: [0 1 2 3 4] list [even popd] split
     out: [1 3] list [0 2 4] list
-  semantics:
-    split(xs pred -> xs1 xs2)
 }}
 {
   dup2 filter
@@ -238,6 +249,9 @@ define move_head : (list list -> list list)
 }}
 { uncons swap [cons] dip }
 
+/*
+This requires "count_while" which is not currently implemented.
+
 define index_of : (list 'a -> list int)
 {{
   desc:
@@ -254,6 +268,7 @@ define index_of : (list 'a -> list int)
     out: 3
 }}
 { [neq] papply count_while }
+*/
 
 define split_at : (list int -> list list)
 {{
