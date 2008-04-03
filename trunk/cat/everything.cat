@@ -7,14 +7,10 @@
 "interpreter-cmds.cat" #load
 "interpreter-flags.cat" #load
 
-// Dedicated to the public domain by Christopher Diggins
-// This file is free to be used, modified or redistributed for any purpose,
-// without restriction, obligation, or warantee.
-// http://www.cdiggins.com
-
 "standard-core.cat" #load
 "standard-shuffle.cat" #load
 "standard-combinators.cat" #load
+"standard-control-flow.cat" #load
 "standard-lists.cat" #load
 
 /*

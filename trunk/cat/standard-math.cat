@@ -130,39 +130,6 @@ define gteq : (any any -> bool)
 //=============================================================================
 // Mathematical definitions
 
-define neq : ('a 'a -> bool)
-{{
-  desc:
-    Pushes true if the top two values on the stack are not equal.
-  test:
-    in: 3 5 neq
-    out: true
-  test:
-    in: 'a' 'a' neq
-    out: false
-}}
-{ eq not }
-
-define inc : (int -> int)
-{{
-  desc:
-    Increments an integer on the top of the stack by one.
-  test:
-    in: 3 inc
-    out: 4
-}}
-{ 1 add_int }
-
-define dec : (int -> int)
-{{
-  desc:
-    Decrements an integer on the top of the stack by one.
-  test:
-    in: 3 dec
-    out: 2
-}}
-{ 1 sub_int }
-
 define sqr : (any -> any)
 {{
   desc:
@@ -234,25 +201,25 @@ define are_lteq : (any any -> any any bool) { dup2 lteq }
 //=============================================================================
 // Predicate generation functions
 
-define ltf : (any -> (any -> any bool))
-{ [dupd lt] papply }
+define ltf : (any -> (any -> bool))
+{ [lt] papply }
 
-define lteqf : (any -> (any -> any bool))
-{ [dupd lteq] papply }
+define lteqf : (any -> (any -> bool))
+{ [lteq] papply }
 
-define gtf : (any -> (any -> any bool))
-{ [dupd gt] papply }
+define gtf : (any -> (any -> bool))
+{ [gt] papply }
 
-define gteqf : (any -> (any -> any bool))
-{ [dupd gteq] papply }
+define gteqf : (any -> (any -> bool))
+{ [gteq] papply }
 
-define eqf : ('a -> ('a -> 'a bool))
-{ [dupd eq] papply }
+define eqf : ('a -> ('a -> bool))
+{ [eq] papply }
 
-define neqf : ('a -> ('a -> 'a bool))
-{ [dupd neq] papply }
+define neqf : ('a -> ('a -> bool))
+{ [neq] papply }
 
-define modnf : (any -> (any -> any bool))
+define modnf : (any -> (any -> bool))
 { [modn] papply }
 
 //=============================================================================
