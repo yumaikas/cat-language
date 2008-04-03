@@ -73,14 +73,9 @@ namespace Cat
         public static bool gbVerboseInferenceOnLoad = false;
 
         /// <summary>
-        /// Tells the compiler to output details of each test
-        /// </summary>
-        public static bool gbVerboseTests = true;
-
-        /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "0.19.0";
+        public static string gsVersion = "1.0 beta 1";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 
@@ -95,12 +90,12 @@ namespace Cat
         /// <summary>
         /// Shows a log of each rewriting rule applied
         /// </summary>
-        public static bool gbShowRewritingRuleApplications = true;
+        public static bool gbShowRewritingRuleApplications = false;
 
         /// <summary>
         /// Shows the total result of all rewritings
         /// </summary>
-        public static bool gbShowRewritingResults = true;
+        public static bool gbShowRewritingResults = false;
 
         /// <summary>
         /// Show a welcome message when the interpreter starts up

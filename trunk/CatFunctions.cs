@@ -18,21 +18,27 @@ namespace Cat
     /// </summary>
     public abstract class Function : CatBase
     {
-        public Function(string sName, string sDesc)
+        public Function(string sName, string sDesc, string sTags)
         {
             msName = sName;
             msDesc = sDesc;
+            msTags = sTags;
         }
 
-        public Function(string sName)
+        public Function(string sName, string sDesc)
+            : this(sName, sDesc, "")
         {
-            msName = sName;
-            msDesc = "";
+        }
+        
+        public Function(string sName)
+            : this(sName, "")
+        {
         }
 
         #region Fields
         public string msName = "_unnamed_"; 
         public string msDesc = "";
+        public string msTags = "";
         public CatFxnType mpFxnType;
         CatMetaDataBlock mpMetaData;
         #endregion
@@ -48,9 +54,13 @@ namespace Cat
         {
             return msName;
         }
+        public string GetTags()
+        {
+            return msTags;
+        }
         public override string ToString()
         {
-            return "[" + msName + "]";
+            return msName;
         }
         public string GetFxnTypeString()
         {
@@ -67,8 +77,7 @@ namespace Cat
         {
             mpMetaData = meta;
             CatMetaData desc = meta.Find("desc");
-            if (desc != null)
-            {
+            if (desc != null) {
                 msDesc = desc.msContent;
             }
         }
@@ -171,6 +180,19 @@ namespace Cat
         public virtual CatExpr GetSubFxns()
         {
             return null;
+        }
+
+        public IEnumerable<Function> GetDescendantFxns()
+        {
+            if (GetSubFxns() != null)
+            {
+                foreach (Function f in GetSubFxns())
+                {
+                    yield return f;
+                    foreach (Function g in f.GetDescendantFxns())
+                        yield return g;
+                }
+            }
         }
     }
 
@@ -298,13 +320,7 @@ namespace Cat
         {
             mSubFxns = children.GetRange(0, children.Count);
             msDesc = "pushes an anonymous function onto the stack";
-            msName = "[";
-            for (int i = 0; i < mSubFxns.Count; ++i)
-            {
-                if (i > 0) msName += " ";
-                msName += mSubFxns[i].GetName();
-            }
-            msName += "]";
+            msName = "_function_";
 
             if (Config.gbTypeChecking)
             {
@@ -348,10 +364,13 @@ namespace Cat
 
         public override string ToString()
         {
-            string ret = "";
-            foreach (Function f in mSubFxns)
-                ret += f.msName + " ";
-            return ret;
+            string ret = "[";
+            for (int i = 0; i < mSubFxns.Count; ++i)
+            {
+                if (i > 0) ret += " ";
+                ret += mSubFxns[i].ToString();
+            }
+            return ret + "]";
         }
 
         public override bool Equals(object obj)
@@ -378,12 +397,7 @@ namespace Cat
         {
             mSubFxns = new CatExpr(children.ToArray());
             msDesc = "anonymous function";
-            msName = "";
-            for (int i = 0; i < mSubFxns.Count; ++i)
-            {
-                if (i > 0) msName += " ";
-                msName += mSubFxns[i].GetName();
-            }
+            msName = "_anonymous_";
             mpFxnType = new CatQuotedType(pFxnType);
         }
 
@@ -454,7 +468,7 @@ namespace Cat
             for (int i = 0; i < mSubFxns.Count; ++i)
             {
                 if (i > 0) ret += " ";
-                ret += mSubFxns[i].GetName();
+                ret += mSubFxns[i].ToString();
             }
             ret += "]";
             return ret;
@@ -533,11 +547,6 @@ namespace Cat
         bool mbExplicitType = false;
         bool mbTypeError = false;
 
-        public DefinedFunction(string s)
-        {
-            msName = s;
-        }
-
         public DefinedFunction(string s, CatExpr fxns)
         {
             msName = s;
@@ -610,7 +619,7 @@ namespace Cat
         Object mObject;
 
         public Method(Object o, MethodInfo mi)
-            : base(mi.Name, MethodToTypeString(mi))
+            : base(mi.Name, "undocumented method from CLR")
         {
             mMethod = mi;
             mObject = o;
@@ -662,7 +671,12 @@ namespace Cat
     public abstract class PrimitiveFunction : Function
     {
         public PrimitiveFunction(string sName, string sType, string sDesc)
-            : base(sName, sDesc)
+            : this(sName, sType, sDesc, "")
+        {
+        }
+
+        public PrimitiveFunction(string sName, string sType, string sDesc, string sTags)
+            : base(sName, sDesc, sTags)
         {
             mpFxnType = CatFxnType.Create(sType);
             mpFxnType = CatVarRenamer.RenameVars(mpFxnType);
@@ -676,40 +690,60 @@ namespace Cat
 
     public class SelfFunction : Function
     {
-        Function mpFxn;
-
-        public SelfFunction(Function f)
-            : base("self")
+        public SelfFunction(string name)
+            : base(name)
         {
             mpFxnType = CatFxnType.Create("('A -> 'B)");
-            mpFxn = f;
         }
 
         public override void Eval(Executor exec)
         {
-            mpFxn.Eval(exec);
-        }
-
-        public override string ToString()
-        {
-            return "self";
-        }
-
-        public Function GetFxn()
-        {
-            return mpFxn;
+            // Look up the name at the last minute.
+            exec.ThrowingLookup(GetName()).Eval(exec);
         }
 
         public override bool Equals(object obj)
         {
             if (!(obj is SelfFunction))
                 return false;
-            return (obj as SelfFunction).GetFxn().Equals(GetFxn());
+            return (obj as SelfFunction).GetName().Equals(GetName());
         }
 
         public override int GetHashCode()
         {
             return base.GetHashCode();
+        }
+    }
+
+    public class JumpTable : Function
+    {
+        Function defaultFun;
+        Dictionary<int, Function> cases = new Dictionary<int, Function>();
+
+        public JumpTable(Function d)
+        {
+            defaultFun = d;
+            msName = "_jump_table_";
+        }
+
+        public override void Eval(Executor exec)
+        {
+            int n = exec.PopInt();
+            if (cases.ContainsKey(n))
+            {
+                Function f = cases[n];
+                f.Eval(exec);
+            }
+            else
+            {
+                exec.PushInt(n);
+                defaultFun.Eval(exec);
+            }
+        }
+
+        public void AddCase(int n, Function f)
+        {
+            cases.Add(n, f);
         }
     }
 }

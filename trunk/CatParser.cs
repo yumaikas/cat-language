@@ -313,8 +313,6 @@ namespace Cat
                 mTerms.Add(expr as AstExpr);
                 n++;
             }
-            
-            CatLambdaConverter.Convert(this);
         }
 
         public override void Output(TextWriter writer, int nIndent)

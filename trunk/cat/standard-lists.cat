@@ -113,7 +113,6 @@ define unpair : (list -> any any)
 }}
 { uncons [head] dip }
 
-/*
 define fold : (list 'a ('a 'a -> 'a) -> list)
 {{
   level:
@@ -130,7 +129,7 @@ define fold : (list 'a ('a 'a -> 'a) -> list)
     out: 10
 }}
 {
-  ...
+  [empty] dip2 [pop popd] [[uncons] dip2 keep fold] if
 }
 
 define rev : (list -> list)
@@ -143,6 +142,7 @@ define rev : (list -> list)
 }}
 { nil [cons] fold }
 
+/*
 define small : (list -> list bool)
 {{
   desc:

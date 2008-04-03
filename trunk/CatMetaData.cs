@@ -93,22 +93,6 @@ namespace Cat
 
     public class CatMetaDataBlock : CatMetaData 
     {
-        private void SplitLabel(string sIn, out int nIndent, out string sName)
-        {
-            nIndent = 0;
-            for (int i = 0; i < sIn.Length; ++i)
-            {
-                if (sIn[i] == ' ' || sIn[i] == '\t')
-                    nIndent++;
-            }
-            sName = sIn.Substring(nIndent);
-            // check validity
-            if ((sName.Length < 2) || (sName[sName.Length - 1] != ':'))
-                throw new Exception("invalid meta-data label: " + sName);
-            // strip the trailing ':'
-            sName = sName.Substring(0, sName.Length - 1);
-        }
-
         public static CatMetaDataBlock Create(string s)
         {
             s = "{{\n" + s + "\n}}\n";
@@ -170,6 +154,22 @@ namespace Cat
                     throw new Exception("invalid AstMetaDataBlock");
                 }
             }
+        }
+
+        private void SplitLabel(string sIn, out int nIndent, out string sName)
+        {
+            nIndent = 0;
+            for (int i = 0; i < sIn.Length; ++i)
+            {
+                if (sIn[i] == ' ' || sIn[i] == '\t')
+                    nIndent++;
+            }
+            sName = sIn.Substring(nIndent);
+            // check validity
+            if ((sName.Length < 2) || (sName[sName.Length - 1] != ':'))
+                throw new Exception("invalid meta-data label: " + sName);
+            // strip the trailing ':'
+            sName = sName.Substring(0, sName.Length - 1);
         }
     }
 }
