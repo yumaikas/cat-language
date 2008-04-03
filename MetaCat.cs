@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace Cat
 {
-    public static class Macros
+    public static class MetaCat
     {        
         #region fields
         static Dictionary<string, List<AstMacro>> mMacros = new Dictionary<string, List<AstMacro>>();
@@ -289,14 +289,8 @@ namespace Cat
             mMacros[s].Add(node);
         }
 
-        public static void ApplyMacros(INameLookup names, CatExpr fxns)
+        private static void ApplyMacrosInner(INameLookup names, CatExpr fxns)
         {            
-            if (Config.gbShowRewritingRuleApplications)
-            {
-                Output.Write("Before rewriting: ");
-                Output.WriteLine(fxns);
-            }
-
             // Recursively apply macros for all quotations.
             for (int i=0; i < fxns.Count; ++i)
             {
@@ -345,6 +339,24 @@ namespace Cat
                 MacroMatch m = matches[i];
                 List<AstMacroTerm> pattern = m.mMacro.mDest.mPattern;
                 m.Replace(names, fxns, pattern);      
+            }
+        }
+
+        public static void ApplyMacros(INameLookup names, CatExpr fxns)
+        {            
+            if (Config.gbShowRewritingRuleApplications)
+            {
+                Output.Write("Before rewriting: ");
+                Output.WriteLine(fxns);
+            }
+
+            // repeat until a fix-point is reached (the algorithm converges)
+            bool bDone = false;
+            while (!bDone)
+            {
+                CatExpr original = fxns.Clone();
+                ApplyMacrosInner(names, fxns);
+                bDone = fxns.Equals(original);
             }
 
             if (Config.gbShowRewritingRuleApplications)

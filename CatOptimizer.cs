@@ -91,7 +91,7 @@ namespace Cat
                 if (f is PushFunction)
                 {
                     PushFunction q = f as PushFunction;
-                    CatExpr tmp = PartialEval(new Executor(), q.GetChildren());
+                    CatExpr tmp = PartialEval(new Executor(), q.GetSubFxns());
                     fxns[i] = new PushFunction(tmp);
                 }
             }
@@ -206,7 +206,7 @@ namespace Cat
         static public QuotedFunction ApplyMacros(INameLookup names, QuotedFunction f)
         {
             CatExpr list = new CatExpr(f.GetSubFxns().ToArray());
-            Macros.ApplyMacros(names, list);
+            MetaCat.ApplyMacros(names, list);
             return new QuotedFunction(list);
         }
         #endregion

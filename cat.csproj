@@ -161,6 +161,9 @@
     <BaseApplicationManifest Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="notes.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

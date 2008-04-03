@@ -24,12 +24,18 @@ namespace Cat
         public TextReader input = Console.In;
         public TextWriter output = Console.Out;
         private Dictionary<string, Function> dictionary = new Dictionary<string, Function>();
+        INameLookup otherNames;
         List<Object> stack = new List<Object>();
 
         public Executor()
         {
             RegisterType(typeof(MetaCommands));
             RegisterType(typeof(Primitives));
+        }
+
+        public Executor(INameLookup other)
+        {
+            otherNames = other;
         }
         
         public Object Peek()
@@ -216,15 +222,8 @@ namespace Cat
 
         public void Execute(string s)
         {
-            try
-            {
-                List<CatAstNode> nodes = CatParser.Parse(s + "\n");
-                Execute(nodes);
-            }
-            catch (Exception e)
-            {
-                Output.WriteLine("error: " + e.Message);
-            }
+            List<CatAstNode> nodes = CatParser.Parse(s + "\n");
+            Execute(nodes);
         }
 
         public void OutputStack()
@@ -232,7 +231,7 @@ namespace Cat
             Output.WriteLine("stack: " + StackToString());
         }
 
-        public Function LiteralToFunction(AstLiteral literal)
+        public Function LiteralToFunction(string name, AstLiteral literal)
         {
             switch (literal.GetLabel())
             {
@@ -269,18 +268,18 @@ namespace Cat
                 case AstLabel.Quote:
                     {
                         AstQuote tmp = literal as AstQuote;
-                        CatExpr fxns = NodesToFxns(tmp.GetTerms());
+                        CatExpr fxns = NodesToFxns(name, tmp.GetTerms());
                         if (Config.gbOptimizeQuotations)
-                            Macros.ApplyMacros(this, fxns);
+                            MetaCat.ApplyMacros(this, fxns);
                         return new PushFunction(fxns);
                     }
                 case AstLabel.Lambda:
                     {
                         AstLambda tmp = literal as AstLambda;
                         CatLambdaConverter.Convert(tmp);
-                        CatExpr fxns = NodesToFxns(tmp.GetTerms());
+                        CatExpr fxns = NodesToFxns(name, tmp.GetTerms());
                         if (Config.gbOptimizeLambdas) 
-                            Macros.ApplyMacros(this, fxns);
+                            MetaCat.ApplyMacros(this, fxns);
                         return new PushFunction(fxns);
                     }
                 default:
@@ -310,7 +309,7 @@ namespace Cat
             }
         }
 
-        public CatExpr NodesToFxns(List<CatAstNode> nodes)
+        public CatExpr NodesToFxns(string name, List<CatAstNode> nodes)
         {
             CatExpr result = new CatExpr(); 
             for (int i = 0; i < nodes.Count; ++i)
@@ -319,12 +318,14 @@ namespace Cat
                 if (node.GetLabel().Equals(AstLabel.Name))
                 {
                     string s = node.ToString();
-                    Function f = ThrowingLookup(s);
-                    result.Add(f);
+                    if (s.Equals(name))
+                        result.Add(new SelfFunction(name));
+                    else
+                        result.Add(ThrowingLookup(s));
                 }
                 else if (node is AstLiteral)
                 {
-                    result.Add(LiteralToFunction(node as AstLiteral));
+                    result.Add(LiteralToFunction(name, node as AstLiteral));
                 }
                 else if (node is AstDef)
                 {
@@ -332,7 +333,7 @@ namespace Cat
                 }
                 else if (node is AstMacro)
                 {
-                    Macros.AddMacro(node as AstMacro);
+                    MetaCat.AddMacro(node as AstMacro);
                 }
                 else
                 {
@@ -344,7 +345,7 @@ namespace Cat
         
         public void Execute(List<CatAstNode> nodes)
         {
-            Execute(NodesToFxns(nodes));
+            Execute(NodesToFxns("self", nodes));
         }
 
         public void ClearTo(int n)
@@ -416,6 +417,9 @@ namespace Cat
             if (dictionary.ContainsKey(s))
                 return dictionary[s];
 
+            if (otherNames != null)
+                return otherNames.Lookup(s);
+
             return null;
         }
 
@@ -427,7 +431,6 @@ namespace Cat
             return f;
         }
         #endregion
-
 
         /// <summary>
         /// Methods allow overloading of function definitions.
@@ -451,11 +454,64 @@ namespace Cat
             return dictionary.Values;
         }
 
+        public void TestFunction(Function f)
+        {
+            CatMetaDataBlock md = f.GetMetaData();
+            if (md != null)
+            {
+                List<CatMetaData> tests = md.FindAll("test");
+                foreach (CatMetaData test in tests)
+                {
+                    CatMetaData input = test.Find("in");
+                    CatMetaData output = test.Find("out");
+                    if (input == null || output == null)
+                    {
+                        Output.WriteLine("ill-formed test in " + f.GetName());
+                        break;
+                    }
+                    try
+                    {
+                        Executor aux = new Executor(this);
+                        aux.Execute(input.GetContent());
+                        CatList listInput = aux.GetStackAsList();
+                        aux.Clear();
+                        aux.Execute(output.GetContent());
+                        CatList listOutput = aux.GetStackAsList();
+                        aux.Clear();
+                        
+                        if (!listInput.Equals(listOutput))
+                        {
+                            Output.WriteLine("failed test for instruction " + f.GetName());
+                            Output.WriteLine("test input program = " + input.GetContent());
+                            Output.WriteLine("test output program = " + output.GetContent());
+                            Output.WriteLine("input program result = " + listInput.ToString());
+                            Output.WriteLine("output program result = " + listOutput.ToString());
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Output.WriteLine("test failed for " + f.GetName() + " with exception " + e.Message);
+                    }
+                }
+            }
+        }
+
         public Function MakeFunction(AstDef def) 
         {
-            CatExpr fxns = NodesToFxns(def.mTerms);
+            bool bLambda = def.mParams.Count > 0;
+            if (bLambda)
+                CatLambdaConverter.Convert(def);
+            CatExpr fxns = NodesToFxns(def.mName, def.mTerms);
             Function ret = new DefinedFunction(def.mName, fxns);
-            return AddFunction(ret);
+            if (def.mpMetaData != null) {
+                ret.SetMetaData(new CatMetaDataBlock(def.mpMetaData));
+            }
+            if (bLambda && Config.gbOptimizeLambdas)
+                MetaCat.ApplyMacros(this, fxns);
+
+            AddFunction(ret);
+            TestFunction(ret);
+            return ret;
         }
 
         public Function AddFunction(Function f)

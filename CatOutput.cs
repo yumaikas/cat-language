@@ -41,15 +41,6 @@ namespace Cat
             else
                 WriteLine(ObjectToString(o));
         }
-        public static void WriteLine(CatExpr fxns)
-        {
-            foreach (Function f in fxns)
-            {
-                Write(f.ToString());
-                Write(" ");
-            }
-            WriteLine("");
-        }
         public static void Write(string s)
         {
             Console.Write(s);
@@ -80,7 +71,7 @@ namespace Cat
             }
             else if (o is CatList)
             {
-                return (o as CatList).ToShortString();
+                return (o as CatList).ToString();
             }
             else if (o is Byte)
             {

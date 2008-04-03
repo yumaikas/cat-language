@@ -33,7 +33,7 @@ namespace Cat
         public class Load : PrimitiveFunction
         {
             public Load()
-                : base("#load", "(string ~> )", "loads and executes a source code file")
+                : base("#load", "(string ~> )", "loads and executes a source code file", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -45,7 +45,7 @@ namespace Cat
         public class Save : PrimitiveFunction
         {
             public Save()
-                : base("#save", "(string ~> )", "saves a transcript of the session so far")
+                : base("#save", "(string ~> )", "saves a transcript of the session so far", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -57,7 +57,7 @@ namespace Cat
         public class TypeOf : PrimitiveFunction
         {
             public TypeOf()
-                : base("#type", "(function -> function type)", "displays the type of an expression")
+                : base("#type", "(function -> function)", "displays the type of an expression", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -84,7 +84,7 @@ namespace Cat
         public class Expand : PrimitiveFunction
         {
             public Expand()
-                : base("#inline", "(('A -> 'B) ~> ('A -> 'B))", "performs inline expansion")
+                : base("#inline", "(('A -> 'B) ~> ('A -> 'B))", "performs inline expansion", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -97,7 +97,7 @@ namespace Cat
         public class Expand1 : PrimitiveFunction
         {
             public Expand1()
-                : base("#inline-step", "(('A -> 'B) -> ('A -> 'B))", "performs inline expansion")
+                : base("#inline-step", "(('A -> 'B) -> ('A -> 'B))", "performs inline expansion", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -110,7 +110,7 @@ namespace Cat
         public class ApplyMacros : PrimitiveFunction
         {
             public ApplyMacros()
-                : base("#metacat", "(('A -> 'B) ~> ('A -> 'B))", "runs MetaCat rewriting rules")
+                : base("#metacat", "(('A -> 'B) ~> ('A -> 'B))", "runs MetaCat rewriting rules", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -123,7 +123,7 @@ namespace Cat
         public class Clr : PrimitiveFunction
         {
             public Clr()
-                : base("#clr", "('A ~> )", "removes all items from the stack")
+                : base("#clr", "('A ~> )", "removes all items from the stack", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -135,13 +135,52 @@ namespace Cat
         public class Doc : PrimitiveFunction
         {
             public Doc()
-                : base("#doc", "(('A -> 'B) ~> ('A -> 'B) string)", "outputs the meta-data associated with a function")
+                : base("#doc", "(('A -> 'B) ~> ('A -> 'B) list)", "outputs the meta-data associated with a function", "meta")
             { }
 
             public override void Eval(Executor exec)
             {
                 QuotedFunction f = exec.TypedPeek<QuotedFunction>();
-                exec.Push(f.GetMetaData().ToList());
+
+                if (f.GetMetaData() != null)
+                    exec.Push(f.GetMetaData().ToList());
+                else
+                    exec.Push(new CatList());
+            }
+        }
+
+        public class Defs : PrimitiveFunction
+        {
+            public Defs()
+                : base("#defs", "( ~> )", "outputs a complete list of defined instructions ", "meta")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                List<Function> fxns = new List<Function>(exec.GetAllFunctions());
+                fxns.Sort(delegate(Function x, Function y) { return x.GetName().CompareTo(y.GetName()); });
+
+                foreach (Function f in fxns)
+                    Output.Write(f.GetName() + "\t");
+                Output.WriteLine("");
+
+                /* TODO: move this code somewhere else
+                int n = 0;
+                foreach (Function f in fxns) {
+                    string s = f.GetName();
+                    if (f.GetFxnType() != null)
+                        s += " : " + f.GetFxnType();
+                    if (f.GetDesc() != null)
+                        s += " - " + f.GetDesc();
+                    Output.WriteLine(s);
+                    if (++n % 25 == 0)
+                    {
+                        Console.WriteLine("press enter to continue");
+                        Console.ReadLine();
+                    }
+                }
+                 */
             }
         }
     }
@@ -149,6 +188,21 @@ namespace Cat
     public class Primitives
     {
         #region conversion functions
+        public class EvalFun : PrimitiveFunction
+        {
+            public EvalFun()
+                : base("eval", "(string ~> list)", "evaluates a string as a function, generating a list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string s = exec.PopString();
+                Executor aux = new Executor();
+                aux.Execute(s);
+                exec.Push(aux.GetStackAsList());
+            }
+        }
+
         public class Str : PrimitiveFunction
         {
             public Str()
@@ -218,21 +272,6 @@ namespace Cat
         #endregion 
 
         #region primitive function classes
-        /// <summary>
-        /// HACK: this is a big hack. But it works
-        /// </summary>
-        public class RecursiveCast : PrimitiveFunction
-        {
-            public RecursiveCast()
-                : base("self_call", "('A ('A -> 'B) -> 'B)", "used to make self-calls type safe")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                // does nothing
-            }
-        }
-
         public class Halt : PrimitiveFunction
         {
             public Halt()
@@ -383,7 +422,7 @@ namespace Cat
         {
             public Pull()
                 : base("pull", "(( -> 'A 'b) -> ( -> 'A) 'b)",
-                    "experimental")
+                    "[experimental] deconstructs a function")
             { }
 
             public override void Eval(Executor exec)
@@ -452,7 +491,7 @@ namespace Cat
                     }
                     else if (f is PushFunction)
                     {
-                        a[i++] = FxnsToList((f as PushFunction).GetChildren());
+                        a[i++] = FxnsToList((f as PushFunction).GetSubFxns());
                     }
                     else 
                     {
@@ -471,6 +510,47 @@ namespace Cat
         #endregion
 
         #region control flow primitives
+
+        public class Default : PrimitiveFunction
+        {
+            public Default()
+                : base("default", "('A -> 'B) -> ('A int -> 'B)", "used to construct a default 'case' statement")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction f = exec.TypedPop<QuotedFunction>();
+                f.GetSubFxns().Insert(0, new Pop());
+                JumpTable jt = new JumpTable(f);
+                exec.Push(jt);
+            }
+        }
+
+        public class Case : PrimitiveFunction
+        {
+            public Case()
+                : base("case", "('A int -> 'B) ('A -> 'B) int -> ('A int -> 'B)", "used to construct a 'case' statement member of a switch statement")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                Function f = exec.TypedPop<Function>();
+                Function g = exec.TypedPeek<Function>();
+                if (g is JumpTable)
+                {
+                    JumpTable jt = g as JumpTable;
+                    jt.AddCase(n, f);                    
+                }
+                else
+                {
+                    exec.Pop(); 
+                    JumpTable jt = new JumpTable(g);
+                    exec.Push(jt);                        
+                }
+            }
+        }
+
         public class CallCC : PrimitiveFunction
         {
             public CallCC()
@@ -529,6 +609,7 @@ namespace Cat
             }
         }
 
+        /* TODO: remove
         public class Switch : PrimitiveFunction
         {
             public Switch()
@@ -559,6 +640,7 @@ namespace Cat
                 throw new Exception("failed to match switch statement");
             }
         }
+         */
 
         public class BinRec : PrimitiveFunction
         {
@@ -1404,7 +1486,7 @@ namespace Cat
             {
                 int n = exec.PopInt();
                 CatList list = exec.TypedPeek<CatList>();
-                exec.Push(list[n]);
+                exec.Push(list[list.Count - n - 1]);
             }
         }
 
@@ -1477,6 +1559,23 @@ namespace Cat
                 list[n] = o;
             }
         }
+
+        public class SwapAt : PrimitiveFunction
+        {
+            public SwapAt()
+                : base("swap_at", "(list any int -> list any)", "swaps an item, with an item in the list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                Object o = exec.Pop();
+                CatList list = exec.TypedPeek<CatList>();
+                Object x = list[n];
+                list[n] = o;
+                exec.Push(o);
+            }
+        }
         #endregion
 
         #region misc functions
@@ -1525,7 +1624,7 @@ namespace Cat
         public class AsVar : PrimitiveFunction
         {
             public AsVar()
-                : base("as_var", "('a -> var)", "converts anything into a variant")
+                : base("as_var", "('a -> var)", "casts anything into a variant")
             { }
 
             public override void Eval(Executor exec)
@@ -1537,7 +1636,7 @@ namespace Cat
         public class AsBool : PrimitiveFunction
         {
             public AsBool()
-                : base("as_bool", "(any -> bool)", "converts a variant to a bool")
+                : base("as_bool", "(any -> bool)", "casts a variant to a bool")
             { }
 
             public override void Eval(Executor exec)
@@ -1549,7 +1648,7 @@ namespace Cat
         public class AsInt : PrimitiveFunction
         {
             public AsInt()
-                : base("as_int", "(any -> int)", "converts a variant to an int")
+                : base("as_int", "(any -> int)", "casts a variant to an int")
             { }
 
             public override void Eval(Executor exec)
@@ -1561,7 +1660,7 @@ namespace Cat
         public class AsList : PrimitiveFunction
         {
             public AsList()
-                : base("as_list", "(any -> list)", "converts a variant to a list")
+                : base("as_list", "(any -> list)", "casts a variant to a list")
             { }
 
             public override void Eval(Executor exec)
@@ -1573,7 +1672,7 @@ namespace Cat
         public class AsString : PrimitiveFunction
         {
             public AsString()
-                : base("as_string", "(any -> string)", "converts a variant to a char")
+                : base("as_string", "(any -> string)", "casts a variant to a char")
             { }
 
             public override void Eval(Executor exec)
@@ -1585,7 +1684,7 @@ namespace Cat
         public class AsDbl : PrimitiveFunction
         {
             public AsDbl()
-                : base("as_dbl", "(any -> double)", "converts a variant to a double")
+                : base("as_dbl", "(any -> double)", "casts a variant to a double")
             { }
 
             public override void Eval(Executor exec)
@@ -1597,7 +1696,7 @@ namespace Cat
         public class AsChar : PrimitiveFunction
         {
             public AsChar()
-                : base("as_char", "(any -> char)", "converts a variant to a double")
+                : base("as_char", "(any -> char)", "casts a variant to a double")
             { }
 
             public override void Eval(Executor exec)
@@ -1605,6 +1704,59 @@ namespace Cat
                 exec.Push(exec.TypedPop<double>());
             }
         }        
+
+        public class ToInt : PrimitiveFunction
+        {
+            public ToInt()
+                : base("to_int", "(any -> int)", "coerces any value to an integer")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Pop();
+                if (o is int) { exec.Push(o); }
+                else if (o is double) { exec.Push((int)(Double)o); }
+                else if (o is char) { exec.Push((int)(Char)o); }
+                else if (o is string) { exec.Push(Int32.Parse(o as String)); }
+                else if (o is bool) { exec.Push((Boolean)o ? 1 : 0); }
+                else if (o is Bit) { exec.Push(((Bit)(o)).m ? 1 : 0); }
+                else if (o is Stack) { exec.Push((o as Stack).Count); }
+                else { exec.PushInt(0); }
+            }
+        }
+
+        public class ToStr : PrimitiveFunction
+        {
+            public ToStr()
+                : base("to_str", "(any -> str)", "coerces any value to a string")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Pop();
+                exec.Push(o.ToString());
+            }
+        }
+
+        public class ToBool : PrimitiveFunction
+        {
+            public ToBool()
+                : base("to_bool", "(any -> bool)", "coerces any value to a boolean")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Object o = exec.Pop();
+                if (o is int) { exec.Push(o); }
+                else if (o is double) { exec.Push((Double)o != 0.0); }
+                else if (o is char) { exec.Push((int)(Char)o != 0); }
+                else if (o is string) { exec.Push(Boolean.Parse(o as String)); }
+                else if (o is bool) { exec.Push(o); }
+                else if (o is Bit) { exec.Push(((Bit)(o)).m); }
+                else if (o is Stack) { exec.Push((o as Stack).Count == 0); }
+                else { exec.PushBool(false); }
+            }
+        }
         #endregion
 
         #region graphics primitives 

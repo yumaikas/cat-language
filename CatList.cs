@@ -62,10 +62,34 @@ namespace Cat
             return new CatList(this);
         }
 
-        public string ToShortString()
+        public override string ToString()
         {
-            // TODO: rename to PrettyString, and fix other things.
-            return "(...)";
+            string result = "(";
+            for (int i=0; i < 10 && i < Count; ++i) {
+                if (i > 0) result += " ";
+                result += this[i].ToString();
+            }
+            if (Count > 10) result += " ...";
+            result += ")";
+            return result;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is CatList))
+                return false;
+            CatList x = obj as CatList;
+            if (Count != x.Count) return false;
+            for (int i = 0; i < Count; ++i)
+                if (!this[i].Equals(x[i]))
+                    return false;
+                
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }
