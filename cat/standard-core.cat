@@ -36,3 +36,90 @@ define try : (( -> 'A) -> 'A)
 }}
 { ["exception data: " write writeln] try_catch }
 
+//=============================================================================
+// Some really primitive math functions
+
+define neq : ('a 'a -> bool)
+{{
+  desc:
+    Pushes true if the top two values on the stack are not equal.
+  test:
+    in: 3 5 neq
+    out: true
+  test:
+    in: 'a' 'a' neq
+    out: false
+}}
+{
+  eq not
+}
+
+define inc : (int -> int)
+{{
+  desc:
+    Adds one to an integer on the stack
+  test:
+    in: 5 inc
+    out: 6
+}}
+{
+  1 add_int
+}
+
+define dec : (int -> int)
+{{
+  desc:
+    Subtract one from an integer on the stack
+  test:
+    in: 5 dec
+    out: 4
+}}
+{
+  1 sub_int
+}
+
+define eqz : (int -> int bool)
+{{
+  desc:
+    Returns true if the top value is zero
+  test:
+    in: 5 eqz
+    out: 5 false
+  test:
+    in: 0 eqz
+    out: 0 true
+}}
+{
+  dup 0 eq
+}
+
+define neqz : (int -> int bool)
+{{
+  desc:
+    Returns true if the top value is zero
+  test:
+    in: 5 neqz
+    out: 5 true
+  test:
+    in: 0 neqz
+    out: 0 false
+}}
+{
+  eqz not
+}
+
+define modn : (int int -> int bool)
+{{
+  desc:
+    Returns true if the second integer modulo the top integer is equal to zero.
+    It leaves the original input on the stack.
+  test:
+    in: 4 2 modn
+    out: 4 true
+  test:
+    in: 5 3 modn
+    out: 5 false
+}}
+{
+  [dup] dip mod_int eqz
+}

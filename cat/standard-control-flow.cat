@@ -12,11 +12,20 @@ define repeat : ('A ('A -> 'A) int -> 'A)
     Executes a loop a fixed number of times
   semantics:
     $A [$B] $c repeat == $A $c eqz [] [$B $c dec] if
+  test:
+    in: 3 [inc] 3 repeat
+    out: 6
+  test:
+    in: 3 [2 mul_int] 2 repeat
+    out: 12
+  test:
+    in: 3 [inc] 0 repeat
+    out: 3
 }}
 {
-  swap            // 'A int [body]
-  [dip dec] papply  // 'A int [[body] dip dec]
-  [neqz] while pop
+  swap
+  [dip dec] papply
+  [0 neqz] while pop
 }
 
 define whilen : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
@@ -25,8 +34,13 @@ define whilen : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
     Executes a while loop, while a condition is not true
   semantics:
     $A [$B] [$C] whilen == $A $C not [$B [$B][$C] whilen] [] if
+  test:
+    in: 42 [dec] [dup eqz] whilen
+    out: 0
 }}
-{ [not] compose while }
+{
+  [not] compose while
+}
 
 define whilene : ('A list ('A list -> 'A list) -> 'A)
 {{
@@ -34,8 +48,13 @@ define whilene : ('A list ('A list -> 'A list) -> 'A)
     Executes a function while the list on the top of the stack is not empty
   semantics:
     $A $b [$C] whilene == $A $b empty not [$C [$C] whilene] [pop] if
+  test:
+    in: 0 [1 2 3 4] list [uncons swap [add_int] dip] whilene
+    out: 10
 }}
-{ [empty] whilen pop }
+{
+  [empty] whilen pop
+}
 
 define whilenz : ('A int ('A int -> 'A int) -> 'A)
 {{
@@ -43,39 +62,50 @@ define whilenz : ('A int ('A int -> 'A int) -> 'A)
     Executes a function while the value on the top of the stack is not equal to zero.
   semantics:
     $A $b [$C] whilenz == $A $b neqz [$C [$C] whilenz] [pop] if
+  test:
+    in: 1 4 [[2 mul_int] dip dec] whilenz
+    out: 16
 }}
-{ [neqz] while pop }
+{
+  [dup neqz] while pop
+}
 
-define for_each : ('A list ('A any -> 'A) -> 'A)
+define foreach : ('A list ('A any -> 'A) -> 'A)
 {{
   desc:
     Executes a function with each item in the list, and consumes the list.
   semantics:
-    $A $b [$C] for_each == $A $b empty not [uncons pop [$C] for_each] [pop] if }
+    $A $b [$C] foreach == $A $b empty not [uncons pop [$C] foreach] [pop] if }
+  test:
+    in: 0 [1 2 3 4] list [add_int] foreach
+    out: 10
 }}
-{ [dip] papply [uncons swap] rcompose whilene }
+{
+  [dip] papply [uncons swap] rcompose whilene
+}
 
 define for : ('A ('A int -> 'A) int -> 'A)
 {{
   desc:
-    A for loop. Behaves like repeat but an montonically increasing index value is
+    A for loop. Behaves like repeat but an index value is
     passed to the loop body on each iteration, starting at 0.
+  test:
+    in: 0 [add_int] 4 for
+    out: 10
 }}
-{ swap [dip inc] papply [dup] rcompose swap neqf 0 bury while pop }
-
-define rfor : ('A ('A int -> 'A) int -> 'A)
-{{
-  desc:
-    Reverse for loop. Behaves like a for loop but the index decreases from
-    n down to 1.
-}}
-{ swap [dip dec] papply [dup] rcompose whilenz }
+{
+  0 bury
+  swap [inc] compose swap
+  [over neq] papply while pop
+}
 
 define print_list : ('A list ~> 'A list)
 {{
   desc:
     Outputs a list to the console window
   bugs:
-    The type checker requires variabe 'A to be written explicitly
+    The type checker requires variable 'A to be written explicitly
 }}
-{ dup [writeln] for_each }
+{
+  dup [writeln] foreach
+}

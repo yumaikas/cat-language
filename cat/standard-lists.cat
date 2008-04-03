@@ -3,6 +3,31 @@
 // without restriction, obligation or warantee.
 // http://www.cdiggins.com
 
+define swons : ('a list -> list)
+{{
+  desc:
+    Appends the second item on the stack, to a list in the first item
+  test:
+    in: 3 [1 2] list swons
+    out: [1 2 3] list
+}}
+{
+  swap cons
+}
+
+define unit : (any -> list)
+{{
+  desc:
+    Creates a list containing one element, which is taken from the top
+    of the stack
+  test:
+    in: 42 unit
+    out: [42] list
+}}
+{
+  nil swons
+}
+
 define head : (list -> any)
 {{
   desc:
@@ -83,18 +108,6 @@ define triple : ('a 'b 'c -> list)
 }}
 { [pair] dip cons }
 
-define swons : ('a list -> list)
-{{
-  desc:
-    Appends the second item on the stack, to a list in the first item
-  test:
-    in: 3 [1 2] list swons
-    out: [1 2 3] list
-}}
-{
-  swap cons
-}
-
 define uncons2 : (list -> list any any)
 {{
   desc:
@@ -133,6 +146,9 @@ define fold : (list 'a ('a 'a -> 'a) -> list)
   test:
     in: [1 2 3 4] list 0 [add_int] fold
     out: 10
+  test:
+    in: [1 2 3 4] list 0 [pop] fold
+    out: 1
 }}
 {
   [empty] dip2 dig [pop popd] [[uncons] dip2 keep fold] if
@@ -163,8 +179,11 @@ define rfold
   semantics:
     define rfold(xs x f) { xs empty dig [x] [uncons f rfold x f apply] if }
   test:
-    in: [1 2 3 4] list 0 [add_int] fold
+    in: [1 2 3 4] list 0 [add_int] rfold
     out: 10
+  test:
+    in: [1 2 3 4] list 0 [pop] rfold
+    out: 4
 }}
 {
   [rev] dip2 fold
@@ -178,32 +197,22 @@ define small : (list -> list bool)
     in: 1 unit small popd
     out: true
 }}
-{ empty [true] [rest empty popd] if }
-
-/*
-This will be useful for implementing a better split function, among other things
-
-define do_while : ('A list ('A 'a -> 'A bool) -> 'A list)
-{{
-  desc:
-    An early-terminating fold.
-}}
 {
+  empty [true] [rest empty popd] if
 }
-*/
 
 define filter : (list ('a -> bool) -> list)
 {{
   desc:
     Creates a list from another keeping only values for which the predicate is true
   semantics:
-    define filter(xs pred) { xs nil [dup pred [cons] [pop] if] foldr }
+    define filter(xs pred) { xs nil [pred [cons] [pop] if] foldr }
   test:
-    in: [1 2 3 4] list [2 mod_int 0 eq] filter
+    in: [1 2 3 4] list [2 mod_int eqz] filter
     out: [1 3] list
 }}
 {
-  [dupd apply [cons] [pop] if] papply nil swap foldr
+  [dupd apply [cons] [pop] if] papply nil swap rfold
 }
 
 define split : (list ('a -> bool) -> list list)
@@ -211,7 +220,7 @@ define split : (list ('a -> bool) -> list list)
   desc:
     Splits a list into two new lists
   test:
-    in: [0 1 2 3 4] list [even popd] split
+    in: [0 1 2 3 4] list [2 mod_int eqz] split
     out: [1 3] list [0 2 4] list
 }}
 {
@@ -227,7 +236,9 @@ define cons_first : (list 'a -> list)
     in: [1 2] list [3 4] list pair 5 cons_first
     out: [1 2] list [3 4 5] list pair
 }}
-{ [unpair] dip cons pair }
+{
+  [unpair] dip cons pair
+}
 
 define cons_second : (list 'a -> list)
 {{
@@ -237,7 +248,9 @@ define cons_second : (list 'a -> list)
     in: [1 2] list [3 4] list pair 5 cons_second
     out: [1 2 5] list [3 4] list pair
 }}
-{ [unpair] dip swap [cons] dip pair }
+{
+  [unpair] dip swap [cons] dip pair
+}
 
 define move_head : (list list -> list list)
 {{
@@ -247,28 +260,9 @@ define move_head : (list list -> list list)
     in: [1 2] list [3 4] list move_head
     out: [1 2 4] list [3] list
 }}
-{ uncons swap [cons] dip }
-
-/*
-This requires "count_while" which is not currently implemented.
-
-define index_of : (list 'a -> list int)
-{{
-  desc:
-    Returns the index of a value in a list or the size of the list
-    if not found.
-  test:
-    in: [1 2 3 4] list 1 index_of popd
-    out: 3
-  test:
-    in: ['a' 'b' 'c'] list 'c' index_of popd
-    out: 0
-  test:
-    in: ['a' 'b' 'c'] list 'd' index_of popd
-    out: 3
-}}
-{ [neq] papply count_while }
-*/
+{
+  uncons swap [cons] dip
+}
 
 define split_at : (list int -> list list)
 {{
@@ -276,7 +270,9 @@ define split_at : (list int -> list list)
     Splits a list in two at an index, the top result contains the second half
     sand the second result contains the first half of the original list
 }}
-{ nil bury [move_head] swap repeat }
+{
+  nil bury [move_head] swap repeat
+}
 
 define dhead : (list -> list any)
 {{
@@ -286,7 +282,9 @@ define dhead : (list -> list any)
     in: [1 2] list dhead
     out: [1 2] list 2
 }}
-{ first }
+{
+  first
+}
 
 define dtail : (list -> list list)
 {{
@@ -296,7 +294,9 @@ define dtail : (list -> list list)
     in: [1 2 3] list dtail
     out: [1 2 3] list [1 2] list
 }}
-{ rest }
+{
+  rest
+}
 
 define head_eq : (list any -> list bool)
 {{
@@ -308,4 +308,6 @@ define head_eq : (list any -> list bool)
     in: [1 2] list 1 head_eq popd
     out: false
 }}
-{ [dhead] dip eq }
+{
+  [dhead] dip eq
+}
