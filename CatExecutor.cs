@@ -437,8 +437,7 @@ namespace Cat
         /// </summary>
         public void AddMethod(Object o, MethodInfo mi)
         {
-            // Does not add public methods. Simplifies using this 
-            // Function in a loop
+            // Does not add public methods. 
             if (!mi.IsPublic)
                 return;                
 
