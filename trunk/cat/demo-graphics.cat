@@ -36,7 +36,8 @@ define fractal1
 
 define demo1
 {{
-  desc{Draws a simple fractal}
+  desc:
+    Draws a simple fractal
 }}
 {
   90 tl 80 fractal1
@@ -44,7 +45,8 @@ define demo1
 
 define demo2
 {{
-  desc{Draws the demo1 fractal and its mirror image}
+  desc:
+    Draws the demo1 fractal and its mirror image
 }}
 {
   [90 tl demo1] 2 repeat

@@ -135,7 +135,7 @@ namespace Cat
         public class Doc : PrimitiveFunction
         {
             public Doc()
-                : base("#doc", "(('A -> 'B) ~> ('A -> 'B) list)", "outputs the meta-data associated with a function", "meta")
+                : base("#metadata", "(('A -> 'B) ~> ('A -> 'B) list)", "outputs the meta-data associated with a function", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -143,9 +143,36 @@ namespace Cat
                 QuotedFunction f = exec.TypedPeek<QuotedFunction>();
 
                 if (f.GetMetaData() != null)
-                    exec.Push(f.GetMetaData().ToList());
-                else
+                    exec.Push(f.GetMetaData().ToList()); else
                     exec.Push(new CatList());
+            }
+        }
+
+        public class Test : PrimitiveFunction
+        {
+            public Test()
+                : base("#test", "(('A -> 'B) ~> ('A -> 'B))", "runs the unit tests associated with an instruction", "meta")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                QuotedFunction f = exec.TypedPeek<QuotedFunction>();
+                exec.TestFunction(f);
+            }
+        }
+
+        public class TestAll : PrimitiveFunction
+        {
+            public TestAll()
+                : base("#test_all", "( ~> )", "runs all unit tests associated with all instructions", "meta")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                exec.testCount = 0;
+                foreach (Function f in exec.GetAllFunctions())
+                    exec.TestFunction(f);
+                Output.WriteLine("ran " + exec.testCount + " unit tests");
             }
         }
 
@@ -159,28 +186,56 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 List<Function> fxns = new List<Function>(exec.GetAllFunctions());
-                fxns.Sort(delegate(Function x, Function y) { return x.GetName().CompareTo(y.GetName()); });
+                fxns.Sort(delegate(Function x, Function y) { 
+                    return x.GetName().CompareTo(y.GetName()); 
+                });
 
                 foreach (Function f in fxns)
                     Output.Write(f.GetName() + "\t");
                 Output.WriteLine("");
+            }
+        }
 
-                /* TODO: move this code somewhere else
-                int n = 0;
-                foreach (Function f in fxns) {
-                    string s = f.GetName();
-                    if (f.GetFxnType() != null)
-                        s += " : " + f.GetFxnType();
-                    if (f.GetDesc() != null)
-                        s += " - " + f.GetDesc();
-                    Output.WriteLine(s);
-                    if (++n % 25 == 0)
-                    {
-                        Console.WriteLine("press enter to continue");
-                        Console.ReadLine();
-                    }
+        public class Def : PrimitiveFunction
+        {
+            public Def()
+                : base("#def", "(string ~> )", "outputs a detailed description of all instruction starting with the name", "meta")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                string sName = exec.PopString();
+
+                List<Function> fxns = new List<Function>(exec.GetAllFunctions());
+                fxns.Sort(delegate(Function x, Function y) { 
+                    return x.GetName().CompareTo(y.GetName()); 
+                });
+
+                foreach (Function f in fxns)
+                    if (f.GetName().IndexOf(sName) == 0)
+                        Output.WriteLine(f.GetImplStr());
+            }
+        }
+
+        public class Trace : PrimitiveFunction
+        {
+            public Trace()
+                : base("#trace", "('A ('A -> 'B) ~> 'B)", "used to trace the execution of a function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.PopFxn();
+                exec.bTrace = true;
+                try
+                {
+                    f.Eval(exec);
                 }
-                 */
+                finally
+                {
+                    exec.bTrace = false;
+                }
             }
         }
     }
@@ -469,6 +524,53 @@ namespace Cat
             }
         }
 
+        public class Dispatch1 : PrimitiveFunction
+        {
+            public Dispatch1()
+                : base("dispatch1", "('a list -> any)", "dynamically dispatches a function depending on the type on top of the stack")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CatList fs = exec.TypedPop<CatList>();
+                Object o = exec.Peek();
+                for (int i = 0; i < fs.Count / 2; ++i)
+                {
+                    Type t = fs[i * 2 + 1] as Type;
+                    Function f = fs[i * 2] as Function;
+                    if (t.IsInstanceOfType(o))
+                    {
+                        f.Eval(exec);
+                        return;
+                    }
+                }
+                throw new Exception("could not dispatch function");
+            }
+        }
+
+        public class Dispatch2 : PrimitiveFunction
+        {
+            public Dispatch2()
+                : base("dispatch2", "('a 'b list -> any)", "dynamically dispatches a function depending on the type on top of the stack")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                CatList fs = exec.TypedPop<CatList>();
+                Object o = exec.Peek();
+                for (int i = 0; i < fs.Count / 2; ++i)
+                {
+                    Type t = fs[i * 2 + 1] as Type;
+                    Function f = fs[i * 2] as Function;
+                    if (t.IsInstanceOfType(o))
+                    {
+                        f.Eval(exec);
+                        return;
+                    }
+                }
+                throw new Exception("could not dispatch function");
+            }
+        }
         #endregion
 
         #region reflection api
@@ -856,7 +958,7 @@ namespace Cat
         public class TypeName : PrimitiveFunction
         {
             public TypeName()
-                : base("type_name", "(any -> string)", "returns the name of the type of an object")
+                : base("typename", "(any -> string)", "returns the name of the type of an object")
             { }
 
             public override void Eval(Executor exec)
@@ -868,7 +970,7 @@ namespace Cat
         public class TypeId : PrimitiveFunction
         {
             public TypeId()
-                : base("type_of", "(any -> any type)", "returns a type tag for an object")
+                : base("typeof", "(any -> any type)", "returns a type tag for an object")
             { }
 
             public override void Eval(Executor exec)
@@ -1450,6 +1552,29 @@ namespace Cat
             }
         }
 
+        public class Map : PrimitiveFunction
+        {
+            public Map()
+                : base("map", "(list ('a -> 'b) -> list)", "creates a list from another by transforming every value using the supplied function")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Function f = exec.TypedPop<Function>();
+                CatList list = exec.TypedPeek<CatList>();
+
+                int n = exec.Count();
+                for (int i = 0; i < list.Count; ++i)
+                {
+                    exec.Push(list[i]);
+                    f.Eval(exec);
+                    if (exec.Count() != n + 1)
+                        throw new Exception("dynamic type-checking error in map function");
+                    list[i] = exec.Pop();
+                }
+            }
+        }
+
         public class IsEmpty : PrimitiveFunction
         {
             public IsEmpty()
@@ -1472,7 +1597,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 CatList list = exec.TypedPeek<CatList>();
-                exec.PushInt(list.Count);
+                exec.Push(list.Count);
             }
         }
 

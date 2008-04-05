@@ -27,6 +27,9 @@ namespace Cat
         INameLookup otherNames;
         List<Object> stack = new List<Object>();
 
+        public int testCount = 0;
+        public bool bTrace = false;
+
         public Executor()
         {
             RegisterType(typeof(MetaCommands));
@@ -303,6 +306,8 @@ namespace Cat
                 }
                 else 
                 {
+                    if (bTrace)
+                        Output.WriteLine("trace: " + f.ToString());
                     f.Eval(this);
                     ++i;
                 }
@@ -455,6 +460,7 @@ namespace Cat
 
         public void TestFunction(Function f)
         {
+            testCount += 1;
             CatMetaDataBlock md = f.GetMetaData();
             if (md != null)
             {
@@ -489,7 +495,8 @@ namespace Cat
                     }
                     catch (Exception e)
                     {
-                        Output.WriteLine("test failed for " + f.GetName() + " with exception " + e.Message);
+                        Output.WriteLine("failed test for instruction " + f.GetName());
+                        Output.WriteLine("exception occured: " + e.Message);
                     }
                 }
             }
@@ -509,7 +516,6 @@ namespace Cat
                 MetaCat.ApplyMacros(this, fxns);
 
             AddFunction(ret);
-            TestFunction(ret);
             return ret;
         }
 

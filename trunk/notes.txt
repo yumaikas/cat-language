@@ -872,5 +872,9 @@ Open Issues:
 - 
 //
 
-
+- I need an execution trace for when execution fails
+- I need to assure that "map_reduce" works as it did in the Doctor Dobbs article
+- I need to test my graphics
+- I need to write the Heron to Cat translator.
+- I want to write a Cat interpreter for different languages.
 

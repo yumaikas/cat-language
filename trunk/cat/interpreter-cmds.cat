@@ -5,7 +5,7 @@
 
 // These commands exist for backwards compatibility, but will be possibly
 // remove in later versions of Cat.
-define #h { #doc }
+define #h { #metadata }
 define #t { #type }
 define #m { #metacat }
 define #i { #inline }

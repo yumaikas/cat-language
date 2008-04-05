@@ -75,7 +75,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "1.0 alpha 1";
+        public static string gsVersion = "1.0 beta 1";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 
@@ -111,5 +111,10 @@ namespace Cat
         /// Applies rewriting rules to all literal quotations
         /// </summary>
         public static bool gbOptimizeQuotations = false;
+
+        /// <summary>
+        /// run all self-tests automatically
+        /// </summary>
+        public static bool gbSelfTest = true;
     }
 }
