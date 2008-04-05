@@ -26,7 +26,7 @@ namespace Cat
         {
             if (Config.gbShowWelcome)
             {
-                WriteLine("Welcome to the Cat interpreter");
+                WriteLine("Welcome to the Cat programming language =^..^=");
                 WriteLine("version " + Config.gsVersion);
                 WriteLine("by Christopher Diggins");
                 WriteLine("licensed under MIT License 1.0");

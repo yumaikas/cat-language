@@ -344,6 +344,7 @@ namespace Cat
     public class PushFunction : Function
     {
         CatExpr mSubFxns;
+        QuotedFunction mQF;
         
         public PushFunction(CatExpr children)
         {
@@ -381,9 +382,16 @@ namespace Cat
             }
         }
 
+        public QuotedFunction GetQuotedFxn()
+        {
+            if (mQF == null)
+                mQF = new QuotedFunction(mSubFxns, CatFxnType.Unquote(mpFxnType));
+            return mQF;
+        }
+
         public override void Eval(Executor exec)
         {
-            exec.Push(new QuotedFunction(mSubFxns, CatFxnType.Unquote(mpFxnType)));
+            exec.Push(GetQuotedFxn());
         }
 
         public CatExpr GetChildren()
@@ -579,6 +587,19 @@ namespace Cat
         {
             msName = s;
             AddFunctions(fxns);
+            ReplaceSelfFunctions(fxns);
+        }
+
+        private void ReplaceSelfFunctions(CatExpr fxns)
+        {
+            for (int i = 0; i < fxns.Count; ++i)
+            {
+                Function f = fxns[i];
+                if (f is SelfFunction)
+                    fxns[i] = this;
+                if (f is PushFunction)
+                    ReplaceSelfFunctions((f as PushFunction).GetChildren());
+            }
         }
 
         public void AddFunctions(CatExpr fxns)
@@ -716,6 +737,9 @@ namespace Cat
         }
     }
 
+    /// <summary>
+    /// This is a place holder function. 
+    /// </summary>
     public class SelfFunction : Function
     {
         public SelfFunction(string name)
@@ -726,20 +750,7 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
-            // Look up the name at the last minute.
-            exec.ThrowingLookup(GetName()).Eval(exec);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (!(obj is SelfFunction))
-                return false;
-            return (obj as SelfFunction).GetName().Equals(GetName());
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
+            throw new Exception("self functions are supposed to be replaced during a function construction");
         }
     }
 

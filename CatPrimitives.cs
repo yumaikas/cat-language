@@ -404,10 +404,10 @@ namespace Cat
         #endregion
 
         #region function functions
-        public class EvalFxn : PrimitiveFunction
+        public class ApplyFxn : PrimitiveFunction
         {
-            public EvalFxn()
-                : base("apply", "('A ('A -> 'B) -> 'B)", "evaluates a function")
+            public ApplyFxn()
+                : base("apply", "('A ('A -> 'B) -> 'B)", "applies a function to the stack (i.e. executes an instruction)")
             { }
 
             public override void Eval(Executor exec)
@@ -700,12 +700,10 @@ namespace Cat
                 Function onfalse = exec.TypedPop<Function>();
                 Function ontrue = exec.TypedPop<Function>();
 
-                if ((bool)exec.Pop())
-                {
+                if ((bool)exec.Pop()) {
                     ontrue.Eval(exec);
                 }
-                else
-                {
+                else {
                     onfalse.Eval(exec);
                 }
             }

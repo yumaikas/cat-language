@@ -878,3 +878,6 @@ Open Issues:
 - I need to write the Heron to Cat translator.
 - I want to write a Cat interpreter for different languages.
 
+//
+
+- better error messages when underflowing/overflowing the stack.
