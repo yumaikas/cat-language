@@ -289,7 +289,16 @@ namespace Cat
                     throw new Exception("unhandled literal " + literal.ToString());
             }
         }
+
+        void Trace(string s)
+        {
+            if (bTrace) Output.WriteLine("trace: " + s);
+        }
         
+        /// <summary>
+        /// This function is optimized to handle tail-calls with increasing the stack size.
+        /// </summary>
+        /// <param name="fxns"></param>
         public void Execute(CatExpr fxns)
         {
             int i = 0;
@@ -301,13 +310,32 @@ namespace Cat
                 // if so then we are going to avoid creating a new stack frame
                 if (i == fxns.Count - 1 && f.GetSubFxns() != null)
                 {
+                    Trace("tail-call of '" + f.GetName() + "' function");
                     fxns = f.GetSubFxns();
                     i = 0;
-                }
-                else 
+                }                   
+                else if (i == fxns.Count - 1 && f is Primitives.If)
                 {
-                    if (bTrace)
-                        Output.WriteLine("trace: " + f.ToString());
+                    Trace("tail-call of 'if' function");
+                    QuotedFunction onfalse = PopFxn();
+                    QuotedFunction ontrue = PopFxn();
+
+                    if (PopBool())
+                        fxns = ontrue.GetSubFxns(); else
+                        fxns = onfalse.GetSubFxns();
+
+                    i = 0;
+                }
+                else if (i == fxns.Count - 1 && f is Primitives.ApplyFxn)
+                {
+                    Trace("tail-call of 'apply' function");
+                    QuotedFunction q = PopFxn();
+                    fxns = q.GetSubFxns();
+                    i = 0;
+                }
+                else
+                {
+                    Trace(f.ToString());
                     f.Eval(this);
                     ++i;
                 }

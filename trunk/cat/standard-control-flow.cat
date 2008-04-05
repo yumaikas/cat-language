@@ -25,7 +25,7 @@ define repeat : ('A ('A -> 'A) int -> 'A)
 {
   swap
   [dip dec] papply
-  [dup neqz] while pop
+  [0 neqz] while pop
 }
 
 define whilen : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
@@ -39,7 +39,7 @@ define whilen : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
     out: 0
 }}
 {
-  negate while
+  [not] compose while
 }
 
 define whilene : ('A list ('A list -> 'A list) -> 'A)
@@ -90,13 +90,13 @@ define for : ('A ('A int -> 'A) int -> 'A)
     A for loop. Behaves like repeat but an index value is
     passed to the loop body on each iteration, starting at 0.
   test:
-    in: 0 [add_int] 5 for
+    in: 0 [add_int] 4 for
     out: 10
 }}
 {
   0 bury
-  swap [dupd swap [apply] dip inc] papply swap
-  [dupd neq] papply while pop
+  swap [inc] compose swap
+  [over neq] papply while pop
 }
 
 define print_list : ('A list ~> 'A list)
