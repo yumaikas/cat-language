@@ -194,6 +194,35 @@ namespace Cat
                 }
             }
         }
+
+        public string GetImplStr()
+        {
+            string s = "define " + GetName();
+            if (GetFxnType() != null)
+                s += " : " + GetFxnType();
+            s += "\n";
+            if (GetDesc() != null && GetDesc().Length > 0)
+            {
+                s += "{{\n  desc:\n    " + GetDesc() + "\n}}\n";
+            }
+
+            s += "{\n  ";
+            if (GetSubFxns() != null)
+            {
+                for (int i=0; i < GetSubFxns().Count; ++i) {
+                    Function f = GetSubFxns()[i];
+                    if (i >= 0) s += " ";
+                    s += f.ToString();
+                }
+                s += "\n";
+            }
+            else
+            {
+                s += "_primitive_\n";
+            }
+            s += "}\n";
+            return s;
+        }
     }
 
     /// <summary>
@@ -458,8 +487,7 @@ namespace Cat
 
         public override void Eval(Executor exec)
         {
-            foreach (Function f in mSubFxns)
-                f.Eval(exec);
+            exec.Execute(mSubFxns);
         }
 
         public override string ToString()

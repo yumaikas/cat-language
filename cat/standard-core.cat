@@ -78,19 +78,19 @@ define dec : (int -> int)
   1 sub_int
 }
 
-define eqz : (int -> int bool)
+define eqz : (int -> bool)
 {{
   desc:
     Returns true if the top value is zero
   test:
     in: 5 eqz
-    out: 5 false
+    out: false
   test:
     in: 0 eqz
-    out: 0 true
+    out: true
 }}
 {
-  dup 0 eq
+  0 eq
 }
 
 define neqz : (int -> int bool)
@@ -99,27 +99,39 @@ define neqz : (int -> int bool)
     Returns true if the top value is zero
   test:
     in: 5 neqz
-    out: 5 true
+    out: true
   test:
     in: 0 neqz
-    out: 0 false
+    out: false
 }}
 {
   eqz not
 }
 
-define modn : (int int -> int bool)
+define modn : (int int -> bool)
 {{
   desc:
     Returns true if the second integer modulo the top integer is equal to zero.
-    It leaves the original input on the stack.
   test:
     in: 4 2 modn
-    out: 4 true
+    out: true
   test:
     in: 5 3 modn
-    out: 5 false
+    out: false
 }}
 {
-  [dup] dip mod_int eqz
+  mod_int eqz
+}
+
+define negate : (('A -> 'B bool) -> ('A -> 'B bool))
+{{
+  desc:
+    Takes a function that returns a boolean value (i.e. a predicate) and creates a new function that
+    is the negation of the predicate.
+  test:
+    in: 0 [eqz] negate apply
+    out: false
+}}
+{
+  [not] compose
 }

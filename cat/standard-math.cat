@@ -13,8 +13,8 @@ define neg : (any -> any)
 }}
 {
   [
-    int_type [neg_int] pair
-    double_type [neg_dbl] pair
+    [neg_int] int_type
+    [neg_dbl] double_type
   ] list
   dispatch1
 }
@@ -22,11 +22,11 @@ define neg : (any -> any)
 define add : (any any -> any)
 {
   [
-    int_type [add_int] pair
-    double_type [add_dbl] pair
-    byte_type [add_byte] pair
-    bit_type [add_bit] pair
-    string_type [add_str] pair
+    [add_int] int_type
+    [add_dbl] double_type
+    [add_byte] byte_type
+    [add_bit] bit_type
+    [add_str] string_type
   ] list
   dispatch2
 }
@@ -34,10 +34,10 @@ define add : (any any -> any)
 define sub : (any any -> any)
 {
   [
-    int_type [sub_int] pair
-    double_type [sub_dbl] pair
-    byte_type [sub_byte] pair
-    bit_type [sub_bit] pair
+    [sub_int] int_type
+    [sub_dbl] double_type
+    [sub_byte] byte_type
+    [sub_bit] bit_type
   ] list
   dispatch2
 }
@@ -45,10 +45,10 @@ define sub : (any any -> any)
 define mul : (any any -> any)
 {
   [
-    int_type [mul_int] pair
-    double_type [mul_dbl] pair
-    byte_type [mul_byte] pair
-    bit_type [mul_bit] pair
+    [mul_int] int_type
+    [mul_dbl] double_type
+    [mul_byte] byte_type
+    [mul_bit] bit_type
   ] list
   dispatch2
 }
@@ -56,10 +56,10 @@ define mul : (any any -> any)
 define mod : (any any -> any)
 {
   [
-    int_type [mod_int] pair
-    double_type [mod_dbl] pair
-    byte_type [mod_byte] pair
-    bit_type [mod_bit] pair
+    [mod_int] int_type
+    [mod_dbl] double_type
+    [mod_byte] byte_type
+    [mod_bit] bit_type
   ] list
   dispatch2
 }
@@ -67,10 +67,10 @@ define mod : (any any -> any)
 define div : (any any -> any)
 {
   [
-    int_type [div_int] pair
-    double_type [div_dbl] pair
-    byte_type [div_byte] pair
-    bit_type [div_bit] pair
+    [div_int] int_type
+    [div_dbl] double_type
+    [div_byte] byte_type
+    [div_bit] bit_type
   ] list
   dispatch2
 }
@@ -78,11 +78,11 @@ define div : (any any -> any)
 define lt : (any any -> bool)
 {
   [
-    int_type [lt_int] pair
-    double_type [lt_dbl] pair
-    byte_type [lt_byte] pair
-    bit_type [lt_bit] pair
-    string_type [lt_str] pair
+    [lt_int] int_type
+    [lt_dbl] double_type
+    [lt_byte] byte_type
+    [lt_bit] bit_type
+    [lt_str] string_type
   ] list
   dispatch2
   as_bool
@@ -91,11 +91,11 @@ define lt : (any any -> bool)
 define gt : (any any -> bool)
 {
   [
-    int_type [gt_int] pair
-    double_type [gt_dbl] pair
-    byte_type [gt_byte] pair
-    bit_type [gt_bit] pair
-    string_type [gt_str] pair
+    [gt_int] int_type
+    [gt_dbl] double_type
+    [gt_byte] byte_type
+    [gt_bit] bit_type
+    [gt_str] string_type
   ] list
   dispatch2
   as_bool
@@ -104,11 +104,11 @@ define gt : (any any -> bool)
 define lteq : (any any -> bool)
 {
   [
-    int_type [lteq_int] pair
-    double_type [lteq_dbl] pair
-    byte_type [lteq_byte] pair
-    bit_type [lteq_bit] pair
-    string_type [lteq_str] pair
+    [lteq_int] int_type
+    [lteq_dbl] double_type
+    [lteq_byte] byte_type
+    [lteq_bit] bit_type
+    [lteq_str] string_type
   ] list
   dispatch2
   as_bool
@@ -117,11 +117,11 @@ define lteq : (any any -> bool)
 define gteq : (any any -> bool)
 {
   [
-    int_type [gteq_int] pair
-    double_type [gteq_dbl] pair
-    byte_type [gteq_byte] pair
-    bit_type [gteq_bit] pair
-    string_type [gteq_str] pair
+    [gteq_int] int_type
+    [gteq_dbl] double_type
+    [gteq_byte] byte_type
+    [gteq_bit] bit_type
+    [gteq_str] string_type
   ] list
   dispatch2
   as_bool
@@ -171,15 +171,10 @@ define != { neq }
 //=============================================================================
 // Predicates and comparison functions
 
-define eqz : (int -> int bool)  { dup 0 eq }
-define neqz : (int -> int bool) { eqz not }
 define gtz : (int -> int bool) { dup 0 gt_int }
 define gteqz : (int -> int bool) { dup 0 gteq_int }
 define ltz : (int -> int bool) { dup 0 lt_int }
 define lteqz : (int -> int bool) { dup 0 lteq_int }
-
-// Not really a predicate, but used to generate predicates
-define modn : (any any -> any bool) { dupd mod 0 eq }
 
 define even : (any -> any bool) { 2 modn }
 define odd : (any -> any bool) { even not }

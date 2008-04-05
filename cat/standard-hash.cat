@@ -12,7 +12,8 @@ define hash_safe_get : (hash_list any any -> hash_list any)
     Gets a value from a hash_list. If it doesn't exist then uses the default
 }}
 {
-  [[hash_contains] keep] dip // => hash_list bool key default
+  [[hash_contains]
+  over [apply] dip] dip      // => hash_list bool key default
   quote                      // => hash_list bool key [default]
   [[hash_get] papply] dip    // => hash_list bool [key hash_get] [default]
   if                         // => hash_list result
@@ -25,9 +26,10 @@ define hash_add_chain : (hash_list any 'a -> hash_list)
     otherwise chain it to the current list item.
 }}
 {
-  [[nil hash_safe_get] keep] dip // => hash_list curr key value
-  swapd cons                     // => hash_list key list(curr, value)
-  hash_set                       // => hash_list
+  [[nil hash_safe_get]
+  over [apply] dip] dip       // => hash_list curr key value
+  swapd cons                  // => hash_list key list(curr, value)
+  hash_set                    // => hash_list
 }
 
 define list_to_hash : (list -> hash_list)
@@ -35,7 +37,9 @@ define list_to_hash : (list -> hash_list)
   desc:
     Converts a list of pairs into a hash list
 }}
-{  hash_list swap [unpair swap hash_add_chain] gfold }
+{
+  hash_list swap [unpair swap hash_add_chain] foreach
+}
 
 define self_join : (list -> list)
 {{
@@ -44,11 +48,15 @@ define self_join : (list -> list)
     In other words all unique first items in pairs are treated as keys,
     and all second values are concatenated together in a list.
 }}
-{ list_to_hash hash_to_list }
+{
+  list_to_hash hash_to_list
+}
 
 define join : (list list -> list)
 {{
   desc:
     Performs an inner join on two lists of pairs
 }}
-{ cat self_join }
+{
+  cat self_join
+}

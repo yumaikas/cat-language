@@ -31,8 +31,8 @@ namespace Cat
         public static CatList MakePair(Object x, Object y)
         {
             CatList result = new CatList();
-            result.Add(x);
             result.Add(y);
+            result.Add(x);
             return result;
         }
 

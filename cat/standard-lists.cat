@@ -132,7 +132,7 @@ define unpair : (list -> any any)
   uncons [head] dip
 }
 
-define fold : (list 'a ('a 'a -> 'a) -> list)
+define fold : (list 'a ('a 'b -> 'a) -> list)
 {{
   level:
     1
@@ -142,16 +142,19 @@ define fold : (list 'a ('a 'a -> 'a) -> list)
     Also known as a reduce function, this combines adjacent values
     in a list using an initial value and a binary function.
   semantics:
-    define fold(xs x f) { xs empty dig [x] [uncons x f apply f fold] if }
+    define fold(xs x f) { xs empty [x] [xs uncons x swap f apply f fold] if }
   test:
     in: [1 2 3 4] list 0 [add_int] fold
     out: 10
   test:
-    in: [1 2 3 4] list 0 [pop] fold
+    in: [1 2 3 4] list 0 [popd] fold
     out: 1
 }}
 {
-  [empty] dip2 dig [pop popd] [[uncons] dip2 keep fold] if
+  [empty] dip2 dig
+    [pop popd]
+    [[[uncons] dip swap] dip keep fold]
+  if
 }
 
 define rev : (list -> list)
@@ -163,7 +166,7 @@ define rev : (list -> list)
     out: [3 2 1] list
 }}
 {
-  nil [swons] fold
+  nil [cons] fold
 }
 
 define rfold
@@ -182,8 +185,11 @@ define rfold
     in: [1 2 3 4] list 0 [add_int] rfold
     out: 10
   test:
-    in: [1 2 3 4] list 0 [pop] rfold
+    in: [1 2 3 4] list 0 [popd] rfold
     out: 4
+  test:
+    in: [1 2 3 4] list nil [cons] rfold
+    out: [1 2 3 4] list
 }}
 {
   [rev] dip2 fold
@@ -206,13 +212,14 @@ define filter : (list ('a -> bool) -> list)
   desc:
     Creates a list from another keeping only values for which the predicate is true
   semantics:
-    define filter(xs pred) { xs nil [pred [cons] [pop] if] foldr }
+    define filter(xs pred) { xs nil [dup pred [cons] [pop] if] rfold }
   test:
-    in: [1 2 3 4] list [2 mod_int eqz] filter
-    out: [1 3] list
+    in: [1 2 3 4] list [2 modn] filter
+    out: [2 4] list
 }}
 {
-  [dupd apply [cons] [pop] if] papply nil swap rfold
+  [dupd apply [cons] [pop] if]
+  papply nil swap rfold
 }
 
 define split : (list ('a -> bool) -> list list)
@@ -222,6 +229,8 @@ define split : (list ('a -> bool) -> list list)
   test:
     in: [0 1 2 3 4] list [2 mod_int eqz] split
     out: [1 3] list [0 2 4] list
+  notes:
+    this implementation is not very efficient
 }}
 {
   dup2 filter
@@ -300,14 +309,52 @@ define dtail : (list -> list list)
 
 define head_eq : (list any -> list bool)
 {{
+  desc:
+    Returns true if the head of a list is equal to the value on the top
+    of the stack.
   test:
     in: [1 2] list 2 head_eq popd
     out: true
-
-  test:
+   test:
     in: [1 2] list 1 head_eq popd
     out: false
 }}
 {
   [dhead] dip eq
+}
+
+define concat : (list list -> list)
+{{
+  desc:
+    Concatenates two lists together
+  test:
+    in: [1 2] list [3 4] list concat
+    out: [1 2 3 4] list
+}}
+{
+  swap [cons] rfold
+}
+
+define flatten : (list -> list)
+{{
+  desc:
+    Converts a list of lists into a single list, by appending them together
+  test:
+    in: [[1 2] list [3] list [] list] list flatten
+    out: [1 2 3] list
+}}
+{
+  nil [concat] rfold
+}
+
+define n : (int -> list)
+{{
+  desc:
+    Constructs a list of consectutive numbers from 0 to n-1
+  test:
+    in: 4 n
+    out: [3 2 1 0] list
+}}
+{
+  nil [cons] dig for rev
 }
