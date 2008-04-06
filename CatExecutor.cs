@@ -43,6 +43,8 @@ namespace Cat
         
         public Object Peek()
         {
+            if (stack.Count == 0)
+                throw new Exception("stack underflow occured");
             return stack[stack.Count - 1];
         }
 
@@ -60,6 +62,8 @@ namespace Cat
 
         public Object PeekBelow(int n)
         {
+            if (stack.Count <= n)
+                throw new Exception("stack underflow occured");
             return stack[stack.Count - 1 - n];
         }
 
@@ -83,6 +87,8 @@ namespace Cat
 
         public void Swap()
         {
+            if (stack.Count < 2)
+                throw new Exception("stack underflow occured");
             Object tmp = stack[stack.Count - 2];
             stack[stack.Count - 2] = stack[stack.Count - 1];
             stack[stack.Count - 1] = tmp;

@@ -180,21 +180,7 @@ namespace Cat
             }
         }
 
-        private static string NodesToString(List<CatAstNode> nodes)
-        {
-            string ret = "";
-            for (int i=0; i < nodes.Count; ++i)
-            {
-                if (i > 0) ret += " ";
-                if (i > 5) return ret + " ... ";
-
-                // BUG: this is incorrect. 
-                // As inner terms are changed, this should be changed.
-                ret += nodes[i].ToString();
-            }
-            return ret;
-        }
-
+        /* DEBUG: 
         private static string VarsToString(List<string> vars)
         {
             string ret = "";
@@ -202,6 +188,7 @@ namespace Cat
                 ret += s + " ";
             return ret;
         }
+         */
 
         /// <summary>
         /// Converts a list of terms to point-free form. 

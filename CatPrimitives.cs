@@ -30,6 +30,28 @@ namespace Cat
 
     public class MetaCommands
     {
+        public class Help : PrimitiveFunction
+        {
+            public Help()
+                : base("#help", "( ~> )", "outputs a help message", "meta")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                Output.WriteLine("Some basic commands to get you started:");
+                Output.WriteLine("  \"filename\" #load - loads a source file");
+                Output.WriteLine("  [...] #trace - runs a function in trace mode");
+                Output.WriteLine("  #testall - runs all unit tests");
+                Output.WriteLine("  [...] #type - shows the type of a function");
+                Output.WriteLine("  [...] #metacat - optimizes a function by applying rewriting rules");
+                Output.WriteLine("  #defs - lists all loaded commands");
+                Output.WriteLine("  \"instruction\" #def - detailed help on an instruction");
+                Output.WriteLine("  \"prefix\" #defmatch - descrioes all instructions starting with prefix");
+                Output.WriteLine("  #exit - exits the Cat interpreter");
+                Output.WriteLine("");
+            }
+        }
+
         public class Load : PrimitiveFunction
         {
             public Load()
@@ -196,10 +218,10 @@ namespace Cat
             }
         }
 
-        public class Def : PrimitiveFunction
+        public class DefMatch : PrimitiveFunction
         {
-            public Def()
-                : base("#def", "(string ~> )", "outputs a detailed description of all instruction starting with the name", "meta")
+            public DefMatch()
+                : base("#defmatch", "(string ~> )", "outputs a detailed description of all instructions starting with the name", "meta")
             {
             }
 
@@ -218,10 +240,27 @@ namespace Cat
             }
         }
 
+        public class Def : PrimitiveFunction
+        {
+            public Def()
+                : base("#def", "(string ~> )", "outputs a detailed description of the instruction", "meta")
+            {
+            }
+
+            public override void Eval(Executor exec)
+            {
+                string sName = exec.PopString();
+                Function f = exec.Lookup(sName);
+                if (f == null)
+                    Output.WriteLine("instruction '" + sName + "' was not found"); else
+                    Output.WriteLine(f.GetImplStr());
+            }
+        }
+
         public class Trace : PrimitiveFunction
         {
             public Trace()
-                : base("#trace", "('A ('A -> 'B) ~> 'B)", "used to trace the execution of a function")
+                : base("#trace", "('A ('A -> 'B) ~> 'B)", "used to trace the execution of a function", "meta")
             { }
 
             public override void Eval(Executor exec)
@@ -246,13 +285,14 @@ namespace Cat
         public class EvalFun : PrimitiveFunction
         {
             public EvalFun()
-                : base("eval", "(string ~> list)", "evaluates a string as a function, generating a list")
+                : base("eval", "(list string ~> list)", "evaluates a string as a function using the list as a stack", "meta")
             { }
 
             public override void Eval(Executor exec)
             {
                 string s = exec.PopString();
-                Executor aux = new Executor();
+
+                Executor aux = new Executor(exec);
                 aux.Execute(s);
                 exec.Push(aux.GetStackAsList());
             }
@@ -1696,7 +1736,7 @@ namespace Cat
                 CatList list = exec.TypedPeek<CatList>();
                 Object x = list[n];
                 list[n] = o;
-                exec.Push(o);
+                exec.Push(x);
             }
         }
         #endregion

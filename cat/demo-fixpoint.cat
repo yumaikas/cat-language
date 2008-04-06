@@ -32,19 +32,28 @@ define m_while : ('A ('A -> 'A) ('A -> 'A bool) -> 'A)
 {{
   desc:
     A while function written using the m (a.k.a. U) combinator
+  test:
+    in: 1 5 [[2 mul_int] dip dec] [is_neqz] m_while pop
+    out: 32
 }}
 {
   // [$A] [$B]
-  [swap] papply swap // [$B swap] $A
-  [dip m] papply     // [$B swap] [[$A] dip m]
-  quote compose      // [$B dip swap [[$A] dip m]]
-  [[pop] if] compose // [$B dip swap [[$A] dip m] [pop] if]
+  [dip swap] papply      // [$A] [[$B] dip swap]
+  swap               // [[$B] dip swap] [$A]
+  [dip m] papply     // [[$B] dip swap] [[$A] swap m]
+  quote compose      // [[$B] dip swap [[$A] dip m]]
+  [[pop] if] compose // [[$B] dip swap [[$A] dip m] [pop] if]
   m
 }
 
 define y
+{{
+  desc:
+    This is the famous y combinator. It executes a function with itself as an argument.
+    The function is expected to terminate on its own when a "fixpoint" is reached.
+}}
 {
-  swap [m] dip apply m
+  [dup papply] swap compose dup apply
 }
 
 define y_fact : (int -> int)
@@ -57,11 +66,10 @@ define y_fact : (int -> int)
 }}
 {
   [
-    over 0 eq
-    [pop2 1]
-    [[dup dec] dip apply mul_int]
+    dupd swap 0 eq
+      [pop2 1]
+      [[dup dec] dip apply mul_int]
     if
   ]
   y
 }
-

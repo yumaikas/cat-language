@@ -257,6 +257,7 @@ namespace Cat
                     GetRight().ReplaceConstraint(i, Clone());
         }
 
+        /* TEMP: restore when I go back to recursive relations
         private bool CanRollupRelation(Constraint child)
         {
             VarNameMap map = new VarNameMap();
@@ -306,6 +307,7 @@ namespace Cat
             }
             return true;
         }
+         */
 
         /// <summary>
         /// We want to compact any recursive relations as much as possible, for example:
@@ -528,7 +530,10 @@ namespace Cat
         {
             int ret = 0;
             foreach (Constraint c in GetSubConstraints())
-                ++ret;
+            {
+                // artificial check to remove unused variable warning.
+                if (c != null) ++ret;
+            }
             return ret;
         }
 

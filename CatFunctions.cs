@@ -384,6 +384,7 @@ namespace Cat
 
         public QuotedFunction GetQuotedFxn()
         {
+            // An important optimization: this can be very slow.
             if (mQF == null)
                 mQF = new QuotedFunction(mSubFxns, CatFxnType.Unquote(mpFxnType));
             return mQF;

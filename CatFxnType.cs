@@ -198,6 +198,7 @@ namespace Cat
             }
         }
 
+        /* TODO: LOWPRI: remove
         private CatTypeVarList GetVarsExcept(CatFxnType except)
         {
             CatTypeVarList ret = new CatTypeVarList();
@@ -222,6 +223,7 @@ namespace Cat
                 }
             }
         }
+        */
 
         /// <summary>
         /// Every kind variable has a scope in which it is free. 

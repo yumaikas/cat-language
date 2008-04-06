@@ -17,8 +17,6 @@ namespace Cat
 {
     public partial class GraphWindow : Form
     {
-        List<Object> mValues = new List<Object>();
-        List<String> mNames = new List<String>();
         List<GraphicCommand> mCmds = new List<GraphicCommand>();
         Mutex mMutex = new Mutex();
         
@@ -134,7 +132,6 @@ namespace Cat
     {
         static GraphWindow mWindow;
         static EventWaitHandle mWait = new EventWaitHandle(false, EventResetMode.AutoReset);
-        static Executor mExec = new Executor();
         static Pen mPen = new Pen(Color.Black);
         static bool mbPenUp = false;
         static Pen turtlePen = new Pen(Color.Blue);
@@ -335,12 +332,6 @@ namespace Cat
             mWindow.SaveToFile(s);
         }
         #endregion 
-
-
-        static private Form GetForm()
-        {
-            return mWindow;
-        }
 
         static private void LaunchWindow()
         {

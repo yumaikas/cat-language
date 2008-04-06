@@ -6,17 +6,6 @@
 //=============================================================================
 // Function manipulation operators
 
-define papply : ('a ('B 'a -> 'C) -> ('B -> 'C))
-{{
-  desc:
-    Partial application function, binds the top-most argument
-    of a function to the second value on the stack creating a new function.
-  test:
-    in: 3 5 [add_int] papply apply
-    out: 8
-}}
-{ [quote] dip compose }
-
 define papply2 : ('a 'b ('C 'a 'b -> 'D) -> ('C -> 'D))
 {{
   desc:
@@ -46,7 +35,6 @@ define rpapply : (('B 'a -> 'C) 'a -> ('B -> 'C))
     out: 8
 }}
 { quote swap compose }
-
 
 //==============================================================================
 // DipN
@@ -132,23 +120,10 @@ define apply2 : ('A ('A -> 'A) -> 'A)
 }}
 { keep apply }
 
-define negate : (('A -> 'B bool) -> ('A -> 'B bool))
-{{
-  desc:
-    Takes any function that returns a boolean, and returns the a new function that negates
-    result.
-  test:
-    in: 42 [42 eq] negate apply
-    out: false
-}}
-{
-  [not] compose
-}
-
 define push : (('A -> 'B) 'c -> ('A -> 'B 'c))
 {{
   desc:
-    Quotes the top value and composes it with a function below  it.
+    Quotes the top value and composes it with a function below it.
   test:
     in: [1] 2 push list
     out: [1 2] list
