@@ -20,7 +20,9 @@ namespace Cat
         static Executor exec = new Executor();
         
         public static string gsDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\cat";
-        static string gsSessionFile = gsDataFolder + "\\session.cat";
+        
+        // TODO: LOWPRI: reintroduce sessions 
+        //static string gsSessionFile = gsDataFolder + "\\session.cat";
 
         static void Main(string[] a)
         {
@@ -30,7 +32,9 @@ namespace Cat
                 WriteLine("version " + Config.gsVersion);
                 WriteLine("by Christopher Diggins");
                 WriteLine("licensed under MIT License 1.0");
-                WriteLine("http://www.cat-language.com");
+                WriteLine("http://www.cat-language.com");                
+                WriteLine("");
+                WriteLine("for help, type in #help followed by the enter key");
                 WriteLine("");
             }
 

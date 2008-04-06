@@ -337,7 +337,7 @@ namespace Cat
         }
     }
 
-    // TODO: figure out why this is here.
+    /* // TODO: figure out why this is here.
     public class AstDeclare : CatAstNode
     {
         AstType mType;
@@ -362,6 +362,7 @@ namespace Cat
             }
         }
     }
+     */
 
     public class AstName : AstExpr
     {
@@ -791,7 +792,7 @@ namespace Cat
             {
                 AstFxnType typeNode = new AstFxnType(node.GetChild(1));
                 mType = CatFxnType.Create(typeNode) as CatFxnType;
-                if (!(mType is CatFxnType)) throw new Exception("expected function type " + typeNode.ToString());
+                if (mType == null) throw new Exception("expected function type " + typeNode.ToString());
             }
 
             CheckLabel(AstLabel.MacroStackVar);

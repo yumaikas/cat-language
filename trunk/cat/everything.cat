@@ -6,7 +6,6 @@
 "metacat-macros.cat" #load
 "interpreter-cmds.cat" #load
 "interpreter-flags.cat" #load
-
 "standard-core.cat" #load
 "standard-shuffle.cat" #load
 "standard-combinators.cat" #load
@@ -16,15 +15,8 @@
 "standard-hash.cat" #load
 "standard-vectors.cat" #load
 "standard-geometry.cat" #load
-
-// Not finished.
-// "standard-trees.cat" #load
-// "parsing.cat" #load
-// "test-misc.cat" #load
-// "test-metacat.cat" #load
-// "deprecated.cat" #load
-
 "clr-graphics.cat" #load
 "clr-regex.cat" #load
 "demo-examples.cat" #load
 "demo-graphics.cat" #load
+"demo-fixpoint.cat" #load

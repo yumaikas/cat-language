@@ -171,10 +171,10 @@ define != { neq }
 //=============================================================================
 // Predicates and comparison functions
 
-define gtz : (int -> int bool) { dup 0 gt_int }
-define gteqz : (int -> int bool) { dup 0 gteq_int }
-define ltz : (int -> int bool) { dup 0 lt_int }
-define lteqz : (int -> int bool) { dup 0 lteq_int }
+define gtz : (int -> bool) { 0 gt_int }
+define gteqz : (int -> bool) { 0 gteq_int }
+define ltz : (int -> bool) { 0 lt_int }
+define lteqz : (int -> bool) { 0 lteq_int }
 
 define even : (any -> any bool) { 2 modn }
 define odd : (any -> any bool) { even not }
@@ -185,6 +185,12 @@ define is_gt : (any any -> any bool) { dupd gt }
 define is_gteq : (any any -> any bool) { dupd gteq }
 define is_lt : (any any -> any bool) { dupd lt }
 define is_lteq : (any any -> any bool) { dupd lteq }
+define is_eqz : ('t -> 't bool)  { dup 0 eq }
+define is_neqz : ('t -> 't bool) { dup 0 neq }
+define is_gtz : (any -> any bool) { dup 0 gt }
+define is_gteqz : (any -> any bool) { dup 0 gteq }
+define is_ltz : (any -> any bool) { dup 0 lt }
+define is_lteqz : (any -> any bool) { dup 0 lteq }
 
 define are_eq : ('t 't -> 't 't bool)  { dup2 eq }
 define are_neq : ('t 't -> 't 't bool) { dup2 neq }

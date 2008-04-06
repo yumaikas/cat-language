@@ -562,7 +562,8 @@ namespace Cat
 
         public override string ToString()
         {
-            return "meta_" + TypeToString(typeof(T));
+            //return "meta_" + TypeToString(typeof(T));
+            return mData.ToString();
         }
     }
 }

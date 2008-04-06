@@ -165,7 +165,6 @@ namespace Cat
                     {
                         // TODO: handle typed terms within a quotation.
                         AstMacroQuote macroQuote = t as AstMacroQuote;
-                        CatExpr localFxns = new CatExpr();
                         List<AstMacroTerm> localPattern = macroQuote.mTerms;
                         PushFunction q = new PushFunction(PatternToFxns(names, localPattern));
                         ret.Add(q);
