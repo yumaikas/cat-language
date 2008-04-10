@@ -54,9 +54,13 @@ namespace Cat
         {
             return msName;
         }
-        public string GetTags()
+        public string GetRawTags()
         {
             return msTags;
+        }
+        public string[] GetTags()
+        {
+            return msTags.Split(new char[] { ',' });
         }
         public override string ToString()
         {

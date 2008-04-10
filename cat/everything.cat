@@ -12,6 +12,7 @@
 "standard-control-flow.cat" #load
 "standard-lists.cat" #load
 "standard-math.cat" #load
+"standard-predicates.cat" #load
 "standard-hash.cat" #load
 "standard-vectors.cat" #load
 "standard-geometry.cat" #load

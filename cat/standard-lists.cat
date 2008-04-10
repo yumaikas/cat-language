@@ -132,7 +132,7 @@ define unpair : (list -> any any)
   uncons [head] dip
 }
 
-define fold : (list 'a ('a 'b -> 'a) -> list)
+define fold : (list 'a ('a 'b -> 'a) -> 'a)
 {{
   level:
     1
@@ -151,10 +151,12 @@ define fold : (list 'a ('a 'b -> 'a) -> list)
     out: 1
 }}
 {
-  [empty] dip2 dig
-    [pop popd]
-    [[[uncons] dip swap] dip keep fold]
-  if
+  dig empty [pop2] [uncons swap [swap keep] dip bury fold] if
+  // Here is an alternative implementation that exposes the list during iteration.
+  // the semantics are very different in this context.
+  // [empty] dip2 dig [pop popd] [[[uncons] dip swap] dip keep fold] if
+  // foldl f z [] = z
+  // foldl f z (x:xs) = foldl f (f z x) xs
 }
 
 define rev : (list -> list)

@@ -64,7 +64,8 @@ namespace Cat
         TypeName,
         TypeVar,
         StackVar,
-        Macro,
+        MacroRule,
+        MacroProp,
         MacroPattern,
         MacroQuote,
         MacroTypeVar,
@@ -143,7 +144,9 @@ namespace Cat
                     return new AstSimpleType(node);
                 case AstLabel.StackVar:
                     return new AstStackVar(node);
-                case AstLabel.Macro:
+                case AstLabel.MacroRule:
+                    return new AstMacro(node);
+                case AstLabel.MacroProp:
                     return new AstMacro(node);
                 case AstLabel.MacroPattern:
                     return new AstMacroPattern(node);
@@ -709,9 +712,17 @@ namespace Cat
             : base(node)
         {
             CheckChildCount(node, 2);
-            CheckLabel(AstLabel.Macro);
+            CheckLabel(AstLabel.MacroRule);
             mSrc = new AstMacroPattern(node.GetChild(0));
             mDest = new AstMacroPattern(node.GetChild(1));
+        }
+    }
+
+    public class AstMacroProperty : AstMacro
+    {
+        public AstMacroProperty(PegAstNode node)
+            : base(node)
+        {
         }
     }
 

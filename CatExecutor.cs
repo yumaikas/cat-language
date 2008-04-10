@@ -423,9 +423,10 @@ namespace Cat
                 if (mi is MethodInfo)
                 {
                     MethodInfo meth = mi as MethodInfo;
-                    if (meth.IsStatic)
-                    {
-                        AddMethod(null, meth);
+                    if (meth.IsStatic) {
+                        Function f = AddMethod(null, meth);
+                        if (f != null)
+                            f.msTags = "level2";
                     }
                 }
             }
@@ -474,22 +475,27 @@ namespace Cat
         /// <summary>
         /// Methods allow overloading of function definitions.
         /// </summary>
-        public void AddMethod(Object o, MethodInfo mi)
+        public Function AddMethod(Object o, MethodInfo mi)
         {
             // Does not add public methods. 
             if (!mi.IsPublic)
-                return;                
+                return null;                
 
             if (mi.IsStatic)
                 o = null;
 
             Method f = new Method(o, mi);
             AddFunction(f);
+            return f;
         }
 
-        public Dictionary<String, Function>.ValueCollection GetAllFunctions()
+        public List<Function> GetAllFunctions()
         {
-            return dictionary.Values;
+            List<Function> fxns = new List<Function>(dictionary.Values);
+            fxns.Sort(delegate(Function x, Function y) { 
+                return x.GetName().CompareTo(y.GetName()); 
+            });
+            return fxns;
         }
 
         public void TestFunction(Function f)
