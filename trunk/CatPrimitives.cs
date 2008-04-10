@@ -46,9 +46,31 @@ namespace Cat
                 Output.WriteLine("  [...] #metacat - optimizes a function by applying rewriting rules");
                 Output.WriteLine("  #defs - lists all loaded commands");
                 Output.WriteLine("  \"instruction\" #def - detailed help on an instruction");
-                Output.WriteLine("  \"prefix\" #defmatch - descrioes all instructions starting with prefix");
+                Output.WriteLine("  \"prefix\" #defmatch - describes all instructions starting with prefix");
                 Output.WriteLine("  #exit - exits the Cat interpreter");
                 Output.WriteLine("");
+            }
+        }
+
+        public class MakeHelp : PrimitiveFunction
+        {
+            public MakeHelp()
+                : base("#makehelp", "( ~> )", "generates an HTML help file")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                string sHelpFile = MainClass.gsDataFolder + "\\help.html";
+                StreamWriter sw = new StreamWriter(sHelpFile);
+                sw.WriteLine("<html><head><title>Cat Help File</title></head><body><table width='100%'>");
+                foreach (Function f in exec.GetAllFunctions())
+                {
+                    string s = "<tr valign='top'><td>" + f.GetName() + "</td><td>" + f.GetRawTags() + "</td><td>" + f.GetDesc() + "</td></tr>";
+                    sw.WriteLine(s);
+                }
+                sw.WriteLine("</table></body></html>");
+                sw.Close();
+                Output.WriteLine("saved help file to " + sHelpFile);
             }
         }
 
@@ -154,9 +176,9 @@ namespace Cat
             }
         }
 
-        public class Doc : PrimitiveFunction
+        public class MetaData : PrimitiveFunction
         {
-            public Doc()
+            public MetaData()
                 : base("#metadata", "(('A -> 'B) ~> ('A -> 'B) list)", "outputs the meta-data associated with a function", "meta")
             { }
 
@@ -207,12 +229,7 @@ namespace Cat
 
             public override void Eval(Executor exec)
             {
-                List<Function> fxns = new List<Function>(exec.GetAllFunctions());
-                fxns.Sort(delegate(Function x, Function y) { 
-                    return x.GetName().CompareTo(y.GetName()); 
-                });
-
-                foreach (Function f in fxns)
+                foreach (Function f in exec.GetAllFunctions())
                     Output.Write(f.GetName() + "\t");
                 Output.WriteLine("");
             }
@@ -228,13 +245,7 @@ namespace Cat
             public override void Eval(Executor exec)
             {
                 string sName = exec.PopString();
-
-                List<Function> fxns = new List<Function>(exec.GetAllFunctions());
-                fxns.Sort(delegate(Function x, Function y) { 
-                    return x.GetName().CompareTo(y.GetName()); 
-                });
-
-                foreach (Function f in fxns)
+                foreach (Function f in exec.GetAllFunctions())
                     if (f.GetName().IndexOf(sName) == 0)
                         Output.WriteLine(f.GetImplStr());
             }
@@ -285,7 +296,7 @@ namespace Cat
         public class EvalFun : PrimitiveFunction
         {
             public EvalFun()
-                : base("eval", "(list string ~> list)", "evaluates a string as a function using the list as a stack", "meta")
+                : base("eval", "(list string ~> list)", "evaluates a string as a function using the list as a stack", "level2,misc")
             { }
 
             public override void Eval(Executor exec)
@@ -301,7 +312,7 @@ namespace Cat
         public class Str : PrimitiveFunction
         {
             public Str()
-                : base("str", "(any -> string)", "converts any value into a string representation.")
+                : base("str", "(any -> string)", "converts any value into a string representation.", "level2,strings")
             { }
 
             public override void Eval(Executor exec)
@@ -313,7 +324,7 @@ namespace Cat
         public class MakeByte : PrimitiveFunction
         {
             public MakeByte()
-                : base("to_byte", "(int -> byte)", "converts an integer into a byte, throwing away sign and ignoring higher bits")
+                : base("int_to_byte", "(int -> byte)", "converts an integer into a byte, throwing away sign and ignoring higher bits", "level1,numeric,conversion")
             { }
 
             public override void Eval(Executor exec)
@@ -326,7 +337,7 @@ namespace Cat
         public class BinStr : PrimitiveFunction
         {
             public BinStr()
-                : base("bin_str", "(int -> string)", "converts a number into a binary string representation.")
+                : base("bin_str", "(int -> string)", "converts a number into a binary string representation.", "level2,string,numeric,conversion")
             { }
 
             public override void Eval(Executor exec)
@@ -354,7 +365,7 @@ namespace Cat
         public class HexStr : PrimitiveFunction
         {
             public HexStr()
-                : base("hex_str", "(int -> string)", "converts a number into a hexadecimal string representation.")
+                : base("hex_str", "(int -> string)", "converts a number into a hexadecimal string representation.", "level2,string,numeric,conversion")
             { }
 
             public override void Eval(Executor exec)
@@ -370,7 +381,7 @@ namespace Cat
         public class Halt : PrimitiveFunction
         {
             public Halt()
-                : base("halt", "(int ~> )", "halts the program with an error code")
+                : base("halt", "(int ~> )", "halts the program with an error code", "level2,application")
             { }
 
             public override void Eval(Executor exec)
@@ -384,7 +395,7 @@ namespace Cat
         public class Id : PrimitiveFunction
         {
             public Id()
-                : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.")
+                : base("id", "('a -> 'a)", "does nothing, but requires one item on the stack.", "level1,misc")
             { }
 
             public override void Eval(Executor exec)
@@ -395,7 +406,7 @@ namespace Cat
         public class Eq : PrimitiveFunction
         {
             public Eq()
-                : base("eq", "('a 'a -> bool)", "returns true if both items on stack have the same value")
+                : base("eq", "('a 'a -> bool)", "returns true if both items on stack have the same value", "level1,comparison")
             { }
 
             public override void Eval(Executor exec)
@@ -409,7 +420,7 @@ namespace Cat
         public class Dup : PrimitiveFunction
         {
             public Dup()
-                : base("dup", "('a -> 'a 'a)", "duplicate the top item on the stack")
+                : base("dup", "('a -> 'a 'a)", "duplicate the top item on the stack", "level0,stack")
             { }
 
             public override void Eval(Executor exec)
@@ -421,7 +432,7 @@ namespace Cat
         public class Pop : PrimitiveFunction
         {
             public Pop()
-                : base("pop", "('a -> )", "removes the top item from the stack")
+                : base("pop", "('a -> )", "removes the top item from the stack", "level0,stack")
             { }
 
             public override void Eval(Executor exec)
@@ -433,7 +444,7 @@ namespace Cat
         public class Swap : PrimitiveFunction
         {
             public Swap()
-                : base("swap", "('a 'b -> 'b 'a)", "swap the top two items on the stack")
+                : base("swap", "('a 'b -> 'b 'a)", "swap the top two items on the stack", "level0,stack")
             { }
 
             public override void Eval(Executor exec)
@@ -447,7 +458,7 @@ namespace Cat
         public class ApplyFxn : PrimitiveFunction
         {
             public ApplyFxn()
-                : base("apply", "('A ('A -> 'B) -> 'B)", "applies a function to the stack (i.e. executes an instruction)")
+                : base("apply", "('A ('A -> 'B) -> 'B)", "applies a function to the stack (i.e. executes an instruction)", "level0,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -460,7 +471,7 @@ namespace Cat
         public class ApplyOneFxn : PrimitiveFunction
         {
             public ApplyOneFxn()
-                : base("A", "('a ('a -> 'b) -> 'b)", "applies a unary function to its argument")
+                : base("A", "('a ('a -> 'b) -> 'b)", "applies a unary function to its argument", "functions")
             { }
 
             public override void Eval(Executor exec)
@@ -470,10 +481,10 @@ namespace Cat
             }
         }
 
-        public class PartialEvalFxn : PrimitiveFunction
+        public class PartialApplyFxn : PrimitiveFunction
         {
-            public PartialEvalFxn()
-                : base("papply", "('a ('A 'a -> 'B) -> ('A -> 'B))", "binds the top argument to the top value in the stack, also know as partial-application")
+            public PartialApplyFxn()
+                : base("papply", "('a ('A 'a -> 'B) -> ('A -> 'B))", "partial application: binds the top argument to the top value in the stack", "level0,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -485,7 +496,7 @@ namespace Cat
         public class Dip : PrimitiveFunction
         {
             public Dip()
-                : base("dip", "('A 'b ('A -> 'C) -> 'C 'b)", "evaluates a function, temporarily removing second item")
+                : base("dip", "('A 'b ('A -> 'C) -> 'C 'b)", "evaluates a function, temporarily removing second item", "level0,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -501,7 +512,7 @@ namespace Cat
         {
             public Compose()
                 : base("compose", "(('A -> 'B) ('B -> 'C) -> ('A -> 'C))",
-                    "creates a function by composing (concatenating) two existing functions")
+                    "creates a function by composing (concatenating) two existing functions", "level0,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -517,7 +528,7 @@ namespace Cat
         {
             public Pull()
                 : base("pull", "(( -> 'A 'b) -> ( -> 'A) 'b)",
-                    "[experimental] deconstructs a function")
+                    "deconstructs a function", "experimental")
             { }
 
             public override void Eval(Executor exec)
@@ -553,7 +564,7 @@ namespace Cat
         {
             public Quote()
                 : base("quote", "('a -> ( -> 'a))",
-                    "creates a constant generating function from the top value on the stack")
+                    "creates a constant generating function from the top value on the stack", "level0,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -567,7 +578,7 @@ namespace Cat
         public class Dispatch1 : PrimitiveFunction
         {
             public Dispatch1()
-                : base("dispatch1", "('a list -> any)", "dynamically dispatches a function depending on the type on top of the stack")
+                : base("dispatch1", "('a list -> any)", "dynamically dispatches a function depending on the type on top of the stack", "level1,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -591,7 +602,7 @@ namespace Cat
         public class Dispatch2 : PrimitiveFunction
         {
             public Dispatch2()
-                : base("dispatch2", "('a 'b list -> any)", "dynamically dispatches a function depending on the type on top of the stack")
+                : base("dispatch2", "('a 'b list -> any)", "dynamically dispatches a function depending on the type on top of the stack", "level1,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -618,7 +629,7 @@ namespace Cat
         {
             public Explode()
                 : base("explode", "('A -> 'B) -> list)",
-                    "breaks a function up into a list of instructions")
+                    "breaks a function up into a list of instructions", "level2,functions")
             { }
 
             public CatList FxnsToList(CatExpr fxns)
@@ -656,7 +667,7 @@ namespace Cat
         public class Default : PrimitiveFunction
         {
             public Default()
-                : base("default", "('A -> 'B) -> ('A int -> 'B)", "used to construct a default 'case' statement")
+                : base("default", "('A -> 'B) -> ('A int -> 'B)", "used to construct a default 'case' statement", "level1,control,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -671,7 +682,8 @@ namespace Cat
         public class Case : PrimitiveFunction
         {
             public Case()
-                : base("case", "('A int -> 'B) ('A -> 'B) int -> ('A int -> 'B)", "used to construct a 'case' statement member of a switch statement")
+                : base("case", "('A int -> 'B) ('A -> 'B) int -> ('A int -> 'B)", "used to construct a 'case' statement member of a switch statement", 
+                    "level1,control,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -693,10 +705,11 @@ namespace Cat
             }
         }
 
+        /*
         public class CallCC : PrimitiveFunction
         {
             public CallCC()
-                : base("callcc", "('A ('A ('B -> 'C) -> 'B) ~> 'B)", "calls a function with the current continuation")
+                : base("callcc", "('A ('A ('B -> 'C) -> 'B) ~> 'B)", "calls a function with the current continuation", "experimental")
             { }
 
             public override void Eval(Executor exec)            
@@ -705,13 +718,13 @@ namespace Cat
                 // TODO: make a copy of the stack, and a pointer to the current instruction. 
                 // this implies that I need to make a copy of the index stream.
             }
-        }
+        }*/
 
         public class While : PrimitiveFunction
         {
             public While()
                 : base("while", "('A ('A -> 'A) ('A -> 'A bool) -> 'A)",
-                    "executes a block of code repeatedly until the condition returns true")
+                    "executes a block of code repeatedly until the condition returns true", "level1,control")
             { }
 
             public override void Eval(Executor exec)
@@ -732,7 +745,7 @@ namespace Cat
         {
             public If()
                 : base("if", "('A bool ('A -> 'B) ('A -> 'B) -> 'B)",
-                    "executes one predicate or another whether the condition is true")
+                    "executes one predicate or another whether the condition is true", "level0,control")
             { }
 
             public override void Eval(Executor exec)
@@ -749,46 +762,13 @@ namespace Cat
             }
         }
 
-        /* TODO: remove
-        public class Switch : PrimitiveFunction
-        {
-            public Switch()
-                : base("switch", "(any list -> any)",
-                    "chooses the first item from a list of pairs, when the second item matches the switch value")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                CatList choices = exec.PopList();
-                Object compare = exec.Pop();
-                for (int i=0; i < choices.Count; ++i)
-                {
-                    Object o = choices[i];
-                    if (!(o is CatList))
-                        throw new Exception("argument to switch must be a list of pairs");
-                    CatList pair = o as CatList;
-                    if (pair.Count != 2)
-                        throw new Exception("argument to switch must be a list of pairs");
-                    Object first = pair[0];
-                    Object second = pair[1];
-                    if (second.Equals(compare))
-                    {
-                        exec.Push(first);
-                        return;
-                    }
-                }
-                throw new Exception("failed to match switch statement");
-            }
-        }
-         */
-
         public class BinRec : PrimitiveFunction
         {
             // The fact that it takes 'b instead of 'B is a minor optimization for untyped implementations
             // I may ignore it later on.
             public BinRec()
                 : base("bin_rec", "('a ('a -> bool) ('a -> 'b) ('a -> 'C 'a 'a) ('C 'b 'b -> 'b) -> 'b)",
-                    "execute a binary recursion process")
+                    "execute a binary recursion process", "level1,control")
             { }
 
             public class BinRecHelper
@@ -889,7 +869,7 @@ namespace Cat
         public class Throw : PrimitiveFunction
         {
             public Throw()
-                : base("throw", "(any -> )", "throws an exception")
+                : base("throw", "(any -> )", "throws an exception", "level2,control")
             { }
 
             public override void Eval(Executor exec)
@@ -902,7 +882,7 @@ namespace Cat
         public class TryCatch : PrimitiveFunction
         {
             public TryCatch()
-                : base("try_catch", "(( -> 'A) (exception -> 'A) -> 'A)", "evaluates a function, and catches any exceptions")
+                : base("try_catch", "(( -> 'A) (exception -> 'A) -> 'A)", "evaluates a function, and catches any exceptions", "level2,control")
             { }
 
             public override void Eval(Executor exec)
@@ -930,7 +910,7 @@ namespace Cat
         public class True : PrimitiveFunction
         {
             public True()
-                : base("true", "( -> bool)", "pushes the boolean value true on the stack")
+                : base("true", "( -> bool)", "pushes the boolean value true on the stack", "level0,boolean")
             { }
 
             public override void Eval(Executor exec)
@@ -942,7 +922,7 @@ namespace Cat
         public class False : PrimitiveFunction
         {
             public False()
-                : base("false", "( -> bool)", "pushes the boolean value false on the stack")
+                : base("false", "( -> bool)", "pushes the boolean value false on the stack", "level0,boolean")
             { }
 
             public override void Eval(Executor exec)
@@ -954,7 +934,7 @@ namespace Cat
         public class And : PrimitiveFunction
         {
             public And()
-                : base("and", "(bool bool -> bool)", "returns true if both of the top two values on the stack are true")
+                : base("and", "(bool bool -> bool)", "returns true if both of the top two values on the stack are true", "level0,boolean")
             { }
 
             public override void Eval(Executor exec)
@@ -968,7 +948,7 @@ namespace Cat
         public class Or : PrimitiveFunction
         {
             public Or()
-                : base("or", "(bool bool -> bool)", "returns true if either of the top two values on the stack are true")
+                : base("or", "(bool bool -> bool)", "returns true if either of the top two values on the stack are true", "level0,boolean")
             { }
 
             public override void Eval(Executor exec)
@@ -982,7 +962,7 @@ namespace Cat
         public class Not : PrimitiveFunction
         {
             public Not()
-                : base("not", "(bool -> bool)", "returns true if the top value on the stack is false")
+                : base("not", "(bool -> bool)", "returns true if the top value on the stack is false", "level0,boolean")
             { }
 
             public override void Eval(Executor exec)
@@ -996,7 +976,7 @@ namespace Cat
         public class TypeName : PrimitiveFunction
         {
             public TypeName()
-                : base("typename", "(any -> string)", "returns the name of the type of an object")
+                : base("typename", "(any -> string)", "returns the name of the type of an object", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1008,7 +988,7 @@ namespace Cat
         public class TypeId : PrimitiveFunction
         {
             public TypeId()
-                : base("typeof", "(any -> any type)", "returns a type tag for an object")
+                : base("typeof", "(any -> any type)", "returns a type tag for an object", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1035,7 +1015,7 @@ namespace Cat
         public class TypeType : PrimitiveFunction
         {
             public TypeType()
-                : base("type_type", "( -> type)", "")
+                : base("type_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1046,7 +1026,7 @@ namespace Cat
         public class IntType : PrimitiveFunction
         {
             public IntType()
-                : base("int_type", "( -> type)", "")
+                : base("int_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1057,7 +1037,7 @@ namespace Cat
         public class StrType : PrimitiveFunction
         {
             public StrType()
-                : base("string_type", "( -> type)", "")
+                : base("string_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1068,7 +1048,7 @@ namespace Cat
         public class DblType : PrimitiveFunction
         {
             public DblType()
-                : base("double_type", "( -> type)", "")
+                : base("double_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1079,7 +1059,7 @@ namespace Cat
         public class ByteType : PrimitiveFunction
         {
             public ByteType()
-                : base("byte_type", "( -> type)", "")
+                : base("byte_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1090,7 +1070,7 @@ namespace Cat
         public class BitType : PrimitiveFunction
         {
             public BitType()
-                : base("bit_type", "( -> type)", "")
+                : base("bit_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1101,7 +1081,7 @@ namespace Cat
         public class BoolType : PrimitiveFunction
         {
             public BoolType()
-                : base("bool_type", "( -> type)", "")
+                : base("bool_type", "( -> type)", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1112,7 +1092,7 @@ namespace Cat
         public class TypeEq : PrimitiveFunction
         {
             public TypeEq()
-                : base("type_eq", "(type type -> bool)", "returns true if either type is assignable to the other")
+                : base("type_eq", "(type type -> bool)", "returns true if either type is assignable to the other", "level1,types")
             { }
 
             public override void Eval(Executor exec)
@@ -1128,22 +1108,22 @@ namespace Cat
         #region date-time functions
         public class Now : PrimitiveFunction
         {
-            public Now() : base("now", "( ~> date_time)", "") { }
+            public Now() : base("now", "( ~> date_time)", "level2,datetime") { }
             public override void Eval(Executor exec) { exec.Push(DateTime.Now); }
         }
         public class SubTime : PrimitiveFunction
         {
-            public SubTime() : base("sub_time", "(date_time date_time -> time_span)", "") { }
+            public SubTime() : base("sub_time", "(date_time date_time -> time_span)", "level2,datetime") { }
             public override void Eval(Executor exec) { DateTime x = exec.TypedPop<DateTime>(); DateTime y = exec.TypedPop<DateTime>(); exec.Push(y - x); }
         }
         public class AddTime : PrimitiveFunction
         {
-            public AddTime() : base("add_time", "(date_time time_span -> date_time)", "") { }
+            public AddTime() : base("add_time", "(date_time time_span -> date_time)", "level2,datetime") { }
             public override void Eval(Executor exec) { TimeSpan x = exec.TypedPop<TimeSpan>(); DateTime y = exec.TypedPop<DateTime>(); exec.Push(y + x); }
         }
         public class ToMsec : PrimitiveFunction
         {
-            public ToMsec() : base("to_msec", "(time_span -> int)", "") { }
+            public ToMsec() : base("to_msec", "(time_span -> int)", "level2,datetime") { }
             public override void Eval(Executor exec) { exec.Push(exec.TypedPop<TimeSpan>().TotalMilliseconds); }
         }
         #endregion 
@@ -1151,71 +1131,73 @@ namespace Cat
         #region int functions
         public class AddInt : PrimitiveFunction
         {
-            public AddInt() : base("add_int", "(int int -> int)", "") { }            
+            public AddInt() : base("add_int", "(int int -> int)", "level0,numeric") { }            
             public override void Eval(Executor exec) { exec.PushInt(exec.PopInt() + exec.PopInt()); }
         }
         public class MulInt : PrimitiveFunction
         {
-            public MulInt() : base("mul_int", "(int int -> int)", "") { }
+            public MulInt() : base("mul_int", "(int int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.PushInt(exec.PopInt() * exec.PopInt()); }
         }
         public class DivInt : PrimitiveFunction
         {
-            public DivInt() : base("div_int", "(int int -> int)", "") { }
+            public DivInt() : base("div_int", "(int int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { int x = exec.PopInt(); int y = exec.PopInt(); exec.PushInt(y / x); }
         }
         public class SubInt : PrimitiveFunction
         {
-            public SubInt() : base("sub_int", "(int int -> int)", "") { }
+            public SubInt() : base("sub_int", "(int int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { int x = exec.PopInt(); int y = exec.PopInt(); exec.PushInt(y - x);  }
         }
         public class ModInt : PrimitiveFunction
         {
-            public ModInt() : base("mod_int", "(int int -> int)", "") { }
+            public ModInt() : base("mod_int", "(int int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { int x = exec.PopInt(); int y = exec.PopInt(); exec.PushInt(y % x); }
         }
         public class NegInt : PrimitiveFunction
         {
-            public NegInt() : base("neg_int", "(int -> int)", "") { }
+            public NegInt() : base("neg_int", "(int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.PushInt(-exec.PopInt()); }
         }
         public class ComplInt : PrimitiveFunction
         {
-            public ComplInt() : base("compl_int", "(int -> int)", "") { }
+            public ComplInt() : base("compl_int", "(int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.PushInt(~exec.PopInt()); }
         }
         public class ShlInt : PrimitiveFunction
         {
-            public ShlInt() : base("shl_int", "(int int -> int)", "") { }
+            public ShlInt() : base("shl_int", "(int int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.Swap(); exec.PushInt(exec.PopInt() << exec.PopInt()); }
         }
         public class ShrInt : PrimitiveFunction
         {
-            public ShrInt() : base("shr_int", "(int int -> int)", "") { }
+            public ShrInt() : base("shr_int", "(int int -> int)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.Swap(); exec.PushInt(exec.PopInt() >> exec.PopInt()); }
         }
         public class GtInt : PrimitiveFunction
         {
-            public GtInt() : base("gt_int", "(int int -> bool)", "") { }
+            public GtInt() : base("gt_int", "(int int -> bool)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.Swap(); exec.PushBool(exec.PopInt() > exec.PopInt()); }
         }
         public class LtInt : PrimitiveFunction
         {
-            public LtInt() : base("lt_int", "(int int -> bool)", "") { }
+            public LtInt() : base("lt_int", "(int int -> bool)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.Swap(); exec.PushBool(exec.PopInt() < exec.PopInt()); }
         }
         public class GtEqInt : PrimitiveFunction
         {
-            public GtEqInt() : base("gteq_int", "(int int -> bool)", "") { }
+            public GtEqInt() : base("gteq_int", "(int int -> bool)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.Swap(); exec.PushBool(exec.PopInt() >= exec.PopInt()); }
         }
         public class LtEqInt : PrimitiveFunction
         {
-            public LtEqInt() : base("lteq_int", "(int int -> bool)", "") { }
+            public LtEqInt() : base("lteq_int", "(int int -> bool)", "level0,numeric") { }
             public override void Eval(Executor exec) { exec.Swap();  exec.PushBool(exec.PopInt() <= exec.PopInt()); }
         }
         #endregion
 
+        // Notice at this point I use static functions instead of declaring objects.
+        // this is simply because I am lazy, and these few dozen operations don't really merit documentation. 
         #region byte functions
         public static byte add_byte(byte x, byte y) { return (byte)(x + y); }
         public static byte sub_byte(byte x, byte y) { return (byte)(x - y); }
@@ -1340,7 +1322,7 @@ namespace Cat
         public class Write : PrimitiveFunction
         {
             public Write()
-                : base("write", "('a ~> )", "outputs the text representation of a value to the console")
+                : base("write", "('a ~> )", "outputs the text representation of a value to the console","level1,console")
             { }
 
             public override void Eval(Executor exec)
@@ -1352,7 +1334,7 @@ namespace Cat
         public class WriteLn : PrimitiveFunction
         {
             public WriteLn()
-                : base("writeln", "('a ~> )", "outputs the text representation of a value to the console followed by a newline character")
+                : base("writeln", "('a ~> )", "outputs the text representation of a value to the console followed by a newline character","level1,console")
             { }
 
             public override void Eval(Executor exec)
@@ -1364,7 +1346,7 @@ namespace Cat
         public class ReadLn : PrimitiveFunction
         {
             public ReadLn()
-                : base("readln", "( ~> string)", "inputs a string from the user (or console)")
+                : base("readln", "( ~> string)", "inputs a string from the console", "level1,console")
             { }
 
             public override void Eval(Executor exec)
@@ -1376,7 +1358,7 @@ namespace Cat
         public class ReadKey : PrimitiveFunction
         {
             public ReadKey()
-                : base("readch", "( ~> char)", "inputs a single character from the user (or console)")
+                : base("readch", "( ~> char)", "inputs a single character from the console", "level1,console")
             { }
 
             public override void Eval(Executor exec)
@@ -1390,7 +1372,7 @@ namespace Cat
         public class OpenFileReader : PrimitiveFunction
         {
             public OpenFileReader()
-                : base("file_reader", "(string -> istream)", "creates an input stream from a file name")
+                : base("file_reader", "(string -> istream)", "creates an input stream from a file name","level2,streams")
             { }
 
             public override void Eval(Executor exec)
@@ -1403,7 +1385,7 @@ namespace Cat
         public class OpenWriter : PrimitiveFunction
         {
             public OpenWriter()
-                : base("file_writer", "(string -> ostream)", "creates an output stream from a file name")
+                : base("file_writer", "(string -> ostream)", "creates an output stream from a file name", "level2,streams")
             { }
 
             public override void Eval(Executor exec)
@@ -1416,7 +1398,7 @@ namespace Cat
         public class FileExists : PrimitiveFunction
         {
             public FileExists()
-                : base("file_exists", "(string -> string bool)", "returns a boolean value indicating whether a file or directory exists")
+                : base("file_exists", "(string -> string bool)", "returns a boolean value indicating whether a file or directory exists", "level2,streams")
             { }
 
             public override void Eval(Executor exec)
@@ -1429,7 +1411,7 @@ namespace Cat
         public class TmpFileName : PrimitiveFunction
         {
             public TmpFileName()
-                : base("temp_file", "( -> string)", "creates a unique temporary file")
+                : base("temp_file", "( -> string)", "creates a unique temporary file", "level2,streams")
             { }
 
             public override void Eval(Executor exec)
@@ -1474,7 +1456,7 @@ namespace Cat
         public class CloseStream : PrimitiveFunction
         {
             public CloseStream()
-                : base("close_stream", "(stream ~> )", "closes a stream")
+                : base("close_stream", "(stream ~> )", "closes a stream", "level2,streams")
             { }
 
             public override void Eval(Executor exec)
@@ -1491,7 +1473,7 @@ namespace Cat
         public class MakeHashList : PrimitiveFunction
         {
             public MakeHashList()
-                : base("hash_list", "( -> hash_list)", "makes an empty hash list")
+                : base("hash_list", "( -> hash_list)", "makes an empty hash list", "level2,hash")
             { }
 
             public override void Eval(Executor exec)
@@ -1503,7 +1485,7 @@ namespace Cat
         public class HashGet : PrimitiveFunction
         {
             public HashGet()
-                : base("hash_get", "(hash_list any -> hash_list any)", "gets a value from a hash list using a key")
+                : base("hash_get", "(hash_list any -> hash_list any)", "gets a value from a hash list using a key", "level2,hash")
             { }
 
             public override void Eval(Executor exec)
@@ -1518,7 +1500,7 @@ namespace Cat
         public class HashSet : PrimitiveFunction
         {
             public HashSet()
-                : base("hash_set", "(hash_list any any -> hash_list)", "associates a value with a key in a hash list")
+                : base("hash_set", "(hash_list any any -> hash_list)", "associates a value with a key in a hash list", "level2,hash")
             { }
 
             public override void Eval(Executor exec)
@@ -1533,7 +1515,7 @@ namespace Cat
         public class HashAdd : PrimitiveFunction
         {
             public HashAdd()
-                : base("hash_add", "(hash_list any any -> hash_list)", "associates a value with a key in a hash list")
+                : base("hash_add", "(hash_list any any -> hash_list)", "associates a value with a key in a hash list", "level2,hash")
             { }
 
             public override void Eval(Executor exec)
@@ -1548,7 +1530,7 @@ namespace Cat
         public class HashContains : PrimitiveFunction
         {
             public HashContains()
-                : base("hash_contains", "(hash_list any -> hash_list bool)", "returns true if hash list contains key")
+                : base("hash_contains", "(hash_list any -> hash_list bool)", "returns true if hash list contains key", "level2,hash")
             { }
 
             public override void Eval(Executor exec)
@@ -1562,7 +1544,7 @@ namespace Cat
         public class HashToList : PrimitiveFunction
         {
             public HashToList()
-                : base("hash_to_list", "(hash_list -> list)", "converts a hash_list to a list of pairs")
+                : base("hash_to_list", "(hash_list -> list)", "converts a hash_list to a list of pairs", "level2,hash")
             { }
 
             public override void Eval(Executor exec)
@@ -1577,7 +1559,7 @@ namespace Cat
         public class List : PrimitiveFunction
         {
             public List()
-                : base("list", "(( -> 'A) -> list)", "creates a list from a function")
+                : base("list", "(( -> 'A) -> list)", "creates a list from a function", "level0,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1593,7 +1575,7 @@ namespace Cat
         public class Map : PrimitiveFunction
         {
             public Map()
-                : base("map", "(list ('a -> 'b) -> list)", "creates a list from another by transforming every value using the supplied function")
+                : base("map", "(list ('a -> 'b) -> list)", "creates a list from another by transforming every value using the supplied function", "level0,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1616,7 +1598,7 @@ namespace Cat
         public class IsEmpty : PrimitiveFunction
         {
             public IsEmpty()
-                : base("empty", "(list -> list bool)", "returns true if the list is empty")
+                : base("empty", "(list -> list bool)", "returns true if the list is empty", "level0,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1629,7 +1611,7 @@ namespace Cat
         public class Count : PrimitiveFunction
         {
             public Count()
-                : base("count", "(list -> list int)", "returns the number of items in a list")
+                : base("count", "(list -> list int)", "returns the number of items in a list", "level1,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1639,24 +1621,10 @@ namespace Cat
             }
         }
 
-        public class Nth : PrimitiveFunction
-        {
-            public Nth()
-                : base("get_at", "(list int -> list any)", "returns the nth item in a list")
-            { }
-
-            public override void Eval(Executor exec)
-            {
-                int n = exec.PopInt();
-                CatList list = exec.TypedPeek<CatList>();
-                exec.Push(list[list.Count - n - 1]);
-            }
-        }
-
         public class Nil : PrimitiveFunction
         {
             public Nil()
-                : base("nil", "( -> list)", "creates an empty list")
+                : base("nil", "( -> list)", "creates an empty list", "level0,list")
             { }
 
             public override void  Eval(Executor exec)
@@ -1668,7 +1636,7 @@ namespace Cat
         public class Cons : PrimitiveFunction
         {
             public Cons()
-                : base("cons", "(list 'a -> list)", "prepends an item to a list")
+                : base("cons", "(list 'a -> list)", "prepends an item to a list", "level0,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1682,7 +1650,7 @@ namespace Cat
         public class Uncons : PrimitiveFunction
         {
             public Uncons()
-                : base("uncons", "(list -> list any)", "returns the top of the list, and the rest of a list")
+                : base("uncons", "(list -> list any)", "returns the top of the list, and the rest of a list", "level0,list")
             {}
 
             public override void Eval(Executor exec)
@@ -1697,7 +1665,7 @@ namespace Cat
         public class Cat : PrimitiveFunction
         {
             public Cat()
-                : base("cat", "(list list -> list)", "concatenates two lists")
+                : base("cat", "(list list -> list)", "concatenates two lists", "level1,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1708,10 +1676,24 @@ namespace Cat
             }
         }
 
+        public class GetAt : PrimitiveFunction
+        {
+            public GetAt()
+                : base("get_at", "(list int -> list any)", "returns the nth item in a list", "level1,list")
+            { }
+
+            public override void Eval(Executor exec)
+            {
+                int n = exec.PopInt();
+                CatList list = exec.TypedPeek<CatList>();
+                exec.Push(list[list.Count - n - 1]);
+            }
+        }
+
         public class SetAt : PrimitiveFunction
         {
             public SetAt()
-                : base("set_at", "(list 'a int -> list)", "sets an item in a list")
+                : base("set_at", "(list 'a int -> list)", "sets an item in a list", "level1,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1726,7 +1708,7 @@ namespace Cat
         public class SwapAt : PrimitiveFunction
         {
             public SwapAt()
-                : base("swap_at", "(list any int -> list any)", "swaps an item, with an item in the list")
+                : base("swap_at", "(list any int -> list any)", "swaps an item, with an item in the list", "level1,list")
             { }
 
             public override void Eval(Executor exec)
@@ -1747,7 +1729,7 @@ namespace Cat
             static Random mGen = new Random();
 
             public RandomInt()
-                : base("rnd_int", "(int ~> int)", "creates a random integer between zero and some maximum value")
+                : base("rnd_int", "(int ~> int)", "creates a random integer between zero and some maximum value", "level1,misc")
             { }
 
             public override void Eval(Executor exec)
@@ -1761,7 +1743,7 @@ namespace Cat
             static Random mGen = new Random();
 
             public RandomDbl()
-                : base("rnd_dbl", "( ~> double)", "creates a random floating point number between zero and 1.0")
+                : base("rnd_dbl", "( ~> double)", "creates a random floating point number between zero and 1.0", "level1,misc")
             { }
 
             public override void Eval(Executor exec)
@@ -1787,7 +1769,7 @@ namespace Cat
         public class AsVar : PrimitiveFunction
         {
             public AsVar()
-                : base("as_var", "('a -> var)", "casts anything into a variant")
+                : base("as_var", "('a -> var)", "casts anything into a variant", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1799,7 +1781,7 @@ namespace Cat
         public class AsBool : PrimitiveFunction
         {
             public AsBool()
-                : base("as_bool", "(any -> bool)", "casts a variant to a bool")
+                : base("as_bool", "(any -> bool)", "casts a variant to a bool", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1811,7 +1793,7 @@ namespace Cat
         public class AsInt : PrimitiveFunction
         {
             public AsInt()
-                : base("as_int", "(any -> int)", "casts a variant to an int")
+                : base("as_int", "(any -> int)", "casts a variant to an int", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1823,7 +1805,7 @@ namespace Cat
         public class AsList : PrimitiveFunction
         {
             public AsList()
-                : base("as_list", "(any -> list)", "casts a variant to a list")
+                : base("as_list", "(any -> list)", "casts a variant to a list", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1835,7 +1817,7 @@ namespace Cat
         public class AsString : PrimitiveFunction
         {
             public AsString()
-                : base("as_string", "(any -> string)", "casts a variant to a char")
+                : base("as_string", "(any -> string)", "casts a variant to a char", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1847,7 +1829,7 @@ namespace Cat
         public class AsDbl : PrimitiveFunction
         {
             public AsDbl()
-                : base("as_dbl", "(any -> double)", "casts a variant to a double")
+                : base("as_dbl", "(any -> double)", "casts a variant to a double", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1859,7 +1841,7 @@ namespace Cat
         public class AsChar : PrimitiveFunction
         {
             public AsChar()
-                : base("as_char", "(any -> char)", "casts a variant to a double")
+                : base("as_char", "(any -> char)", "casts a variant to a double", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1871,7 +1853,7 @@ namespace Cat
         public class ToInt : PrimitiveFunction
         {
             public ToInt()
-                : base("to_int", "(any -> int)", "coerces any value to an integer")
+                : base("to_int", "(any -> int)", "coerces any value to an integer", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1891,7 +1873,7 @@ namespace Cat
         public class ToStr : PrimitiveFunction
         {
             public ToStr()
-                : base("to_str", "(any -> str)", "coerces any value to a string")
+                : base("to_str", "(any -> str)", "coerces any value to a string", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1904,7 +1886,7 @@ namespace Cat
         public class ToBool : PrimitiveFunction
         {
             public ToBool()
-                : base("to_bool", "(any -> bool)", "coerces any value to a boolean")
+                : base("to_bool", "(any -> bool)", "coerces any value to a boolean", "level1,cast")
             { }
 
             public override void Eval(Executor exec)
@@ -1926,7 +1908,7 @@ namespace Cat
         public class OpenWindow : PrimitiveFunction
         {
             public OpenWindow()
-                : base("open_window", "( ~> )", "opens a drawing window")
+                : base("open_window", "( ~> )", "opens a drawing window", "level2,graphics")
             { }
 
             public override void Eval(Executor exec)
@@ -1938,7 +1920,7 @@ namespace Cat
         public class SaveWindow  : PrimitiveFunction
         {
             public SaveWindow()
-                : base("save_window", "(string ~> )", "saves a bitmap of the viewport")
+                : base("save_window", "(string ~> )", "saves a bitmap of the viewport", "level2,graphics")
             { }
 
             public override void Eval(Executor exec)
@@ -1950,7 +1932,7 @@ namespace Cat
         public class CloseWindow : PrimitiveFunction
         {
             public CloseWindow()
-                : base("close_window", "( ~> )", "close a drawing window")
+                : base("close_window", "( ~> )", "close a drawing window", "level2,graphics")
             { }
 
             public override void Eval(Executor exec)
@@ -1962,7 +1944,7 @@ namespace Cat
         public class ClearWindow : PrimitiveFunction
         {
             public ClearWindow()
-                : base("clear", "( ~> )", "clears the drawing window")
+                : base("clear", "( ~> )", "clears the drawing window", "level2,graphics")
             { }
 
             public override void Eval(Executor exec)
@@ -1974,7 +1956,7 @@ namespace Cat
         public class Render : PrimitiveFunction
         {
             public Render()
-                : base("render", "(list string ~> )", "sends a drawing instruction to the graphics device")
+                : base("render", "(list string ~> )", "sends a drawing instruction to the graphics device", "level2,graphics")
             { }
 
             public override void Eval(Executor exec)
@@ -1993,7 +1975,7 @@ namespace Cat
         public class Invoke : PrimitiveFunction
         {
             public Invoke()
-                : base("clr_invoke", "(list string any -> any any)", "calls a method on a .NET object")
+                : base("clr_invoke", "(list string any -> any any)", "calls a method on a .NET object", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2013,7 +1995,7 @@ namespace Cat
         public class SetField : PrimitiveFunction
         {
             public SetField()
-                : base("clr_set_field", "(any string any -> any)", "assigns a value to a field of a .NET object")
+                : base("clr_set_field", "(any string any -> any)", "assigns a value to a field of a .NET object", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2032,7 +2014,7 @@ namespace Cat
         public class GetField : PrimitiveFunction
         {
             public GetField()
-                : base("clr_get_field", "(string any -> any any)", "retrieves the value of a field from a .NET object")
+                : base("clr_get_field", "(string any -> any any)", "retrieves the value of a field from a .NET object", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2050,7 +2032,7 @@ namespace Cat
         public class ListFields : PrimitiveFunction
         {
             public ListFields()
-                : base("clr_list_fields", "(any -> list any)", "retrieves a list of field names from a .NET object")
+                : base("clr_list_fields", "(any -> list any)", "retrieves a list of field names from a .NET object", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2069,7 +2051,7 @@ namespace Cat
         public class ListMethods : PrimitiveFunction
         {
             public ListMethods()
-                : base("clr_list_methods", "(any -> list any)", "retrieves a list of field names from a .NET object")
+                : base("clr_list_methods", "(any -> list any)", "retrieves a list of field names from a .NET object", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2087,7 +2069,7 @@ namespace Cat
         public class New : PrimitiveFunction
         {
             public New()
-                : base("clr_new", "(list string -> any)", "constructs a new .NET object")
+                : base("clr_new", "(list string -> any)", "constructs a new .NET object", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2110,7 +2092,7 @@ namespace Cat
         public class ClrEnumerableToList : PrimitiveFunction
         {
             public ClrEnumerableToList()
-                : base("clr_enumerable_to_list", "(any -> list)", "converts a .NET IEnumerable object into a list")
+                : base("clr_enumerable_to_list", "(any -> list)", "converts a .NET IEnumerable object into a list", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2125,7 +2107,7 @@ namespace Cat
         public class MakeRegex : PrimitiveFunction
         {
             public MakeRegex()
-                : base("regex", "(string -> regex)", "constructs a regular expression matcher")
+                : base("regex", "(string -> regex)", "constructs a regular expression matcher", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2137,7 +2119,7 @@ namespace Cat
         public class ReMatch : PrimitiveFunction
         {
             public ReMatch()
-                : base("re_match", "(string regex -> list)", "matches the regular expression")
+                : base("re_match", "(string regex -> list)", "matches the regular expression", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2155,7 +2137,7 @@ namespace Cat
         public class ReFind : PrimitiveFunction
         {
             public ReFind()
-                : base("re_find", "(string regex -> string int)", "finds the regular expression")
+                : base("re_find", "(string regex -> string int)", "finds the regular expression", "clr")
             { }
 
             public override void Eval(Executor exec)
@@ -2183,7 +2165,7 @@ namespace Cat
         public class MakeRef : PrimitiveFunction
         {
             public MakeRef()
-                : base("ref", "('a -> ref)", "creates a reference")
+                : base("ref", "('a -> ref)", "creates a reference", "level2,ref")
             { }
 
             public override void Eval(Executor exec)
@@ -2195,7 +2177,7 @@ namespace Cat
         public class GetVal : PrimitiveFunction
         {
             public GetVal()
-                : base("getval", "(ref ~> ref any)", "gets value associated with reference")
+                : base("getval", "(ref ~> ref any)", "gets value associated with reference", "level2,ref")
             { }
 
             public override void Eval(Executor exec)
@@ -2207,7 +2189,7 @@ namespace Cat
         public class SetVal : PrimitiveFunction
         {
             public SetVal()
-                : base("setval", "(ref any ~> ref)", "sets a reference to a new value")
+                : base("setval", "(ref any ~> ref)", "sets a reference to a new value", "level2,ref")
             { }
 
             public override void Eval(Executor exec)

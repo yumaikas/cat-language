@@ -38,7 +38,7 @@ namespace Cat
         /// <summary>
         /// Set this to false to prevent implicit redefining existing functions. 
         /// </summary>
-        public static bool gbAllowRedefines = false;
+        public static bool gbAllowRedefines = true;
 
         /// <summary>
         /// Set to false to only implement point-free Cat

@@ -109,3 +109,4 @@ define print_list : ('A list ~> 'A list)
 {
   dup [writeln] foreach
 }
+

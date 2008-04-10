@@ -259,7 +259,11 @@ namespace Cat
         }
         public static Rule MacroDef()
         {
-            return CatAstNode(AstLabel.Macro, Seq(Choice(Word("macro"), Word("rule")), NoFail(Seq(MacroPattern(), Token("=>"), MacroPattern()), "expected macro defintiion")));
+            return CatAstNode(AstLabel.MacroRule, Seq(Word("rule"), Seq(MacroPattern(), Token("=>"), MacroPattern())));
+        }
+        public static Rule MacroProp()
+        {
+            return CatAstNode(AstLabel.MacroProp, Seq(Word("rule"), Seq(MacroPattern(), Token("=="), MacroPattern())));
         }
         #endregion
         public static Rule CatProgram()

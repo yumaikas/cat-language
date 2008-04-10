@@ -107,6 +107,7 @@
     <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
     <Compile Include="CatVarScopes.cs" />
+    <Compile Include="CodeGraph.cs" />
     <Compile Include="ConstraintSolver.cs" />
     <Compile Include="ConstraintSolverUtil.cs" />
     <Compile Include="CatLambda.cs" />
