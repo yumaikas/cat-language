@@ -16,6 +16,8 @@ define swapd : ('a 'b 'c -> 'b 'a 'c)
     out: 2 1 3
   semantics:
     $a $b $c swapd == $b $a $c
+  tags:
+    stack,level0
 }}
 { [swap] dip }
 
@@ -28,6 +30,8 @@ define swapdd : ('a 'b 'c 'd -> 'b 'a 'c 'd)
     out: 2 1 3 4
   semantics:
     $a $b $c $d swapd == $b $a $c $d
+  tags:
+    stack,level1
 }}
 { [swapd] dip }
 
@@ -40,6 +44,8 @@ define dupd : ('a 'b -> 'a 'a 'b)
     out: 1 1 2
   semantics:
     $a $b swapd == $a $a $b
+  tags:
+    stack,level0
 }}
 { [dup] dip }
 
@@ -52,6 +58,8 @@ define dupdd : ('a 'b 'c -> 'a 'a 'b 'c)
     out: 1 1 2 3
   semantics:
     $a $b $c dupdd == $a $a $b $c
+  tags:
+    stack,level1
 }}
 { [dupd] dip }
 
@@ -64,6 +72,8 @@ define popd : ('a 'b -> 'b)
     out: 2
   semantics:
     $a $b popd == $b
+  tags:
+    stack,level0
 }}
 { [pop] dip }
 
@@ -76,6 +86,8 @@ define popdd : ('a 'b 'c -> 'b 'c)
     out: 2 3
   semantics:
     $a $b $c popd == $b $c
+  tags:
+    stack,level1
 }}
 { [popd] dip }
 
@@ -85,6 +97,8 @@ define over : ('a 'b -> 'a 'b 'a)
     Places a copy of the second item on the top of the stack.
   semantics:
     $a $b over == $b $a
+  tags:
+    stack,level1
 }}
 { dupd swap }
 
@@ -95,28 +109,47 @@ define under : ('a 'b -> 'b 'a 'b)
   test:
     in: 1 2 under
     out: 2 1 2
+  tags:
+    stack,level1
 }}
 { dup swapd }
 
 define bury : ('a 'b 'c -> 'c 'a 'b)
 {{
   desc:
-    Place the top item on the stack under the second item.
+    Place the top item on the stack under the third item.
   test:
     in: 1 2 3 bury
     out: 3 1 2
+  tags:
+    stack,level1
 }}
 { swap swapd }
 
 define dig : ('a 'b 'c -> 'b 'c 'a)
 {{
   desc:
-    Place the third item on the stack on the top.
+    Places the third item on the stack on the top.
   test:
     in: 1 2 3 dig
     out: 2 3 1
+  tags:
+    stack,level1
 }}
 { swapd swap }
+
+
+define flip : ('a 'b 'c -> 'c 'b 'a)
+{{
+  desc:
+    Swaps the top and third item on the stack.
+  test:
+    in: 1 2 3 flip
+    out: 3 2 1
+  tags:
+    stack,level1
+}}
+{ swapd swap swapd }
 
 //==============================================================================
 // PopN functions
@@ -124,12 +157,14 @@ define dig : ('a 'b 'c -> 'b 'c 'a)
 define pop2 : ('a 'b -> )
 {{
   desc:
-    Removes two item from the top of the stack.
+    Removes two items from the top of the stack.
   test:
     in: 1 2 pop2
     out:
   semantics:
     $a $b pop2 == noop
+  tags:
+    stack,level1
 }}
 { pop pop }
 
@@ -142,6 +177,8 @@ define pop3 : ('a 'b 'c -> )
     out:
   semantics:
     $a $b $c pop2 == noop
+  tags:
+    stack,level1
 }}
 { pop pop pop }
 
@@ -154,6 +191,8 @@ define pop4 : ('a 'b 'c 'd -> )
     out:
   semantics:
     $a $b $c $d pop4 == noop
+  tags:
+    stack,level1
 }}
 { pop pop pop pop }
 
@@ -161,206 +200,247 @@ define pop4 : ('a 'b 'c 'd -> )
 // SetN
 
 define set1 : ('a 'b  -> 'b)
+{{
+  desc:
+    Replaces the value in the second location on the stack, with the top value of the stack.
+  test:
+    in: 1 2 set1
+    out: 2
+  tags:
+    stack,level1
+}}
 { popd }
 
 define set2 : ('a 'b 'c -> 'c 'b)
+{{
+  desc:
+    Replaces the value in the third location on the stack, with the top value of the stack.
+  test:
+    in: 1 2 3 set2
+    out: 3 2
+  tags:
+    stack,level1
+}}
 { swap [set1] dip }
 
 define set3 : ('a 'b 'c 'd -> 'd 'b 'c)
+{{
+  desc:
+    Replaces the value in the fourth location on the stack, with the top value of the stack.
+  test:
+    in: 1 2 3 4 set3
+    out: 4 2 3
+  tags:
+    stack,level1
+}}
 { swap [set2] dip }
 
 define set4 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd)
+{{
+  desc:
+    Replaces the value in the fifth location on the stack, with the top value of the stack.
+  test:
+    in: 1 2 3 4 5 set4
+    out: 5 2 3 4
+  tags:
+    stack,level1
+}}
 { swap [set3] dip }
 
 //==============================================================================
 // GetN
 
-define get1 : ('a -> 'a 'a)
-{ dup }
-
 define get2 : ('a 'b -> 'a 'b 'a)
-{ [get1] dip swap }
+{{
+  desc:
+    Pushes a copy of the value from the second location on the stack to the top.
+  test:
+    in: 1 2 get2
+    out: 1 2 1
+  tags:
+    stack,level1
+}}
+{ [dup] dip swap }
 
 define get3 : ('a 'b 'c -> 'a 'b 'c 'a)
+{{
+  desc:
+    Pushes a copy of the value from the third location on the stack to the top.
+  test:
+    in: 1 2 3 get3
+    out: 1 2 3 1
+  tags:
+    stack,level1
+}}
 { [get2] dip swap }
 
 define get4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
+{{
+  desc:
+    Pushes a copy of the value from the fourth location on the stack to the top.
+  test:
+    in: 1 2 3 4 get4
+    out: 1 2 3 4 1
+  tags:
+    stack,level1
+}}
 { [get3] dip swap }
 
 //==============================================================================
 // UnderN
 
-define under1 : ('a 'b -> 'b 'a 'b)
-{ under }
-
-define under2 : ('a 'b 'c -> 'c 'a 'b 'c)
+define under3 : ('a 'b 'c -> 'c 'a 'b 'c)
+{{
+  desc:
+    Moves a copy of the top of the stack under the third item
+  tests:
+    in: 1 2 3 under3
+    out: 3 1 2 3
+  tags:
+    stack,level1
+}}
 { swap [under] dip swap }
 
-define under3 : ('a 'b 'c 'd -> 'd 'a 'b 'c 'd)
-{ swap [under2] dip swap }
-
-define under4 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd 'e)
+define under4 : ('a 'b 'c 'd -> 'd 'a 'b 'c 'd)
+{{
+  desc:
+    Moves a copy of the top of the stack under the fourth item.
+  tests:
+    in: 1 2 3 4 under4
+    out: 4 1 2 3 4
+  tags:
+    stack,level1
+}}
 { swap [under3] dip swap }
 
-//==============================================================================
-// OverN
-
-define over2 : ('a 'b 'c -> 'a 'b 'c 'a)
+define under5 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd 'e)
 {{
-  test:
-    in: 1 2 3 over2
-    out: 1 2 3 1
+  desc:
+    Moves a copy of the top of the stack under the fifth item.
+  tests:
+    in: 1 2 3 4 5 under5
+    out: 5 1 2 3 4 5
+  tags:
+    stack,level1
 }}
-{ [over] dip swap }
-
-define over3 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
-{{
-  test:
-    in: 1 2 3 4 over3
-    out: 1 2 3 4 1
-}}
-{ [over2] dip swap }
-
-define over4 : ('a 'b 'c 'd 'e -> 'a 'b 'c 'd 'e 'a)
-{{
-  test:
-    in: 1 2 3 4 5 over4
-    out: 1 2 3 4 5 1
-}}
-{ [over3] dip swap }
+{ swap [under4] dip swap }
 
 //==============================================================================
 // DigN
 
-define dig2 : ('a 'b 'c -> 'b 'c 'a)
+define dig4 : ('a 'b 'c 'd -> 'b 'c 'd 'a)
 {{
+  desc:
+    Moves the fourth value to the top.
   test:
-    in: 1 2 3 dig2
-    out: 2 3 1
-  semantics:
-    $a $b $c dig2 == $b $c $a
-}}
-{ dig }
-
-define dig3 : ('a 'b 'c 'd -> 'b 'c 'd 'a)
-{{
-  test:
-    in: 1 2 3 4 dig3
+    in: 1 2 3 4 dig4
     out: 2 3 4 1
-  semantics:
-    $a $b $c $d dig3 == $b $c $d $a
+  tags:
+    stack,level1
 }}
-{ [dig2] dip swap }
+{ [dig] dip swap }
 
-define dig4 : ('a 'b 'c 'd 'e -> 'b 'c 'd 'e 'a)
+define dig5 : ('a 'b 'c 'd 'e -> 'b 'c 'd 'e 'a)
 {{
+  desc:
+    Moves the fifth value to the top.
   test:
-    in: 1 2 3 4 5 dig4
+    in: 1 2 3 4 5 dig5
     out: 2 3 4 5 1
-  semantics:
-    $a $b $c $d $e dig3 == $b $c $d $e $a
+  tags:
+    stack,level1
 }}
-{ [dig3] dip swap }
+{ [dig4] dip swap }
 
 //==============================================================================
 // BuryN
 
-define bury2 : ('a 'b 'c -> 'c 'a 'b)
+define bury4 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
 {{
+  desc:
+    Moves the top value to under the fourth value.
   test:
-    in: 1 2 3 bury2
-    out: 3 1 2
-  semantics:
-    $a $b $c bury2 == $c $a $b
-}}
-{ bury }
-
-define bury3 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
-{{
-  test:
-    in: 1 2 3 4 bury3
+    in: 1 2 3 4 bury4
     out: 4 1 2 3
-  semantics:
-    $a $b $c $d bury3 == $d $a $b $c
+  tags:
+    stack,level1
 }}
-{ swap [bury2] dip }
+{ swap [bury] dip }
 
-define bury4 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd)
+define bury5 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd)
 {{
+  desc:
+    Moves the top value to under the fifth value.
   test:
-    in: 1 2 3 4 5 bury4
+    in: 1 2 3 4 5 bury5
     out: 5 1 2 3 4
-  semantics:
-    $a $b $c $d $e bury4 == $e $a $b $c $d
+  tags:
+    stack,level1
 }}
-{ swap [bury3] dip }
+{ swap [bury4] dip }
 
 //==============================================================================
 // DupN
 
 define dup2 : ('a 'b -> 'a 'b 'a 'b)
 {{
+  desc:
+    Duplicates the top two values.
   test:
     in: 1 2 dup2
     out: 1 2 1 2
-  semantics:
-    $a $b dup2 == $a $b $a $b
+  tags:
+    stack,level1
 }}
-{ over over }
+{ get2 get2 }
 
 define dup3 : ('a 'b 'c -> 'a 'b 'c 'a 'b 'c)
 {{
+  desc:
+    Duplicates the top three values.
   test:
     in: 1 2 3 dup3
     out: 1 2 3 1 2 3
-  semantics:
-    $a $b $c dup3 == $a $b $c $a $b $c
+  tags:
+    stack,level1
 }}
-{ over2 over2 over2 }
+{ get3 get3 get3 }
 
 define dup4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a 'b 'c 'd)
 {{
+  desc:
+    Duplicates the top four values
   test:
     in: 1 2 3 4 dup4
     out: 1 2 3 4 1 2 3 4
-  semantics:
-    $a $b $c $d dup4 == $a $b $c $d $a $b $c $d
+  tags:
+    stack,level1
 }}
-{ over3 over3 over3 over3 }
+{ get4 get4 get4 get4 }
 
 //==============================================================================
 // FlipN
 
-define flip : ('a 'b 'c -> 'c 'b 'a)
-{{
-  desc:
-    Swaps the top and third item on the stack.
-  test:
-    in: 1 2 3 flip
-    out: 3 2 1
-}}
-{ swapd swap swapd }
-
-define flip2 : ('a 'b 'c 'd -> 'd 'b 'c 'a)
+define flip4 : ('a 'b 'c 'd -> 'd 'b 'c 'a)
 {{
   desc:
     Swaps the top and fourth item on the stack.
   test:
-    in: 1 2 3 4 flip2
+    in: 1 2 3 4 flip4
     out: 4 2 3 1
-  semantics:
-    $a $b $c $d flip2 == $d $b $c $a
+  tags:
+    stack,level1
 }}
 { swap [flip] dip swap }
 
-define flip3 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd 'a)
+define flip5 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd 'a)
 {{
   desc:
     Swaps the top and fifth item on the stack.
   test:
-    in: 1 2 3 4 5 flip3
+    in: 1 2 3 4 5 flip5
     out: 5 2 3 4 1
-  semantics:
-    $a $b $c $d flip2 == $d $b $c $a
+  tags:
+    stack,level1
 }}
-{ swap [flip2] dip swap }
+{ swap [flip4] dip swap }

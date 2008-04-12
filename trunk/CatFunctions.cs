@@ -81,8 +81,14 @@ namespace Cat
         {
             mpMetaData = meta;
             CatMetaData desc = meta.Find("desc");
-            if (desc != null) {
+            if (desc != null) 
+            {
                 msDesc = desc.msContent;
+            }
+            CatMetaData tags = meta.Find("tags");
+            if (tags != null)
+            {
+                msTags = tags.msContent;
             }
         }
         public CatMetaDataBlock GetMetaData()

@@ -9,16 +9,20 @@ define noop : ( -> )
 {{
   desc:
     Does nothing
+  tags:
+    level0,misc
 }}
 { }
 
 //=============================================================================
 // Exception throwing and handling
 
-define throw_if : (bool any -> )
+define throw_if : (bool any ~> )
 {{
   desc:
     A utilty for throwing exceptions
+  tags:
+    level1,misc
 }}
 { [throw] [quote] dip compose [] if }
 
@@ -26,6 +30,8 @@ define assert : (bool -> )
 {{
   desc:
     Used to check that preconditions or postconditions are true
+  tags:
+    level1,misc
 }}
 { "assertion failed" throw_if }
 
@@ -33,6 +39,8 @@ define try : (( -> 'A) -> 'A)
 {{
   desc:
     Provides a simple default exception handler
+  tags:
+    level1,misc
 }}
 { ["exception data: " write writeln] try_catch }
 
@@ -49,6 +57,8 @@ define neq : ('a 'a -> bool)
   test:
     in: 'a' 'a' neq
     out: false
+  tags:
+    level0,boolean
 }}
 {
   eq not
@@ -61,6 +71,8 @@ define inc : (int -> int)
   test:
     in: 5 inc
     out: 6
+  tags:
+    level0,math
 }}
 {
   1 add_int
@@ -73,6 +85,8 @@ define dec : (int -> int)
   test:
     in: 5 dec
     out: 4
+  tags:
+    level0,math
 }}
 {
   1 sub_int
@@ -88,6 +102,8 @@ define eqz : (int -> bool)
   test:
     in: 0 eqz
     out: true
+  tags:
+    level0,math
 }}
 {
   0 eq
@@ -103,6 +119,8 @@ define neqz : (int -> int bool)
   test:
     in: 0 neqz
     out: false
+  tags:
+    level0,math
 }}
 {
   eqz not
@@ -118,6 +136,8 @@ define modn : (int int -> bool)
   test:
     in: 5 3 modn
     out: false
+  tags:
+    level1,math
 }}
 {
   mod_int eqz
@@ -131,6 +151,8 @@ define negate : (('A -> 'B bool) -> ('A -> 'B bool))
   test:
     in: 0 [eqz] negate apply
     out: false
+  tags:
+    level1,math
 }}
 {
   [not] compose

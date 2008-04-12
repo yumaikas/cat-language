@@ -6,10 +6,12 @@
 //=============================================================================
 // Dynamically dispatched functions
 
-define neg : (any -> any)
+define neg : (any ~> any)
 {{
   desc:
-    Negates a values.
+    Negates top values.
+  tags:
+    math,level1
 }}
 {
   [
@@ -19,7 +21,13 @@ define neg : (any -> any)
   dispatch1
 }
 
-define add : (any any -> any)
+define add : (any any ~> any)
+{{
+  desc:
+    Adds top value to second value.
+  tags:
+    math,level1
+}}
 {
   [
     [add_int] int_type
@@ -31,7 +39,13 @@ define add : (any any -> any)
   dispatch2
 }
 
-define sub : (any any -> any)
+define sub : (any any ~> any)
+{{
+  desc:
+    Subtracts top value from second value.
+  tags:
+    math,level1
+}}
 {
   [
     [sub_int] int_type
@@ -43,6 +57,12 @@ define sub : (any any -> any)
 }
 
 define mul : (any any -> any)
+{{
+  desc:
+    Multiplies top value to second value.
+  tags:
+    math,level1
+}}
 {
   [
     [mul_int] int_type
@@ -54,6 +74,12 @@ define mul : (any any -> any)
 }
 
 define mod : (any any -> any)
+{{
+  desc:
+    Computes the modulo of the top value from the second value.
+  tags:
+    math,level1
+}}
 {
   [
     [mod_int] int_type
@@ -167,4 +193,3 @@ define <= { lteq }
 define >= { gteq }
 define == { eq }
 define != { neq }
-

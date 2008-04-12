@@ -1,26 +1,130 @@
 //=============================================================================
 // Predicates and comparison functions
 
-define gtz : (int -> bool) { 0 gt_int }
-define gteqz : (int -> bool) { 0 gteq_int }
-define ltz : (int -> bool) { 0 lt_int }
-define lteqz : (int -> bool) { 0 lteq_int }
+define gtz : (int -> bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ 0 gt_int }
 
-define even : (any -> any bool) { 2 modn }
-define odd : (any -> any bool) { even not }
+define gteqz : (int -> bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ 0 gteq_int }
 
-define is_eq : ('t 't -> 't bool)  { dupd eq }
-define is_neq : ('t 't -> 't bool) { dupd neq }
-define is_gt : (any any -> any bool) { dupd gt }
-define is_gteq : (any any -> any bool) { dupd gteq }
-define is_lt : (any any -> any bool) { dupd lt }
-define is_lteq : (any any -> any bool) { dupd lteq }
-define is_eqz : ('t -> 't bool)  { dup 0 eq }
-define is_neqz : ('t -> 't bool) { dup 0 neq }
-define is_gtz : (any -> any bool) { dup 0 gt }
-define is_gteqz : (any -> any bool) { dup 0 gteq }
-define is_ltz : (any -> any bool) { dup 0 lt }
-define is_lteqz : (any -> any bool) { dup 0 lteq }
+define ltz : (int -> bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ 0 lt_int }
+
+define lteqz : (int -> bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ 0 lteq_int }
+
+define even : (any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ 2 modn }
+
+define odd : (any -> any bool) {{
+  tags:
+    level1,boolean
+}}
+{ even not }
+
+define is_eq : ('t 't -> 't bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dupd eq }
+
+define is_neq : ('t 't -> 't bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dupd neq }
+
+define is_gt : (any any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dupd gt }
+
+define is_gteq : (any any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dupd gteq }
+
+define is_lt : (any any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dupd lt }
+
+define is_lteq : (any any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dupd lteq }
+
+define is_eqz : ('t -> 't bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dup 0 eq }
+
+define is_neqz : ('t -> 't bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dup 0 neq }
+
+define is_gtz : (any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dup 0 gt }
+
+define is_gteqz : (any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dup 0 gteq }
+
+define is_ltz : (any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dup 0 lt }
+
+define is_lteqz : (any -> any bool)
+{{
+  tags:
+    level1,boolean
+}}
+{ dup 0 lteq }
 
 define are_eq : ('t 't -> 't 't bool)  { dup2 eq }
 define are_neq : ('t 't -> 't 't bool) { dup2 neq }
@@ -151,4 +255,3 @@ define ifneqz : ('A int ('A -> 'A) -> 'A)
 {
   0 ifneq
 }
-

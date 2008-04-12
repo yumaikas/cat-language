@@ -498,8 +498,29 @@ namespace Cat
             return fxns;
         }
 
-        public void TestFunction(Function f)
+        public Dictionary<string, List<Function>> GetFunctionsByTag()
         {
+            Dictionary<string, List<Function> > ret = new Dictionary<string, List<Function>>();
+            foreach (Function f in GetAllFunctions()) 
+            {
+                foreach (string s in f.GetTags()) 
+                {
+                    string s2 = s.Trim();
+                    if (s.Length > 0)
+                    {
+                        if (!ret.ContainsKey(s2))
+                            ret.Add(s2, new List<Function>());
+                        ret[s2].Add(f);
+                    }
+                }
+            }
+            return ret;
+        }
+
+
+        public bool TestFunction(Function f)
+        {
+            bool bRet = true;
             testCount += 1;
             CatMetaDataBlock md = f.GetMetaData();
             if (md != null)
@@ -512,7 +533,7 @@ namespace Cat
                     if (input == null || output == null)
                     {
                         Output.WriteLine("ill-formed test in " + f.GetName());
-                        break;
+                        return false;
                     }
                     try
                     {
@@ -531,15 +552,18 @@ namespace Cat
                             Output.WriteLine("test output program = " + output.GetContent());
                             Output.WriteLine("input program result = " + listInput.ToString());
                             Output.WriteLine("output program result = " + listOutput.ToString());
+                            bRet = false;
                         }
                     }
                     catch (Exception e)
                     {
                         Output.WriteLine("failed test for instruction " + f.GetName());
                         Output.WriteLine("exception occured: " + e.Message);
+                        bRet = false;
                     }
                 }
             }
+            return bRet;
         }
 
         public Function MakeFunction(AstDef def) 

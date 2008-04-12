@@ -76,7 +76,7 @@ namespace Cat
             int i = 0;
             foreach (KeyValuePair<Object, Object> pair in mDict)
             {
-                a[i++] = CatList.MakePair(pair.Key, pair.Value);
+                a[i++] = CatList.MakePair(pair.Value, pair.Key);
             }
             return new CatList(a);
         }
