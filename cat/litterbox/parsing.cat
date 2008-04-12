@@ -112,7 +112,7 @@ define p_end : (list -> list bool)
 }}
 { empty }
 
-define p_or : ('A list ('A list -> 'A list bool)* -> 'B bool)
+define p_or : ('A list ('A list -> 'A list bool) -> 'B bool)
 {{
   desc:
     Applies a list of parsing rules in order, until one succeeds, at which
@@ -126,7 +126,7 @@ define p_or : ('A list ('A list -> 'A list bool)* -> 'B bool)
 }}
 { false [uncons dip] [empty not] while }
 
-define p_seq : ('A ('A -> 'A bool)* -> 'B bool)
+define p_seq : ('A ('A -> 'A bool) -> 'B bool)
 {{
   desc:
     Applies a list of parsing rules in sequence, returning true if it succeeds
@@ -176,4 +176,25 @@ define p_ast : (list list (list -> list bool) -> list list bool)
   if
 }
 
+//
 
+define instruction {
+  
+  hash_set
+}
+
+define exec_instruction {
+  switch
+}
+
+define parse_cat_program {
+  ast
+  input
+  [
+    uncons
+    [parse_quotation] ['['] eq
+    [parse_name] [is_name] cond
+    apply
+  ]
+  whilene
+}

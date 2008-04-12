@@ -28,11 +28,11 @@ namespace Cat
             return result;
         }
 
-        public static CatList MakePair(Object x, Object y)
+        public static CatList MakePair(Object first, Object second)
         {
             CatList result = new CatList();
-            result.Add(y);
-            result.Add(x);
+            result.Add(first);
+            result.Add(second);
             return result;
         }
 

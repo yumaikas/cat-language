@@ -88,14 +88,14 @@ namespace Cat
                             TimeSpan elapsed = DateTime.Now - begin;
                             if (Config.gbOutputTimeElapsed)
                                 WriteLine("Time elapsed in msec " + elapsed.TotalMilliseconds.ToString("F"));
-                            if (Config.gbOutputStack)
-                                exec.OutputStack();
                             // Politely ask graphics window to redraw if needed
                         }
                         catch (Exception e)
                         {
                             WriteLine("exception occurred: " + e.Message);
                         }
+                        if (Config.gbOutputStack)
+                            exec.OutputStack();
 
                         WindowGDI.Invalidate();                        
                     }

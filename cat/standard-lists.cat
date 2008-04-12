@@ -10,6 +10,8 @@ define swons : ('a list -> list)
   test:
     in: 3 [1 2] list swons
     out: [1 2 3] list
+  tags:
+    level1,lists
 }}
 {
   swap cons
@@ -23,6 +25,8 @@ define unit : (any -> list)
   test:
     in: 42 unit
     out: [42] list
+  tags:
+    level1,lists
 }}
 {
   nil swons
@@ -35,6 +39,8 @@ define head : (list -> any)
   test:
     in: [1 2 3] list head
     out: 3
+  tags:
+    level1,lists
 }}
 {
   uncons popd
@@ -47,6 +53,8 @@ define tail : (list -> list)
   test:
     in: [1 2 3] list tail
     out: [1 2] list
+  tags:
+    level1,lists
 }}
 {
   uncons pop
@@ -59,6 +67,8 @@ define first : (list -> list any)
   test:
     in: [1 2 3] list first
     out: [1 2 3] list 3
+  tags:
+    level1,lists
 }}
 {
   0 get_at
@@ -71,6 +81,8 @@ define rest : (list -> list list)
   test:
     in: [1 2 3] list rest
     out: [1 2 3] list [1 2] list
+  tags:
+    level1,lists
 }}
 {
   dup tail
@@ -83,6 +95,8 @@ define consd
   test:
     in: [1 2] list 3 4 consd
     out: [1 2 3] list 4
+  tags:
+    level1,lists
 }}
 { [cons] dip }
 
@@ -93,6 +107,8 @@ define pair : ('a 'b -> list)
   test:
     in: 1 2 pair
     out: [1 2] list
+  tags:
+    level1,lists
 }}
 {
   nil bury [cons] dip cons
@@ -105,6 +121,8 @@ define triple : ('a 'b 'c -> list)
    test:
     in: 1 2 3 triple
     out: [1 2 3] list
+  tags:
+    level1,lists
 }}
 { [pair] dip cons }
 
@@ -115,6 +133,8 @@ define uncons2 : (list -> list any any)
   test:
     in: [1 2 3] list uncons2
     out: [1] list 2 3
+  tags:
+    level1,lists
 }}
 {
   uncons [uncons] dip
@@ -127,6 +147,8 @@ define unpair : (list -> any any)
   test:
     in: [1 2] list unpair
     out: 1 2
+  tags:
+    level1,lists
 }}
 {
   uncons [head] dip
@@ -134,10 +156,6 @@ define unpair : (list -> any any)
 
 define fold : (list 'a ('a 'b -> 'a) -> 'a)
 {{
-  level:
-    1
-  category:
-    standard-lists
   desc:
     Also known as a reduce function, this combines adjacent values
     in a list using an initial value and a binary function.
@@ -149,14 +167,22 @@ define fold : (list 'a ('a 'b -> 'a) -> 'a)
   test:
     in: [1 2 3 4] list 0 [popd] fold
     out: 1
+  tags:
+    level0,lists
 }}
 {
   dig empty [pop2] [uncons swap [swap keep] dip bury fold] if
-  // Here is an alternative implementation that exposes the list during iteration.
-  // the semantics are very different in this context.
-  // [empty] dip2 dig [pop popd] [[[uncons] dip swap] dip keep fold] if
-  // foldl f z [] = z
-  // foldl f z (x:xs) = foldl f (f z x) xs
+}
+
+define foldwlist : ('R list 'a ('R list 'a 'b -> 'a) -> 'R 'a)
+{{
+  desc:
+    Like fold except the list being folded is an argument to the function.
+  tags:
+    level1,lists
+}}
+{
+  [empty] dip2 dig [pop popd] [[[uncons] dip swap] dip keep fold] if
 }
 
 define rev : (list -> list)
@@ -166,6 +192,8 @@ define rev : (list -> list)
   test:
     in: [1 2 3] list rev
     out: [3 2 1] list
+  tags:
+    level1,lists
 }}
 {
   nil [cons] fold
@@ -173,10 +201,6 @@ define rev : (list -> list)
 
 define rfold
 {{
-  level:
-    1
-  category:
-    standard-lists
   desc:
     A reverse fold, it combines adjacent values
     in a list using an initial value and a binary function, starting
@@ -192,6 +216,8 @@ define rfold
   test:
     in: [1 2 3 4] list nil [cons] rfold
     out: [1 2 3 4] list
+  tags:
+    level1,lists
 }}
 {
   [rev] dip2 fold
@@ -204,6 +230,8 @@ define small : (list -> list bool)
   test:
     in: 1 unit small popd
     out: true
+  tags:
+    level1,lists
 }}
 {
   empty [true] [rest empty popd] if
@@ -218,6 +246,8 @@ define filter : (list ('a -> bool) -> list)
   test:
     in: [1 2 3 4] list [2 modn] filter
     out: [2 4] list
+  tags:
+    level1,lists
 }}
 {
   [dupd apply [cons] [pop] if]
@@ -232,7 +262,10 @@ define split : (list ('a -> bool) -> list list)
     in: [0 1 2 3 4] list [2 mod_int eqz] split
     out: [1 3] list [0 2 4] list
   notes:
-    this implementation is not very efficient
+    This implementation is sub-optimal, I would prefer to move items rather than ask for copies.
+    Interestingly, it could be a good test for the optimizer as-is.
+  tags:
+    level1,lists
 }}
 {
   dup2 filter
@@ -246,6 +279,8 @@ define cons_first : (list 'a -> list)
   test:
     in: [1 2] list [3 4] list pair 5 cons_first
     out: [1 2] list [3 4 5] list pair
+  tags:
+    level2,lists
 }}
 {
   [unpair] dip cons pair
@@ -258,6 +293,8 @@ define cons_second : (list 'a -> list)
   test:
     in: [1 2] list [3 4] list pair 5 cons_second
     out: [1 2 5] list [3 4] list pair
+  tags:
+    level2,lists
 }}
 {
   [unpair] dip swap [cons] dip pair
@@ -270,6 +307,8 @@ define move_head : (list list -> list list)
   test:
     in: [1 2] list [3 4] list move_head
     out: [1 2 4] list [3] list
+  tags:
+    level1,lists
 }}
 {
   uncons swap [cons] dip
@@ -278,35 +317,16 @@ define move_head : (list list -> list list)
 define split_at : (list int -> list list)
 {{
   desc:
-    Splits a list in two at an index, the top result contains the second half
-    sand the second result contains the first half of the original list
+    Splits a list in two at an index, the top result contains the second part
+    and the second result contains the first part of the original list
+  test:
+    in: [1 2 3 4] list 1 split_at
+    out: [4] list [1 2 3] list
+  tags:
+    level1,lists
 }}
 {
   nil bury [move_head] swap repeat
-}
-
-define dhead : (list -> list any)
-{{
-  desc:
-    Returns the head of a list, leaving the original list on the stack.
-  test:
-    in: [1 2] list dhead
-    out: [1 2] list 2
-}}
-{
-  first
-}
-
-define dtail : (list -> list list)
-{{
-  desc:
-    Returns the tail of a list, leaving the original list on the stack.
-  test:
-    in: [1 2 3] list dtail
-    out: [1 2 3] list [1 2] list
-}}
-{
-  rest
 }
 
 define head_eq : (list any -> list bool)
@@ -320,18 +340,22 @@ define head_eq : (list any -> list bool)
    test:
     in: [1 2] list 1 head_eq popd
     out: false
+  tags:
+    level1,lists
 }}
 {
-  [dhead] dip eq
+  [first] dip eq
 }
 
-define concat : (list list -> list)
+define cat : (list list -> list)
 {{
   desc:
     Concatenates two lists together
   test:
-    in: [1 2] list [3 4] list concat
+    in: [1 2] list [3 4] list cat
     out: [1 2 3 4] list
+  tags:
+    level1,lists
 }}
 {
   swap [cons] rfold
@@ -344,9 +368,11 @@ define flatten : (list -> list)
   test:
     in: [[1 2] list [3] list [] list] list flatten
     out: [1 2 3] list
+  tags:
+    level1,lists
 }}
 {
-  nil [concat] rfold
+  nil [cat] rfold
 }
 
 define n : (int -> list)
@@ -356,6 +382,8 @@ define n : (int -> list)
   test:
     in: 4 n
     out: [3 2 1 0] list
+  tags:
+    level1,lists
 }}
 {
   nil [cons] dig for rev

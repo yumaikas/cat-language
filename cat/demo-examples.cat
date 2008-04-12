@@ -16,6 +16,8 @@ define fib
   test:
     in: 5 fib
     out: 8
+  tags:
+    demo,algorithms
 }}
 {
   [dup 2 lt_int] // termination condition
@@ -34,6 +36,8 @@ define fact : (int -> int)
   tests:
     in: 5 fact
     out: 120
+  tags:
+    demo,algorithms
 }}
 {
   eqz
@@ -58,6 +62,8 @@ define qsort : (list -> list)
   test:
     in: [] list qsort
     out: [] list
+  tags:
+    demo,algorithms
 }}
 {
   // Does list have 0 or 1 elements?
@@ -90,8 +96,14 @@ define qsort : (list -> list)
 
 define map_reduce
 {{
-  semantics:
-
+  desc:
+    Takes a list of inputs, a worker function, and on top a way to combine results of two worker
+    functions in an order independent way. This implementation of Cat does not do
+    any parallelization, but by expressing an algorithm in this manner, a clever Cat compiler
+    can automatically distribute and parallelize the work performed by the various worker
+    functions.
+  tags:
+    demo,algorithms
 }}
 {
   [map flatten self_join] dip map
