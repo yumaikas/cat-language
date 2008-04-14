@@ -19,5 +19,43 @@ namespace Cat
                 file.Close();
             }
         }
+
+        public static string ToHtml(string s)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            int nCol = 0;
+            foreach (Char c in s)
+            {
+                if (c == '<')
+                {
+                    sb.Append("&lt;");
+                }
+                else if (c == '>')
+                {
+                    sb.Append("&gt;");
+                }
+                else if (c == '&')
+                {
+                    sb.Append("&amp;");
+                }
+                else if (c == '\n')
+                {
+                    sb.Append(c);
+                    nCol = 0;
+                }
+                else
+                {
+                    if (nCol++ >= 80)
+                    {
+                        sb.Append('\n');
+                        nCol = 1;
+                    }
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
+        }
     }
 }

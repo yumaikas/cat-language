@@ -58,24 +58,73 @@ namespace Cat
                 : base("#make_help", "( ~> )", "generates an HTML help file", "meta")
             { }
 
+            void OutputTaggedTable(StreamWriter sw, string sTag, Executor exec)
+            {
+                sw.WriteLine("<table width='100%'>");
+                int nRow = 0;
+                foreach (Function f in exec.GetAllFunctions())
+                {
+                    if ((sTag.Length == 0 && f.GetRawTags().Length == 0) || (sTag.Length != 0 && f.GetRawTags().Contains(sTag)))
+                    {
+                        if (nRow % 5 == 0)
+                            sw.WriteLine("<tr valign='top'>");                    
+                        string sName = Util.ToHtml(f.GetName());
+                        string s = "<td><a href='#" + sName + "'>" + sName + "</a></td>";
+                        sw.WriteLine(s);
+                        if (nRow++ % 5 == 4)
+                            sw.WriteLine("</tr>");
+                    }
+                }
+                if (nRow % 5 != 0) sw.WriteLine("</tr>");
+                sw.WriteLine("</table>");
+            }
+
+            void OutputAllTable(StreamWriter sw, Executor exec)
+            {
+                sw.WriteLine("<table width='100%'>");
+                int nRow = 0;
+                foreach (Function f in exec.GetAllFunctions())
+                {
+                    if (nRow % 5 == 0)
+                        sw.WriteLine("<tr valign='top'>");
+                    string sName = Util.ToHtml(f.GetName());
+                    string s = "<td><a href='#" + sName + "'>" + sName + "</a></td>";
+                    sw.WriteLine(s);
+                    if (nRow++ % 5 == 4)
+                        sw.WriteLine("</tr>");
+                }
+                if (nRow % 5 != 0) sw.WriteLine("</tr>");
+                sw.WriteLine("</table>");
+            }
+
             public override void Eval(Executor exec)
             {
                 string sHelpFile = MainClass.gsDataFolder + "\\help.html";
                 StreamWriter sw = new StreamWriter(sHelpFile);
                 sw.WriteLine("<html><head><title>Cat Help File</title></head><body>");
 
-                sw.WriteLine("<h1><a name='level0'></a>Level 0 Primitives</h1>");
-                sw.WriteLine("<table width='100%'>");
-                
+                /*
+                sw.WriteLine("<h1><a name='level0prims'></a>Level 0 Primitives</h1>");
+                OutputTable(sw, "level0", exec);
+                sw.WriteLine("<h1><a name='level1prims'></a>Level 1 Primitives</h1>");
+                OutputTable(sw, "level1", exec);               
+                sw.WriteLine("<h1><a name='level2prims'></a>Level 2 Primitives</h1>");
+                OutputTable(sw, "level2", exec);                
+                sw.WriteLine("<h1><a name='otherprims'></a>Other Functions</h1>");
+                OutputTable(sw, "", exec);
+                 */
 
+                sw.WriteLine("<h1>Instructions</h1>");
+                OutputAllTable(sw, exec);
+
+                sw.WriteLine("<h1>Definitions</h1>");
+                sw.WriteLine("<pre>");
                 foreach (Function f in exec.GetAllFunctions())
                 {
-                    string s = "<tr valign='top'><td>" + f.GetName() + "</td><td>" + f.GetRawTags() + "</td><td>" + f.GetDesc() + "</td></tr>";
-                    sw.WriteLine(s);
+                    sw.WriteLine(f.GetImplString(true));
                 }
-                sw.WriteLine("</table>");
-                    
-                    
+                sw.WriteLine("</pre>");
+    
                 sw.WriteLine("</body></html>");
                 sw.Close();
                 Output.WriteLine("saved help file to " + sHelpFile);
@@ -300,7 +349,7 @@ namespace Cat
                 string sName = exec.PopString();
                 foreach (Function f in exec.GetAllFunctions())
                     if (f.GetName().IndexOf(sName) == 0)
-                        Output.WriteLine(f.GetImplStr());
+                        Output.WriteLine(f.GetImplString());
             }
         }
 
@@ -317,7 +366,7 @@ namespace Cat
                 Function f = exec.Lookup(sName);
                 if (f == null)
                     Output.WriteLine("instruction '" + sName + "' was not found"); else
-                    Output.WriteLine(f.GetImplStr());
+                    Output.WriteLine(f.GetImplString());
             }
         }
 

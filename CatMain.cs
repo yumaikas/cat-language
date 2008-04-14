@@ -28,13 +28,14 @@ namespace Cat
         {
             if (Config.gbShowWelcome)
             {
-                WriteLine("Welcome to the Cat programming language =^..^=");
+                WriteLine("Welcome to the Cat programming language =^,,^=");
                 WriteLine("version " + Config.gsVersion);
                 WriteLine("by Christopher Diggins");
-                WriteLine("licensed under MIT License 1.0");
+                WriteLine("licensed under the MIT License 1.0");
                 WriteLine("http://www.cat-language.com");                
                 WriteLine("");
                 WriteLine("for help, type in #help followed by the enter key");
+                WriteLine("to exit, type in #exit followed by the enter key");
                 WriteLine("");
             }
 
@@ -55,20 +56,10 @@ namespace Cat
 
             try
             {
-                foreach (string s in a)
-                    gsInputFiles.Add(s);
-                 
-                // Load all files on the command line                
-                foreach (string sFile in gsInputFiles)
-                    exec.LoadModule(sFile);
+                exec.LoadModule("everything.cat");
 
-                if (gsInputFiles.Count == 0)
-                {
-                    WriteLine("warning: no files were passed as command line arguments,"); 
-                    WriteLine("this means the standard library hasn't been loaded.");
-                    WriteLine("You can load the standard library by writing: \"everything.cat\" #load");
-                    WriteLine("");
-                }
+                foreach (string s in a)
+                    exec.LoadModule(s);
 
                 // main execution loop
                 while (true)

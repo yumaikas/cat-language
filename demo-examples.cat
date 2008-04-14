@@ -33,14 +33,14 @@ define fact : (int -> int)
     A simple factorial function
   precondition:
     dup 0 gteq
-  tests:
+  test:
     in: 5 fact
     out: 120
   tags:
     demo,algorithms
 }}
 {
-  eqz
+  dup eqz
   [pop 1]
   [dup dec fact mul_int]
   if

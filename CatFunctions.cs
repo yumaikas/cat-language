@@ -205,15 +205,41 @@ namespace Cat
             }
         }
 
-        public string GetImplStr()
+        public string GetImplString()
         {
-            string s = "define " + GetName();
-            if (GetFxnType() != null)
-                s += " : " + GetFxnType();
-            s += "\n";
-            if (GetDesc() != null && GetDesc().Length > 0)
+            return GetImplString(false);
+        }
+
+        public string GetImplString(bool bHtml)
+        {
+            string sBegin = "define ";
+
+            if (bHtml)
             {
-                s += "{{\n  desc:\n    " + GetDesc() + "\n}}\n";
+                string sName = Util.ToHtml(GetName());
+                sBegin += "<a href='#" + sName + "' name='" + sName + "'>" + sName + "</a>";
+            }
+            else
+            {
+                sBegin += GetName();
+            }
+            sBegin += " : " + GetFxnTypeString() + "\n";
+            
+            string s = "";
+            if (GetMetaData() != null)
+            {
+                s += "{{\n";
+                s += GetMetaData().ToString();
+                s += "\n}}\n";
+            }
+            else if (GetDesc() != null)
+            {
+                s += "{{\n";
+                if (GetDesc() != null && GetDesc().Length > 0)
+                    s += "  desc:\n    " + GetDesc() + "\n";
+                if (GetRawTags().Length > 0)
+                    s += "  tags:\n    " + GetRawTags() + "\n";
+                s += "}}\n";
             }
 
             s += "{\n  ";
@@ -222,7 +248,9 @@ namespace Cat
                 for (int i=0; i < GetSubFxns().Count; ++i) {
                     Function f = GetSubFxns()[i];
                     if (i >= 0) s += " ";
-                    s += f.ToString();
+                    if (bHtml)
+                        s += Util.ToHtml(f.ToString()); else
+                        s += f.ToString();
                 }
                 s += "\n";
             }
@@ -231,7 +259,9 @@ namespace Cat
                 s += "_primitive_\n";
             }
             s += "}\n";
-            return s;
+            
+            if (bHtml) s = Util.ToHtml(s);
+            return sBegin + s;
         }
     }
 
