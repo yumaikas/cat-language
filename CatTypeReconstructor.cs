@@ -87,9 +87,7 @@ namespace Cat
             }
             else if (c is RecursiveRelation)
             {
-                // TODO: TEMP:
-                return CatFxnType.Create("('A -> 'B)");
-                //throw new Exception("illegal recursive relation");
+                return new CatRecursiveType();
             }
             else if (c is Constant)
             {

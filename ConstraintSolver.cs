@@ -10,6 +10,17 @@ namespace Cat
 {
     public class ConstraintSolver
     {
+        public class TypeException : Exception
+        {
+            public TypeException(string s)
+                : base("type error: " + s)
+            { }
+
+            public TypeException(Constraint c1, Constraint c2)
+                : this("constraint " + c1 + " is not compatible with " + c2)
+            { }
+        }
+
         #region fields
         List<ConstraintList> mConstraintList; // left null, because it is created upon request
         Dictionary<string, ConstraintList> mLookup = new Dictionary<string, ConstraintList>();
@@ -296,9 +307,33 @@ namespace Cat
                 AddVecConstraint(c1 as Vector, c2 as Vector);
             else if ((c1 is Relation) && (c2 is Relation))
                 AddRelConstraint(c1 as Relation, c2 as Relation);
-
-            if (c1 is Constant && c2 is Constant)
-                AddDeduction(c2 as Constant, c2 as Constant);
+            else if (c1 is Relation) {
+                // BUG: RecursiveRelations are not automatically compatible with other relations.
+                if (!(c2.ToString().Equals("self")) && (!c2.ToString().Equals("any")))
+                    throw new TypeException(c1, c2);
+            }
+            else if (c2 is Relation)
+            {
+                // BUG: RecursiveRelations are not automatically compatible with other relations.
+                if (!(c1.ToString().Equals("self")) &&(!c1.ToString().Equals("any")))
+                    throw new TypeException(c1, c2);
+            }
+            else if (c1 is Constant && c2 is Constant) {
+                if (!c1.ToString().Equals(c2.ToString())
+                    && !c1.ToString().Equals("any")
+                    && !c2.ToString().Equals("any"))
+                    throw new TypeException(c1, c2);
+            }
+            else if (c1 is RecursiveRelation || c2 is RecursiveRelation)
+            {
+                if (c1 is RecursiveRelation) 
+                    if (!c2.ToString().Equals("any"))
+                        throw new TypeException(c1, c2);
+            }
+            else
+            {
+                throw new TypeException("unhandled constraint scenario");
+            }
         }
 
         /// <summary>

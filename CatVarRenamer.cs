@@ -73,6 +73,8 @@ namespace Cat
                 return Rename(k as CatTypeVector);
             else if (k is CatCustomKind)
                 return k;
+            else if (k is CatRecursiveType)
+                return k;
             else
                 throw new Exception(k.ToString() + " is an unrecognized kind");
         }
