@@ -129,7 +129,8 @@ namespace Cat
 
         public void RemoveImplicitRhoVariables()
         {
-            RemoveImplicitRhoVariables(this);
+            // TEMP: TODO: figure out whether or not to remove this. 
+            // RemoveImplicitRhoVariables(this);
         }
 
         /// <summary>
@@ -634,6 +635,33 @@ namespace Cat
         public CatQuotedType(CatKind k)
         {
             GetProd().Add(k);
+        }
+    }
+
+    public class CatRecursiveType : CatKind
+    {
+        public CatRecursiveType()
+        {
+        }
+
+        public override string ToString()
+        {
+            return "self";
+        }
+
+        public override bool Equals(CatKind k)
+        {
+            return k is CatRecursiveType;
+        }
+
+        public override IEnumerable<CatKind> GetChildKinds()
+        {
+            return new List<CatKind>();
+        }
+
+        public override IEnumerable<CatKind> GetDescendantKinds()
+        {
+            return new List<CatKind>();
         }
     }
 }

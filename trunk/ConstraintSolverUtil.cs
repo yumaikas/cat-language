@@ -257,7 +257,6 @@ namespace Cat
                     GetRight().ReplaceConstraint(i, Clone());
         }
 
-        /* TEMP: restore when I go back to recursive relations
         private bool CanRollupRelation(Constraint child)
         {
             VarNameMap map = new VarNameMap();
@@ -307,7 +306,6 @@ namespace Cat
             }
             return true;
         }
-         */
 
         /// <summary>
         /// We want to compact any recursive relations as much as possible, for example:
@@ -317,8 +315,6 @@ namespace Cat
         /// </summary>
         public void RollupRecursiveRelations()
         {
-            // TEMP: this might be the source of some bugs
-            /*
             foreach (Relation r in GetChildRelations())
                 r.RollupRecursiveRelations();
 
@@ -329,7 +325,6 @@ namespace Cat
             for (int i = 0; i < GetRight().GetCount(); ++i)
                 if (CanRollupRelation(GetRight().GetConstraint(i)))
                     GetRight().ReplaceConstraint(i, new RecursiveRelation());
-             */
         }
 
         public Vector GetLeft()
@@ -500,9 +495,9 @@ namespace Cat
         public override string ToString()
         {
             string ret = "(";
-            for (int i = 0; i < mList.Count; ++i)
+            for (int i = mList.Count - 1; i >= 0; --i)
             {
-                if (i > 0) ret += ",";
+                if (i < mList.Count - 1) ret += " ";
                 ret += mList[i].ToString();
             }
             ret += ")";

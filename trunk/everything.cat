@@ -5,7 +5,6 @@
 
 "metacat-macros.cat" #load
 "interpreter-cmds.cat" #load
-"interpreter-flags.cat" #load
 "standard-core.cat" #load
 "standard-shuffle.cat" #load
 "standard-combinators.cat" #load

@@ -268,8 +268,7 @@ define split : (list ('a -> bool) -> list list)
     level1,lists
 }}
 {
-  dup2 filter
-  [negate filter] dip
+  nil bury nil swap [apply [cons] [swapd cons swap] if] papply fold
 }
 
 define cons_first : (list 'a -> list)
