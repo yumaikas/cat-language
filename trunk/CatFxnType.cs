@@ -383,7 +383,7 @@ namespace Cat
             char c = 'a';
             c += (char)(n % 26);
             s += c.ToString();
-            return s;
+            return "'" + s;
         }
 
         public static string ToPrettyString(CatTypeVector vec, Dictionary<string, string> dic)

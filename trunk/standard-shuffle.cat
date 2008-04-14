@@ -17,7 +17,7 @@ define swapd : ('a 'b 'c -> 'b 'a 'c)
   semantics:
     $a $b $c swapd == $b $a $c
   tags:
-    stack,level0
+    level0,stack
 }}
 { [swap] dip }
 
@@ -31,7 +31,7 @@ define swapdd : ('a 'b 'c 'd -> 'b 'a 'c 'd)
   semantics:
     $a $b $c $d swapd == $b $a $c $d
   tags:
-    stack,level1
+    level1,stack
 }}
 { [swapd] dip }
 
@@ -45,7 +45,7 @@ define dupd : ('a 'b -> 'a 'a 'b)
   semantics:
     $a $b swapd == $a $a $b
   tags:
-    stack,level0
+    level0,stack
 }}
 { [dup] dip }
 
@@ -59,7 +59,7 @@ define dupdd : ('a 'b 'c -> 'a 'a 'b 'c)
   semantics:
     $a $b $c dupdd == $a $a $b $c
   tags:
-    stack,level1
+    level0,stack
 }}
 { [dupd] dip }
 
@@ -73,7 +73,7 @@ define popd : ('a 'b -> 'b)
   semantics:
     $a $b popd == $b
   tags:
-    stack,level0
+    level0,stack
 }}
 { [pop] dip }
 
@@ -87,7 +87,7 @@ define popdd : ('a 'b 'c -> 'b 'c)
   semantics:
     $a $b $c popd == $b $c
   tags:
-    stack,level1
+    level1,stack
 }}
 { [popd] dip }
 
@@ -98,7 +98,7 @@ define over : ('a 'b -> 'a 'b 'a)
   semantics:
     $a $b over == $b $a
   tags:
-    stack,level1
+    level1,stack
 }}
 { dupd swap }
 
@@ -110,7 +110,7 @@ define under : ('a 'b -> 'b 'a 'b)
     in: 1 2 under
     out: 2 1 2
   tags:
-    stack,level1
+    level1,stack
 }}
 { dup swapd }
 
@@ -122,7 +122,7 @@ define bury : ('a 'b 'c -> 'c 'a 'b)
     in: 1 2 3 bury
     out: 3 1 2
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap swapd }
 
@@ -134,7 +134,7 @@ define dig : ('a 'b 'c -> 'b 'c 'a)
     in: 1 2 3 dig
     out: 2 3 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { swapd swap }
 
@@ -147,7 +147,7 @@ define flip : ('a 'b 'c -> 'c 'b 'a)
     in: 1 2 3 flip
     out: 3 2 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { swapd swap swapd }
 
@@ -164,7 +164,7 @@ define pop2 : ('a 'b -> )
   semantics:
     $a $b pop2 == noop
   tags:
-    stack,level1
+    level1,stack
 }}
 { pop pop }
 
@@ -178,7 +178,7 @@ define pop3 : ('a 'b 'c -> )
   semantics:
     $a $b $c pop2 == noop
   tags:
-    stack,level1
+    level1,stack
 }}
 { pop pop pop }
 
@@ -192,7 +192,7 @@ define pop4 : ('a 'b 'c 'd -> )
   semantics:
     $a $b $c $d pop4 == noop
   tags:
-    stack,level1
+    level1,stack
 }}
 { pop pop pop pop }
 
@@ -207,7 +207,7 @@ define set1 : ('a 'b  -> 'b)
     in: 1 2 set1
     out: 2
   tags:
-    stack,level1
+    level1,stack
 }}
 { popd }
 
@@ -219,7 +219,7 @@ define set2 : ('a 'b 'c -> 'c 'b)
     in: 1 2 3 set2
     out: 3 2
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [set1] dip }
 
@@ -231,7 +231,7 @@ define set3 : ('a 'b 'c 'd -> 'd 'b 'c)
     in: 1 2 3 4 set3
     out: 4 2 3
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [set2] dip }
 
@@ -243,7 +243,7 @@ define set4 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd)
     in: 1 2 3 4 5 set4
     out: 5 2 3 4
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [set3] dip }
 
@@ -258,7 +258,7 @@ define get2 : ('a 'b -> 'a 'b 'a)
     in: 1 2 get2
     out: 1 2 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { [dup] dip swap }
 
@@ -270,7 +270,7 @@ define get3 : ('a 'b 'c -> 'a 'b 'c 'a)
     in: 1 2 3 get3
     out: 1 2 3 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { [get2] dip swap }
 
@@ -282,7 +282,7 @@ define get4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a)
     in: 1 2 3 4 get4
     out: 1 2 3 4 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { [get3] dip swap }
 
@@ -297,7 +297,7 @@ define under3 : ('a 'b 'c -> 'c 'a 'b 'c)
     in: 1 2 3 under3
     out: 3 1 2 3
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [under] dip swap }
 
@@ -309,7 +309,7 @@ define under4 : ('a 'b 'c 'd -> 'd 'a 'b 'c 'd)
     in: 1 2 3 4 under4
     out: 4 1 2 3 4
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [under3] dip swap }
 
@@ -321,7 +321,7 @@ define under5 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd 'e)
     in: 1 2 3 4 5 under5
     out: 5 1 2 3 4 5
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [under4] dip swap }
 
@@ -336,7 +336,7 @@ define dig4 : ('a 'b 'c 'd -> 'b 'c 'd 'a)
     in: 1 2 3 4 dig4
     out: 2 3 4 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { [dig] dip swap }
 
@@ -348,7 +348,7 @@ define dig5 : ('a 'b 'c 'd 'e -> 'b 'c 'd 'e 'a)
     in: 1 2 3 4 5 dig5
     out: 2 3 4 5 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { [dig4] dip swap }
 
@@ -363,7 +363,7 @@ define bury4 : ('a 'b 'c 'd -> 'd 'a 'b 'c)
     in: 1 2 3 4 bury4
     out: 4 1 2 3
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [bury] dip }
 
@@ -375,7 +375,7 @@ define bury5 : ('a 'b 'c 'd 'e -> 'e 'a 'b 'c 'd)
     in: 1 2 3 4 5 bury5
     out: 5 1 2 3 4
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [bury4] dip }
 
@@ -390,7 +390,7 @@ define dup2 : ('a 'b -> 'a 'b 'a 'b)
     in: 1 2 dup2
     out: 1 2 1 2
   tags:
-    stack,level1
+    level1,stack
 }}
 { get2 get2 }
 
@@ -402,7 +402,7 @@ define dup3 : ('a 'b 'c -> 'a 'b 'c 'a 'b 'c)
     in: 1 2 3 dup3
     out: 1 2 3 1 2 3
   tags:
-    stack,level1
+    level1,stack
 }}
 { get3 get3 get3 }
 
@@ -414,7 +414,7 @@ define dup4 : ('a 'b 'c 'd -> 'a 'b 'c 'd 'a 'b 'c 'd)
     in: 1 2 3 4 dup4
     out: 1 2 3 4 1 2 3 4
   tags:
-    stack,level1
+    level1,stack
 }}
 { get4 get4 get4 get4 }
 
@@ -429,7 +429,7 @@ define flip4 : ('a 'b 'c 'd -> 'd 'b 'c 'a)
     in: 1 2 3 4 flip4
     out: 4 2 3 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [flip] dip swap }
 
@@ -441,6 +441,6 @@ define flip5 : ('a 'b 'c 'd 'e -> 'e 'b 'c 'd 'a)
     in: 1 2 3 4 5 flip5
     out: 5 2 3 4 1
   tags:
-    stack,level1
+    level1,stack
 }}
 { swap [flip4] dip swap }
