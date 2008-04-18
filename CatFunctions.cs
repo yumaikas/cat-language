@@ -489,6 +489,7 @@ namespace Cat
             mSubFxns = new CatExpr();
         }
 
+        /*
         public CatFxnType GetUnquotedFxnType()
         {
             CatKind k = GetUnquotedKind();
@@ -496,6 +497,7 @@ namespace Cat
                 throw new Exception("illegal type for a quoted function, should produce a single function : " + mpFxnType.ToString());
             return k as CatFxnType;
         }
+         */
 
         public CatKind GetUnquotedKind()
         {
@@ -522,9 +524,9 @@ namespace Cat
 
             try
             {
-                mpFxnType = new CatQuotedType(
-                    CatTypeReconstructor.ComposeTypes(first.GetUnquotedFxnType(), 
-                        second.GetUnquotedFxnType()));
+                mpFxnType = new CatQuotedType(CatTypeReconstructor.ComposeTypes(first.GetFxnType(), second.GetFxnType()));
+                // TODO: remove once everythign tests okay.
+                //mpFxnType = new CatQuotedType(CatTypeReconstructor.ComposeTypes(first.GetUnquotedFxnType(), second.GetUnquotedFxnType()));
             }
             catch (Exception e)
             {
@@ -582,7 +584,7 @@ namespace Cat
             mFxn = new PushValue<Object>(x);
             msName = x.ToString();
             if (mFxn.GetFxnType() != null)
-                mpFxnType = new CatQuotedType(mFxn.GetFxnType());
+                mpFxnType = mFxn.GetFxnType();
             GetSubFxns().Add(mFxn);
         }
 

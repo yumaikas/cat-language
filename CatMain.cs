@@ -88,7 +88,9 @@ namespace Cat
                         if (Config.gbOutputStack)
                             exec.OutputStack();
 
+#if (!NOGRAPHICS)
                         WindowGDI.Invalidate();                        
+#endif
                     }
                 }
             }

@@ -13,7 +13,7 @@ namespace Cat
         public class TypeException : Exception
         {
             public TypeException(string s)
-                : base("type error: " + s)
+                : base(s)
             { }
 
             public TypeException(Constraint c1, Constraint c2)

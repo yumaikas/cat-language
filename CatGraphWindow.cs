@@ -17,6 +17,7 @@ namespace Cat
 {
     public partial class GraphWindow : Form
     {
+#if (!NOGRAPHICS)
         List<GraphicCommand> mCmds = new List<GraphicCommand>();
         Mutex mMutex = new Mutex();
         
@@ -99,7 +100,6 @@ namespace Cat
         private void GraphWindow_Paint(object sender, PaintEventArgs e)
         {
             mMutex.WaitOne();
-
             try
             {
                 Bitmap b = new Bitmap(Width, Height, CreateGraphics());
@@ -126,8 +126,10 @@ namespace Cat
         {
             WindowGDI.NullifyWindow();
         }
+#endif
     }
 
+#if (!NOGRAPHICS)
     public class WindowGDI
     {
         static GraphWindow mWindow;
@@ -384,4 +386,7 @@ namespace Cat
             mi.Invoke(o, maArgs);
         }
     }
+#endif
 }
+
+ 
