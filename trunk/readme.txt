@@ -16,6 +16,10 @@ Or the open-source Mono compiler version 1.2 or later:
 
   http://www.mono-project.com/Downloads
 
+To compile with mono on Windows use the files "mono_build.bat", or if graphics give you a problem
+use "no_graphics_mono_build.bat". If you are using Mac, Linux, or other, open these files to see
+the neccessary command-line options for running Mono.
+
 To report bugs go to:
 
   http://code.google.com/p/cat-language/issues/list
@@ -30,12 +34,11 @@ To join the Cat discussion group and mailing list go to:
 
 For a Cat tutorial go to:
 
-  http://code.google.com/p/cat-language/wiki/Tutorial
+  http://www.cat-language.com/tutorial.html
 
 The Cat manual/specification is at:
 
   http://www.cat-language.com/manual.html
-
 
 Most importantly, have fun!
 

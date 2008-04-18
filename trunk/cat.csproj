@@ -104,6 +104,7 @@
     <Compile Include="CatOutput.cs" />
     <Compile Include="CatParser.cs" />
     <Compile Include="CatPrimitives.cs" />
+    <Compile Include="CatToC.cs" />
     <Compile Include="CatUtil.cs" />
     <Compile Include="CatVarRenamer.cs" />
     <Compile Include="CatVarScopes.cs" />

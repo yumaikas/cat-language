@@ -153,3 +153,18 @@ define push : (('A -> 'B) 'c -> ('A -> 'B 'c))
 {
   quote compose
 }
+
+define app2 : ('A 'b 'b (A 'b -> 'A) -> 'A)
+{{
+  desc:
+    Applies a function to the stack twice, first with the top value removed
+    then next with the second value removed.
+  test:
+    in: 7 2 3 [sub_int] app2
+    out: 2
+  tags:
+    level1,functions
+}}
+{
+   dup swapd [apply] dip2 apply
+}

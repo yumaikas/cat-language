@@ -69,7 +69,7 @@ namespace Cat
         }
         public static Rule CatIdent()
         {
-            return Plus(CatIdentChar()); ;
+            return Plus(CatIdentChar());
         }
         public static Rule Token(string s) 
         { 

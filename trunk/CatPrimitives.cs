@@ -41,7 +41,7 @@ namespace Cat
                 Output.WriteLine("Some basic commands to get you started:");
                 Output.WriteLine("  \"filename\" #load - loads a source file");
                 Output.WriteLine("  [...] #trace - runs a function in trace mode");
-                Output.WriteLine("  #testall - runs all unit tests");
+                Output.WriteLine("  #test_all - runs all unit tests");
                 Output.WriteLine("  [...] #type - shows the type of a function");
                 Output.WriteLine("  [...] #metacat - optimizes a function by applying rewriting rules");
                 Output.WriteLine("  #defs - lists all loaded commands");
@@ -586,7 +586,7 @@ namespace Cat
         public class PartialApplyFxn : PrimitiveFunction
         {
             public PartialApplyFxn()
-                : base("papply", "('a ('A 'a -> 'B) -> ('A -> 'B))", "partial application: binds the top argument to the top value in the stack", "level0,functions")
+                : base("papply", "('C 'a ('A 'a -> 'B) -> 'C ('A -> 'B))", "partial application: binds the top argument to the top value in the stack", "level0,functions")
             { }
 
             public override void Eval(Executor exec)
@@ -2007,6 +2007,7 @@ namespace Cat
         #endregion
 
         #region graphics primitives 
+#if (!NOGRAPHICS)
         public class OpenWindow : PrimitiveFunction
         {
             public OpenWindow()
@@ -2070,7 +2071,7 @@ namespace Cat
                 WindowGDI.Render(c);
             }
         }
-
+#endif
         #endregion
 
         #region .NET (CLR) reflection API

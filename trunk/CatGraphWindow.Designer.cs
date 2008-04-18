@@ -48,9 +48,11 @@ namespace Cat
             this.MinimizeBox = false;
             this.Name = "GraphWindow";
             this.Text = "Cat Graphics Window";
+#if (!NOGRAPHICS)
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.GraphWindow_Paint);
             this.Resize += new System.EventHandler(this.GraphWindow_Resize);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GraphWindow_FormClosing);
+#endif
             this.ResumeLayout(false);
 
         }
