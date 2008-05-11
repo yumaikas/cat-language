@@ -68,6 +68,9 @@ define y
   [dup papply] swap compose dup apply
 }
 
+/*
+TEMP: removed because it violates new type system
+
 define y_fact : (int -> int)
 {{
   desc:
@@ -87,3 +90,4 @@ define y_fact : (int -> int)
   ]
   y
 }
+*/

@@ -113,6 +113,7 @@
     <Compile Include="ConstraintSolverUtil.cs" />
     <Compile Include="CatLambda.cs" />
     <Compile Include="MetaCat.cs" />
+    <Compile Include="CatMetaCommands.cs" />
     <Compile Include="PegParser.cs" />
     <Compile Include="CatBase.cs" />
     <Compile Include="Resources.Designer.cs">

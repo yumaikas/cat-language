@@ -75,7 +75,7 @@ namespace Cat
         /// <summary>
         /// Version number 
         /// </summary>
-        public static string gsVersion = "1.0 beta 4";
+        public static string gsVersion = "1.0 beta 5";
 
         /// <summary>
         /// Displays a turtle representing the current pen when drawing. 
@@ -116,5 +116,10 @@ namespace Cat
         /// run all self-tests automatically
         /// </summary>
         public static bool gbSelfTest = true;
+
+        /// <summary>
+        /// Folder for storing data file
+        /// </summary>
+        public static string gsDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\cat";
     }
 }

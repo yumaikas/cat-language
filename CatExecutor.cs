@@ -32,8 +32,6 @@ namespace Cat
 
         public Executor()
         {
-            RegisterType(typeof(MetaCommands));
-            RegisterType(typeof(Primitives));
         }
 
         public Executor(INameLookup other)

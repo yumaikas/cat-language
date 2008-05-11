@@ -156,7 +156,7 @@ namespace Cat
         public void AddVarConstraint(Var v, Constraint c)
         {
             if (c is RecursiveRelation)
-                return; 
+                return;
 
             AddConstraintToList(c, GetConstraints(v.ToString()));
         }
@@ -312,8 +312,7 @@ namespace Cat
                 if (!(c2.ToString().Equals("self")) && (!c2.ToString().Equals("any")))
                     throw new TypeException(c1, c2);
             }
-            else if (c2 is Relation)
-            {
+            else if (c2 is Relation) {
                 // BUG: RecursiveRelations are not automatically compatible with other relations.
                 if (!(c1.ToString().Equals("self")) &&(!c1.ToString().Equals("any")))
                     throw new TypeException(c1, c2);
@@ -345,6 +344,38 @@ namespace Cat
             foreach (ConstraintList list in mLookup.Values)
                 if (!mConstraintList.Contains(list))
                     mConstraintList.Add(list);
+
+            // TODO: this is temporarily removed, because it is wrong.
+            // CheckConstraintListForIllegalRecursions();
+        }
+
+        private void CheckConstraintListForIllegalRecursions()
+        {
+            foreach (ConstraintList list in mConstraintList)
+            {
+                List<Var> vars = new List<Var>();
+                foreach (Constraint c in list)
+                    if (c is Var)
+                        vars.Add(c as Var);
+                foreach (Constraint c in list) 
+                {
+                    if (c is Vector) 
+                    {
+                        Vector v = c as Vector;
+                        if (v.GetCount() > 1)
+                        {
+                            foreach (Var tmp in vars)
+                            {
+                                if (v.ContainsVar(tmp))
+                                {
+                                    throw new Exception("illegal recursive vector relation");
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
         }
 
         public List<ConstraintList> GetConstraintLists()

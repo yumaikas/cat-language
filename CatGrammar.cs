@@ -65,6 +65,7 @@ namespace Cat
         }
         public static Rule CatIdentChar()
         {
+            //return Choice(IdentNextChar(), CharSet("~`!@#$%^&*-+=|:;<>.?/"));
             return Choice(IdentNextChar(), CharSet("~`!@#$%^&*-+=|:;<>.?/"));
         }
         public static Rule CatIdent()
@@ -212,8 +213,8 @@ namespace Cat
         }
         public static Rule FxnDef()
         {
-            return CatAstNode(AstLabel.Def, Seq(Word("define"), NoFail(Name(), "expected name"),
-                Opt(Params()), Opt(TypeDecl()), Opt(MetaDataBlock()), NoFail(CodeBlock(), "expected a code block")));
+            return CatAstNode(AstLabel.Def, Seq(Word("define"), 
+                NoFail(Name(), "expected name"), Opt(Params()), Opt(TypeDecl()), Opt(MetaDataBlock()), Star(Delay(FxnDef)), NoFail(CodeBlock(), "expected a code block")));
         }
         public static Rule FxnDecl()
         {

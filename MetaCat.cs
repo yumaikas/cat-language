@@ -196,7 +196,7 @@ namespace Cat
                         if (i > 0) sTo += " ";
                         sTo += pNewFxns[i].msName;
                     }
-                    MainClass.WriteLine("Rewriting { " + sFrom + " } to { " + sTo + " }");
+                    Output.WriteLine("Rewriting { " + sFrom + " } to { " + sTo + " }");
                 }
 
                 if (mnFxnIndex < fxns.Count)

@@ -591,6 +591,15 @@ namespace Cat
             }
             return true;
         }
+
+        public bool ContainsVar(Var v)
+        {
+            foreach (Constraint c in this)
+                if (c.EqualsVar(v.ToString()))
+                    return true;
+            return false;
+
+        }
     }
 
     public class ConstraintList : List<Constraint>
