@@ -566,7 +566,7 @@ namespace Cat
 
         public Function MakeFunction(AstDef def) 
         {
-            bool bLambda = def.mParams.Count > 0;
+            bool bLambda = def.mParams.Count > 0 || def.mLocals.Count > 0;
             if (bLambda)
                 CatLambdaConverter.Convert(def);
             CatExpr fxns = NodesToFxns(def.mName, def.mTerms);
