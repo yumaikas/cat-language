@@ -244,34 +244,48 @@ namespace Cat
             l.mIdentifiers.Clear();
         }
 
+        public static void ConvertLocalCalls(List<CatAstNode> terms, List<AstDef> locals)
+        {
+            foreach (AstDef def in locals)
+            {
+                for (int i = terms.Count - 1; i >= 0; --i)
+                {
+                    CatAstNode node = terms[i];
+                    if (node is AstLambda)
+                    {
+                        ConvertLocalCalls((node as AstLambda).GetTerms(), locals);
+                    }
+                    else if (node is AstQuote)
+                    {
+                        ConvertLocalCalls((node as AstQuote).GetTerms(), locals);
+                    }
+                    else if (node is AstName)
+                    {
+                        if ((node as AstName).ToString().Equals(def.mName))
+                            terms.Insert(i + 1, new AstName("apply"));
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// This is known as an abstraction algorithm. It converts from 
         /// a form with named parameters to point-free form.
         /// </summary>
-        /// <param name="sRightConsequent"></param>
         public static void Convert(AstDef d)
         {
-            if (IsPointFree(d)) 
-                return;
+            List<string> locs = new List<string>();
+            foreach (AstDef loc in d.mLocals)
+                locs.Add(loc.mName);
+            ConvertLocalCalls(d.mTerms, d.mLocals);
+            ConvertTerms(locs, d.mTerms);
 
+            foreach (AstDef loc in d.mLocals)
+                d.mTerms.Insert(0, new AstQuote(loc.mTerms));
             List<string> args = new List<string>();
             foreach (AstParam p in d.mParams)
                 args.Add(p.ToString());
-
-            ConvertTerms(args, d.mTerms);           
-        }
-
-        public static bool IsPointFree(AstRoot p)
-        {
-            foreach (AstDef d in p.Defs)
-                if (!IsPointFree(d))
-                    return false;
-            return true;
-        }
-
-        public static bool IsPointFree(AstDef d)
-        {
-            return d.mParams.Count == 0;
+            ConvertTerms(args, d.mTerms);
         }
     }
 }

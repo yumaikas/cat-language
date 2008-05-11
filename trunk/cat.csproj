@@ -87,6 +87,7 @@
     <Compile Include="CatExpr.cs" />
     <Compile Include="CatFunctions.cs" />
     <Compile Include="CatFxnType.cs" />
+    <Compile Include="CatGenerator.cs" />
     <Compile Include="CatGrammar.cs" />
     <Compile Include="CatGraphWindow.cs">
       <SubType>Form</SubType>

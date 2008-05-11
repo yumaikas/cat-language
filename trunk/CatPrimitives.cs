@@ -372,24 +372,32 @@ namespace Cat
 
             public CatList FxnsToList(CatExpr fxns)
             {
-                Object[] a = new Object[fxns.Count];
-                int i = 0;
+                CatList list = new CatList();                
                 foreach (Function f in fxns )
                 {
-                    if (f is QuotedFunction)
+                    if (f is PushFunction)
                     {
-                        a[i++] = FxnsToList((f as QuotedFunction).GetSubFxns());
+                        list.Add(FxnsToList(f.GetSubFxns()));
                     }
-                    else if (f is PushFunction)
+                    else if (f is DefinedFunction)
                     {
-                        a[i++] = FxnsToList((f as PushFunction).GetSubFxns());
+                        DefinedFunction def = f as DefinedFunction;
+                        if (f.GetSubFxns().Count > 0)
+                        {
+                            foreach (Function g in f.GetSubFxns())
+                                list.Add(g);
+                        }
+                        else
+                        {
+                            list.Add(f);
+                        }
                     }
-                    else 
+                    else
                     {
-                        a[i++] = f;
+                        list.Add(f);
                     }
                 }
-                return new CatList(a);
+                return list;
             }
 
             public override void Eval(Executor exec)

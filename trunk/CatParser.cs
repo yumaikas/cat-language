@@ -251,6 +251,7 @@ namespace Cat
         public AstMetaDataBlock mpMetaData;
         public List<AstParam> mParams = new List<AstParam>();
         public List<CatAstNode> mTerms = new List<CatAstNode>();
+        public List<AstDef> mLocals = new List<AstDef>();
 
         public AstDef(PegAstNode node)
             : base(node)
@@ -312,7 +313,7 @@ namespace Cat
                 if (!child.GetLabel().Equals(AstLabel.Def))
                     break;
 
-                mpLocalDefs.Add(new AstDef(child));
+                mLocals.Add(new AstDef(child));
                 n++;
             }
 
