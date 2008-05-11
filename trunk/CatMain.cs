@@ -18,14 +18,15 @@ namespace Cat
     {
         static List<string> gsInputFiles = new List<string>();
         static Executor exec = new Executor();
-        
-        public static string gsDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\cat";
-        
+                
         // TODO: LOWPRI: reintroduce sessions 
         //static string gsSessionFile = gsDataFolder + "\\session.cat";
 
         static void Main(string[] a)
         {
+            exec.RegisterType(typeof(CatMetaCommands));
+            exec.RegisterType(typeof(Primitives));
+
             if (Config.gbShowWelcome)
             {
                 WriteLine("Welcome to the Cat programming language =^,,^=");
@@ -39,11 +40,11 @@ namespace Cat
                 WriteLine("");
             }
 
-            if (!Directory.Exists(gsDataFolder))
+            if (!Directory.Exists(Config.gsDataFolder))
             {
                 try
                 {
-                    DirectoryInfo di = Directory.CreateDirectory(gsDataFolder);
+                    DirectoryInfo di = Directory.CreateDirectory(Config.gsDataFolder);
                     if (di == null)
                         throw new Exception("Failed to create directory");
                 }

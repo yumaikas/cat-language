@@ -308,6 +308,17 @@ namespace Cat
             while (n < node.GetNumChildren())
             {
                 PegAstNode child = node.GetChild(n);
+
+                if (!child.GetLabel().Equals(AstLabel.Def))
+                    break;
+
+                mpLocalDefs.Add(new AstDef(child));
+                n++;
+            }
+
+            while (n < node.GetNumChildren())
+            {
+                PegAstNode child = node.GetChild(n);
                 CatAstNode expr = Create(child);
 
                 if (!(expr is AstExpr))
@@ -339,33 +350,6 @@ namespace Cat
             writer.WriteLine(IndentedString(nIndent, "}"));
         }
     }
-
-    /* // TODO: figure out why this is here.
-    public class AstDeclare : CatAstNode
-    {
-        AstType mType;
-        AstMetaData mMetaData;
-
-        public AstDeclare(PegAstNode node)
-            : base(node)
-        {
-            CheckLabel(AstLabel.Decl);
-            if (node.GetNumChildren() == 0)
-            {
-                throw new Exception("Illegal declaration, missing type signature");
-            }
-            else if (node.GetNumChildren() == 1)
-            {
-                mType = new AstType(node.GetChild(0));
-            }
-            else if (node.GetNumChildren() == 2)
-            {
-                mType = new AstType(node.GetChild(0));
-                mMetaData = new AstMetaData(node.GetChild(1));
-            }
-        }
-    }
-     */
 
     public class AstName : AstExpr
     {

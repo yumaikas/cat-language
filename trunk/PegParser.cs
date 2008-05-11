@@ -768,6 +768,7 @@ namespace Peg
         public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3) { return new SeqRule(new Rule[] { x0, x1, x2, x3 }); }
         public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3, Rule x4) { return new SeqRule(new Rule[] { x0, x1, x2, x3, x4 }); }
         public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3, Rule x4, Rule x5) { return new SeqRule(new Rule[] { x0, x1, x2, x3, x4, x5 }); }
+        public static Rule Seq(Rule x0, Rule x1, Rule x2, Rule x3, Rule x4, Rule x5, Rule x6) { return new SeqRule(new Rule[] { x0, x1, x2, x3, x4, x5, x6 }); }
         public static Rule Choice(Rule x0, Rule x1) { return new ChoiceRule(new Rule[] { x0, x1 }); }
         public static Rule Choice(Rule x0, Rule x1, Rule x2) { return new ChoiceRule(new Rule[] { x0, x1, x2 }); }
         public static Rule Choice(Rule x0, Rule x1, Rule x2, Rule x3) { return new ChoiceRule(new Rule[] { x0, x1, x2, x3 }); }
