@@ -1,0 +1,8 @@
+# Unfair Benchmarks #
+
+This page shows Cat trouncing a number of languages, in various benchmark comparisons.
+
+A case can always be made that a benchmark in unfair in one manner or another but I'll leave it to you to decide whether or not you care about fairness.
+
+### under construction ###
+

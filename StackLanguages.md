@@ -1,0 +1,7 @@
+# Stack Based Languages #
+
+Stack based languages (also known as stack-oriented languages) are programming languages with the characteristic that they pass arguments to, and return results from, functions using one or more shared stacks.
+
+Some well known examples of stack-based languages include Postscript and Forth, as well as several intermediate languages such as the .NET common intermediate language (CIL) and Java byte-code (JVML).
+
+Stack-based languages usually use a [postfix notation](RPN.md) also known as reverse polish notation.

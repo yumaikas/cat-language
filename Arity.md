@@ -1,0 +1,12 @@
+# Arity #
+
+The arity of a function is the number of arguments it accepts. Functions with specific arities are called names according to the following table:
+
+| Arity | Name |
+|:------|:-----|
+| 0     | Nullary |
+| 1     | Unary |
+| 2     | Binary |
+| 3     | Ternary |
+| 4     | Tertiary |
+
